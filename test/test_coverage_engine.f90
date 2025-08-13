@@ -26,6 +26,9 @@ program test_coverage_engine
     ! Test 4: Exclude pattern filtering
     all_tests_passed = all_tests_passed .and. test_exclude_pattern_filtering()
     
+    ! Test 4b: Middle wildcard pattern matching (bug fix)
+    all_tests_passed = all_tests_passed .and. test_middle_wildcard_patterns()
+    
     ! Test 5: Coverage threshold enforcement
     all_tests_passed = all_tests_passed .and. test_coverage_threshold_enforcement()
     
@@ -342,5 +345,45 @@ contains
             print *, "    FAILED: Quiet mode failed"
         end if
     end function test_quiet_mode
+
+    function test_middle_wildcard_patterns() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        logical :: match1, match2, match3, match4, match5
+        
+        print *, "  Test 4b: Middle wildcard pattern matching (bug fix)"
+        
+        ! Given: Config with middle wildcard pattern "src/*.f90"
+        call initialize_config(config)
+        
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
+        allocate(character(len=256) :: config%exclude_patterns(1))
+        config%exclude_patterns(1) = "src/*.f90"
+        
+        ! Test cases for middle wildcard pattern matching
+        ! Should match: starts with "src/" and ends with ".f90"
+        match1 = check_exclude_patterns("src/main.f90", config)       ! Should match
+        match2 = check_exclude_patterns("src/module.f90", config)     ! Should match
+        
+        ! Should NOT match: wrong prefix or suffix
+        match3 = check_exclude_patterns("lib/main.f90", config)       ! Wrong prefix
+        match4 = check_exclude_patterns("src/main.c", config)         ! Wrong suffix
+        match5 = check_exclude_patterns("test/src/main.f90", config)  ! Contains but wrong prefix
+        
+        ! Pattern should match files that start with "src/" AND end with ".f90"
+        passed = match1 .and. match2 .and. (.not. match3) .and. &
+                (.not. match4) .and. (.not. match5)
+        
+        if (passed) then
+            print *, "    PASSED - Middle wildcard patterns work correctly"
+        else
+            print *, "    FAILED: Pattern matching results:"
+            print *, "           src/main.f90:", match1, "(should be T)"
+            print *, "           src/module.f90:", match2, "(should be T)"
+            print *, "           lib/main.f90:", match3, "(should be F)"
+            print *, "           src/main.c:", match4, "(should be F)"
+            print *, "           test/src/main.f90:", match5, "(should be F)"
+        end if
+    end function test_middle_wildcard_patterns
 
 end program test_coverage_engine

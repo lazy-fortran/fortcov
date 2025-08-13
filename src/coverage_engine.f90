@@ -259,8 +259,8 @@ contains
                      (filepath_lower(len(filepath_lower) - len(pattern_lower) + 2:) == &
                       pattern_lower(2:))
         else
-            ! Wildcard in middle - simplified implementation
-            matches = (index(filepath_lower, pattern_lower(1:star_pos-1)) > 0) .or. &
+            ! Wildcard in middle - check both prefix and suffix match
+            matches = (index(filepath_lower, pattern_lower(1:star_pos-1)) == 1) .and. &
                      (index(filepath_lower, pattern_lower(star_pos+1:)) > 0)
         end if
     end function matches_pattern
