@@ -318,23 +318,59 @@ contains
         character(len=:), allocatable :: args(:)
         character(len=256) :: error_message
         logical :: success
+        integer :: unit, iostat
+        character(len=:), allocatable :: test_file
         
         print *, "  Test 12: Load config from file"
         
-        allocate(character(len=25) :: args(1))
-        args(1) = "--config=fortcov.cfg"
+        ! Create a test namelist file
+        test_file = "test_fortcov.nml"
+        open(newunit=unit, file=test_file, status='replace', iostat=iostat)
+        if (iostat == 0) then
+            write(unit, '(A)') "&fortcov_config"
+            write(unit, '(A)') "  input_format = 'lcov'"
+            write(unit, '(A)') "  output_format = 'json'"
+            write(unit, '(A)') "  output_path = 'test_output.json'"
+            write(unit, '(A)') "  source_paths = 'src/', 'lib/', 'test/'"
+            write(unit, '(A)') "  exclude_patterns = '*.mod', '*.o', 'build/*'"
+            write(unit, '(A)') "  minimum_coverage = 85.5"
+            write(unit, '(A)') "  verbose = .true."
+            write(unit, '(A)') "/"
+            close(unit)
+        end if
+        
+        allocate(character(len=30) :: args(1))
+        args(1) = "--config=" // test_file
         
         call parse_config(args, config, success, error_message)
         
-        ! For now, we expect this to fail since file doesn't exist
-        ! Later when file loading is implemented, this should check
-        ! that config was loaded properly
-        passed = .not. success .and. (len_trim(error_message) > 0)
+        ! Clean up test file
+        open(newunit=unit, file=test_file, status='old', iostat=iostat)
+        if (iostat == 0) then
+            close(unit, status='delete')
+        end if
+        
+        ! Verify the configuration was loaded correctly
+        passed = success .and. &
+                 config%input_format == "lcov" .and. &
+                 config%output_format == "json" .and. &
+                 config%output_path == "test_output.json" .and. &
+                 abs(config%minimum_coverage - 85.5) < 0.01 .and. &
+                 config%verbose
         
         if (.not. passed) then
-            print *, "    FAILED: Expected success=F with error message"
+            if (.not. success) then
+                print *, "    FAILED: " // trim(error_message)
+            else
+                print *, "    FAILED: Config values not loaded correctly"
+                print *, "      input_format: ", config%input_format
+                print *, "      output_format: ", config%output_format
+                print *, "      output_path: ", config%output_path
+                print *, "      minimum_coverage: ", config%minimum_coverage
+                print *, "      verbose: ", config%verbose
+            end if
         else
-            print *, "    PASSED"
+            print *, "    PASSED - Namelist config loaded successfully"
         end if
     end function test_load_config_file
 

@@ -145,9 +145,107 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        ! For now, just report that config file loading is not implemented
+        ! Namelist variables
+        character(len=256) :: input_format
+        character(len=256) :: output_format
+        character(len=256) :: output_path
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
+        real :: minimum_coverage
+        logical :: verbose
+        integer :: unit, iostat, i, count
+        logical :: file_exists
+        
+        namelist /fortcov_config/ input_format, output_format, output_path, &
+                                  source_paths, exclude_patterns, &
+                                  minimum_coverage, verbose
+        
         success = .false.
-        error_message = "Configuration file not found: " // config%config_file
+        error_message = ""
+        
+        ! Check if file exists
+        inquire(file=config%config_file, exist=file_exists)
+        if (.not. file_exists) then
+            error_message = "Configuration file not found: " // config%config_file
+            return
+        end if
+        
+        ! Initialize namelist variables with defaults
+        input_format = config%input_format
+        output_format = config%output_format
+        output_path = config%output_path
+        source_paths = ''
+        exclude_patterns = ''
+        minimum_coverage = config%minimum_coverage
+        verbose = config%verbose
+        
+        ! Read namelist from file
+        open(newunit=unit, file=config%config_file, status='old', &
+             action='read', iostat=iostat)
+        if (iostat /= 0) then
+            error_message = "Failed to open config file: " // config%config_file
+            return
+        end if
+        
+        read(unit, nml=fortcov_config, iostat=iostat)
+        close(unit)
+        
+        if (iostat /= 0) then
+            error_message = "Invalid namelist format in config file"
+            return
+        end if
+        
+        ! Update config from namelist variables
+        config%input_format = trim(adjustl(input_format))
+        config%output_format = trim(adjustl(output_format))
+        config%output_path = trim(adjustl(output_path))
+        
+        ! Process source paths array
+        if (allocated(config%source_paths)) deallocate(config%source_paths)
+        count = 0
+        do i = 1, MAX_ARRAY_SIZE
+            if (len_trim(source_paths(i)) > 0) then
+                count = count + 1
+            else
+                exit
+            end if
+        end do
+        if (count > 0) then
+            allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(count))
+            do i = 1, count
+                config%source_paths(i) = trim(adjustl(source_paths(i)))
+            end do
+        end if
+        
+        ! Process exclude patterns array
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
+        count = 0
+        do i = 1, MAX_ARRAY_SIZE
+            if (len_trim(exclude_patterns(i)) > 0) then
+                count = count + 1
+            else
+                exit
+            end if
+        end do
+        if (count > 0) then
+            allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(count))
+            do i = 1, count
+                config%exclude_patterns(i) = trim(adjustl(exclude_patterns(i)))
+            end do
+        end if
+        
+        ! Update other fields
+        config%minimum_coverage = minimum_coverage
+        config%verbose = verbose
+        
+        ! Validate the loaded configuration
+        if (config%minimum_coverage < MIN_COVERAGE .or. &
+            config%minimum_coverage > MAX_COVERAGE) then
+            error_message = "Invalid threshold in config file (must be 0-100)"
+            return
+        end if
+        
+        success = .true.
     end subroutine load_config_file
 
     subroutine show_help()
@@ -160,13 +258,27 @@ contains
         print *, "  --source=PATH             Source directory to include (can be repeated)"
         print *, "  --exclude=PATTERN         Pattern to exclude (can be repeated)"
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
-        print *, "  --config=FILE             Load configuration from file"
+        print *, "  --config=FILE             Load configuration from namelist file"
         print *, "  --verbose, -v             Enable verbose output"
         print *, "  --help, -h                Show this help message"
         print *, ""
         print *, "Examples:"
         print *, "  fortcov --output=coverage.md --source=src"
         print *, "  fortcov --fail-under=80 --exclude='*.mod' --verbose"
+        print *, "  fortcov --config=fortcov.nml"
+        print *, ""
+        print *, "Configuration File Format (Fortran namelist):"
+        print *, "  Create a file (e.g., fortcov.nml) with:"
+        print *, ""
+        print *, "  &fortcov_config"
+        print *, "    input_format = 'gcov'"
+        print *, "    output_format = 'markdown'"
+        print *, "    output_path = 'coverage.md'"
+        print *, "    source_paths = 'src/', 'lib/', 'app/'"
+        print *, "    exclude_patterns = '*.mod', 'test/*', 'build/*'"
+        print *, "    minimum_coverage = 80.0"
+        print *, "    verbose = .true."
+        print *, "  /"
     end subroutine show_help
 
     subroutine initialize_config(config)

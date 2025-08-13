@@ -1,0 +1,41 @@
+! FortCov Configuration File (Fortran Namelist Format)
+! 
+! Copy this file to fortcov.nml and modify as needed
+! Then run: fortcov --config=fortcov.nml
+!
+! All settings are optional. Uncomment and modify as needed.
+
+&fortcov_config
+    ! Input format for coverage data
+    ! Options: 'gcov' (default), 'lcov', 'cobertura' (future)
+    input_format = 'gcov'
+    
+    ! Output format for coverage report
+    ! Options: 'markdown' (default), 'json', 'xml', 'html' (future)
+    output_format = 'markdown'
+    
+    ! Output file path
+    ! Use '-' for stdout (default)
+    output_path = 'coverage.md'
+    
+    ! Source directories to include (up to 100 paths)
+    ! Paths are processed in order
+    source_paths = 'src/', 
+                   'lib/', 
+                   'app/'
+    
+    ! Patterns to exclude from coverage (up to 100 patterns)
+    ! Uses glob-style patterns
+    exclude_patterns = '*.mod',     ! Fortran module files
+                       '*.o',       ! Object files
+                       'build/*',   ! Build directory
+                       'test/*',    ! Test files
+                       'external/*' ! External libraries
+    
+    ! Minimum coverage threshold (0.0 to 100.0)
+    ! Exit with error code 2 if coverage is below this
+    minimum_coverage = 80.0
+    
+    ! Enable verbose output
+    verbose = .false.
+/
