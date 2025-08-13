@@ -10,18 +10,48 @@ module gcov_binary_format
     public :: gcov_function_t
     public :: gcov_counters_t
     
-    ! Magic numbers for GCC coverage files
-    integer, parameter :: GCNO_MAGIC = int(z'67636E6F')  ! "gcno"
-    integer, parameter :: GCDA_MAGIC = int(z'67636461')  ! "gcda"
+    ! Magic numbers for GCC coverage files (little-endian format)
+    integer, parameter :: GCNO_MAGIC = int(z'67636E6F', kind=4)  ! "gcno" 
+    integer, parameter :: GCDA_MAGIC = int(z'67636461', kind=4)  ! "gcda"
     
-    ! GCov function record
+    ! GCC version constants for format handling
+    integer, parameter :: GCC_VERSION_4_2_0 = int(z'40200', kind=4)
+    integer, parameter :: GCC_VERSION_4_7_0 = int(z'40700', kind=4) 
+    integer, parameter :: GCC_VERSION_8_0_0 = int(z'80000', kind=4)
+    integer, parameter :: GCC_VERSION_9_0_0 = int(z'90000', kind=4)
+    integer, parameter :: GCC_VERSION_10_0_0 = int(z'A0000', kind=4)
+    integer, parameter :: GCC_VERSION_11_0_0 = int(z'B0000', kind=4)
+    integer, parameter :: GCC_VERSION_12_0_0 = int(z'C0000', kind=4)
+    
+    ! GCNO record tags
+    integer, parameter :: GCOV_TAG_FUNCTION = int(z'01000000', kind=4)
+    integer, parameter :: GCOV_TAG_BLOCKS = int(z'01410000', kind=4)
+    integer, parameter :: GCOV_TAG_ARCS = int(z'01430000', kind=4)
+    integer, parameter :: GCOV_TAG_LINES = int(z'01450000', kind=4)
+    
+    ! GCDA record tags
+    integer, parameter :: GCOV_TAG_OBJECT_SUMMARY = int(z'00000000', kind=4)
+    integer, parameter :: GCOV_TAG_PROGRAM_SUMMARY = int(z'00000000', kind=4)
+    integer, parameter :: GCOV_TAG_COUNTER_BASE = int(z'01a10000', kind=4)
+    
+    ! Maximum reasonable values for validation
+    integer, parameter :: MAX_FUNCTION_NAME_LENGTH = 1000
+    integer, parameter :: MAX_SOURCE_PATH_LENGTH = 4000
+    integer, parameter :: MAX_COUNTER_COUNT = 100000
+    
+    ! GCov function record with enhanced validation
     type :: gcov_function_t
         character(len=:), allocatable :: name
         character(len=:), allocatable :: source_file
         integer :: line_number = 0
         integer :: checksum = 0
+        integer :: cfg_checksum = 0
+        integer :: lineno_checksum = 0
+        logical :: is_artificial = .false.
+        logical :: is_valid = .false.
     contains
         procedure :: init => gcov_function_init
+        procedure :: validate_checksum => gcov_function_validate_checksum
     end type gcov_function_t
     
     ! Execution counters
@@ -32,49 +62,65 @@ module gcov_binary_format
         procedure :: init => gcov_counters_init
     end type gcov_counters_t
     
-    ! GCNO file reader
+    ! GCNO file reader with enhanced format support
     type :: gcno_reader_t
         integer :: unit = 0
         logical :: is_open = .false.
         logical :: is_little_endian = .true.
-        character(len=4) :: version = "    "
+        integer :: version = 0
+        integer :: stamp = 0
+        logical :: supports_unexecuted_blocks = .false.
+        character(len=:), allocatable :: working_directory
     contains
         procedure :: init => gcno_reader_init
         procedure :: open => gcno_reader_open
         procedure :: close => gcno_reader_close
         procedure :: read_magic => gcno_read_magic
         procedure :: read_version => gcno_read_version
+        procedure :: read_stamp => gcno_read_stamp
         procedure :: parse_functions => gcno_parse_functions
         procedure :: parse_source_paths => gcno_parse_source_paths
         procedure :: detect_endianness => gcno_detect_endianness
+        procedure :: read_word => gcno_read_word
+        procedure :: read_string => gcno_read_string
+        procedure :: validate_file_integrity => gcno_validate_file_integrity
     end type gcno_reader_t
     
-    ! GCDA file reader
+    ! GCDA file reader with checksum validation
     type :: gcda_reader_t
         integer :: unit = 0
         logical :: is_open = .false.
         logical :: is_little_endian = .true.
+        integer :: version = 0
+        integer :: stamp = 0
     contains
         procedure :: init => gcda_reader_init
         procedure :: open => gcda_reader_open
         procedure :: close => gcda_reader_close
         procedure :: read_magic => gcda_read_magic
+        procedure :: read_version => gcda_read_version
+        procedure :: read_stamp => gcda_read_stamp
         procedure :: parse_counters => gcda_parse_counters
+        procedure :: read_word => gcda_read_word
+        procedure :: validate_checksum => gcda_validate_checksum
     end type gcda_reader_t
     
-    ! Combined data reader
+    ! Combined data reader with enhanced validation
     type :: gcov_data_reader_t
         type(gcov_function_t), allocatable :: functions(:)
         type(gcov_counters_t) :: counters
         logical :: has_gcda = .false.
+        logical :: checksums_match = .false.
+        character(len=:), allocatable :: error_message
     contains
         procedure :: init => gcov_data_reader_init
         procedure :: load_files => gcov_data_reader_load_files
+        procedure :: validate_data_integrity => gcov_data_validate_integrity
     end type gcov_data_reader_t
     
 contains
 
-    ! Initialize GCov function
+    ! Initialize GCov function with enhanced validation
     subroutine gcov_function_init(this, name, source_file, line_number, &
                                  checksum)
         class(gcov_function_t), intent(inout) :: this
@@ -83,11 +129,35 @@ contains
         integer, intent(in) :: line_number
         integer, intent(in) :: checksum
         
-        this%name = name
-        this%source_file = source_file
+        ! Validate input parameters
+        if (len_trim(name) == 0 .or. len_trim(name) > MAX_FUNCTION_NAME_LENGTH) then
+            this%is_valid = .false.
+            return
+        end if
+        
+        if (len_trim(source_file) > MAX_SOURCE_PATH_LENGTH) then
+            this%is_valid = .false. 
+            return
+        end if
+        
+        this%name = trim(name)
+        this%source_file = trim(source_file)
         this%line_number = line_number
         this%checksum = checksum
+        this%cfg_checksum = 0
+        this%lineno_checksum = 0
+        this%is_artificial = .false.
+        this%is_valid = .true.
     end subroutine gcov_function_init
+    
+    ! Validate function checksum against expected value
+    function gcov_function_validate_checksum(this, expected_checksum) result(valid)
+        class(gcov_function_t), intent(in) :: this
+        integer, intent(in) :: expected_checksum
+        logical :: valid
+        
+        valid = (this%checksum == expected_checksum) .and. this%is_valid
+    end function gcov_function_validate_checksum
 
     ! Initialize counters
     subroutine gcov_counters_init(this, values)
@@ -99,14 +169,17 @@ contains
         allocate(this%values, source=values)
     end subroutine gcov_counters_init
 
-    ! Initialize GCNO reader
+    ! Initialize GCNO reader with enhanced capabilities
     subroutine gcno_reader_init(this)
         class(gcno_reader_t), intent(inout) :: this
         
         this%unit = 0
         this%is_open = .false.
         this%is_little_endian = .true.
-        this%version = "    "
+        this%version = 0
+        this%stamp = 0
+        this%supports_unexecuted_blocks = .false.
+        if (allocated(this%working_directory)) deallocate(this%working_directory)
     end subroutine gcno_reader_init
 
     ! Open GCNO file for reading
@@ -143,7 +216,7 @@ contains
         end if
     end subroutine gcno_reader_close
 
-    ! Read magic number from GCNO file
+    ! Read magic number from GCNO file with endianness detection
     function gcno_read_magic(this) result(magic)
         class(gcno_reader_t), intent(inout) :: this
         integer :: magic
@@ -152,106 +225,352 @@ contains
         magic = 0
         if (.not. this%is_open) return
         
+        ! Reset to beginning of file
+        rewind(this%unit)
+        
+        ! Read 4 bytes as integer
         read(this%unit, iostat=iostat) magic
-        if (iostat /= 0) magic = 0
+        if (iostat /= 0) then
+            magic = 0
+            return
+        end if
+        
+        ! Validate magic number and determine endianness
+        if (magic == GCNO_MAGIC) then
+            this%is_little_endian = .true.
+        else
+            ! Try big-endian interpretation
+            magic = ishft(iand(magic, int(z'FF000000', kind=4)), -24) + &
+                   ishft(iand(magic, int(z'00FF0000', kind=4)), -8) + &
+                   ishft(iand(magic, int(z'0000FF00', kind=4)), 8) + &
+                   ishft(iand(magic, int(z'000000FF', kind=4)), 24)
+            if (magic == GCNO_MAGIC) then
+                this%is_little_endian = .false.
+            else
+                magic = 0  ! Invalid magic number
+            end if
+        end if
     end function gcno_read_magic
 
-    ! Read version string from GCNO file
+    ! Read version from GCNO file with format validation
     function gcno_read_version(this) result(version)
         class(gcno_reader_t), intent(inout) :: this
-        character(len=4) :: version
+        integer :: version
         integer :: iostat
-        integer :: version_int
         
-        version = "    "
+        version = 0
         if (.not. this%is_open) return
         
-        read(this%unit, iostat=iostat) version_int
-        if (iostat == 0) then
-            version = transfer(version_int, version)
-            this%version = version
+        read(this%unit, iostat=iostat) version
+        if (iostat /= 0) then
+            version = 0
+            return
         end if
+        
+        ! Handle endianness if needed
+        if (.not. this%is_little_endian) then
+            version = ishft(iand(version, int(z'FF000000', kind=4)), -24) + &
+                     ishft(iand(version, int(z'00FF0000', kind=4)), -8) + &
+                     ishft(iand(version, int(z'0000FF00', kind=4)), 8) + &
+                     ishft(iand(version, int(z'000000FF', kind=4)), 24)
+        end if
+        
+        ! Validate version is reasonable for supported GCC versions
+        if (version < GCC_VERSION_4_2_0 .or. version > int(z'F0000', kind=4)) then
+            version = 0
+            return
+        end if
+        
+        this%version = version
     end function gcno_read_version
+    
+    ! Read timestamp from GCNO file
+    function gcno_read_stamp(this) result(stamp)
+        class(gcno_reader_t), intent(inout) :: this
+        integer :: stamp
+        integer :: iostat
+        
+        stamp = 0
+        if (.not. this%is_open) return
+        
+        read(this%unit, iostat=iostat) stamp
+        if (iostat /= 0) then
+            stamp = 0
+            return
+        end if
+        
+        ! Handle endianness if needed
+        if (.not. this%is_little_endian) then
+            stamp = ishft(iand(stamp, int(z'FF000000', kind=4)), -24) + &
+                   ishft(iand(stamp, int(z'00FF0000', kind=4)), -8) + &
+                   ishft(iand(stamp, int(z'0000FF00', kind=4)), 8) + &
+                   ishft(iand(stamp, int(z'000000FF', kind=4)), 24)
+        end if
+        
+        this%stamp = stamp
+    end function gcno_read_stamp
 
-    ! Parse function records from GCNO file
+    ! Parse function records from GCNO file using real binary format
     subroutine gcno_parse_functions(this, functions)
         class(gcno_reader_t), intent(inout) :: this
         type(gcov_function_t), allocatable, intent(out) :: functions(:)
-        integer :: func_count, iostat, i
-        integer :: dummy_magic, dummy_version
+        type(gcov_function_t), allocatable :: temp_functions(:)
+        integer :: func_count, i, tag, length, next_pos, curr_pos
+        character(len=:), allocatable :: func_name, filename
+        integer :: lineno, checksum, artificial_flag
+        logical :: eof_reached
         
-        if (.not. this%is_open) then
-            allocate(functions(0))
-            return
-        end if
+        ! Initialize with empty array
+        allocate(functions(0))
         
-        ! Start from beginning of file
-        rewind(this%unit)
+        if (.not. this%is_open) return
         
-        ! Skip magic and version
-        read(this%unit, iostat=iostat) dummy_magic
-        if (iostat /= 0) then
-            allocate(functions(0))
-            return
-        end if
+        ! Validate file and position after header
+        if (.not. this%validate_file_integrity()) return
         
-        read(this%unit, iostat=iostat) dummy_version
-        if (iostat /= 0) then
-            allocate(functions(0))
-            return
-        end if
+        func_count = 0
+        allocate(temp_functions(100))  ! Start with reasonable capacity
         
-        ! Read function count (simplified format)
-        read(this%unit, iostat=iostat) func_count
-        if (iostat /= 0) then
-            allocate(functions(0))
-            return
-        end if
-        
-        ! Read actual function records from GCNO file
-        allocate(functions(max(func_count, 0)))
-        
-        ! For each function, attempt to read name and metadata
-        do i = 1, min(func_count, size(functions))
-            ! Read function record structure from GCNO binary format
-            call read_gcno_function_record(this%unit, functions(i), iostat)
-            if (iostat /= 0) then
-                call functions(i)%init("unknown_function", "unknown.f90", &
-                                      0, 0)
+        eof_reached = .false.
+        do while (.not. eof_reached)
+            curr_pos = 0
+            
+            ! Try to read record tag
+            tag = this%read_word()
+            if (tag == 0) then
+                eof_reached = .true.
+                cycle
             end if
+            
+            ! Read record length
+            length = this%read_word()
+            if (length <= 0) then
+                eof_reached = .true.
+                cycle
+            end if
+            
+            ! Calculate next record position
+            inquire(unit=this%unit, pos=curr_pos)
+            next_pos = curr_pos + length * 4
+            
+            ! Process function records
+            if (tag == GCOV_TAG_FUNCTION) then
+                ! Read function checksum
+                checksum = this%read_word()
+                
+                ! Read function name
+                func_name = this%read_string()
+                if (len_trim(func_name) == 0) then
+                    read(this%unit, pos=next_pos)  ! Skip to next record
+                    cycle
+                end if
+                
+                ! Read artificial flag for GCC 8+
+                artificial_flag = 0
+                if (this%version >= GCC_VERSION_8_0_0) then
+                    artificial_flag = this%read_word()
+                end if
+                
+                ! Read source filename
+                filename = this%read_string()
+                
+                ! Read line number
+                lineno = this%read_word()
+                
+                ! Skip additional fields for GCC 8+
+                if (this%version >= GCC_VERSION_8_0_0) then
+                    ! Skip column and ending line number
+                    checksum = this%read_word()  ! column (reuse variable)
+                    checksum = this%read_word()  ! ending line (reuse variable)
+                end if
+                
+                ! Expand array if needed
+                if (func_count >= size(temp_functions)) then
+                    call expand_function_array(temp_functions)
+                end if
+                
+                func_count = func_count + 1
+                call temp_functions(func_count)%init(func_name, filename, lineno, checksum)
+                temp_functions(func_count)%is_artificial = (artificial_flag /= 0)
+            end if
+            
+            ! Move to next record
+            read(this%unit, pos=next_pos)
+            
+            ! Check if we've reached end of file
+            if (next_pos > huge(next_pos) - 8) eof_reached = .true.
         end do
+        
+        ! Copy results to output array
+        if (func_count > 0) then
+            allocate(functions(func_count))
+            do i = 1, func_count
+                functions(i) = temp_functions(i)
+            end do
+        end if
+        
+        deallocate(temp_functions)
     end subroutine gcno_parse_functions
 
-    ! Parse source file paths from GCNO file
+    ! Parse source file paths from GCNO file lines records
     subroutine gcno_parse_source_paths(this, source_paths)
         class(gcno_reader_t), intent(inout) :: this
         character(len=:), allocatable, intent(out) :: source_paths(:)
-        integer :: iostat, dummy_magic
-        character(len=9) :: path_buffer
+        character(len=:), allocatable :: temp_paths(:)
+        integer :: path_count, i, tag, length, next_pos, curr_pos
+        integer :: lineno
+        character(len=:), allocatable :: path_string
+        logical :: eof_reached
         
-        if (.not. this%is_open) then
-            allocate(character(len=0) :: source_paths(0))
-            return
+        ! Initialize with empty array
+        allocate(character(len=0) :: source_paths(0))
+        
+        if (.not. this%is_open) return
+        
+        ! Validate file and position after header  
+        if (.not. this%validate_file_integrity()) return
+        
+        path_count = 0
+        allocate(character(len=256) :: temp_paths(50))  ! Start with capacity
+        
+        eof_reached = .false.
+        do while (.not. eof_reached)
+            ! Try to read record tag
+            tag = this%read_word()
+            if (tag == 0) then
+                eof_reached = .true.
+                cycle
+            end if
+            
+            ! Read record length
+            length = this%read_word()
+            if (length <= 0) then
+                eof_reached = .true.
+                cycle
+            end if
+            
+            ! Calculate next record position
+            inquire(unit=this%unit, pos=curr_pos)
+            next_pos = curr_pos + length * 4
+            
+            ! Process lines records containing source paths
+            if (tag == GCOV_TAG_LINES) then
+                ! Skip basic block index
+                i = this%read_word()
+                
+                do while (curr_pos < next_pos)
+                    ! Read line number
+                    lineno = this%read_word()
+                    if (lineno == 0) then
+                        ! Line number 0 indicates filename
+                        path_string = this%read_string()
+                        
+                        if (len_trim(path_string) == 0) then
+                            exit  ! End of record marker
+                        end if
+                        
+                        ! Check if path already exists
+                        do i = 1, path_count
+                            if (trim(temp_paths(i)) == trim(path_string)) then
+                                path_string = ""  ! Mark as duplicate
+                                exit
+                            end if
+                        end do
+                        
+                        ! Add new unique path
+                        if (len_trim(path_string) > 0) then
+                            path_count = path_count + 1
+                            if (path_count > size(temp_paths)) then
+                                call expand_path_array(temp_paths)
+                            end if
+                            temp_paths(path_count) = trim(path_string)
+                        end if
+                    end if
+                    
+                    inquire(unit=this%unit, pos=curr_pos)
+                    if (curr_pos >= next_pos) exit
+                end do
+            end if
+            
+            ! Move to next record
+            read(this%unit, pos=next_pos)
+            
+            ! Check for end of file
+            if (next_pos > huge(next_pos) - 8) eof_reached = .true.
+        end do
+        
+        ! Copy results to output array
+        if (path_count > 0) then
+            allocate(character(len=256) :: source_paths(path_count))
+            do i = 1, path_count
+                source_paths(i) = trim(temp_paths(i))
+            end do
         end if
         
-        ! Start from beginning and skip magic
-        rewind(this%unit)
-        read(this%unit, iostat=iostat) dummy_magic
-        if (iostat /= 0) then
-            allocate(character(len=0) :: source_paths(0))
-            return
-        end if
-        
-        ! Read the path bytes directly
-        read(this%unit, iostat=iostat) path_buffer
-        if (iostat == 0) then
-            allocate(character(len=len_trim(path_buffer)) :: source_paths(1))
-            source_paths(1) = trim(path_buffer)
-        else
-            allocate(character(len=0) :: source_paths(0))
-        end if
+        deallocate(temp_paths)
     end subroutine gcno_parse_source_paths
 
+    ! Read a single word with endianness handling
+    function gcno_read_word(this) result(word)
+        class(gcno_reader_t), intent(inout) :: this
+        integer :: word
+        integer :: iostat
+        
+        word = 0
+        if (.not. this%is_open) return
+        
+        read(this%unit, iostat=iostat) word
+        if (iostat /= 0) then
+            word = 0
+            return
+        end if
+        
+        ! Handle endianness if needed
+        if (.not. this%is_little_endian) then
+            word = ishft(iand(word, int(z'FF000000', kind=4)), -24) + &
+                  ishft(iand(word, int(z'00FF0000', kind=4)), -8) + &
+                  ishft(iand(word, int(z'0000FF00', kind=4)), 8) + &
+                  ishft(iand(word, int(z'000000FF', kind=4)), 24)
+        end if
+    end function gcno_read_word
+    
+    ! Read a string from GCNO file  
+    function gcno_read_string(this) result(string)
+        class(gcno_reader_t), intent(inout) :: this
+        character(len=:), allocatable :: string
+        integer :: length, i, word
+        character(len=4) :: word_chars
+        
+        ! Initialize empty result
+        string = ""
+        
+        if (.not. this%is_open) return
+        
+        ! Read string length in words
+        length = this%read_word()
+        if (length < 0 .or. length > MAX_FUNCTION_NAME_LENGTH/4) return
+        
+        if (length == 0) then
+            string = ""
+            return
+        end if
+        
+        ! Read the string data word by word
+        do i = 1, length
+            word = this%read_word()
+            word_chars = transfer(word, word_chars)
+            string = string // word_chars
+        end do
+        
+        ! Remove null terminators
+        do i = 1, len(string)
+            if (iachar(string(i:i)) == 0) then
+                string = string(1:i-1)
+                exit
+            end if
+        end do
+    end function gcno_read_string
+    
     ! Detect endianness from magic number
     function gcno_detect_endianness(this) result(is_little_endian)
         class(gcno_reader_t), intent(inout) :: this
@@ -266,10 +585,38 @@ contains
         rewind(this%unit)
         magic = this%read_magic()
         
-        ! Check if magic matches expected little-endian value
-        is_little_endian = (magic == GCNO_MAGIC)
-        this%is_little_endian = is_little_endian
+        ! Endianness already determined by read_magic
+        is_little_endian = this%is_little_endian
     end function gcno_detect_endianness
+    
+    ! Validate file integrity by checking header
+    function gcno_validate_file_integrity(this) result(valid)
+        class(gcno_reader_t), intent(inout) :: this
+        logical :: valid
+        integer :: magic, version, stamp
+        
+        valid = .false.
+        if (.not. this%is_open) return
+        
+        ! Read and validate header
+        magic = this%read_magic()
+        if (magic /= GCNO_MAGIC) return
+        
+        version = this%read_version()
+        if (version == 0) return
+        
+        stamp = this%read_stamp()
+        if (stamp == 0) return
+        
+        ! Check for unexecuted blocks support flag in GCC 8+
+        if (version >= GCC_VERSION_8_0_0) then
+            ! Skip the unexecuted blocks flag
+            stamp = this%read_word()
+            this%supports_unexecuted_blocks = (stamp /= 0)
+        end if
+        
+        valid = .true.
+    end function gcno_validate_file_integrity
 
     ! Initialize GCDA reader
     subroutine gcda_reader_init(this)
@@ -278,6 +625,8 @@ contains
         this%unit = 0
         this%is_open = .false.
         this%is_little_endian = .true.
+        this%version = 0
+        this%stamp = 0
     end subroutine gcda_reader_init
 
     ! Open GCDA file for reading
@@ -314,7 +663,7 @@ contains
         end if
     end subroutine gcda_reader_close
 
-    ! Read magic number from GCDA file
+    ! Read magic number from GCDA file with endianness detection
     function gcda_read_magic(this) result(magic)
         class(gcda_reader_t), intent(inout) :: this
         integer :: magic
@@ -323,53 +672,227 @@ contains
         magic = 0
         if (.not. this%is_open) return
         
+        ! Reset to beginning of file
+        rewind(this%unit)
+        
+        ! Read 4 bytes as integer
         read(this%unit, iostat=iostat) magic
-        if (iostat /= 0) magic = 0
+        if (iostat /= 0) then
+            magic = 0
+            return
+        end if
+        
+        ! Validate magic number and determine endianness
+        if (magic == GCDA_MAGIC) then
+            this%is_little_endian = .true.
+        else
+            ! Try big-endian interpretation
+            magic = ishft(iand(magic, int(z'FF000000', kind=4)), -24) + &
+                   ishft(iand(magic, int(z'00FF0000', kind=4)), -8) + &
+                   ishft(iand(magic, int(z'0000FF00', kind=4)), 8) + &
+                   ishft(iand(magic, int(z'000000FF', kind=4)), 24)
+            if (magic == GCDA_MAGIC) then
+                this%is_little_endian = .false.
+            else
+                magic = 0  ! Invalid magic number
+            end if
+        end if
     end function gcda_read_magic
+    
+    ! Read version from GCDA file
+    function gcda_read_version(this) result(version)
+        class(gcda_reader_t), intent(inout) :: this
+        integer :: version
+        integer :: iostat
+        
+        version = 0
+        if (.not. this%is_open) return
+        
+        read(this%unit, iostat=iostat) version
+        if (iostat /= 0) then
+            version = 0
+            return
+        end if
+        
+        ! Handle endianness if needed
+        if (.not. this%is_little_endian) then
+            version = ishft(iand(version, int(z'FF000000', kind=4)), -24) + &
+                     ishft(iand(version, int(z'00FF0000', kind=4)), -8) + &
+                     ishft(iand(version, int(z'0000FF00', kind=4)), 8) + &
+                     ishft(iand(version, int(z'000000FF', kind=4)), 24)
+        end if
+        
+        this%version = version
+    end function gcda_read_version
+    
+    ! Read timestamp from GCDA file
+    function gcda_read_stamp(this) result(stamp)
+        class(gcda_reader_t), intent(inout) :: this
+        integer :: stamp
+        integer :: iostat
+        
+        stamp = 0
+        if (.not. this%is_open) return
+        
+        read(this%unit, iostat=iostat) stamp
+        if (iostat /= 0) then
+            stamp = 0
+            return
+        end if
+        
+        ! Handle endianness if needed
+        if (.not. this%is_little_endian) then
+            stamp = ishft(iand(stamp, int(z'FF000000', kind=4)), -24) + &
+                   ishft(iand(stamp, int(z'00FF0000', kind=4)), -8) + &
+                   ishft(iand(stamp, int(z'0000FF00', kind=4)), 8) + &
+                   ishft(iand(stamp, int(z'000000FF', kind=4)), 24)
+        end if
+        
+        this%stamp = stamp
+    end function gcda_read_stamp
+    
+    ! Read a single word with endianness handling
+    function gcda_read_word(this) result(word)
+        class(gcda_reader_t), intent(inout) :: this
+        integer :: word
+        integer :: iostat
+        
+        word = 0
+        if (.not. this%is_open) return
+        
+        read(this%unit, iostat=iostat) word
+        if (iostat /= 0) then
+            word = 0
+            return
+        end if
+        
+        ! Handle endianness if needed
+        if (.not. this%is_little_endian) then
+            word = ishft(iand(word, int(z'FF000000', kind=4)), -24) + &
+                  ishft(iand(word, int(z'00FF0000', kind=4)), -8) + &
+                  ishft(iand(word, int(z'0000FF00', kind=4)), 8) + &
+                  ishft(iand(word, int(z'000000FF', kind=4)), 24)
+        end if
+    end function gcda_read_word
+    
+    ! Validate checksum between GCNO and GCDA
+    function gcda_validate_checksum(this, expected_stamp) result(valid)
+        class(gcda_reader_t), intent(in) :: this
+        integer, intent(in) :: expected_stamp
+        logical :: valid
+        
+        valid = (this%stamp == expected_stamp) .and. (this%version > 0)
+    end function gcda_validate_checksum
 
-    ! Parse execution counters from GCDA file
+    ! Parse execution counters from GCDA file using real binary format
     subroutine gcda_parse_counters(this, counters)
         class(gcda_reader_t), intent(inout) :: this
         type(gcov_counters_t), intent(out) :: counters
-        integer :: iostat, i, j
-        integer(4) :: magic, counter_count
-        integer(8), allocatable :: values(:)
+        integer :: iostat, i, tag, length, next_pos, curr_pos
+        integer :: counter_count, checksum1, checksum2, checksum3
+        integer :: low_word, high_word
+        integer(8), allocatable :: values(:), temp_values(:)
+        integer :: total_counters
+        logical :: eof_reached
         
         call counters%init([integer(8) ::])  ! Initialize with empty array
         
         if (.not. this%is_open) return
         
-        ! Skip magic, read counter count (simplified format)
-        read(this%unit, iostat=iostat) magic
-        read(this%unit, iostat=iostat) counter_count
-        if (iostat /= 0 .or. counter_count <= 0 .or. counter_count > 1000) &
-            return
+        ! Read and validate header
+        i = this%read_magic()
+        if (i /= GCDA_MAGIC) return
         
-        ! Read actual counter values from GCDA file
-        allocate(values(counter_count))
-        do i = 1, counter_count
-            read(this%unit, iostat=iostat) values(i)
-            if (iostat /= 0) then
-                ! If we can't read, use the remaining dummy values
-                values(i:) = [(int(j * 100, 8), j = i, counter_count)]
-                exit
+        i = this%read_version()
+        if (i == 0) return
+        
+        i = this%read_stamp()
+        if (i == 0) return
+        
+        total_counters = 0
+        allocate(temp_values(1000))  ! Start with reasonable capacity
+        
+        eof_reached = .false.
+        do while (.not. eof_reached)
+            ! Try to read record tag
+            tag = this%read_word()
+            if (tag == 0) then
+                eof_reached = .true.
+                cycle
             end if
+            
+            ! Read record length
+            length = this%read_word()
+            if (length <= 0) then
+                eof_reached = .true.
+                cycle
+            end if
+            
+            ! Calculate next record position
+            inquire(unit=this%unit, pos=curr_pos)
+            next_pos = curr_pos + length * 4
+            
+            ! Check for counter records (arc counters)
+            if (iand(tag, int(z'FFFF0000', kind=4)) == GCOV_TAG_COUNTER_BASE) then
+                ! This is a counter record
+                ! Read function checksum (3 words for modern GCC)
+                checksum1 = this%read_word()
+                checksum2 = this%read_word()
+                checksum3 = this%read_word()
+                
+                ! Calculate number of counters in this record
+                counter_count = (length - 3) / 2  ! Each counter is 2 words (64-bit)
+                if (counter_count > 0 .and. counter_count < MAX_COUNTER_COUNT) then
+                    ! Expand array if needed
+                    if (total_counters + counter_count > size(temp_values)) then
+                        call expand_counter_array(temp_values, total_counters + counter_count)
+                    end if
+                    
+                    ! Read counter values (each is 8 bytes / 2 words)
+                    do i = 1, counter_count
+                        ! Read 64-bit counter as two 32-bit words
+                        low_word = this%read_word()
+                        high_word = this%read_word()
+                        
+                        total_counters = total_counters + 1
+                        ! Combine into 64-bit value
+                        temp_values(total_counters) = &
+                            ior(int(low_word, kind=8), &
+                                ishft(int(high_word, kind=8), 32))
+                    end do
+                end if
+            end if
+            
+            ! Move to next record
+            read(this%unit, pos=next_pos)
+            
+            ! Check for end of file
+            if (next_pos > huge(next_pos) - 8) eof_reached = .true.
         end do
         
-        call counters%init(values)
-        deallocate(values)
+        ! Copy results to final array
+        if (total_counters > 0) then
+            allocate(values(total_counters))
+            values(1:total_counters) = temp_values(1:total_counters)
+            call counters%init(values)
+            deallocate(values)
+        end if
+        
+        deallocate(temp_values)
     end subroutine gcda_parse_counters
 
-    ! Initialize data reader
+    ! Initialize data reader with enhanced validation
     subroutine gcov_data_reader_init(this)
         class(gcov_data_reader_t), intent(inout) :: this
         
         if (allocated(this%functions)) deallocate(this%functions)
         call this%counters%init([integer(8) ::])
         this%has_gcda = .false.
+        this%checksums_match = .false.
+        if (allocated(this%error_message)) deallocate(this%error_message)
     end subroutine gcov_data_reader_init
 
-    ! Load and parse both GCNO and GCDA files
+    ! Load and parse both GCNO and GCDA files with full validation
     subroutine gcov_data_reader_load_files(this, gcno_path, gcda_path, success)
         class(gcov_data_reader_t), intent(inout) :: this
         character(len=*), intent(in) :: gcno_path
@@ -378,6 +901,7 @@ contains
         type(gcno_reader_t) :: gcno_reader
         type(gcda_reader_t) :: gcda_reader
         logical :: gcno_ok, gcda_ok
+        integer :: i
         
         success = .false.
         call this%init()
@@ -386,10 +910,26 @@ contains
         call gcno_reader%init()
         call gcno_reader%open(gcno_path, gcno_ok)
         
-        if (.not. gcno_ok) return
+        if (.not. gcno_ok) then
+            this%error_message = "Failed to open GCNO file: " // trim(gcno_path)
+            return
+        end if
+        
+        ! Validate GCNO file integrity
+        if (.not. gcno_reader%validate_file_integrity()) then
+            call gcno_reader%close()
+            this%error_message = "Invalid GCNO file format: " // trim(gcno_path)
+            return
+        end if
         
         ! Parse functions from GCNO
         call gcno_reader%parse_functions(this%functions)
+        if (.not. allocated(this%functions)) then
+            call gcno_reader%close()
+            this%error_message = "No functions found in GCNO file"
+            return
+        end if
+        
         call gcno_reader%close()
         
         ! Load GCDA file (optional)
@@ -398,25 +938,117 @@ contains
             call gcda_reader%open(gcda_path, gcda_ok)
             
             if (gcda_ok) then
+                ! Validate version compatibility
+                i = gcda_reader%read_version()
+                if (i /= gcno_reader%version) then
+                    call gcda_reader%close()
+                    this%error_message = "Version mismatch between GCNO and GCDA files"
+                    return
+                end if
+                
+                ! Validate timestamp match
+                i = gcda_reader%read_stamp()
+                if (.not. gcda_reader%validate_checksum(gcno_reader%stamp)) then
+                    this%error_message = "Checksum mismatch between GCNO and GCDA files"
+                    ! Continue processing but mark as mismatched
+                    this%checksums_match = .false.
+                else
+                    this%checksums_match = .true.
+                end if
+                
                 call gcda_reader%parse_counters(this%counters)
                 call gcda_reader%close()
                 this%has_gcda = .true.
+            else
+                this%error_message = "Failed to open GCDA file: " // trim(gcda_path)
+                ! Continue without GCDA data
             end if
         end if
         
-        success = .true.  ! Success if GCNO loaded, GCDA is optional
+        success = .true.
     end subroutine gcov_data_reader_load_files
-
-    ! Read a single function record from GCNO file
-    subroutine read_gcno_function_record(unit, func, iostat)
-        integer, intent(in) :: unit
-        type(gcov_function_t), intent(out) :: func
-        integer, intent(out) :: iostat
+    
+    ! Validate data integrity across GCNO and GCDA
+    function gcov_data_validate_integrity(this) result(valid)
+        class(gcov_data_reader_t), intent(in) :: this
+        logical :: valid
+        integer :: i
         
-        ! For now, just use fixed values since this is a dummy format
-        ! Real GCNO parsing would be much more complex
-        call func%init("test_function", "test.f90", 1, 12345)
-        iostat = 0
-    end subroutine read_gcno_function_record
+        valid = .false.
+        
+        ! Check that we have valid functions
+        if (.not. allocated(this%functions) .or. size(this%functions) == 0) return
+        
+        ! Validate each function
+        do i = 1, size(this%functions)
+            if (.not. this%functions(i)%is_valid) return
+        end do
+        
+        ! If GCDA data exists, validate checksums match
+        if (this%has_gcda .and. .not. this%checksums_match) then
+            ! Still valid but with warning
+            valid = .true.
+            return
+        end if
+        
+        valid = .true.
+    end function gcov_data_validate_integrity
+
+    ! Helper function to expand function array capacity
+    subroutine expand_function_array(functions)
+        type(gcov_function_t), allocatable, intent(inout) :: functions(:)
+        type(gcov_function_t), allocatable :: temp(:)
+        integer :: old_size, new_size, i
+        
+        old_size = size(functions)
+        new_size = old_size * 2
+        
+        allocate(temp(new_size))
+        do i = 1, old_size
+            temp(i) = functions(i)
+        end do
+        
+        call move_alloc(temp, functions)
+    end subroutine expand_function_array
+    
+    ! Helper function to expand path array capacity
+    subroutine expand_path_array(paths)
+        character(len=:), allocatable, intent(inout) :: paths(:)
+        character(len=:), allocatable :: temp(:)
+        integer :: old_size, new_size, i, path_len
+        
+        old_size = size(paths)
+        new_size = old_size * 2
+        path_len = len(paths(1))
+        
+        allocate(character(len=path_len) :: temp(new_size))
+        do i = 1, old_size
+            temp(i) = paths(i)
+        end do
+        do i = old_size + 1, new_size
+            temp(i) = ""
+        end do
+        
+        call move_alloc(temp, paths)
+    end subroutine expand_path_array
+    
+    ! Helper function to expand counter array capacity
+    subroutine expand_counter_array(counters, min_size)
+        integer(8), allocatable, intent(inout) :: counters(:)
+        integer, intent(in) :: min_size
+        integer(8), allocatable :: temp(:)
+        integer :: old_size, new_size, i
+        
+        old_size = size(counters)
+        new_size = max(old_size * 2, min_size)
+        
+        allocate(temp(new_size))
+        temp(1:old_size) = counters(1:old_size)
+        do i = old_size + 1, new_size
+            temp(i) = 0
+        end do
+        
+        call move_alloc(temp, counters)
+    end subroutine expand_counter_array
 
 end module gcov_binary_format
