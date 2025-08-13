@@ -82,20 +82,12 @@ contains
         end if
         
         ! Select parser based on extension
-        ! TODO: Add support for additional coverage formats:
-        ! - ".info" -> lcov_parser_t (LCOV format)
-        ! - ".xml" -> cobertura_parser_t (Cobertura XML format)
-        ! - ".json" -> json_parser_t (JSON coverage format)
-        ! - Intel Fortran coverage files
-        ! - LLVM/Flang coverage formats
+        ! Currently supports only GCC gcov binary format (.gcda/.gcno)
         select case (trim(extension))
         case (".gcda", ".gcno")
             allocate(gcov_parser_t :: parser)
         case default
-            ! TODO: Add informative error message for unsupported formats
-            ! write(error_unit, '(A,A,A)') &
-            !   "ERROR: Unsupported coverage file format: '", &
-            !   trim(extension), "'"
+            ! Unsupported file format - only GCC gcov format is currently supported
             error_flag = .true.
         end select
     end subroutine create_parser
@@ -163,9 +155,7 @@ contains
         character(len=:), allocatable :: extensions(:)
         
         ! GCov requires both .gcda (runtime data) and .gcno (graph notes) files
-        ! TODO: Consider supporting additional GCC coverage file variants:
-        ! - .gcov text format files (gcov tool output)
-        ! - .info format files (lcov tool output)
+        ! Text format .gcov files are not currently supported
         allocate(character(len=5) :: extensions(2))
         extensions(1) = ".gcda"
         extensions(2) = ".gcno"
