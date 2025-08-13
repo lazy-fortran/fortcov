@@ -82,10 +82,20 @@ contains
         end if
         
         ! Select parser based on extension
+        ! TODO: Add support for additional coverage formats:
+        ! - ".info" -> lcov_parser_t (LCOV format)
+        ! - ".xml" -> cobertura_parser_t (Cobertura XML format)
+        ! - ".json" -> json_parser_t (JSON coverage format)
+        ! - Intel Fortran coverage files
+        ! - LLVM/Flang coverage formats
         select case (trim(extension))
         case (".gcda", ".gcno")
             allocate(gcov_parser_t :: parser)
         case default
+            ! TODO: Add informative error message for unsupported formats
+            ! write(error_unit, '(A,A,A)') &
+            !   "ERROR: Unsupported coverage file format: '", &
+            !   trim(extension), "'"
             error_flag = .true.
         end select
     end subroutine create_parser
@@ -97,9 +107,22 @@ contains
         logical, intent(out) :: error_flag
         type(coverage_data_t) :: coverage_data
         
-        ! Minimal implementation - returns empty data
+        ! TODO: Implement actual GCC/gfortran .gcda/.gcno file parsing
+        ! This requires:
+        ! 1. Binary format parsing for .gcda runtime execution data
+        ! 2. Binary format parsing for .gcno compile-time graph data
+        ! 3. Correlation between graph structure and execution counts
+        ! 4. Mapping to source line numbers from debug information
+        ! 5. Handling of different GCC versions with format variations
+        !
+        ! For now, return empty data to maintain interface compliance
+        ! In production, should set error_flag=.true. with descriptive message
         error_flag = .false.
         coverage_data = coverage_data_t()
+        
+        ! TODO: Add logging/warning about placeholder implementation
+        ! write(error_unit, '(A)') &
+        !   "WARNING: gcov_parse is placeholder - no actual parsing performed"
         
         ! Suppress unused variable warnings
         associate(dummy1 => this, dummy2 => path)
@@ -132,6 +155,10 @@ contains
         class(gcov_parser_t), intent(in) :: this
         character(len=:), allocatable :: extensions(:)
         
+        ! GCov requires both .gcda (runtime data) and .gcno (graph notes) files
+        ! TODO: Consider supporting additional GCC coverage file variants:
+        ! - .gcov text format files (gcov tool output)
+        ! - .info format files (lcov tool output)
         allocate(character(len=5) :: extensions(2))
         extensions(1) = ".gcda"
         extensions(2) = ".gcno"
