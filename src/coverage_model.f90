@@ -314,44 +314,41 @@ contains
     function coverage_data_serialize(this) result(serialized)
         class(coverage_data_t), intent(in) :: this
         character(len=:), allocatable :: serialized
-        character(len=1000) :: buffer
+        character(len=:), allocatable :: result_str
+        character(len=200) :: line_str
         integer :: i, j
         
         ! Simple format: filename:line:count|filename:line:count...
-        buffer = ""
+        result_str = ""
         
         do i = 1, size(this%files)
             do j = 1, size(this%files(i)%lines)
-                write(buffer, '(A,A,A,I0,A,I0,A)') &
-                    trim(buffer), &
+                write(line_str, '(A,A,I0,A,I0,A)') &
                     trim(this%files(i)%filename), ":", &
                     this%files(i)%lines(j)%line_number, ":", &
                     this%files(i)%lines(j)%execution_count, "|"
+                result_str = result_str // trim(line_str)
             end do
         end do
         
-        serialized = trim(buffer)
+        serialized = result_str
     end function coverage_data_serialize
 
-    ! Deserialize coverage data from string (simplified implementation)
+    ! Deserialize coverage data from string (placeholder implementation)
     subroutine coverage_data_deserialize(this, serialized)
         class(coverage_data_t), intent(inout) :: this
         character(len=*), intent(in) :: serialized
-        type(coverage_line_t), allocatable :: lines(:)
         
         ! Clean up existing allocation if present
         if (allocated(this%files)) deallocate(this%files)
         
-        ! For simplicity, just recreate the basic structure
+        ! Placeholder implementation: create empty structure
         ! Real implementation would parse the serialized string
-        allocate(lines(2))
-        lines(1) = coverage_line_t(execution_count=5, line_number=1, &
-                                   filename="test.f90", is_executable=.true.)
-        lines(2) = coverage_line_t(execution_count=0, line_number=2, &
-                                   filename="test.f90", is_executable=.true.)
+        allocate(this%files(0))
         
-        allocate(this%files(1))
-        this%files(1) = coverage_file_t(filename="test.f90", lines=lines)
+        ! Suppress unused variable warning
+        associate(dummy => serialized)
+        end associate
     end subroutine coverage_data_deserialize
 
 end module coverage_model
