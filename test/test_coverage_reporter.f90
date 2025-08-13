@@ -33,6 +33,9 @@ program test_coverage_reporter
     ! Test 8: Reporter stdout output
     all_tests_passed = all_tests_passed .and. test_stdout_output()
     
+    ! Test 9: Markdown content validation (no DRY violation)
+    all_tests_passed = all_tests_passed .and. test_markdown_content_validation()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -270,5 +273,89 @@ contains
             print *, "    PASSED"
         end if
     end function test_stdout_output
+
+    function test_markdown_content_validation() result(passed)
+        logical :: passed
+        type(markdown_reporter_t) :: reporter
+        type(coverage_data_t) :: test_data
+        type(coverage_file_t), allocatable :: files(:)
+        type(coverage_line_t), allocatable :: lines(:)
+        logical :: error_flag
+        character(len=*), parameter :: test_file = "content_validation.md"
+        character(len=1000) :: content
+        integer :: unit, iostat
+        real :: expected_coverage
+        logical :: file_exists
+        
+        print *, "  Test 9: Markdown content validation (no DRY violation)"
+        
+        ! Clean up any existing test file
+        open(newunit=unit, file=test_file, iostat=iostat)
+        if (iostat == 0) close(unit, status='delete')
+        
+        ! Create test data with known coverage including non-executable lines
+        allocate(lines(5))
+        lines(1) = coverage_line_t(execution_count=5, line_number=10, &
+                                   filename="test.f90", is_executable=.true.)
+        lines(2) = coverage_line_t(execution_count=0, line_number=11, &
+                                   filename="test.f90", is_executable=.true.)
+        lines(3) = coverage_line_t(execution_count=0, line_number=12, &
+                                   filename="test.f90", is_executable=.false.) ! Comment line
+        lines(4) = coverage_line_t(execution_count=3, line_number=13, &
+                                   filename="test.f90", is_executable=.true.)
+        lines(5) = coverage_line_t(execution_count=0, line_number=14, &
+                                   filename="test.f90", is_executable=.false.) ! Comment line
+        
+        allocate(files(1))
+        files(1) = coverage_file_t(filename="test.f90", lines=lines)
+        test_data = coverage_data_t(files=files)
+        
+        ! Expected: 2 out of 3 executable lines covered = 66.67%
+        expected_coverage = files(1)%get_line_coverage_percentage()
+        
+        ! Generate report
+        call reporter%generate_report(test_data, test_file, error_flag)
+        
+        ! Read and validate content
+        inquire(file=test_file, exist=file_exists)
+        passed = (.not. error_flag) .and. file_exists
+        
+        if (passed) then
+            open(newunit=unit, file=test_file, status='old')
+            ! Skip header lines
+            read(unit, '(A)')  ! "# Coverage Report"
+            read(unit, '(A)')  ! empty line
+            read(unit, '(A)')  ! table header
+            read(unit, '(A)')  ! table separator
+            read(unit, '(A)') content  ! data line
+            close(unit)
+            
+            ! Check that only executable lines are counted (3 total, not 5)
+            ! This will detect the DRY violation where manual counting differs
+            passed = (index(content, " 3 |") > 0) .and. &
+                     (index(content, " 2 |") > 0) .and. &
+                     ((index(content, "66.7") > 0) .or. (index(content, "66.6") > 0))
+        end if
+        
+        ! Clean up
+        if (file_exists) then
+            open(newunit=unit, file=test_file, status='old', iostat=iostat)
+            if (iostat == 0) close(unit, status='delete')
+        end if
+        
+        if (.not. passed) then
+            print *, "    FAILED: Markdown should show 3 total, 2 covered, ~66.7%"
+            print *, "    Content:", trim(content)
+        else
+            print *, "    PASSED - Markdown uses consistent coverage calculation"
+        end if
+    end function test_markdown_content_validation
+    
+    function format_percentage(value) result(formatted)
+        real, intent(in) :: value
+        character(len=10) :: formatted
+        write(formatted, '(F5.1)') value
+        formatted = adjustl(formatted)
+    end function format_percentage
 
 end program test_coverage_reporter
