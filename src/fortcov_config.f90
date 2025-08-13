@@ -16,6 +16,7 @@ module fortcov_config
     ! Public procedures
     public :: parse_config
     public :: show_help
+    public :: show_version
     public :: initialize_config
     
     ! Configuration type
@@ -29,6 +30,7 @@ module fortcov_config
         logical :: verbose
         logical :: quiet
         logical :: show_help
+        logical :: show_version
         character(len=:), allocatable :: config_file
     end type config_t
 
@@ -70,6 +72,13 @@ contains
             ! Check for help flag
             if (arg == "--help" .or. arg == "-h") then
                 config%show_help = .true.
+                success = .false.
+                return
+            end if
+            
+            ! Check for version flag
+            if (arg == "--version" .or. arg == "-V") then
+                config%show_version = .true.
                 success = .false.
                 return
             end if
@@ -294,6 +303,12 @@ contains
         print *, "  /"
     end subroutine show_help
 
+    subroutine show_version()
+        print *, "fortcov version 1.0.0"
+        print *, "Coverage analysis tool for Fortran code"
+        print *, "Copyright (c) 2025 fortcov contributors"
+    end subroutine show_version
+
     subroutine initialize_config(config)
         type(config_t), intent(out) :: config
         
@@ -306,6 +321,7 @@ contains
         config%verbose = .false.
         config%quiet = .false.
         config%show_help = .false.
+        config%show_version = .false.
         config%config_file = ""
     end subroutine initialize_config
 
