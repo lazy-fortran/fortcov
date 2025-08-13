@@ -7,6 +7,7 @@ module gcov_binary_format
     public :: gcov_function_t
     public :: gcov_counters_t
     public :: gcov_line_data_t
+    public :: gcov_line_mapping_t
     
     ! Binary format constants
     integer, parameter :: GCNO_MAGIC = int(Z'67636E6F')  ! "oncg" little-endian  
@@ -17,6 +18,15 @@ module gcov_binary_format
     integer, parameter :: ARCS_TAG = int(Z'01430000')
     integer, parameter :: OBJECT_TAG = int(Z'00000000')
     
+    ! Line mapping from GCNO LINES_TAG records
+    type :: gcov_line_mapping_t
+        integer :: function_id
+        integer :: source_file_id
+        integer, allocatable :: line_numbers(:)
+    contains
+        procedure :: init => gcov_line_mapping_init
+    end type gcov_line_mapping_t
+
     ! Coverage line data from binary parsing
     type :: gcov_line_data_t
         integer :: line_number
@@ -53,6 +63,7 @@ module gcov_binary_format
         type(gcov_function_t), allocatable :: functions(:)
         type(gcov_counters_t) :: counters
         type(gcov_line_data_t), allocatable :: lines(:)
+        type(gcov_line_mapping_t), allocatable :: line_mappings(:)
         logical :: has_gcda = .false.
         logical :: checksums_match = .false.
         logical :: is_big_endian = .false.
@@ -144,7 +155,7 @@ contains
         end if
         
         if (big_endian) then
-            value = ishft(int(high, 8), 32) + int(low, 8)
+            value = ishft(int(low, 8), 32) + int(high, 8)
         else
             value = ishft(int(high, 8), 32) + int(low, 8)
         end if
@@ -189,6 +200,19 @@ contains
         
         string = trim(buffer(1:i-1))
     end function read_gcno_string
+
+    ! Initialize line mapping
+    subroutine gcov_line_mapping_init(this, function_id, source_file_id, &
+                                      line_numbers)
+        class(gcov_line_mapping_t), intent(inout) :: this
+        integer, intent(in) :: function_id, source_file_id
+        integer, intent(in) :: line_numbers(:)
+        
+        this%function_id = function_id
+        this%source_file_id = source_file_id
+        if (allocated(this%line_numbers)) deallocate(this%line_numbers)
+        allocate(this%line_numbers, source=line_numbers)
+    end subroutine gcov_line_mapping_init
 
     ! Initialize line data
     subroutine gcov_line_data_init(this, line_number, execution_count, &
@@ -236,6 +260,7 @@ contains
         
         if (allocated(this%functions)) deallocate(this%functions)
         if (allocated(this%lines)) deallocate(this%lines)
+        if (allocated(this%line_mappings)) deallocate(this%line_mappings)
         if (allocated(this%line_to_count_map)) deallocate(this%line_to_count_map)
         call this%counters%init([integer(8) ::])
         this%has_gcda = .false.
@@ -309,8 +334,9 @@ contains
         character(len=*), intent(in) :: gcno_path
         logical, intent(out) :: success
         integer :: unit, iostat, magic, version, timestamp
-        integer :: tag, length, function_count, i
+        integer :: tag, length, function_count, mapping_count, i
         type(gcov_function_t), allocatable :: temp_functions(:)
+        type(gcov_line_mapping_t), allocatable :: temp_mappings(:)
         character(len=:), allocatable :: func_name, source_file
         integer :: function_id, lineno_checksum, cfg_checksum
         
@@ -320,14 +346,16 @@ contains
         open(newunit=unit, file=gcno_path, status='old', &
              access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to open GCNO file: " // trim(gcno_path)
+            this%error_message = "Failed to open GCNO file '" // trim(gcno_path) // &
+                                "' (error code " // char(48 + iostat) // ")"
             return
         end if
         
         ! Read header
         magic = read_gcno_word(unit, iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to read GCNO magic number"
+            this%error_message = "Failed to read GCNO magic number from '" // &
+                                trim(gcno_path) // "'"
             close(unit)
             return
         end if
@@ -338,7 +366,9 @@ contains
         else if (magic == int(Z'6F6E6367')) then  ! Big-endian "gcno"
             this%is_big_endian = .true.
         else
-            this%error_message = "Invalid GCNO magic number"
+            this%error_message = "Invalid GCNO magic number in '" // &
+                                trim(gcno_path) // "' (got " // &
+                                char(48 + magic) // ")"
             close(unit)
             return
         end if
@@ -346,14 +376,16 @@ contains
         ! Read version and timestamp
         version = read_gcno_value(unit, this%is_big_endian, iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to read GCNO version"
+            this%error_message = "Failed to read GCNO version from '" // &
+                                trim(gcno_path) // "'"
             close(unit)
             return
         end if
         
         timestamp = read_gcno_value(unit, this%is_big_endian, iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to read GCNO timestamp"
+            this%error_message = "Failed to read GCNO timestamp from '" // &
+                                trim(gcno_path) // "'"
             close(unit)
             return
         end if
@@ -363,7 +395,9 @@ contains
         
         ! Parse records
         function_count = 0
+        mapping_count = 0
         allocate(temp_functions(10))  ! Start with space for 10 functions
+        allocate(temp_mappings(10))   ! Start with space for 10 mappings
         
         do
             tag = read_gcno_value(unit, this%is_big_endian, iostat)
@@ -371,7 +405,9 @@ contains
             
             length = read_gcno_value(unit, this%is_big_endian, iostat)
             if (iostat /= 0) then
-                this%error_message = "Failed to read record length"
+                this%error_message = "Failed to read record length in '" // &
+                                    trim(gcno_path) // "' (tag: " // &
+                                    char(48 + tag) // ")"
                 close(unit)
                 return
             end if
@@ -406,9 +442,15 @@ contains
                 temp_functions(function_count)%cfg_checksum = cfg_checksum
                 
             else if (tag == LINES_TAG) then
-                ! Lines record - skip for now, we'll get line info from source
-                call skip_record_data(unit, length, this%is_big_endian, iostat)
-                if (iostat /= 0) exit
+                ! Lines record - parse line numbers for function
+                call parse_lines_record(unit, length, this%is_big_endian, iostat, &
+                                       temp_mappings, mapping_count)
+                if (iostat /= 0) then
+                    this%error_message = "Failed to parse LINES record in " // &
+                                        trim(gcno_path)
+                    close(unit)
+                    return
+                end if
                 
             else
                 ! Skip unknown record types
@@ -429,7 +471,13 @@ contains
             call this%functions(1)%init("main", this%source_file_path, 1)
         end if
         
-        deallocate(temp_functions)
+        ! Store line mappings
+        if (mapping_count > 0) then
+            allocate(this%line_mappings(mapping_count))
+            this%line_mappings(1:mapping_count) = temp_mappings(1:mapping_count)
+        end if
+        
+        deallocate(temp_functions, temp_mappings)
         success = .true.
     end subroutine parse_gcno_binary
     
@@ -445,6 +493,80 @@ contains
             if (iostat /= 0) return
         end do
     end subroutine skip_record_data
+    
+    ! Parse LINES record from GCNO file
+    subroutine parse_lines_record(unit, length_words, big_endian, iostat, &
+                                 temp_mappings, mapping_count)
+        integer, intent(in) :: unit, length_words
+        logical, intent(in) :: big_endian
+        integer, intent(out) :: iostat
+        type(gcov_line_mapping_t), intent(inout) :: temp_mappings(:)
+        integer, intent(inout) :: mapping_count
+        integer :: function_id, source_file_id, line_count, i, line_num
+        integer, allocatable :: line_numbers(:)
+        integer :: words_read, remaining_words
+        
+        iostat = 0
+        words_read = 0
+        
+        ! Read function ID (first word)
+        if (words_read >= length_words) return
+        function_id = read_gcno_value(unit, big_endian, iostat)
+        if (iostat /= 0) return
+        words_read = words_read + 1
+        
+        ! Read source file ID (second word) 
+        if (words_read >= length_words) return
+        source_file_id = read_gcno_value(unit, big_endian, iostat)
+        if (iostat /= 0) return
+        words_read = words_read + 1
+        
+        ! Remaining words are line numbers (except last word which is 0)
+        remaining_words = length_words - words_read
+        if (remaining_words <= 0) return
+        
+        ! Allocate space for line numbers
+        allocate(line_numbers(remaining_words))
+        line_count = 0
+        
+        ! Read line numbers until we hit 0 or end of record
+        do i = 1, remaining_words
+            line_num = read_gcno_value(unit, big_endian, iostat)
+            if (iostat /= 0) then
+                deallocate(line_numbers)
+                return
+            end if
+            
+            if (line_num == 0) exit  ! End marker
+            
+            line_count = line_count + 1
+            line_numbers(line_count) = line_num
+        end do
+        
+        ! Skip remaining words if any
+        do i = words_read + line_count + 1, length_words
+            line_num = read_gcno_value(unit, big_endian, iostat)
+            if (iostat /= 0) then
+                deallocate(line_numbers)
+                return
+            end if
+        end do
+        
+        ! Store mapping if we have line numbers
+        if (line_count > 0) then
+            mapping_count = mapping_count + 1
+            if (mapping_count > size(temp_mappings)) then
+                ! Need to resize array - for simplicity, just limit to current size
+                deallocate(line_numbers)
+                return
+            end if
+            
+            call temp_mappings(mapping_count)%init(function_id, source_file_id, &
+                                                  line_numbers(1:line_count))
+        end if
+        
+        deallocate(line_numbers)
+    end subroutine parse_lines_record
 
     ! Parse GCDA binary file for execution counts
     subroutine parse_gcda_binary(this, gcda_path, success)
@@ -463,21 +585,25 @@ contains
         open(newunit=unit, file=gcda_path, status='old', &
              access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to open GCDA file: " // trim(gcda_path)
+            this%error_message = "Failed to open GCDA file '" // trim(gcda_path) // &
+                                "' (error code " // char(48 + iostat) // ")"
             return
         end if
         
         ! Read header
         magic = read_gcno_word(unit, iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to read GCDA magic number"
+            this%error_message = "Failed to read GCDA magic number from '" // &
+                                trim(gcda_path) // "'"
             close(unit)
             return
         end if
         
         ! Validate magic (should match GCNO endianness)
         if (magic /= GCDA_MAGIC .and. magic /= int(Z'61646367')) then
-            this%error_message = "Invalid GCDA magic number"
+            this%error_message = "Invalid GCDA magic number in '" // &
+                                trim(gcda_path) // "' (got " // &
+                                char(48 + magic) // ")"
             close(unit)
             return
         end if
@@ -485,14 +611,16 @@ contains
         ! Read version and timestamp
         version = read_gcno_value(unit, this%is_big_endian, iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to read GCDA version"
+            this%error_message = "Failed to read GCDA version from '" // &
+                                trim(gcda_path) // "'"
             close(unit)
             return
         end if
         
         timestamp = read_gcno_value(unit, this%is_big_endian, iostat)
         if (iostat /= 0) then
-            this%error_message = "Failed to read GCDA timestamp"
+            this%error_message = "Failed to read GCDA timestamp from '" // &
+                                trim(gcda_path) // "'"
             close(unit)
             return
         end if
@@ -509,7 +637,9 @@ contains
             
             length = read_gcno_value(unit, this%is_big_endian, iostat)
             if (iostat /= 0) then
-                this%error_message = "Failed to read GCDA record length"
+                this%error_message = "Failed to read GCDA record length in '" // &
+                                    trim(gcda_path) // "' (tag: " // &
+                                    char(48 + tag) // ")"
                 close(unit)
                 return
             end if
@@ -537,10 +667,20 @@ contains
                         read_gcno_value64(unit, this%is_big_endian, iostat)
                     if (iostat /= 0) exit
                     
-                    ! Create simple mapping (counter index -> line number)
-                    ! This is simplified - real mapping would come from GCNO
+                    ! Create mapping using GCNO line data
                     map_count = map_count + 1
-                    temp_map(1, map_count) = map_count + 6  ! Start from line 7 (first executable)
+                    if (allocated(this%line_mappings) .and. &
+                        size(this%line_mappings) > 0) then
+                        ! Map counter to actual line number from GCNO data
+                        if (counter_count <= size(this%line_mappings(1)%line_numbers)) then
+                            temp_map(1, map_count) = &
+                                this%line_mappings(1)%line_numbers(counter_count)
+                        else
+                            temp_map(1, map_count) = counter_count  ! Fallback
+                        end if
+                    else
+                        temp_map(1, map_count) = counter_count  ! Fallback
+                    end if
                     temp_map(2, map_count) = int(temp_counters(counter_count))
                 end do
                 
@@ -704,14 +844,33 @@ contains
             end do
         end if
         
-        ! If line is potentially executable but no count found, assume 0
-        ! This is a simplified heuristic
-        if (line_number >= 7 .and. line_number <= 24) then
-            if (this%has_gcda) then
-                count = 0  ! Executable but not covered
-            else
-                count = -1  ! No coverage data available
-            end if
+        ! Check if line is executable using GCNO line mappings
+        if (allocated(this%line_mappings)) then
+            block
+                integer :: i, j
+                logical :: found_executable
+                found_executable = .false.
+                
+                do i = 1, size(this%line_mappings)
+                    if (allocated(this%line_mappings(i)%line_numbers)) then
+                        do j = 1, size(this%line_mappings(i)%line_numbers)
+                            if (this%line_mappings(i)%line_numbers(j) == line_number) then
+                                found_executable = .true.
+                                exit
+                            end if
+                        end do
+                    end if
+                    if (found_executable) exit
+                end do
+                
+                if (found_executable) then
+                    if (this%has_gcda) then
+                        count = 0  ! Executable but not covered
+                    else
+                        count = -1  ! No coverage data available
+                    end if
+                end if
+            end block
         end if
     end function get_line_execution_count
 
