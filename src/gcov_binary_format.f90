@@ -331,7 +331,8 @@ contains
     subroutine gcda_parse_counters(this, counters)
         class(gcda_reader_t), intent(inout) :: this
         type(gcov_counters_t), intent(out) :: counters
-        integer :: counter_count, iostat, i, j
+        integer :: iostat, i, j
+        integer(4) :: magic, counter_count
         integer(8), allocatable :: values(:)
         
         call counters%init([integer(8) ::])  ! Initialize with empty array
@@ -339,6 +340,7 @@ contains
         if (.not. this%is_open) return
         
         ! Skip magic, read counter count (simplified format)
+        read(this%unit, iostat=iostat) magic
         read(this%unit, iostat=iostat) counter_count
         if (iostat /= 0 .or. counter_count <= 0 .or. counter_count > 1000) &
             return

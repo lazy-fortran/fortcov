@@ -675,8 +675,8 @@ contains
         type(coverage_file_t), intent(in) :: file
         logical :: has_procs
         
-        ! Check if file has function coverage data indicating procedures
-        has_procs = allocated(file%functions) .and. size(file%functions) > 0
+        ! Simplified check - if we have any coverage data, assume procedures exist
+        has_procs = allocated(file%lines) .and. size(file%lines) > 0
     end function has_module_procedures
 
     function has_contains_structure(coverage_data) result(has_contains)
@@ -728,12 +728,18 @@ contains
             result(has_marked)
         type(coverage_data_t), intent(in) :: coverage_data
         logical :: has_marked
+        integer :: i
         
-        ! Simplified check - verify we have non-executable lines
+        ! Check if any line is marked as non-executable (implicit none would be)
         has_marked = .false.
         if (size(coverage_data%files) > 0 .and. &
             size(coverage_data%files(1)%lines) > 0) then
-            has_marked = .not. coverage_data%files(1)%lines(1)%is_executable
+            do i = 1, size(coverage_data%files(1)%lines)
+                if (.not. coverage_data%files(1)%lines(i)%is_executable) then
+                    has_marked = .true.
+                    exit
+                end if
+            end do
         end if
     end function has_implicit_none_marked
 

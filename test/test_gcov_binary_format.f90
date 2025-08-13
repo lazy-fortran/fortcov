@@ -235,8 +235,8 @@ contains
         end if
         
         ! Then: Should return execution counts
-        call assert_int(counters%count > 0, "execution counter count", &
-                       1, counters%count)
+        call assert_int(counters%count == 3, "execution counter count", &
+                       3, counters%count)
         
         ! Cleanup
         call delete_temp_file(temp_file)
@@ -425,7 +425,11 @@ contains
         
         ! Write GCDA with execution counters
         write(unit) int(z'67636461', kind=4)  ! Magic
-        write(unit) int(5, kind=4)  ! Counter count
+        write(unit) int(3, kind=4)  ! Counter count
+        ! Write 3 actual counter values
+        write(unit) int(42, kind=8)  ! Counter value 1
+        write(unit) int(7, kind=8)   ! Counter value 2
+        write(unit) int(15, kind=8)  ! Counter value 3
         
         close(unit)
     end function create_temp_gcda_file_with_counters
