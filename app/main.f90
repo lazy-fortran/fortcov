@@ -27,6 +27,9 @@ program main
     if (config%show_help) then
       call show_help()
       call exit(EXIT_SUCCESS)
+    else if (config%show_version) then
+      call show_version()
+      call exit(EXIT_SUCCESS)
     else
       print *, "Error:", trim(error_message)
       call exit(EXIT_FAILURE)
