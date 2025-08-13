@@ -1,14 +1,14 @@
-# Issue #12: Implement Command-Line Application
+# Issue #12: Implement Command-Line Application ✅ COMPLETED
 
 ## User Story
 As an end user, I want a command-line interface to fortcov so that I can generate coverage reports from my terminal.
 
 ## Acceptance Criteria
-- [ ] Parse command-line arguments
-- [ ] Initialize configuration
-- [ ] Invoke coverage engine
-- [ ] Handle errors with proper messages
-- [ ] Return appropriate exit codes
+- [x] Parse command-line arguments
+- [x] Initialize configuration
+- [x] Invoke coverage engine
+- [x] Handle errors with proper messages
+- [x] Return appropriate exit codes
 
 ## Test Specifications (RED Phase)
 
