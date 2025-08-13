@@ -69,6 +69,10 @@ module coverage_model
     contains
         procedure :: get_line_coverage_percentage => &
                      file_get_line_coverage_percentage
+        procedure :: get_executable_line_count => &
+                     file_get_executable_line_count
+        procedure :: get_covered_line_count => &
+                     file_get_covered_line_count
         procedure :: init => file_init
     end type coverage_file_t
     
@@ -282,6 +286,34 @@ contains
             percentage = (real(covered_count) / real(executable_count)) * 100.0
         end if
     end function file_get_line_coverage_percentage
+
+    ! Get number of executable lines for file
+    function file_get_executable_line_count(this) result(count)
+        class(coverage_file_t), intent(in) :: this
+        integer :: count
+        integer :: i
+        
+        count = 0
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable) then
+                count = count + 1
+            end if
+        end do
+    end function file_get_executable_line_count
+
+    ! Get number of covered executable lines for file
+    function file_get_covered_line_count(this) result(count)
+        class(coverage_file_t), intent(in) :: this
+        integer :: count
+        integer :: i
+        
+        count = 0
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable .and. this%lines(i)%is_covered()) then
+                count = count + 1
+            end if
+        end do
+    end function file_get_covered_line_count
 
     ! Coverage data constructor
     function new_coverage_data(files) result(data)

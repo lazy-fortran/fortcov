@@ -90,7 +90,7 @@ contains
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
-        integer :: unit, stat, i, j
+        integer :: unit, stat, i
         integer :: total_lines, covered_lines
         logical :: use_stdout
         
@@ -115,17 +115,10 @@ contains
         write(unit, '(A)') "|----------|-------|---------|------------|"
         
         do i = 1, size(coverage_data%files)
-            total_lines = 0
-            covered_lines = 0
             associate(file => coverage_data%files(i))
-                do j = 1, size(file%lines)
-                    if (file%lines(j)%is_executable) then
-                        total_lines = total_lines + 1
-                        if (file%lines(j)%is_covered()) then
-                            covered_lines = covered_lines + 1
-                        end if
-                    end if
-                end do
+                ! Use model methods to avoid DRY violation
+                total_lines = file%get_executable_line_count()
+                covered_lines = file%get_covered_line_count()
                 write(unit, '(A,A,A,I0,A,I0,A,F5.1,A)') &
                     "| ", trim(file%filename), " | ", &
                     total_lines, " | ", covered_lines, " | ", &
