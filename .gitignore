@@ -1,0 +1,8 @@
+external/
+build/
+*.gcda
+*.gcno
+*.gcov
+coverage/
+*.mod
+*.o
