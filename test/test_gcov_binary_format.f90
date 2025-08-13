@@ -9,8 +9,7 @@ program test_gcov_binary_format
     
     write(*,*) "Running gcov_binary_format tests with REAL gfortran data..."
     
-    ! First setup real test data
-    call setup_real_test_data()
+    ! Using existing test_data/sample.* files
     
     ! Test 1: Read GCNO magic number from real file
     call test_real_gcno_magic()
@@ -45,8 +44,7 @@ program test_gcov_binary_format
     ! Test 11: Binary format integrity validation
     call test_binary_integrity_validation()
     
-    ! Cleanup real test data
-    call cleanup_real_test_data()
+    ! No cleanup needed - using existing test_data files
     
     ! Report results
     write(*,*) ""
@@ -97,7 +95,7 @@ contains
         integer :: magic
         
         ! Check if real gcno file exists
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO file existence", "exists", "missing")
             return
@@ -105,7 +103,7 @@ contains
         
         ! Read magic number from real file
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             magic = reader%read_magic()
@@ -125,14 +123,14 @@ contains
         integer :: version
         logical :: success, file_exists
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO file for version test", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             ! First read magic to set up endianness
@@ -156,14 +154,14 @@ contains
         logical :: success, file_exists
         integer :: func_count
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO file for functions", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             call reader%parse_functions(functions)
@@ -196,14 +194,14 @@ contains
         logical :: success, file_exists
         integer :: magic
         
-        inquire(file="test_real_sample.gcda", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcda", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCDA file existence", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcda", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcda", success)
         
         if (success) then
             magic = reader%read_magic()
@@ -223,14 +221,14 @@ contains
         type(gcov_counters_t) :: counters
         logical :: success, file_exists
         
-        inquire(file="test_real_sample.gcda", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcda", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCDA file for counters", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcda", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcda", success)
         
         if (success) then
             call reader%parse_counters(counters)
@@ -251,8 +249,8 @@ contains
         type(gcov_data_reader_t) :: reader
         logical :: success, gcno_exists, gcda_exists
         
-        inquire(file="test_real_sample.gcno", exist=gcno_exists)
-        inquire(file="test_real_sample.gcda", exist=gcda_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=gcno_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcda", exist=gcda_exists)
         
         if (.not. gcno_exists .or. .not. gcda_exists) then
             call assert(.false., "Real files for matching", "both exist", "missing")
@@ -260,7 +258,7 @@ contains
         end if
         
         call reader%init()
-        call reader%load_files("test_real_sample.gcno", "test_real_sample.gcda", success)
+        call reader%load_files("/home/ert/code/fortcov/test_data/sample.gcno", "/home/ert/code/fortcov/test_data/sample.gcda", success)
         
         ! Should successfully load both files
         call assert(success, "Real GCNO/GCDA loading", "true", &
@@ -281,14 +279,14 @@ contains
         type(gcno_reader_t) :: reader
         logical :: success, is_little_endian, file_exists
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO file for endianness", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             is_little_endian = reader%detect_endianness()
@@ -309,14 +307,14 @@ contains
         logical :: success, file_exists
         integer :: path_count
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO file for paths", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             call reader%parse_source_paths(source_paths)
@@ -342,7 +340,7 @@ contains
         type(gcov_data_reader_t) :: reader
         logical :: success, file_exists
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO file for missing GCDA test", "exists", "missing")
             return
@@ -350,7 +348,7 @@ contains
         
         ! Load only GCNO file, no GCDA
         call reader%init()
-        call reader%load_files("test_real_sample.gcno", "", success)
+        call reader%load_files("/home/ert/code/fortcov/test_data/sample.gcno", "", success)
         
         ! Should handle gracefully without crashing
         call assert(success, "Missing GCDA handling", "handled", &
@@ -368,14 +366,14 @@ contains
         logical :: success, file_exists
         integer :: version
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO for version test", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             version = reader%read_magic()
@@ -400,14 +398,14 @@ contains
         logical :: success, file_exists, integrity_valid
         integer :: magic
         
-        inquire(file="test_real_sample.gcno", exist=file_exists)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=file_exists)
         if (.not. file_exists) then
             call assert(.false., "Real GCNO for integrity test", "exists", "missing")
             return
         end if
         
         call reader%init()
-        call reader%open("test_real_sample.gcno", success)
+        call reader%open("/home/ert/code/fortcov/test_data/sample.gcno", success)
         
         if (success) then
             ! Test basic functionality - if we can open and read magic, it's valid
@@ -426,37 +424,22 @@ contains
     ! Helper functions to create minimal test files
     !
     
-    ! Setup real test data by creating a Fortran program and compiling it
+    ! Setup real test data by copying existing sample files
     subroutine setup_real_test_data()
-        integer :: unit, result
-        character(len=100) :: compile_cmd, run_cmd
+        logical :: exists
+        integer :: result
         
-        ! Create a simple Fortran program
-        open(newunit=unit, file="test_real_sample.f90")
-        write(unit, '(A)') 'program test_sample'
-        write(unit, '(A)') '    implicit none'
-        write(unit, '(A)') '    integer :: i, total'
-        write(unit, '(A)') '    total = 0'
-        write(unit, '(A)') '    do i = 1, 5'
-        write(unit, '(A)') '        if (mod(i, 2) == 0) then'
-        write(unit, '(A)') '            total = total + i * 2'
-        write(unit, '(A)') '        else'
-        write(unit, '(A)') '            total = total + i'
-        write(unit, '(A)') '        end if'
-        write(unit, '(A)') '    end do'
-        write(unit, '(A)') '    write(*,*) "Total:", total'
-        write(unit, '(A)') 'end program test_sample'
-        close(unit)
+        ! Copy existing sample files to test names
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcno", exist=exists)
+        if (exists) then
+            call execute_command_line("cp /home/ert/code/fortcov/test_data/sample.gcno test_real_sample.gcno", &
+                                    exitstat=result)
+        end if
         
-        ! Compile with coverage flags
-        compile_cmd = "gfortran -fprofile-arcs -ftest-coverage -g " // &
-                     "test_real_sample.f90 -o test_real_sample 2>/dev/null"
-        call execute_command_line(compile_cmd, exitstat=result)
-        
-        ! Run the program to generate .gcda file
-        if (result == 0) then
-            run_cmd = "./test_real_sample > /dev/null 2>&1"
-            call execute_command_line(run_cmd)
+        inquire(file="/home/ert/code/fortcov/test_data/sample.gcda", exist=exists)  
+        if (exists) then
+            call execute_command_line("cp /home/ert/code/fortcov/test_data/sample.gcda test_real_sample.gcda", &
+                                    exitstat=result)
         end if
     end subroutine setup_real_test_data
     
