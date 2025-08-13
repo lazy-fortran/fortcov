@@ -1,40 +1,42 @@
 program test_gcov_binary_format
     use gcov_binary_format
-    use file_utils
     implicit none
     
     ! Test results tracking
     integer :: test_count = 0
     integer :: pass_count = 0
     
-    write(*,*) "Running gcov_binary_format tests..."
+    write(*,*) "Running gcov text parser tests with REAL gcov data..."
     
-    ! Test 1: Read GCNO magic number
-    call test_read_gcno_magic()
+    ! Test 1: Parse real gcov text file
+    call test_parse_real_gcov_text()
     
-    ! Test 2: Parse GCNO version
-    call test_parse_gcno_version()
+    ! Test 2: Load real gcno/gcda files and generate gcov text
+    call test_load_real_gcov_files()
     
-    ! Test 3: Extract function records
-    call test_extract_function_records()
+    ! Test 3: Validate gcov line data parsing
+    call test_gcov_line_data_parsing()
     
-    ! Test 4: Read GCDA magic number
-    call test_read_gcda_magic()
+    ! Test 4: Test gcov command execution
+    call test_gcov_command_execution()
     
-    ! Test 5: Parse execution counters
-    call test_parse_execution_counters()
-    
-    ! Test 6: Match GCNO and GCDA data
-    call test_match_gcno_gcda_data()
-    
-    ! Test 7: Handle endianness
-    call test_handle_endianness()
-    
-    ! Test 8: Parse source file paths
-    call test_parse_source_paths()
-    
-    ! Test 9: Handle missing GCDA file
+    ! Test 5: Handle missing gcda gracefully
     call test_handle_missing_gcda()
+    
+    ! Test 6: Test data integrity validation
+    call test_data_integrity_validation()
+    
+    ! Test 7: Test executable line detection from gcov
+    call test_executable_line_detection()
+    
+    ! Test 8: Test counter extraction
+    call test_counter_extraction()
+    
+    ! Test 9: Test error handling for invalid files
+    call test_error_handling()
+    
+    ! Test 10: Test complete workflow with real data
+    call test_complete_workflow()
     
     ! Report results
     write(*,*) ""
@@ -78,423 +80,302 @@ contains
         call assert(condition, test_name, trim(exp_str), trim(act_str))
     end subroutine assert_int
 
-    ! Test 1: Read GCNO magic number
-    ! Given: A valid .gcno file
-    ! When: Reading first 4 bytes
-    ! Then: Should match GCNO magic (0x67636E6F or "gcno")
-    subroutine test_read_gcno_magic()
-        type(gcno_reader_t) :: reader
-        logical :: success
-        integer :: magic
-        character(len=:), allocatable :: temp_file
+    ! Test 1: Parse existing gcov text file
+    subroutine test_parse_real_gcov_text()
+        type(gcov_data_reader_t) :: reader
+        logical :: success, file_exists
+        character(len=:), allocatable :: gcov_path
         
-        ! Given: Create a temporary GCNO file with magic number
-        temp_file = create_temp_gcno_file()
+        gcov_path = "/home/ert/code/fortcov/test_data/sample.f90.gcov"
         
-        ! When: Reading the magic number
-        call reader%init()
-        call reader%open(temp_file, success)
-        
-        if (success) then
-            magic = reader%read_magic()
-            call reader%close()
-        else
-            magic = 0
+        ! Check if gcov text file exists
+        inquire(file=gcov_path, exist=file_exists)
+        if (.not. file_exists) then
+            call assert(.false., "Real gcov text file exists", "exists", "missing")
+            return
         end if
         
-        ! Then: Should match GCNO magic number
-        call assert_int(magic == int(z'67636E6F'), "GCNO magic number", &
-                       int(z'67636E6F'), magic)
-        
-        ! Cleanup
-        call delete_temp_file(temp_file)
-    end subroutine test_read_gcno_magic
-
-    ! Test 2: Parse GCNO version
-    ! Given: A .gcno file header
-    ! When: Reading version field
-    ! Then: Should identify GCC version (e.g., "A03*" for GCC 10+)
-    subroutine test_parse_gcno_version()
-        type(gcno_reader_t) :: reader
-        character(len=4) :: version
-        logical :: success
-        character(len=:), allocatable :: temp_file
-        
-        ! Given: Create a GCNO file with version
-        temp_file = create_temp_gcno_file_with_version()
-        
-        ! When: Reading version
         call reader%init()
-        call reader%open(temp_file, success)
+        call reader%parse_gcov_text(gcov_path, success)
+        
+        call assert(success, "Parse real gcov text file", "success", &
+                   merge("success", "failed ", success))
         
         if (success) then
-            version = reader%read_version()
-            call reader%close()
-        else
-            version = "    "
-        end if
-        
-        ! Then: Should return valid GCC version
-        call assert(trim(version) /= "", "GCNO version read", "A03*", &
-                   trim(version))
-        
-        ! Cleanup  
-        call delete_temp_file(temp_file)
-    end subroutine test_parse_gcno_version
-
-    ! Test 3: Extract function records
-    ! Given: A .gcno file with 3 functions
-    ! When: Parsing function records  
-    ! Then: Should return 3 function entries with names and line numbers
-    subroutine test_extract_function_records()
-        type(gcno_reader_t) :: reader
-        type(gcov_function_t), allocatable :: functions(:)
-        logical :: success
-        character(len=:), allocatable :: temp_file
-        integer :: func_count
-        
-        ! Given: Create GCNO file with function records
-        temp_file = create_temp_gcno_file_with_functions()
-        
-        ! When: Parsing function records
-        call reader%init()
-        call reader%open(temp_file, success)
-        
-        if (success) then
-            call reader%parse_functions(functions)
-            if (allocated(functions)) then
-                func_count = size(functions)
-            else
-                func_count = 0
+            call assert(allocated(reader%lines), "Lines data allocated", &
+                       "allocated", "present")
+            
+            if (allocated(reader%lines)) then
+                call assert_int(size(reader%lines) > 0, "Lines count > 0", &
+                              1, size(reader%lines))
             end if
-            call reader%close()
-        else
-            func_count = 0
+        end if
+    end subroutine test_parse_real_gcov_text
+
+    ! Test 2: Load real gcno/gcda files and run gcov
+    subroutine test_load_real_gcov_files()
+        type(gcov_data_reader_t) :: reader
+        logical :: success, gcno_exists, gcda_exists
+        character(len=:), allocatable :: gcno_path, gcda_path
+        
+        gcno_path = "/home/ert/code/fortcov/test_data/sample.gcno"
+        gcda_path = "/home/ert/code/fortcov/test_data/sample.gcda"
+        
+        ! Check if files exist
+        inquire(file=gcno_path, exist=gcno_exists)
+        inquire(file=gcda_path, exist=gcda_exists)
+        
+        if (.not. gcno_exists .or. .not. gcda_exists) then
+            call assert(.false., "Real gcov files exist", "both exist", "missing")
+            return
         end if
         
-        ! Then: Should return 3 functions
-        call assert_int(func_count == 3, "function count", 3, func_count)
-        
-        ! Cleanup
-        call delete_temp_file(temp_file)
-        if (allocated(functions)) deallocate(functions)
-    end subroutine test_extract_function_records
-
-    ! Test 4: Read GCDA magic number  
-    ! Given: A valid .gcda file
-    ! When: Reading first 4 bytes
-    ! Then: Should match GCDA magic (0x67636461 or "gcda")
-    subroutine test_read_gcda_magic()
-        type(gcda_reader_t) :: reader
-        logical :: success
-        integer :: magic
-        character(len=:), allocatable :: temp_file
-        
-        ! Given: Create temporary GCDA file
-        temp_file = create_temp_gcda_file()
-        
-        ! When: Reading magic number
         call reader%init()
-        call reader%open(temp_file, success)
+        call reader%load_files(gcno_path, gcda_path, success)
+        
+        call assert(success, "Load real gcov files", "success", &
+                   merge("success", "failed ", success))
         
         if (success) then
-            magic = reader%read_magic()
-            call reader%close()
-        else
-            magic = 0
+            call assert(reader%has_gcda, "GCDA data loaded", "true", &
+                       merge("true ", "false", reader%has_gcda))
+            
+            call assert(allocated(reader%functions), "Functions loaded", &
+                       "allocated", "present")
+            
+            call assert(allocated(reader%lines), "Line data loaded", &
+                       "allocated", "present")
         end if
-        
-        ! Then: Should match GCDA magic
-        call assert_int(magic == int(z'67636461'), "GCDA magic number", &
-                       int(z'67636461'), magic)
-        
-        ! Cleanup
-        call delete_temp_file(temp_file)
-    end subroutine test_read_gcda_magic
+    end subroutine test_load_real_gcov_files
 
-    ! Test 5: Parse execution counters
-    ! Given: A .gcda file with arc counters
-    ! When: Reading counter sections
-    ! Then: Should return execution counts for each arc
-    subroutine test_parse_execution_counters()
-        type(gcda_reader_t) :: reader
-        type(gcov_counters_t) :: counters
-        logical :: success
-        character(len=:), allocatable :: temp_file
-        
-        ! Given: Create GCDA file with counters
-        temp_file = create_temp_gcda_file_with_counters()
-        
-        ! When: Reading execution counters
-        call reader%init()
-        call reader%open(temp_file, success)
-        
-        if (success) then
-            call reader%parse_counters(counters)
-            call reader%close()
-        end if
-        
-        ! Then: Should return execution counts
-        call assert_int(counters%count > 0, "execution counter count", &
-                       1, counters%count)
-        
-        ! Cleanup
-        call delete_temp_file(temp_file)
-    end subroutine test_parse_execution_counters
-
-    ! Test 6: Match GCNO and GCDA data
-    ! Given: Corresponding .gcno and .gcda files
-    ! When: Parsing both files
-    ! Then: Function checksums should match
-    subroutine test_match_gcno_gcda_data()
+    ! Test 3: Validate gcov line data parsing from real data
+    subroutine test_gcov_line_data_parsing()
         type(gcov_data_reader_t) :: reader
         logical :: success
-        character(len=:), allocatable :: gcno_file, gcda_file
+        character(len=:), allocatable :: gcov_path
+        integer :: i, exec_lines, non_exec_lines, uncovered_lines
         
-        ! Given: Create corresponding GCNO and GCDA files
-        gcno_file = create_temp_gcno_file_with_checksum()
-        gcda_file = create_temp_gcda_file_with_checksum()
+        gcov_path = "/home/ert/code/fortcov/test_data/sample.f90.gcov"
         
-        ! When: Parsing both files
         call reader%init()
-        call reader%load_files(gcno_file, gcda_file, success)
+        call reader%parse_gcov_text(gcov_path, success)
         
-        ! Then: Should successfully match
-        call assert(success, "GCNO/GCDA checksum match", "true", &
-                   merge("true ", "false", success))
-        
-        ! Cleanup
-        call delete_temp_file(gcno_file)
-        call delete_temp_file(gcda_file)
-    end subroutine test_match_gcno_gcda_data
-
-    ! Test 7: Handle endianness
-    ! Given: Binary data in different endianness
-    ! When: Reading multi-byte integers
-    ! Then: Should correctly interpret based on system
-    subroutine test_handle_endianness()
-        type(gcno_reader_t) :: reader
-        logical :: success, is_little_endian
-        character(len=:), allocatable :: temp_file
-        
-        ! Given: Create file with known endian marker
-        temp_file = create_temp_gcno_file_with_endian()
-        
-        ! When: Reading and determining endianness
-        call reader%init()
-        call reader%open(temp_file, success)
-        
-        if (success) then
-            is_little_endian = reader%detect_endianness()
-            call reader%close()
-        else
-            is_little_endian = .true.  ! Default assumption
+        if (.not. success) then
+            call assert(.false., "Line data parsing setup", "success", "failed")
+            return
         end if
         
-        ! Then: Should detect endianness correctly
-        call assert(.true., "endianness detection", "detected", &
-                   merge("little", "big   ", is_little_endian))
+        ! Count different line types from real gcov data
+        exec_lines = 0
+        non_exec_lines = 0
+        uncovered_lines = 0
         
-        ! Cleanup
-        call delete_temp_file(temp_file)
-    end subroutine test_handle_endianness
+        do i = 1, size(reader%lines)
+            if (reader%lines(i)%is_executable) then
+                if (reader%lines(i)%execution_count == 0) then
+                    uncovered_lines = uncovered_lines + 1
+                else
+                    exec_lines = exec_lines + 1
+                end if
+            else
+                non_exec_lines = non_exec_lines + 1
+            end if
+        end do
+        
+        call assert(exec_lines > 0, "Found executed lines", ">0", "found some")
+        call assert(non_exec_lines > 0, "Found non-executable lines", ">0", "found some")
+        call assert(uncovered_lines >= 0, "Uncovered lines count valid", ">=0", "valid")
+        
+        ! Check specific line details match expected gcov format
+        if (size(reader%lines) > 0) then
+            call assert(reader%lines(1)%line_number > 0, "Line numbers valid", &
+                       ">0", "valid")
+        end if
+    end subroutine test_gcov_line_data_parsing
 
-    ! Test 8: Parse source file paths  
-    ! Given: A .gcno with embedded source paths
-    ! When: Reading string table
-    ! Then: Should extract correct file paths
-    subroutine test_parse_source_paths()
-        type(gcno_reader_t) :: reader
-        character(len=:), allocatable :: source_paths(:)
-        logical :: success
-        character(len=:), allocatable :: temp_file
-        integer :: path_count
+    ! Test 4: Test gcov command execution
+    subroutine test_gcov_command_execution()
+        type(gcov_data_reader_t) :: reader
+        logical :: success, source_exists
+        character(len=:), allocatable :: source_path
         
-        ! Given: Create GCNO with source paths
-        temp_file = create_temp_gcno_file_with_sources()
+        source_path = "/home/ert/code/fortcov/test_data/sample.f90"
         
-        ! When: Reading source paths
-        call reader%init()
-        call reader%open(temp_file, success)
-        
-        if (success) then
-            call reader%parse_source_paths(source_paths)
-            path_count = size(source_paths)
-            call reader%close()
-        else
-            path_count = 0
+        inquire(file=source_path, exist=source_exists)
+        if (.not. source_exists) then
+            call assert(.false., "Source file for gcov test", "exists", "missing")
+            return
         end if
         
-        ! Then: Should extract source paths
-        call assert_int(path_count > 0, "source path count", 1, path_count)
+        call reader%init()
+        call reader%run_gcov_command(source_path, .true., success)
         
-        ! Cleanup
-        call delete_temp_file(temp_file)
-        if (allocated(source_paths)) deallocate(source_paths)
-    end subroutine test_parse_source_paths
+        call assert(success, "Gcov command execution", "success", &
+                   merge("success", "failed ", success))
+    end subroutine test_gcov_command_execution
 
-    ! Test 9: Handle missing GCDA file
-    ! Given: Only .gcno file present (no execution)
-    ! When: Parsing coverage
-    ! Then: Should show 0 execution counts
+    ! Test 5: Handle missing GCDA file gracefully
     subroutine test_handle_missing_gcda()
         type(gcov_data_reader_t) :: reader
-        logical :: success
-        character(len=:), allocatable :: gcno_file
+        logical :: success, gcno_exists
+        character(len=:), allocatable :: gcno_path
         
-        ! Given: Only GCNO file, no GCDA
-        gcno_file = create_temp_gcno_file()
+        gcno_path = "/home/ert/code/fortcov/test_data/sample.gcno"
         
-        ! When: Parsing coverage with missing GCDA
+        inquire(file=gcno_path, exist=gcno_exists)
+        if (.not. gcno_exists) then
+            call assert(.false., "GCNO file for missing GCDA test", "exists", "missing")
+            return
+        end if
+        
         call reader%init()
-        call reader%load_files(gcno_file, "", success)  ! Empty GCDA path
+        call reader%load_files(gcno_path, "nonexistent.gcda", success)
         
-        ! Then: Should handle gracefully
-        call assert(success .or. .not. success, "missing GCDA handling", &
-                   "handled", "handled")  ! Should not crash
+        call assert(success, "Handle missing GCDA", "handled", &
+                   merge("graceful", "failed  ", success))
         
-        ! Cleanup
-        call delete_temp_file(gcno_file)
+        if (success) then
+            call assert(.not. reader%has_gcda, "GCDA flag properly set", &
+                       "false", merge("false", "true ", .not. reader%has_gcda))
+        end if
     end subroutine test_handle_missing_gcda
 
-    !
-    ! Helper functions to create minimal test files
-    !
-    
-    function create_temp_gcno_file() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
+    ! Test 6: Test data integrity validation
+    subroutine test_data_integrity_validation()
+        type(gcov_data_reader_t) :: reader
+        logical :: success, valid
+        character(len=:), allocatable :: gcno_path, gcda_path
         
-        filename = "temp_test.gcno"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
+        gcno_path = "/home/ert/code/fortcov/test_data/sample.gcno"
+        gcda_path = "/home/ert/code/fortcov/test_data/sample.gcda"
         
-        ! Write GCNO magic number (little-endian)
-        write(unit) int(z'67636E6F', kind=4)
+        call reader%init()
+        call reader%load_files(gcno_path, gcda_path, success)
         
-        close(unit)
-    end function create_temp_gcno_file
-
-    function create_temp_gcno_file_with_version() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test_version.gcno"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write GCNO magic and version
-        write(unit) int(z'67636E6F', kind=4)  ! Magic
-        write(unit) transfer("A03*", int(1, kind=4))  ! Version
-        
-        close(unit)
-    end function create_temp_gcno_file_with_version
-
-    function create_temp_gcno_file_with_functions() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test_funcs.gcno"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write minimal GCNO with function records  
-        write(unit) int(z'67636E6F', kind=4)  ! Magic
-        write(unit) transfer("A03*", int(1, kind=4))  ! Version
-        write(unit) int(3, kind=4)  ! 3 functions
-        
-        close(unit)
-    end function create_temp_gcno_file_with_functions
-
-    function create_temp_gcda_file() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test.gcda"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write GCDA magic number
-        write(unit) int(z'67636461', kind=4)
-        
-        close(unit)
-    end function create_temp_gcda_file
-
-    function create_temp_gcda_file_with_counters() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test_counters.gcda"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write GCDA with execution counters
-        write(unit) int(z'67636461', kind=4)  ! Magic
-        write(unit) int(5, kind=4)  ! Counter count
-        
-        close(unit)
-    end function create_temp_gcda_file_with_counters
-
-    function create_temp_gcno_file_with_checksum() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test_csum.gcno"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write GCNO with checksum
-        write(unit) int(z'67636E6F', kind=4)  ! Magic
-        write(unit) int(z'12345678', kind=4)  ! Checksum
-        
-        close(unit)
-    end function create_temp_gcno_file_with_checksum
-
-    function create_temp_gcda_file_with_checksum() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test_csum.gcda"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write GCDA with matching checksum
-        write(unit) int(z'67636461', kind=4)  ! Magic
-        write(unit) int(z'12345678', kind=4)  ! Matching checksum
-        
-        close(unit)
-    end function create_temp_gcda_file_with_checksum
-
-    function create_temp_gcno_file_with_endian() result(filename)
-        character(len=:), allocatable :: filename
-        integer :: unit
-        
-        filename = "temp_test_endian.gcno"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write file with endian marker
-        write(unit) int(z'67636E6F', kind=4)  ! Magic (little-endian)
-        
-        close(unit)
-    end function create_temp_gcno_file_with_endian
-
-    function create_temp_gcno_file_with_sources() result(filename)
-        character(len=:), allocatable :: filename  
-        integer :: unit
-        
-        filename = "temp_test_sources.gcno"
-        open(newunit=unit, file=filename, access='stream', form='unformatted')
-        
-        ! Write GCNO with source paths
-        write(unit) int(z'67636E6F', kind=4)  ! Magic
-        write(unit) transfer("test.f90" // char(0), int(1, kind=1), 9)
-        
-        close(unit)
-    end function create_temp_gcno_file_with_sources
-
-    ! Helper to delete temporary files
-    subroutine delete_temp_file(filename)
-        character(len=*), intent(in) :: filename
-        logical :: exists
-        
-        inquire(file=filename, exist=exists)
-        if (exists) then
-            open(99, file=filename, status='old')
-            close(99, status='delete')
+        if (.not. success) then
+            call assert(.false., "Data integrity setup", "success", "failed")
+            return
         end if
-    end subroutine delete_temp_file
+        
+        valid = reader%validate_data_integrity()
+        
+        call assert(valid, "Data integrity validation", "valid", &
+                   merge("valid  ", "invalid", valid))
+    end subroutine test_data_integrity_validation
+
+    ! Test 7: Test executable line detection from gcov
+    subroutine test_executable_line_detection()
+        type(gcov_data_reader_t) :: reader
+        logical :: success, found_executable, found_non_executable
+        character(len=:), allocatable :: gcov_path
+        integer :: i
+        
+        gcov_path = "/home/ert/code/fortcov/test_data/sample.f90.gcov"
+        
+        call reader%init()
+        call reader%parse_gcov_text(gcov_path, success)
+        
+        if (.not. success) then
+            call assert(.false., "Executable line test setup", "success", "failed")
+            return
+        end if
+        
+        found_executable = .false.
+        found_non_executable = .false.
+        
+        do i = 1, size(reader%lines)
+            if (reader%lines(i)%is_executable) then
+                found_executable = .true.
+            else
+                found_non_executable = .true.
+            end if
+        end do
+        
+        call assert(found_executable, "Found executable lines", "found", &
+                   "detected")
+        call assert(found_non_executable, "Found non-executable lines", "found", &
+                   "detected")
+    end subroutine test_executable_line_detection
+
+    ! Test 8: Test counter extraction from gcov data
+    subroutine test_counter_extraction()
+        type(gcov_data_reader_t) :: reader
+        logical :: success
+        character(len=:), allocatable :: gcov_path
+        
+        gcov_path = "/home/ert/code/fortcov/test_data/sample.f90.gcov"
+        
+        call reader%init()
+        call reader%parse_gcov_text(gcov_path, success)
+        
+        if (.not. success) then
+            call assert(.false., "Counter extraction setup", "success", "failed")
+            return
+        end if
+        
+        call assert(reader%counters%count >= 0, "Counter count valid", ">=0", &
+                   "valid")
+        
+        if (reader%counters%count > 0) then
+            call assert(allocated(reader%counters%values), "Counter values allocated", &
+                       "allocated", "present")
+        end if
+    end subroutine test_counter_extraction
+
+    ! Test 9: Test error handling for invalid files
+    subroutine test_error_handling()
+        type(gcov_data_reader_t) :: reader
+        logical :: success
+        
+        call reader%init()
+        call reader%parse_gcov_text("nonexistent_file.gcov", success)
+        
+        call assert(.not. success, "Handle nonexistent file", "failed", &
+                   merge("handled", "crashed", .not. success))
+        
+        if (.not. success) then
+            call assert(allocated(reader%error_message), "Error message set", &
+                       "set", "present")
+        end if
+    end subroutine test_error_handling
+
+    ! Test 10: Test complete workflow with real data
+    subroutine test_complete_workflow()
+        type(gcov_data_reader_t) :: reader
+        logical :: success
+        character(len=:), allocatable :: gcno_path, gcda_path
+        integer :: line_count, func_count
+        
+        gcno_path = "/home/ert/code/fortcov/test_data/sample.gcno"
+        gcda_path = "/home/ert/code/fortcov/test_data/sample.gcda"
+        
+        ! Complete workflow: load files, parse data, validate
+        call reader%init()
+        call reader%load_files(gcno_path, gcda_path, success)
+        
+        call assert(success, "Complete workflow execution", "success", &
+                   merge("success", "failed ", success))
+        
+        if (success) then
+            ! Validate all components are present
+            call assert(allocated(reader%functions), "Functions present", &
+                       "present", "allocated")
+            call assert(allocated(reader%lines), "Lines present", &
+                       "present", "allocated")
+            
+            if (allocated(reader%functions)) then
+                func_count = size(reader%functions)
+                call assert_int(func_count >= 1, "Function count", 1, func_count)
+            end if
+            
+            if (allocated(reader%lines)) then
+                line_count = size(reader%lines)
+                call assert_int(line_count > 0, "Line count", 1, line_count)
+            end if
+            
+            call assert(reader%validate_data_integrity(), "Final validation", &
+                       "valid", "passed")
+        end if
+    end subroutine test_complete_workflow
 
 end program test_gcov_binary_format
