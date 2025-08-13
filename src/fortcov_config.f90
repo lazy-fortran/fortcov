@@ -16,6 +16,7 @@ module fortcov_config
     ! Public procedures
     public :: parse_config
     public :: show_help
+    public :: initialize_config
     
     ! Configuration type
     type :: config_t
@@ -26,6 +27,7 @@ module fortcov_config
         character(len=:), allocatable :: exclude_patterns(:)
         real :: minimum_coverage
         logical :: verbose
+        logical :: quiet
         logical :: show_help
         character(len=:), allocatable :: config_file
     end type config_t
@@ -75,6 +77,12 @@ contains
             ! Check for verbose flag
             if (arg == "--verbose" .or. arg == "-v") then
                 config%verbose = .true.
+                cycle
+            end if
+            
+            ! Check for quiet flag
+            if (arg == "--quiet" .or. arg == "-q") then
+                config%quiet = .true.
                 cycle
             end if
             
@@ -153,12 +161,13 @@ contains
         character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
         real :: minimum_coverage
         logical :: verbose
+        logical :: quiet
         integer :: unit, iostat, i, count
         logical :: file_exists
         
         namelist /fortcov_config/ input_format, output_format, output_path, &
                                   source_paths, exclude_patterns, &
-                                  minimum_coverage, verbose
+                                  minimum_coverage, verbose, quiet
         
         success = .false.
         error_message = ""
@@ -178,6 +187,7 @@ contains
         exclude_patterns = ''
         minimum_coverage = config%minimum_coverage
         verbose = config%verbose
+        quiet = config%quiet
         
         ! Read namelist from file
         open(newunit=unit, file=config%config_file, status='old', &
@@ -237,6 +247,7 @@ contains
         ! Update other fields
         config%minimum_coverage = minimum_coverage
         config%verbose = verbose
+        config%quiet = quiet
         
         ! Validate the loaded configuration
         if (config%minimum_coverage < MIN_COVERAGE .or. &
@@ -260,6 +271,7 @@ contains
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
         print *, "  --config=FILE             Load configuration from namelist file"
         print *, "  --verbose, -v             Enable verbose output"
+        print *, "  --quiet, -q               Suppress all non-error output"
         print *, "  --help, -h                Show this help message"
         print *, ""
         print *, "Examples:"
@@ -278,6 +290,7 @@ contains
         print *, "    exclude_patterns = '*.mod', 'test/*', 'build/*'"
         print *, "    minimum_coverage = 80.0"
         print *, "    verbose = .true."
+        print *, "    quiet = .false."
         print *, "  /"
     end subroutine show_help
 
@@ -291,6 +304,7 @@ contains
         allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
         config%minimum_coverage = MIN_COVERAGE
         config%verbose = .false.
+        config%quiet = .false.
         config%show_help = .false.
         config%config_file = ""
     end subroutine initialize_config
