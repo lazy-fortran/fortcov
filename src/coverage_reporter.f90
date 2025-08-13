@@ -3,6 +3,11 @@ module coverage_reporter
     implicit none
     private
     
+    ! DRY helper for unused parameter warnings
+    interface suppress_unused_warning
+        module procedure :: suppress_unused_warning_reporter
+    end interface suppress_unused_warning
+    
     ! Public types
     public :: coverage_reporter_t
     public :: markdown_reporter_t
@@ -128,9 +133,7 @@ contains
         
         if (.not. use_stdout) close(unit)
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
+        call suppress_unused_warning(this)
     end subroutine markdown_generate_report
 
     function markdown_get_format_name(this) result(format_name)
@@ -139,9 +142,7 @@ contains
         
         format_name = "markdown"
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
+        call suppress_unused_warning(this)
     end function markdown_get_format_name
 
     function markdown_supports_diff(this) result(supported)
@@ -151,9 +152,7 @@ contains
         ! Markdown reporter will support diff in the future
         supported = .false.
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
+        call suppress_unused_warning(this)
     end function markdown_supports_diff
 
     ! Mock reporter implementations
@@ -175,9 +174,7 @@ contains
         
         format_name = "mock"
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
+        call suppress_unused_warning(this)
     end function mock_get_format_name
 
     function mock_supports_diff(this) result(supported)
@@ -187,9 +184,16 @@ contains
         ! Mock reporter can simulate any capability
         supported = .true.
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
+        call suppress_unused_warning(this)
     end function mock_supports_diff
+
+    ! DRY helper to suppress unused parameter warnings
+    subroutine suppress_unused_warning_reporter(reporter)
+        class(coverage_reporter_t), intent(in) :: reporter
+        
+        ! Use associate construct to avoid unused parameter warning
+        associate(dummy => reporter)
+        end associate
+    end subroutine suppress_unused_warning_reporter
 
 end module coverage_reporter
