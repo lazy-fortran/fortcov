@@ -83,6 +83,15 @@ module gcov_binary_format
 
 contains
 
+    ! Helper function to convert integer to string
+    function int_to_string(value) result(str)
+        integer, intent(in) :: value
+        character(len=:), allocatable :: str
+        character(len=20) :: temp
+        write(temp, '(I0)') value
+        str = trim(temp)
+    end function int_to_string
+
     ! Binary reading utility functions
     
     ! Read 4-byte word from binary stream
@@ -155,9 +164,9 @@ contains
         end if
         
         if (big_endian) then
-            value = ishft(int(low, 8), 32) + int(high, 8)
+            value = ishft(int(high, 8), 32) + int(low, 8)   ! high:low for big-endian
         else
-            value = ishft(int(high, 8), 32) + int(low, 8)
+            value = ishft(int(low, 8), 32) + int(high, 8)   ! low:high for little-endian
         end if
     end function read_gcno_value64
     
@@ -347,7 +356,7 @@ contains
              access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
             this%error_message = "Failed to open GCNO file '" // trim(gcno_path) // &
-                                "' (error code " // char(48 + iostat) // ")"
+                                "' (error code " // int_to_string(iostat) // ")"
             return
         end if
         
@@ -368,7 +377,7 @@ contains
         else
             this%error_message = "Invalid GCNO magic number in '" // &
                                 trim(gcno_path) // "' (got " // &
-                                char(48 + magic) // ")"
+                                int_to_string(magic) // ")"
             close(unit)
             return
         end if
@@ -407,7 +416,7 @@ contains
             if (iostat /= 0) then
                 this%error_message = "Failed to read record length in '" // &
                                     trim(gcno_path) // "' (tag: " // &
-                                    char(48 + tag) // ")"
+                                    int_to_string(tag) // ")"
                 close(unit)
                 return
             end if
@@ -503,8 +512,8 @@ contains
         type(gcov_line_mapping_t), intent(inout) :: temp_mappings(:)
         integer, intent(inout) :: mapping_count
         integer :: function_id, source_file_id, line_count, i, line_num
-        integer, allocatable :: line_numbers(:)
-        integer :: words_read, remaining_words
+        integer, allocatable :: line_numbers(:), temp_lines(:)
+        integer :: words_read
         
         iostat = 0
         words_read = 0
@@ -515,54 +524,57 @@ contains
         if (iostat /= 0) return
         words_read = words_read + 1
         
-        ! Read source file ID (second word) 
-        if (words_read >= length_words) return
-        source_file_id = read_gcno_value(unit, big_endian, iostat)
-        if (iostat /= 0) return
-        words_read = words_read + 1
+        ! The LINES record can contain multiple file sections
+        ! Each file section: source_file_id, line_numbers..., 0
+        ! Continue until all words are consumed
         
-        ! Remaining words are line numbers (except last word which is 0)
-        remaining_words = length_words - words_read
-        if (remaining_words <= 0) return
-        
-        ! Allocate space for line numbers
-        allocate(line_numbers(remaining_words))
+        allocate(line_numbers(length_words))  ! Maximum possible size
         line_count = 0
         
-        ! Read line numbers until we hit 0 or end of record
-        do i = 1, remaining_words
+        do while (words_read < length_words)
+            ! Read source file ID or line number
             line_num = read_gcno_value(unit, big_endian, iostat)
             if (iostat /= 0) then
                 deallocate(line_numbers)
                 return
             end if
+            words_read = words_read + 1
             
-            if (line_num == 0) exit  ! End marker
-            
-            line_count = line_count + 1
-            line_numbers(line_count) = line_num
-        end do
-        
-        ! Skip remaining words if any
-        do i = words_read + line_count + 1, length_words
-            line_num = read_gcno_value(unit, big_endian, iostat)
-            if (iostat /= 0) then
-                deallocate(line_numbers)
-                return
+            if (line_num == 0) then
+                ! End of current file section - create mapping if we have lines
+                if (line_count > 0) then
+                    mapping_count = mapping_count + 1
+                    if (mapping_count <= size(temp_mappings)) then
+                        call temp_mappings(mapping_count)%init(function_id, source_file_id, &
+                                                              line_numbers(1:line_count))
+                    else
+                        ! Array is full, cannot store more mappings
+                        mapping_count = mapping_count - 1
+                    end if
+                end if
+                
+                ! Reset for next file section
+                line_count = 0
+                ! Next word should be source_file_id for new section (if any)
+                
+            else if (words_read == 2 .or. line_count == 0) then
+                ! This is likely a source_file_id (first after function_id or after 0)
+                source_file_id = line_num
+                
+            else
+                ! This is a line number
+                line_count = line_count + 1
+                line_numbers(line_count) = line_num
             end if
         end do
         
-        ! Store mapping if we have line numbers
+        ! Handle case where record doesn't end with 0
         if (line_count > 0) then
             mapping_count = mapping_count + 1
-            if (mapping_count > size(temp_mappings)) then
-                ! Need to resize array - for simplicity, just limit to current size
-                deallocate(line_numbers)
-                return
+            if (mapping_count <= size(temp_mappings)) then
+                call temp_mappings(mapping_count)%init(function_id, source_file_id, &
+                                                      line_numbers(1:line_count))
             end if
-            
-            call temp_mappings(mapping_count)%init(function_id, source_file_id, &
-                                                  line_numbers(1:line_count))
         end if
         
         deallocate(line_numbers)
@@ -586,7 +598,7 @@ contains
              access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
             this%error_message = "Failed to open GCDA file '" // trim(gcda_path) // &
-                                "' (error code " // char(48 + iostat) // ")"
+                                "' (error code " // int_to_string(iostat) // ")"
             return
         end if
         
@@ -603,7 +615,7 @@ contains
         if (magic /= GCDA_MAGIC .and. magic /= int(Z'61646367')) then
             this%error_message = "Invalid GCDA magic number in '" // &
                                 trim(gcda_path) // "' (got " // &
-                                char(48 + magic) // ")"
+                                int_to_string(magic) // ")"
             close(unit)
             return
         end if
@@ -639,7 +651,7 @@ contains
             if (iostat /= 0) then
                 this%error_message = "Failed to read GCDA record length in '" // &
                                     trim(gcda_path) // "' (tag: " // &
-                                    char(48 + tag) // ")"
+                                    int_to_string(tag) // ")"
                 close(unit)
                 return
             end if
@@ -667,21 +679,40 @@ contains
                         read_gcno_value64(unit, this%is_big_endian, iostat)
                     if (iostat /= 0) exit
                     
-                    ! Create mapping using GCNO line data
-                    map_count = map_count + 1
-                    if (allocated(this%line_mappings) .and. &
-                        size(this%line_mappings) > 0) then
-                        ! Map counter to actual line number from GCNO data
-                        if (counter_count <= size(this%line_mappings(1)%line_numbers)) then
-                            temp_map(1, map_count) = &
-                                this%line_mappings(1)%line_numbers(counter_count)
-                        else
-                            temp_map(1, map_count) = counter_count  ! Fallback
-                        end if
-                    else
-                        temp_map(1, map_count) = counter_count  ! Fallback
+                    ! Create mapping using proper GCNO/GCDA correlation via function IDs
+                    if (allocated(this%line_mappings) .and. allocated(this%functions)) then
+                        ! Find matching function by ID and correlate with line mapping
+                        block
+                            integer :: mapping_idx, func_idx, line_idx
+                            logical :: found_mapping
+                            
+                            found_mapping = .false.
+                            
+                            ! Find function matching current func_id from OBJECT_TAG
+                            do func_idx = 1, size(this%functions)
+                                if (this%functions(func_idx)%function_id == func_id) then
+                                    ! Find line mapping for this function
+                                    do mapping_idx = 1, size(this%line_mappings)
+                                        if (this%line_mappings(mapping_idx)%function_id == func_id) then
+                                            ! Map counter index to line number
+                                            line_idx = counter_count
+                                            if (line_idx <= size(this%line_mappings(mapping_idx)%line_numbers)) then
+                                                map_count = map_count + 1
+                                                temp_map(1, map_count) = &
+                                                    this%line_mappings(mapping_idx)%line_numbers(line_idx)
+                                                temp_map(2, map_count) = int(temp_counters(counter_count))
+                                                found_mapping = .true.
+                                            end if
+                                            exit
+                                        end if
+                                    end do
+                                    exit
+                                end if
+                            end do
+                            
+                            ! If no proper correlation found, do not create mapping
+                        end block
                     end if
-                    temp_map(2, map_count) = int(temp_counters(counter_count))
                 end do
                 
             else
@@ -911,7 +942,7 @@ contains
         
         if (exit_status /= 0) then
             this%error_message = "gcov command failed with exit status: " // &
-                                char(48 + exit_status)
+                                int_to_string(exit_status)
             return
         end if
         
