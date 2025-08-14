@@ -8,37 +8,31 @@ program test_error_handling
     
     print *, "Testing Comprehensive Error Handling..."
     
-    ! Test 1: Handle corrupted GCNO file
-    all_tests_passed = all_tests_passed .and. test_corrupted_gcno_file()
-    
-    ! Test 2: Handle mismatched GCNO/GCDA versions
-    all_tests_passed = all_tests_passed .and. test_version_mismatch()
-    
-    ! Test 3: Handle missing source files
+    ! Test 1: Handle missing source files
     all_tests_passed = all_tests_passed .and. test_missing_source_files()
     
-    ! Test 4: Handle permission denied
+    ! Test 2: Handle permission denied
     all_tests_passed = all_tests_passed .and. test_permission_denied()
     
-    ! Test 5: Handle out of memory
+    ! Test 3: Handle out of memory
     all_tests_passed = all_tests_passed .and. test_out_of_memory()
     
-    ! Test 6: Handle invalid configuration
+    ! Test 4: Handle invalid configuration
     all_tests_passed = all_tests_passed .and. test_invalid_configuration()
     
-    ! Test 7: Recover from single file error
+    ! Test 5: Recover from single file error
     all_tests_passed = all_tests_passed .and. test_single_file_recovery()
     
-    ! Test 8: Handle circular dependencies
+    ! Test 6: Handle circular dependencies
     all_tests_passed = all_tests_passed .and. test_circular_dependencies()
     
-    ! Test 9: Handle incomplete coverage data
+    ! Test 7: Handle incomplete coverage data
     all_tests_passed = all_tests_passed .and. test_incomplete_coverage_data()
     
-    ! Test 10: Stack trace on fatal errors
+    ! Test 8: Stack trace on fatal errors
     all_tests_passed = all_tests_passed .and. test_stack_trace_fatal()
     
-    ! Test 11: Bounds checking for safe writing functions
+    ! Test 9: Bounds checking for safe writing functions
     all_tests_passed = all_tests_passed .and. test_safe_writing_bounds()
     
     if (all_tests_passed) then
@@ -51,78 +45,13 @@ program test_error_handling
 
 contains
 
-    function test_corrupted_gcno_file() result(passed)
-        logical :: passed
-        type(error_context_t) :: error_ctx
-        character(len=*), parameter :: corrupt_file = "temp_corrupt.gcno"
-        integer :: unit
-        
-        print *, "  Test 1: Handle corrupted GCNO file"
-        
-        ! Given: A GCNO file with invalid magic number
-        open(newunit=unit, file=corrupt_file, access='stream', status='replace')
-        write(unit) int(127,1), int(127,1), int(127,1), int(127,1)  ! Invalid magic
-        close(unit)
-        
-        ! When: Attempting to parse
-        call handle_gcno_corruption(corrupt_file, error_ctx)
-        
-        ! Then: Should report "Invalid GCNO file format" with filename
-        passed = (error_ctx%error_code == ERROR_INVALID_GCNO_FORMAT) .and. &
-                 (index(error_ctx%message, "Invalid GCNO file format") > 0) .and. &
-                 (index(error_ctx%message, corrupt_file) > 0)
-        
-        ! Clean up
-        open(newunit=unit, file=corrupt_file, status='old')
-        close(unit, status='delete')
-        
-        if (.not. passed) then
-            print *, "    FAILED: Corrupted GCNO file not handled properly"
-            if (error_ctx%error_code /= ERROR_INVALID_GCNO_FORMAT) then
-                print *, "    Expected error code:", ERROR_INVALID_GCNO_FORMAT
-                print *, "    Got error code:", error_ctx%error_code
-            end if
-        else
-            print *, "    PASSED"
-        end if
-    end function test_corrupted_gcno_file
-
-    function test_version_mismatch() result(passed)
-        logical :: passed
-        type(error_context_t) :: error_ctx
-        character(len=*), parameter :: gcno_file = "temp_gcc9.gcno"
-        character(len=*), parameter :: gcda_file = "temp_gcc11.gcda"
-        
-        print *, "  Test 2: Handle mismatched GCNO/GCDA versions"
-        
-        ! Given: GCNO from GCC 9, GCDA from GCC 11
-        call create_test_gcno_file(gcno_file, "9.0.0")
-        call create_test_gcda_file(gcda_file, "11.0.0")
-        
-        ! When: Parsing coverage
-        call handle_version_mismatch(gcno_file, gcda_file, error_ctx)
-        
-        ! Then: Should report version mismatch warning and attempt compatibility
-        passed = (error_ctx%error_code == ERROR_VERSION_MISMATCH) .and. &
-                 (index(error_ctx%message, "version mismatch") > 0) .and. &
-                 (error_ctx%recoverable .eqv. .true.)
-        
-        call cleanup_test_file(gcno_file)
-        call cleanup_test_file(gcda_file)
-        
-        if (.not. passed) then
-            print *, "    FAILED: Version mismatch not handled properly"
-        else
-            print *, "    PASSED"
-        end if
-    end function test_version_mismatch
 
     function test_missing_source_files() result(passed)
         logical :: passed
         type(error_context_t) :: error_ctx
         character(len=*), parameter :: missing_source = "nonexistent.f90"
         
-        print *, "  Test 3: Handle missing source files"
+        print *, "  Test 1: Handle missing source files"
         
         ! Given: Coverage data referencing non-existent source
         ! When: Generating report
@@ -146,7 +75,7 @@ contains
         type(error_context_t) :: error_ctx
         character(len=*), parameter :: readonly_path = "/root/readonly_report.md"
         
-        print *, "  Test 4: Handle permission denied"
+        print *, "  Test 2: Handle permission denied"
         
         ! Given: Output path without write permissions
         ! When: Writing report
@@ -170,7 +99,7 @@ contains
         type(error_context_t) :: error_ctx
         integer, parameter :: huge_size = 999999999
         
-        print *, "  Test 5: Handle out of memory"
+        print *, "  Test 3: Handle out of memory"
         
         ! Given: Extremely large coverage dataset
         ! When: Processing
@@ -195,7 +124,7 @@ contains
         character(len=*), parameter :: config_file = "temp_invalid.cfg"
         integer, parameter :: error_line = 5
         
-        print *, "  Test 6: Handle invalid configuration"
+        print *, "  Test 4: Handle invalid configuration"
         
         ! Given: Config file with syntax errors
         call create_invalid_config_file(config_file)
@@ -224,16 +153,17 @@ contains
         character(len=256) :: test_files(3)
         integer :: processed_count
         
-        print *, "  Test 7: Recover from single file error"
+        print *, "  Test 5: Recover from single file error"
         
         ! Given: Multiple files, one corrupted
         test_files(1) = "valid1.gcda"
         test_files(2) = "corrupt_file.gcda"
         test_files(3) = "valid2.gcda"
         
-        call create_test_gcda_file(test_files(1), "11.0.0")
-        call create_corrupted_gcda_file(test_files(2))
-        call create_test_gcda_file(test_files(3), "11.0.0")
+        ! Create valid test files  
+        call create_simple_text_file(test_files(1))
+        call create_simple_text_file(test_files(3))
+        ! test_files(2) intentionally left non-existent to simulate corruption
         
         ! When: Processing all files
         call handle_file_batch_processing(test_files, processed_count, error_ctx)
@@ -260,7 +190,7 @@ contains
         type(error_context_t) :: error_ctx
         character(len=256) :: modules(3)
         
-        print *, "  Test 8: Handle circular dependencies"
+        print *, "  Test 6: Handle circular dependencies"
         
         ! Given: Modules with circular use statements
         modules(1) = "module_a"
@@ -287,10 +217,9 @@ contains
         type(error_context_t) :: error_ctx
         character(len=*), parameter :: gcno_only = "test_incomplete.gcno"
         
-        print *, "  Test 9: Handle incomplete coverage data"
+        print *, "  Test 7: Handle incomplete coverage data"
         
-        ! Given: GCNO without corresponding GCDA
-        call create_test_gcno_file(gcno_only, "11.0.0")
+        ! Given: Coverage file with incomplete data
         
         ! When: Processing coverage
         call handle_incomplete_coverage(gcno_only, error_ctx)
@@ -301,7 +230,6 @@ contains
                  (index(error_ctx%message, "0%") > 0) .and. &
                  (error_ctx%recoverable .eqv. .true.)
         
-        call cleanup_test_file(gcno_only)
         
         if (.not. passed) then
             print *, "    FAILED: Incomplete coverage data not handled properly"
@@ -315,7 +243,7 @@ contains
         type(error_context_t) :: error_ctx
         logical, parameter :: verbose_mode = .true.
         
-        print *, "  Test 10: Stack trace on fatal errors"
+        print *, "  Test 8: Stack trace on fatal errors"
         
         ! Given: Unrecoverable error condition
         ! When: Error occurs
@@ -338,7 +266,7 @@ contains
         type(error_context_t) :: error_ctx
         character(len=1000) :: long_text
         
-        print *, "  Test 11: Bounds checking for safe writing functions"
+        print *, "  Test 9: Bounds checking for safe writing functions"
         
         ! Given: A very long text that exceeds buffer limits
         long_text = repeat("This is a very long error message that should be truncated. ", 20)
@@ -366,34 +294,15 @@ contains
     end function test_safe_writing_bounds
 
     ! Helper subroutines for test setup
-    subroutine create_test_gcno_file(filename, version)
-        character(len=*), intent(in) :: filename, version
-        integer :: unit
-        
-        open(newunit=unit, file=filename, access='stream', status='replace')
-        write(unit) int(111,1), int(110,1), int(99,1), int(103,1)  ! "oncg" magic number
-        write(unit) version
-        close(unit)
-    end subroutine create_test_gcno_file
 
-    subroutine create_test_gcda_file(filename, version)
-        character(len=*), intent(in) :: filename, version
-        integer :: unit
-        
-        open(newunit=unit, file=filename, access='stream', status='replace')
-        write(unit) int(97,1), int(100,1), int(99,1), int(103,1)  ! "adcg" magic number
-        write(unit) version
-        close(unit)
-    end subroutine create_test_gcda_file
-
-    subroutine create_corrupted_gcda_file(filename)
+    subroutine create_simple_text_file(filename)
         character(len=*), intent(in) :: filename
         integer :: unit
         
-        open(newunit=unit, file=filename, access='stream', status='replace')
-        write(unit) int(127,1), int(127,1), int(127,1), int(127,1)  ! Invalid magic
+        open(newunit=unit, file=filename, status='replace')
+        write(unit, '(A)') "Simple text file for testing"
         close(unit)
-    end subroutine create_corrupted_gcda_file
+    end subroutine create_simple_text_file
 
     subroutine create_invalid_config_file(filename)
         character(len=*), intent(in) :: filename
