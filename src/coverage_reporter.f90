@@ -1,5 +1,6 @@
 module coverage_reporter
     use coverage_model
+    use markdown_reporter, only: generate_markdown_report, markdown_report_options_t
     implicit none
     private
     
@@ -96,12 +97,19 @@ contains
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
-        integer :: unit, stat, i
-        integer :: total_lines, covered_lines
+        integer :: unit, stat
         logical :: use_stdout
+        character(len=:), allocatable :: report_content
+        type(markdown_report_options_t) :: options
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        
+        ! Configure report options
+        call options%init()
+        
+        ! Generate report using proper markdown reporter
+        report_content = generate_markdown_report(coverage_data, options)
         
         ! Open output stream
         if (use_stdout) then
@@ -118,23 +126,10 @@ contains
             end if
         end if
         
-        ! Write basic markdown report
+        ! Write the complete markdown report
         write(unit, '(A)') "# Coverage Report"
         write(unit, '(A)') ""
-        write(unit, '(A)') "| Filename | Lines | Covered | Percentage |"
-        write(unit, '(A)') "|----------|-------|---------|------------|"
-        
-        do i = 1, size(coverage_data%files)
-            associate(file => coverage_data%files(i))
-                ! Use model methods to avoid DRY violation
-                total_lines = file%get_executable_line_count()
-                covered_lines = file%get_covered_line_count()
-                write(unit, '(A,A,A,I0,A,I0,A,F5.1,A)') &
-                    "| ", trim(file%filename), " | ", &
-                    total_lines, " | ", covered_lines, " | ", &
-                    file%get_line_coverage_percentage(), "% |"
-            end associate
-        end do
+        write(unit, '(A)') report_content
         
         if (.not. use_stdout) close(unit)
         
