@@ -72,7 +72,7 @@ generate-lcov-report: ## Generate coverage report using lcov toolchain
 	fpm build --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 2: Running tests with coverage..."
-	fpm test --flag "$(COVERAGE_FLAGS)" || echo "Warning: Some tests failed, continuing..."
+	fpm test --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 3: Capturing coverage with lcov..."
 	./external/lcov/bin/lcov --capture --directory . --output-file $(OUTPUT_DIR)/coverage.info \
@@ -127,7 +127,7 @@ generate-fortcov-report: ## Generate coverage report using fortcov
 	fpm build --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 2: Running tests with coverage..."
-	fpm test --flag "$(COVERAGE_FLAGS)" || echo "Warning: Some tests failed, continuing..."
+	fpm test --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 3: Running fortcov analysis..."
 	fpm run -- \
