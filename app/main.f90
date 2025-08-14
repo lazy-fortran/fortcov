@@ -11,11 +11,13 @@ program main
   logical :: success
   integer :: exit_code, argc, i
   
-  ! Get command line arguments
+  ! Get command line arguments (excluding argv(0) which contains executable path)
+  ! command_argument_count() returns number of user arguments (not including argv(0))
   argc = command_argument_count()
   
   if (argc > 0) then
     allocate(character(len=256) :: args(argc))
+    ! get_command_argument(i, ...) with i=1,2,... gets user arguments (not argv(0))
     do i = 1, argc
       call get_command_argument(i, args(i))
     end do
