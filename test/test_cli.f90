@@ -252,7 +252,7 @@ contains
         call parse_config(args, config, success, error_message)
         
         ! Verify: Should parse threshold correctly
-        passed = success .and. (abs(config%minimum_coverage - 90.0) < 0.01)
+        passed = success .and. (abs(config%minimum_coverage - 90.0) < 0.001)
         
         if (.not. passed) then
             print *, "    FAILED: Expected minimum_coverage=90.0, success=T"
@@ -282,7 +282,7 @@ contains
         call parse_config(args, config, success, error_message)
         
         ! Verify: Should parse threshold correctly
-        passed = success .and. (abs(config%minimum_coverage - 70.0) < 0.01)
+        passed = success .and. (abs(config%minimum_coverage - 70.0) < 0.001)
         
         if (.not. passed) then
             print *, "    FAILED: Expected minimum_coverage=70.0, success=T"

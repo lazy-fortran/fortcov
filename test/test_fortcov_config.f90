@@ -226,7 +226,7 @@ contains
         
         call parse_config(args, config, success, error_message)
         
-        passed = success .and. (abs(config%minimum_coverage - 80.0) < 0.01)
+        passed = success .and. (abs(config%minimum_coverage - 80.0) < 0.001)
         
         if (.not. passed) then
             print *, "    FAILED: Expected minimum_coverage=80.0, success=T"
@@ -370,7 +370,7 @@ contains
                  config%input_format == "lcov" .and. &
                  config%output_format == "json" .and. &
                  config%output_path == "test_output.json" .and. &
-                 abs(config%minimum_coverage - 85.5) < 0.01 .and. &
+                 abs(config%minimum_coverage - 85.5) < 0.001 .and. &
                  config%verbose
         
         if (.not. passed) then
