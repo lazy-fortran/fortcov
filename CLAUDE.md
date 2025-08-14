@@ -20,7 +20,6 @@ fortcov is a coverage analysis tool for Fortran code that processes coverage dat
    - `coverage_reporter.f90`: Abstract reporter interface
 
 3. **Parser Implementation** ✅
-   - `gcov_binary_format.f90`: Comprehensive binary parser for .gcno/.gcda files
    - Handles endianness, function metadata, line mappings, and execution counters
    - Includes fallback to gcov text output parsing
 
@@ -66,7 +65,6 @@ The project uses the Fortran Package Manager (FPM) structure:
 - `src/` - Core library modules for coverage analysis
   - `coverage_model.f90` - Unified data model for coverage information
   - `coverage_parser.f90` - Abstract parser interface and gcov implementation
-  - `gcov_binary_format.f90` - Binary format parser for .gcno/.gcda files
   - `coverage_statistics.f90` - Coverage metric calculations
   - `coverage_reporter.f90` - Abstract reporter interface
   - `markdown_reporter.f90` - Markdown report generation

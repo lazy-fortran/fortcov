@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-FortCov is a coverage analysis tool specifically designed for Fortran projects. It processes coverage data from various compilers and generates comprehensive reports in multiple formats. The architecture prioritizes extensibility, clean abstractions, and exceptional Fortran language support.
+FortCov is a coverage analysis tool specifically designed for Fortran projects that leverages GCC's gcov tool to generate markdown coverage reports. The architecture follows the proven approach used by LCOV: **run gcov command to generate text files, then parse those**. This eliminates complex binary format parsing and provides a fast path to working coverage reports.
 
-## Architecture Overview
+## Architecture Overview - SIMPLIFIED APPROACH
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -14,12 +14,29 @@ FortCov is a coverage analysis tool specifically designed for Fortran projects. 
 ├──────────────────┬──────────────────┬──────────────────────────┤
 │   Parser Layer   │  Analysis Core   │    Reporter Layer         │
 ├──────────────────┼──────────────────┼──────────────────────────┤
-│ GCov Parser      │ Coverage Model   │ Markdown Reporter         │
-│ Cobertura Parser │ Statistics       │ Cobertura Reporter        │
-│ LCOV Parser      │ Diff Engine      │ LCOV Reporter             │
-│ (Future: Intel)  │ Aggregation      │ JSON Reporter             │
+│ GCov Text Parser │ Coverage Model   │ Markdown Reporter         │
+│ (Future: LCOV)   │ Statistics       │ (Future: JSON)            │
+│ (Future: Intel)  │ Diff Engine      │ (Future: Cobertura)       │
+│                  │                  │                          │
 └──────────────────┴──────────────────┴──────────────────────────┘
+
+PROVEN PIPELINE: .gcda/.gcno → gcov command → .gcov text → parse → markdown
 ```
+
+## Key Architectural Decision: Use gcov Tool, Not Binary Parsing
+
+**CRITICAL**: We do NOT parse binary .gcda/.gcno files directly. Instead, we follow the mature approach used by LCOV and other successful coverage tools:
+
+1. **Execute gcov command** on source files
+2. **Parse generated .gcov text files** (well-documented format)
+3. **Transform to internal model** for analysis and reporting
+4. **Generate markdown output** quickly and reliably
+
+This approach is:
+- **Simpler**: Text parsing vs. complex binary format engineering
+- **Maintainable**: Leverages GCC's own gcov tool for format handling
+- **Proven**: Used successfully by LCOV for decades
+- **Fast**: Gets us working coverage reports immediately
 
 ## Core Modules
 
@@ -72,23 +89,34 @@ FortCov is a coverage analysis tool specifically designed for Fortran projects. 
 - `can_parse(path) -> logical`: Check if parser supports format
 - `get_required_files() -> string array`: List required file extensions
 
-### 3. GCov Parser (`gcov_parser`)
+### 3. GCov Text Parser (`gcov_parser`)
 
-**Purpose**: Parse GCC/gfortran coverage data (.gcda/.gcno files).
+**Purpose**: Execute gcov command and parse generated .gcov text files.
 
 **Implementation Details**:
-- Binary format parsing for .gcno (compile-time graph)
-- Binary format parsing for .gcda (runtime data)
-- Arc graph reconstruction
-- Block execution count calculation
-- Line mapping from debug information
+- **Execute gcov command**: `gcov source.f90` generates `source.f90.gcov`
+- **Parse gcov text format**: Well-documented format `count:line_num:source_code`
+- **Handle gcov output patterns**: `-` (non-executable), `#####` (uncovered), numeric (executed)
+- **Extract line-by-line coverage**: Direct mapping from gcov output to coverage model
+- **Support branch info**: Parse gcov branch coverage if available
+
+**Gcov Text Format**:
+```
+        -:    0:Source:test.f90
+        -:    0:Graph:test.gcno  
+        -:    0:Data:test.gcda
+        1:    1:program test
+        2:    2:    print *, "hello"
+    #####:    3:    if (.false.) print *, "never"
+        -:    4:end program
+```
 
 **Fortran-Specific Handling**:
-- Module boundary detection
+- Module procedure recognition from gcov function sections
+- Proper handling of Fortran line continuation
+- Interface block detection (marked as non-executable)
 - Contains block processing
-- Interface block handling
-- Submodule support
-- Generic procedure mapping
+- Generic procedure mapping via function names
 
 ### 4. Coverage Statistics (`coverage_statistics`)
 
@@ -182,27 +210,34 @@ FortCov is a coverage analysis tool specifically designed for Fortran projects. 
 - `trim(string) -> string`
 - `split(string, delimiter) -> string array`
 
-## Data Flow
+## Data Flow - SIMPLIFIED PIPELINE
 
-1. **Input Phase**:
+1. **Input Discovery Phase**:
    - CLI parses arguments into `config_t`
-   - File discovery based on configuration
-   - Parser selection based on file extensions
+   - Discover .gcno/.gcda files in source directories
+   - Identify corresponding Fortran source files
 
-2. **Parsing Phase**:
-   - Selected parser reads coverage files
-   - Binary/text data decoded
-   - Unified `coverage_data_t` constructed
+2. **Gcov Execution Phase**:
+   - Execute `gcov source.f90` for each source file
+   - Generate .gcov text files with coverage data
+   - Handle cases where .gcda missing (no execution data)
 
-3. **Analysis Phase**:
-   - Statistics calculated
-   - Coverage percentages computed
-   - Missing line ranges identified
+3. **Text Parsing Phase**:
+   - Parse .gcov text files line by line
+   - Extract execution counts and source lines
+   - Build unified `coverage_data_t` from text format
 
-4. **Reporting Phase**:
-   - Reporter selected based on configuration
-   - Report generated from unified model
-   - Output written to file/stdout
+4. **Analysis Phase**:
+   - Calculate coverage percentages from execution counts
+   - Compress missing line ranges for reporting
+   - Compute file and project-level statistics
+
+5. **Reporting Phase**:
+   - Generate markdown tables with coverage data
+   - Format percentages, missing ranges, and totals
+   - Output to file or stdout
+
+**Key Benefit**: Steps 2-3 replace complex binary parsing with simple text processing!
 
 ## Extension Points
 
@@ -224,42 +259,51 @@ FortCov is a coverage analysis tool specifically designed for Fortran projects. 
 - Flang/LLVM: Implement `llvm_parser` module
 - Each parser translates to unified `coverage_data_t`
 
-## Testing Strategy
+## Testing Strategy - FOCUSED ON FAST DELIVERY
 
-### Unit Testing
+### Unit Testing - MVP Focus
 
-Each module has corresponding test module:
-- `test_coverage_model`: Model serialization/deserialization
-- `test_gcov_parser`: Binary format parsing
-- `test_markdown_reporter`: Report generation
-- `test_coverage_statistics`: Metric calculations
-- `test_string_utils`: String manipulation
+Priority modules for immediate implementation:
+- `test_gcov_parser`: **TEXT parsing only** (much simpler!)
+- `test_markdown_reporter`: Report generation with actual data
+- `test_coverage_statistics`: Metric calculations from parsed data
+- `test_string_utils`: Range compression and formatting
 
-### Integration Testing
+### Integration Testing - Real Coverage Data
 
-- End-to-end coverage workflow
-- Sample Fortran projects with known coverage
-- Regression tests against reference outputs
+- Test with actual .gcov files generated by gfortran
+- Sample Fortran projects with known coverage results
+- Compare our markdown output to expected results
+- Edge cases: no coverage, 100% coverage, missing files
 
-### Test Data
+### Test Data - Use Real gcov Output
 
-- Minimal coverage files for unit tests
-- Real-world Fortran project samples
-- Edge cases (empty files, 100% coverage, etc.)
+Instead of creating minimal binary files:
+- **Use actual .gcov text files** from gfortran runs
+- Create sample Fortran programs with various coverage scenarios
+- Generate reference markdown reports for comparison
+- Test error cases: missing files, malformed gcov output
 
-## Performance Considerations
+**Key Advantage**: Testing text parsing is much easier than binary format validation!
 
-- Lazy file reading for large projects
-- Efficient binary parsing without full file loads
-- String buffer reuse for report generation
-- Parallel file processing capability (future)
+## Performance Considerations - SIMPLIFIED
 
-## Error Handling
+- **Text file processing**: Much faster than binary parsing
+- **gcov command caching**: Reuse .gcov files if newer than source
+- String buffer reuse for markdown generation  
+- **Parallel gcov execution**: Run gcov commands in parallel (future)
+- **Memory efficiency**: Process files one at a time, not batch loading
 
-- Graceful degradation for corrupt coverage files
-- Clear error messages with file locations
-- Validation of coverage data consistency
-- Non-zero exit codes for CI/CD integration
+## Error Handling - ROBUST AND CLEAR
+
+- **gcov command failures**: Clear error messages when gcov fails
+- **Missing coverage files**: Graceful handling of .gcda absence  
+- **Malformed gcov output**: Validation and error reporting
+- **Source file access**: Clear messages for file permission issues
+- **Non-zero exit codes**: Proper CI/CD integration
+- **Incremental processing**: Skip files that cause errors, continue with others
+
+**Benefit**: Text parsing errors are much easier to diagnose than binary corruption!
 
 ## SOLID Compliance
 
@@ -289,9 +333,35 @@ Each module has corresponding test module:
 - Parsers/Reporters depend on model abstraction
 - Factory pattern for instantiation
 
-## KISS Principle
+## KISS Principle - DRAMATICALLY SIMPLIFIED
 
-- Unified internal model simplifies processing
-- Single-pass parsing where possible
-- Direct markdown generation without templates
-- Minimal external dependencies
+- **Use gcov tool**: Eliminate complex binary format engineering
+- **Text parsing only**: Single-pass line-by-line processing
+- **Direct markdown output**: No intermediate template processing
+- **Minimal dependencies**: Just gcov command and text I/O
+- **Proven approach**: Follow LCOV's successful methodology
+
+## Summary: Why This Approach Wins
+
+### Before (Binary Parsing Complexity)
+- 1000+ lines of binary format parsing code
+- Endianness handling, checksum validation, arc graph reconstruction
+- Fragile parsing that breaks with GCC version changes  
+- Difficult testing with mock binary data
+- Slow development cycle due to complexity
+
+### After (Text Parsing Simplicity)  
+- ~200 lines of text parsing code
+- Simple line-by-line parsing with well-documented format
+- Robust: leverages GCC's own gcov tool for format handling
+- Easy testing with real .gcov files
+- **Fast path to working markdown reports**
+
+### Implementation Priority
+1. **gcov command execution** (execute_command_line)
+2. **Text parsing** (parse .gcov format) 
+3. **Markdown generation** (working coverage reports)
+4. **Statistics and formatting** (percentages, ranges)
+5. **Error handling and edge cases**
+
+**Result**: Working coverage tool in days, not weeks!
