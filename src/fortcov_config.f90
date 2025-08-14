@@ -73,6 +73,9 @@ contains
             
             if (len_trim(arg) == 0) cycle
             
+            ! Skip executable paths (they should not be treated as arguments)
+            if (is_executable_path(arg)) cycle
+            
             ! Check for help flag
             if (arg == "--help" .or. arg == "-h") then
                 config%show_help = .true.
@@ -483,5 +486,34 @@ contains
             return
         end if
     end subroutine validate_config
+
+    ! Helper function to detect if an argument is likely an executable path
+    function is_executable_path(arg) result(is_exec)
+        character(len=*), intent(in) :: arg
+        logical :: is_exec
+        
+        ! Detect executable paths by checking for:
+        ! 1. Absolute paths starting with /
+        ! 2. Paths containing /build/ (common in FPM builds)
+        ! 3. Paths ending with common executable names
+        is_exec = .false.
+        
+        ! Check for absolute path starting with /
+        if (len_trim(arg) > 0 .and. arg(1:1) == '/') then
+            ! Check if it contains typical build directories
+            if (index(arg, '/build/') > 0 .or. &
+                index(arg, '/app/') > 0 .or. &
+                index(arg, 'fortcov') > 0) then
+                is_exec = .true.
+                return
+            end if
+        end if
+        
+        ! Check for paths ending with executable names
+        if (index(arg, 'fortcov') > 0 .and. &
+            (index(arg, '/') > 0 .or. index(arg, '\') > 0)) then
+            is_exec = .true.
+        end if
+    end function is_executable_path
 
 end module fortcov_config
