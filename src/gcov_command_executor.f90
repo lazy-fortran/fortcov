@@ -4,9 +4,11 @@ module gcov_command_executor
     !! This module provides functionality to execute gcov commands on source
     !! files to generate .gcov text coverage reports. It handles command
     !! failures gracefully, supports gcov options, and manages temporary files.
+    !! All command execution is performed securely to prevent injection attacks.
     use iso_fortran_env, only: error_unit
     use error_handling
     use file_utils
+    use secure_command_executor
     implicit none
     private
     
@@ -32,12 +34,12 @@ contains
         character(len=:), allocatable, intent(out) :: gcov_files(:)
         type(error_context_t), intent(out) :: error_ctx
         
-        character(len=512) :: command
         character(len=256) :: gcda_file, gcno_file, gcov_file
         character(len=256) :: temp_filename
         logical :: gcda_exists, source_exists, gcov_file_exists
-        integer :: stat, unit, line_count, i
+        integer :: i, line_count
         character(len=256) :: temp_files(10)
+        type(error_context_t) :: cmd_error_ctx
         
         call clear_error_context(error_ctx)
         
@@ -59,29 +61,25 @@ contains
             return
         end if
         
-        
-        ! Build gcov command with proper working directory handling
-        if (len_trim(this%working_directory) > 0) then
-            command = "cd " // trim(this%working_directory) // " && "
-        else
-            command = ""
-        end if
-        
-        command = trim(command) // trim(this%gcov_command)
-        if (this%branch_coverage) then
-            command = trim(command) // " -b"
-        end if
-        command = trim(command) // " " // trim(source_file)
-        
         ! Create unique temp filename for command output
         call create_temp_filename(temp_filename)
-        command = trim(command) // " > " // trim(temp_filename) // " 2>&1"
         
-        ! Execute gcov command
-        call execute_command_line(command, exitstat=stat)
+        ! Execute gcov command using secure command executor
+        call safe_execute_gcov(this%gcov_command, source_file, &
+                             this%working_directory, this%branch_coverage, &
+                             temp_filename, cmd_error_ctx)
         
-        ! Note: In testing with mock files, gcov may fail but we continue
+        ! Check for command execution errors but don't fail completely
+        ! In testing with mock files, gcov may fail but we continue
         ! to check for pre-existing .gcov files that tests create
+        if (cmd_error_ctx%error_code /= ERROR_SUCCESS) then
+            if (.not. cmd_error_ctx%recoverable) then
+                error_ctx = cmd_error_ctx
+                allocate(character(len=256) :: gcov_files(0))
+                call cleanup_temp_file(temp_filename)
+                return
+            end if
+        end if
         
         ! Find generated .gcov files
         line_count = 0

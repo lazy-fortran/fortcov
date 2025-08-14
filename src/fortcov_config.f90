@@ -1,6 +1,8 @@
 module fortcov_config
     use string_utils
     use file_utils
+    use secure_command_executor
+    use error_handling
     implicit none
     private
     
@@ -18,6 +20,7 @@ module fortcov_config
     public :: show_help
     public :: show_version
     public :: initialize_config
+    public :: validate_config
     
     ! Configuration type
     type :: config_t
@@ -26,6 +29,7 @@ module fortcov_config
         character(len=:), allocatable :: output_path
         character(len=:), allocatable :: source_paths(:)
         character(len=:), allocatable :: exclude_patterns(:)
+        character(len=:), allocatable :: gcov_executable
         real :: minimum_coverage
         logical :: verbose
         logical :: quiet
@@ -124,6 +128,9 @@ contains
                                         success, error_message)
                     if (.not. success) return
                     
+                case ("--gcov")
+                    config%gcov_executable = trim(value)
+                    
                 case ("--config")
                     config%config_file = trim(value)
                     call load_config_file(config, success, error_message)
@@ -168,6 +175,7 @@ contains
         character(len=256) :: output_path
         character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths
         character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
+        character(len=256) :: gcov_executable
         real :: minimum_coverage
         logical :: verbose
         logical :: quiet
@@ -176,7 +184,7 @@ contains
         
         namelist /fortcov_config/ input_format, output_format, output_path, &
                                   source_paths, exclude_patterns, &
-                                  minimum_coverage, verbose, quiet
+                                  gcov_executable, minimum_coverage, verbose, quiet
         
         success = .false.
         error_message = ""
@@ -194,6 +202,7 @@ contains
         output_path = config%output_path
         source_paths = ''
         exclude_patterns = ''
+        gcov_executable = config%gcov_executable
         minimum_coverage = config%minimum_coverage
         verbose = config%verbose
         quiet = config%quiet
@@ -218,6 +227,7 @@ contains
         config%input_format = trim(adjustl(input_format))
         config%output_format = trim(adjustl(output_format))
         config%output_path = trim(adjustl(output_path))
+        config%gcov_executable = trim(adjustl(gcov_executable))
         
         ! Process source paths array
         if (allocated(config%source_paths)) deallocate(config%source_paths)
@@ -277,6 +287,7 @@ contains
         print *, "  --output=FILE             Output file path [default: stdout]"
         print *, "  --source=PATH             Source directory to include (can be repeated)"
         print *, "  --exclude=PATTERN         Pattern to exclude (can be repeated)"
+        print *, "  --gcov=EXECUTABLE         Path to gcov executable [default: gcov]"
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
         print *, "  --config=FILE             Load configuration from namelist file"
         print *, "  --verbose, -v             Enable verbose output"
@@ -286,7 +297,7 @@ contains
         print *, "Examples:"
         print *, "  fortcov --output=coverage.md --source=src"
         print *, "  fortcov --fail-under=80 --exclude='*.mod' --verbose"
-        print *, "  fortcov --config=fortcov.nml"
+        print *, "  fortcov --gcov=/usr/bin/gcov-10 --config=fortcov.nml"
         print *, ""
         print *, "Configuration File Format (Fortran namelist):"
         print *, "  Create a file (e.g., fortcov.nml) with:"
@@ -297,6 +308,7 @@ contains
         print *, "    output_path = 'coverage.md'"
         print *, "    source_paths = 'src/', 'lib/', 'app/'"
         print *, "    exclude_patterns = '*.mod', 'test/*', 'build/*'"
+        print *, "    gcov_executable = 'gcov'"
         print *, "    minimum_coverage = 80.0"
         print *, "    verbose = .true."
         print *, "    quiet = .false."
@@ -315,6 +327,7 @@ contains
         config%input_format = "gcov"
         config%output_format = "markdown"
         config%output_path = "-"
+        config%gcov_executable = "gcov"  ! Default to system gcov
         allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
         allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
         config%minimum_coverage = MIN_COVERAGE
@@ -372,5 +385,103 @@ contains
             allocate(character(len=MAX_PATH_LENGTH) :: final_array(0))
         end if
     end subroutine finalize_array
+
+    ! Validate configuration for security and accessibility
+    subroutine validate_config(config, error_ctx)
+        type(config_t), intent(in) :: config
+        type(error_context_t), intent(out) :: error_ctx
+        
+        character(len=:), allocatable :: safe_path
+        character(len=:), allocatable :: safe_executable
+        integer :: i
+        
+        call clear_error_context(error_ctx)
+        
+        ! Validate gcov executable
+        if (len_trim(config%gcov_executable) > 0) then
+            call validate_executable_path(config%gcov_executable, &
+                                        safe_executable, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) then
+                call safe_write_context(error_ctx, "gcov executable validation")
+                return
+            end if
+        end if
+        
+        ! Validate output path if it's not stdout
+        if (config%output_path /= "-" .and. len_trim(config%output_path) > 0) then
+            call validate_path_security(config%output_path, safe_path, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) then
+                call safe_write_context(error_ctx, "output path validation")
+                return
+            end if
+        end if
+        
+        ! Validate source paths
+        if (allocated(config%source_paths)) then
+            do i = 1, size(config%source_paths)
+                if (len_trim(config%source_paths(i)) > 0) then
+                    call validate_path_security(config%source_paths(i), &
+                                               safe_path, error_ctx)
+                    if (error_ctx%error_code /= ERROR_SUCCESS) then
+                        call safe_write_context(error_ctx, &
+                            "source path validation: " // trim(config%source_paths(i)))
+                        return
+                    end if
+                end if
+            end do
+        end if
+        
+        ! Validate exclude patterns (basic security check)
+        if (allocated(config%exclude_patterns)) then
+            do i = 1, size(config%exclude_patterns)
+                if (len_trim(config%exclude_patterns(i)) > 0) then
+                    call validate_path_security(config%exclude_patterns(i), &
+                                               safe_path, error_ctx)
+                    if (error_ctx%error_code /= ERROR_SUCCESS) then
+                        call safe_write_context(error_ctx, &
+                            "exclude pattern validation: " // trim(config%exclude_patterns(i)))
+                        return
+                    end if
+                end if
+            end do
+        end if
+        
+        ! Validate coverage threshold
+        if (config%minimum_coverage < MIN_COVERAGE .or. &
+            config%minimum_coverage > MAX_COVERAGE) then
+            error_ctx%error_code = ERROR_INVALID_CONFIG
+            call safe_write_message(error_ctx, &
+                "Invalid coverage threshold (must be 0-100)")
+            call safe_write_suggestion(error_ctx, &
+                "Set threshold between 0 and 100 percent")
+            call safe_write_context(error_ctx, "coverage threshold validation")
+            return
+        end if
+        
+        ! Validate input/output formats
+        if (trim(config%input_format) /= "gcov" .and. &
+            trim(config%input_format) /= "lcov") then
+            error_ctx%error_code = ERROR_INVALID_CONFIG
+            call safe_write_message(error_ctx, &
+                "Unsupported input format: " // trim(config%input_format))
+            call safe_write_suggestion(error_ctx, &
+                "Use supported input formats: gcov, lcov")
+            call safe_write_context(error_ctx, "input format validation")
+            return
+        end if
+        
+        if (trim(config%output_format) /= "markdown" .and. &
+            trim(config%output_format) /= "md" .and. &
+            trim(config%output_format) /= "json" .and. &
+            trim(config%output_format) /= "xml") then
+            error_ctx%error_code = ERROR_INVALID_CONFIG
+            call safe_write_message(error_ctx, &
+                "Unsupported output format: " // trim(config%output_format))
+            call safe_write_suggestion(error_ctx, &
+                "Use supported output formats: markdown, md, json, xml")
+            call safe_write_context(error_ctx, "output format validation")
+            return
+        end if
+    end subroutine validate_config
 
 end module fortcov_config

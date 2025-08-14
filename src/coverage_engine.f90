@@ -70,18 +70,29 @@ contains
             print *, "Found", size(filtered_files), "coverage files to process"
         end if
         
-        ! Parse coverage data from all files
+        ! Parse coverage data from all files using safe parsing
         block
-            character(len=:), allocatable :: parse_error_context
-            merged_coverage = parse_all_coverage_files(filtered_files, config, &
-                                                      parser_error, parse_error_context)
+            type(error_context_t) :: parse_error_ctx
+            merged_coverage = parse_all_coverage_files_safe(filtered_files, &
+                                                          config, parse_error_ctx)
             
-            if (parser_error) then
+            if (parse_error_ctx%error_code /= ERROR_SUCCESS .and. &
+                .not. parse_error_ctx%recoverable) then
                 if (.not. config%quiet) then
-                    print *, "Error: Coverage parsing failed - " // parse_error_context
+                    print *, "Error: Coverage parsing failed - " // &
+                            trim(parse_error_ctx%message)
+                    if (len_trim(parse_error_ctx%suggestion) > 0) then
+                        print *, "Suggestion: " // trim(parse_error_ctx%suggestion)
+                    end if
                 end if
                 exit_code = EXIT_FAILURE
                 return
+            else if (parse_error_ctx%error_code /= ERROR_SUCCESS .and. &
+                     parse_error_ctx%recoverable) then
+                ! Report partial processing issues as warnings
+                if (.not. config%quiet) then
+                    print *, "Warning: " // trim(parse_error_ctx%message)
+                end if
             end if
         end block
         

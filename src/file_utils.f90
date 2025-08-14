@@ -1,6 +1,7 @@
 module file_utils
     use iso_fortran_env, only: error_unit
     use error_handling
+    use secure_command_executor
     implicit none
     private
     
@@ -19,52 +20,14 @@ contains
     function find_files(pattern) result(files)
         character(len=*), intent(in) :: pattern
         character(len=:), allocatable :: files(:)
-        character(len=256) :: command, line
-        character(len=256) :: temp_files(100)
-        integer :: unit, stat, count, i
-        character(len=32) :: temp_filename
+        type(error_context_t) :: error_ctx
         
-        ! Use find command to locate files
-        count = 0
+        ! Use secure command executor for safe file finding
+        call safe_find_files(pattern, files, error_ctx)
         
-        ! Create unique temp filename
-        temp_filename = "/tmp/fortcov_find_output"
-        
-        if (index(pattern, "**") > 0) then
-            ! Recursive search
-            command = "find " // extract_dir_from_pattern(pattern) // &
-                     " -name '" // extract_filename_from_pattern(pattern) // &
-                     "' 2>/dev/null > " // trim(temp_filename)
-        else
-            ! Non-recursive search using ls
-            command = "ls " // pattern // " 2>/dev/null > " // trim(temp_filename)
-        end if
-        
-        ! Execute command
-        call execute_command_line(command, exitstat=stat)
-        
-        ! Read results from temp file
-        open(newunit=unit, file=trim(temp_filename), action='read', &
-             status='old', iostat=stat)
-        if (stat == 0) then
-            do i = 1, 100
-                read(unit, '(A)', iostat=stat) line
-                if (stat /= 0) exit
-                if (len_trim(line) > 0) then
-                    count = count + 1
-                    temp_files(count) = trim(line)
-                end if
-            end do
-            close(unit, status='delete')
-        end if
-        
-        ! Allocate result array
-        if (count > 0) then
-            allocate(character(len=256) :: files(count))
-            do i = 1, count
-                files(i) = basename(temp_files(i))
-            end do
-        else
+        ! If secure find fails, return empty array
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            if (allocated(files)) deallocate(files)
             allocate(character(len=256) :: files(0))
         end if
     end function find_files
@@ -169,53 +132,16 @@ contains
     subroutine ensure_directory(path, error_flag)
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag
-        integer :: stat
-        logical :: exists
+        type(error_context_t) :: error_ctx
         
         error_flag = .false.
         
-        ! Check if directory already exists
-        inquire(file=path, exist=exists)
-        if (exists) return
-        
-        ! Create directory using mkdir -p
-        call execute_command_line("mkdir -p " // path, exitstat=stat)
-        error_flag = (stat /= 0)
+        ! Use secure command executor for safe directory creation
+        call safe_mkdir(path, error_ctx)
+        error_flag = (error_ctx%error_code /= ERROR_SUCCESS)
     end subroutine ensure_directory
 
-    ! Helper functions
-    function extract_dir_from_pattern(pattern) result(dir_part)
-        character(len=*), intent(in) :: pattern
-        character(len=:), allocatable :: dir_part
-        integer :: pos
-        
-        pos = index(pattern, "/", back=.true.)
-        if (pos > 0) then
-            dir_part = pattern(1:pos-1)
-        else
-            dir_part = "."
-        end if
-    end function extract_dir_from_pattern
-
-    function extract_filename_from_pattern(pattern) result(filename_part)
-        character(len=*), intent(in) :: pattern
-        character(len=:), allocatable :: filename_part
-        integer :: pos
-        
-        pos = index(pattern, "/", back=.true.)
-        if (pos > 0) then
-            filename_part = pattern(pos+1:)
-        else
-            filename_part = pattern
-        end if
-        
-        ! Remove ** if present
-        pos = index(filename_part, "**")
-        if (pos > 0) then
-            filename_part = filename_part(pos+3:)
-        end if
-    end function extract_filename_from_pattern
-
+    ! Helper function - basename functionality kept for compatibility
     function basename(filepath) result(name)
         character(len=*), intent(in) :: filepath
         character(len=:), allocatable :: name
@@ -298,15 +224,10 @@ contains
         character(len=*), intent(in) :: path
         type(error_context_t), intent(out) :: error_ctx
         
-        logical :: error_flag
-        
         call clear_error_context(error_ctx)
         
-        call ensure_directory(path, error_flag)
-        
-        if (error_flag) then
-            call handle_permission_denied(path, error_ctx)
-        end if
+        ! Use secure command executor directly
+        call safe_mkdir(path, error_ctx)
     end subroutine ensure_directory_safe
 
 end module file_utils

@@ -1,5 +1,7 @@
 program test_file_utils
     use file_utils
+    use secure_command_executor
+    use error_handling
     use iso_fortran_env, only: error_unit
     implicit none
     
@@ -44,7 +46,8 @@ contains
         logical :: passed
         character(len=:), allocatable :: files(:)
         character(len=*), parameter :: test_dir = "temp_test_dir"
-        integer :: unit, stat
+        integer :: unit, stat, i
+        logical :: logical_var
         
         print *, "  Test 1: Find files with extension pattern"
         
@@ -54,12 +57,16 @@ contains
         ! When: Calling find_files("*.gc*")
         files = find_files(test_dir // "/*.gc*")
         
-        ! Then: Should return ["test.gcda", "test.gcno"]
-        passed = (size(files) == 2) .and. &
-                 ((trim(files(1)) == "test.gcda" .and. &
-                   trim(files(2)) == "test.gcno") .or. &
-                  (trim(files(1)) == "test.gcno" .and. &
-                   trim(files(2)) == "test.gcda"))
+        ! Then: Should return full paths to ["test.gcda", "test.gcno"]
+        if (size(files) >= 2) then
+            passed = (size(files) == 2) .and. &
+                     ((trim(files(1)) == test_dir // "/test.gcno" .and. &
+                       trim(files(2)) == test_dir // "/test.gcda") .or. &
+                      (trim(files(1)) == test_dir // "/test.gcda" .and. &
+                       trim(files(2)) == test_dir // "/test.gcno"))
+        else
+            passed = .false.
+        end if
         
         call cleanup_test_files(test_dir)
         
@@ -209,6 +216,7 @@ contains
         logical :: passed
         character(len=:), allocatable :: files(:)
         character(len=*), parameter :: base_dir = "temp_recursive_test"
+        integer :: i
         
         print *, "  Test 6: Find files recursively"
         
@@ -265,8 +273,10 @@ contains
     subroutine create_test_files(dir)
         character(len=*), intent(in) :: dir
         integer :: unit, stat
+        type(error_context_t) :: error_ctx
         
-        call execute_command_line("mkdir -p " // dir, exitstat=stat)
+        ! Use secure mkdir
+        call safe_mkdir(dir, error_ctx)
         
         ! Create test.f90
         open(newunit=unit, file=dir // "/test.f90", status='replace')
@@ -291,15 +301,20 @@ contains
 
     subroutine cleanup_test_files(dir)
         character(len=*), intent(in) :: dir
-        call execute_command_line("rm -rf " // dir)
+        integer :: stat
+        ! For cleanup in tests, we use the simple approach
+        ! In production, we'd want more secure cleanup
+        call execute_command_line("rm -rf " // dir, exitstat=stat)
     end subroutine cleanup_test_files
 
     subroutine create_recursive_test_structure(base_dir)
         character(len=*), intent(in) :: base_dir
         integer :: unit, stat
+        type(error_context_t) :: error_ctx
         
-        call execute_command_line("mkdir -p " // base_dir // "/src", exitstat=stat)
-        call execute_command_line("mkdir -p " // base_dir // "/test", exitstat=stat)
+        call safe_mkdir(base_dir, error_ctx)
+        call safe_mkdir(base_dir // "/src", error_ctx)
+        call safe_mkdir(base_dir // "/test", error_ctx)
         
         ! Create base_dir/src/main.f90
         open(newunit=unit, file=base_dir // "/src/main.f90", status='replace')

@@ -1,10 +1,13 @@
 program main
   use fortcov
+  use fortcov_config, only: validate_config
+  use error_handling
   implicit none
   
   type(config_t) :: config
   character(len=:), allocatable :: args(:)
   character(len=256) :: error_message
+  type(error_context_t) :: error_ctx
   logical :: success
   integer :: exit_code, argc, i
   
@@ -34,6 +37,16 @@ program main
       print *, "Error:", trim(error_message)
       call exit(EXIT_FAILURE)
     end if
+  end if
+  
+  ! Validate configuration for security and accessibility
+  call validate_config(config, error_ctx)
+  if (error_ctx%error_code /= ERROR_SUCCESS) then
+    print *, "Configuration validation failed:", trim(error_ctx%message)
+    if (len_trim(error_ctx%suggestion) > 0) then
+      print *, "Suggestion:", trim(error_ctx%suggestion)
+    end if
+    call exit(EXIT_FAILURE)
   end if
   
   ! Run coverage analysis
