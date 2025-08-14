@@ -50,6 +50,9 @@ module error_handling
     public :: format_error_message
     public :: is_recoverable_error
     public :: clear_error_context
+    public :: safe_write_message
+    public :: safe_write_suggestion
+    public :: safe_write_context
 
 contains
 
@@ -136,8 +139,10 @@ contains
             "Out of memory: Failed to allocate ", requested_size, " bytes."
         
         write(error_ctx%suggestion, '(A)') &
-            "Try processing smaller file sets or increase available memory. " // &
-            "Consider using exclude patterns to reduce data size. " // &
+            "Try processing smaller file sets or increase available memory."
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "Consider using exclude patterns to reduce data size."
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "See documentation for memory optimization solutions."
         
         write(error_ctx%context, '(A)') "Memory allocation"
@@ -173,9 +178,9 @@ contains
         valid_count = 0
         corrupt_count = 0
         
-        ! Simulate processing files (checking if they exist and are valid)
+        ! Process files and check for actual corruption
         do i = 1, size(files)
-            if (index(files(i), "corrupted") > 0) then
+            if (is_file_corrupted(files(i))) then
                 corrupt_count = corrupt_count + 1
             else
                 valid_count = valid_count + 1
@@ -273,7 +278,9 @@ contains
         integer :: unit
         character(len=32) :: timestamp
         
+        ! Set logged flag immediately to prevent race condition
         if (error_ctx%logged) return
+        error_ctx%logged = .true.
         
         call get_timestamp(timestamp)
         
@@ -295,8 +302,6 @@ contains
                     trim(error_ctx%suggestion)
             end if
         end if
-        
-        error_ctx%logged = .true.
     end subroutine log_error
 
     ! Format error message for user display
@@ -342,8 +347,85 @@ contains
     subroutine get_timestamp(timestamp)
         character(len=*), intent(out) :: timestamp
         
-        ! Simple timestamp - in real implementation would use date_and_time
-        timestamp = "2025-01-01 12:00:00"
+        character(len=8) :: date_str
+        character(len=10) :: time_str
+        
+        call date_and_time(date_str, time_str)
+        
+        ! Format as YYYY-MM-DD HH:MM:SS
+        write(timestamp, '(A4,A1,A2,A1,A2,A1,A2,A1,A2,A1,A2)') &
+            date_str(1:4), '-', date_str(5:6), '-', date_str(7:8), ' ', &
+            time_str(1:2), ':', time_str(3:4), ':', time_str(5:6)
     end subroutine get_timestamp
+
+    ! Safe message writing with bounds checking
+    subroutine safe_write_message(error_ctx, text)
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=*), intent(in) :: text
+        
+        if (len(text) <= MAX_MESSAGE_LEN) then
+            error_ctx%message = text
+        else
+            error_ctx%message = text(1:MAX_MESSAGE_LEN-3) // "..."
+        end if
+    end subroutine safe_write_message
+
+    ! Safe suggestion writing with bounds checking
+    subroutine safe_write_suggestion(error_ctx, text)
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=*), intent(in) :: text
+        
+        if (len(text) <= MAX_SUGGESTION_LEN) then
+            error_ctx%suggestion = text
+        else
+            error_ctx%suggestion = text(1:MAX_SUGGESTION_LEN-3) // "..."
+        end if
+    end subroutine safe_write_suggestion
+
+    ! Safe context writing with bounds checking
+    subroutine safe_write_context(error_ctx, text)
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=*), intent(in) :: text
+        
+        if (len(text) <= MAX_CONTEXT_LEN) then
+            error_ctx%context = text
+        else
+            error_ctx%context = text(1:MAX_CONTEXT_LEN-3) // "..."
+        end if
+    end subroutine safe_write_context
+
+    ! Helper function to check if a file is corrupted
+    function is_file_corrupted(filename) result(corrupted)
+        character(len=*), intent(in) :: filename
+        logical :: corrupted
+        
+        integer :: unit, stat
+        integer(kind=1) :: magic_bytes(4)
+        logical :: file_exists
+        
+        corrupted = .true.  ! Assume corrupted until proven otherwise
+        
+        ! Check if file exists
+        inquire(file=filename, exist=file_exists)
+        if (.not. file_exists) return
+        
+        ! Open file and check magic number
+        open(newunit=unit, file=filename, access='stream', &
+             status='old', iostat=stat)
+        if (stat /= 0) return
+        
+        read(unit, iostat=stat) magic_bytes
+        close(unit)
+        
+        if (stat /= 0) return
+        
+        ! Check for valid GCNO (oncg) or GCDA (adcg) magic numbers
+        if ((magic_bytes(1) == 111_1 .and. magic_bytes(2) == 110_1 .and. &
+             magic_bytes(3) == 99_1 .and. magic_bytes(4) == 103_1) .or. &
+            (magic_bytes(1) == 97_1 .and. magic_bytes(2) == 100_1 .and. &
+             magic_bytes(3) == 99_1 .and. magic_bytes(4) == 103_1)) then
+            corrupted = .false.
+        end if
+    end function is_file_corrupted
 
 end module error_handling

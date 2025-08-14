@@ -38,6 +38,9 @@ program test_error_handling
     ! Test 10: Stack trace on fatal errors
     all_tests_passed = all_tests_passed .and. test_stack_trace_fatal()
     
+    ! Test 11: Bounds checking for safe writing functions
+    all_tests_passed = all_tests_passed .and. test_safe_writing_bounds()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -225,7 +228,7 @@ contains
         
         ! Given: Multiple files, one corrupted
         test_files(1) = "valid1.gcda"
-        test_files(2) = "corrupted.gcda"
+        test_files(2) = "corrupt_file.gcda"
         test_files(3) = "valid2.gcda"
         
         call create_test_gcda_file(test_files(1), "11.0.0")
@@ -330,6 +333,38 @@ contains
         end if
     end function test_stack_trace_fatal
 
+    function test_safe_writing_bounds() result(passed)
+        logical :: passed
+        type(error_context_t) :: error_ctx
+        character(len=1000) :: long_text
+        
+        print *, "  Test 11: Bounds checking for safe writing functions"
+        
+        ! Given: A very long text that exceeds buffer limits
+        long_text = repeat("This is a very long error message that should be truncated. ", 20)
+        
+        ! When: Using safe writing functions
+        call clear_error_context(error_ctx)
+        call safe_write_message(error_ctx, long_text)
+        call safe_write_suggestion(error_ctx, long_text)
+        call safe_write_context(error_ctx, long_text)
+        
+        ! Then: Should truncate with ellipsis and not overflow
+        passed = (len_trim(error_ctx%message) <= 512) .and. &
+                 (len_trim(error_ctx%suggestion) <= 512) .and. &
+                 (len_trim(error_ctx%context) <= 256) .and. &
+                 (index(error_ctx%message, "...") > 0)
+        
+        if (.not. passed) then
+            print *, "    FAILED: Safe writing bounds checking not working"
+            print *, "    Message length:", len_trim(error_ctx%message)
+            print *, "    Suggestion length:", len_trim(error_ctx%suggestion)
+            print *, "    Context length:", len_trim(error_ctx%context)
+        else
+            print *, "    PASSED"
+        end if
+    end function test_safe_writing_bounds
+
     ! Helper subroutines for test setup
     subroutine create_test_gcno_file(filename, version)
         character(len=*), intent(in) :: filename, version
@@ -376,10 +411,19 @@ contains
     subroutine cleanup_test_file(filename)
         character(len=*), intent(in) :: filename
         integer :: unit, stat
+        logical :: file_exists
+        
+        ! Check if file exists before attempting to open
+        inquire(file=filename, exist=file_exists)
+        if (.not. file_exists) return
         
         open(newunit=unit, file=filename, status='old', iostat=stat)
         if (stat == 0) then
             close(unit, status='delete')
+        else
+            ! If we somehow fail to open but file exists, 
+            ! ensure unit is not leaked by closing if opened
+            if (unit > 0) close(unit)
         end if
     end subroutine cleanup_test_file
 
