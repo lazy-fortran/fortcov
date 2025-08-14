@@ -1,5 +1,6 @@
 module file_utils
     use iso_fortran_env, only: error_unit
+    use error_handling
     implicit none
     private
     
@@ -9,6 +10,9 @@ module file_utils
     public :: read_binary_file
     public :: write_text_file
     public :: ensure_directory
+    public :: read_binary_file_safe
+    public :: write_text_file_safe
+    public :: ensure_directory_safe
 
 contains
 
@@ -224,5 +228,85 @@ contains
             name = trim(filepath)
         end if
     end function basename
+
+    ! Enhanced file operations using comprehensive error handling
+    
+    ! Safe binary file reading with comprehensive error context
+    subroutine read_binary_file_safe(filename, data, error_ctx)
+        character(len=*), intent(in) :: filename
+        integer(kind=1), allocatable, intent(out) :: data(:)
+        type(error_context_t), intent(out) :: error_ctx
+        
+        logical :: file_exists, error_flag
+        integer :: file_size
+        
+        call clear_error_context(error_ctx)
+        
+        ! Check if file exists first
+        inquire(file=filename, exist=file_exists, size=file_size)
+        if (.not. file_exists) then
+            call handle_missing_source(filename, error_ctx)
+            allocate(data(0))
+            return
+        end if
+        
+        ! Try to read the file using existing function
+        call read_binary_file(filename, data, error_flag)
+        
+        if (error_flag) then
+            if (file_size == 0) then
+                error_ctx%error_code = ERROR_INVALID_GCNO_FORMAT
+                write(error_ctx%message, '(A,A)') &
+                    "Empty file: ", trim(filename)
+                write(error_ctx%suggestion, '(A)') &
+                    "Check if file was properly generated."
+            else
+                call handle_permission_denied(filename, error_ctx)
+            end if
+        end if
+    end subroutine read_binary_file_safe
+    
+    ! Safe text file writing with comprehensive error context
+    subroutine write_text_file_safe(filename, content, error_ctx)
+        character(len=*), intent(in) :: filename, content
+        type(error_context_t), intent(out) :: error_ctx
+        
+        logical :: error_flag
+        character(len=:), allocatable :: dir_path
+        integer :: last_slash
+        
+        call clear_error_context(error_ctx)
+        
+        ! Extract directory path and ensure it exists
+        last_slash = index(filename, "/", back=.true.)
+        if (last_slash > 0) then
+            dir_path = filename(1:last_slash-1)
+            call ensure_directory_safe(dir_path, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) return
+        end if
+        
+        ! Try to write the file
+        call write_text_file(filename, content, error_flag)
+        
+        if (error_flag) then
+            call handle_permission_denied(filename, error_ctx)
+        end if
+    end subroutine write_text_file_safe
+    
+    ! Safe directory creation with comprehensive error context
+    subroutine ensure_directory_safe(path, error_ctx)
+        character(len=*), intent(in) :: path
+        type(error_context_t), intent(out) :: error_ctx
+        
+        logical :: error_flag
+        
+        call clear_error_context(error_ctx)
+        
+        call ensure_directory(path, error_flag)
+        
+        if (error_flag) then
+            call handle_permission_denied(path, error_ctx)
+        end if
+    end subroutine ensure_directory_safe
 
 end module file_utils
