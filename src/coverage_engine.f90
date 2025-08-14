@@ -7,6 +7,8 @@ module coverage_engine
     use file_utils
     use string_utils
     use error_handling
+    use coverage_diff
+    use json_coverage_io
     implicit none
     private
     
@@ -18,6 +20,7 @@ module coverage_engine
     
     ! Public procedures
     public :: analyze_coverage
+    public :: analyze_coverage_diff
     public :: find_coverage_files
     public :: check_exclude_patterns
     public :: analyze_coverage_safe
@@ -42,6 +45,18 @@ contains
         
         if (config%verbose .and. .not. config%quiet) then
             print *, "Starting coverage analysis..."
+        end if
+        
+        ! Check if we're importing JSON instead of analyzing gcov files
+        if (len_trim(config%import_file) > 0) then
+            exit_code = analyze_imported_json(config)
+            return
+        end if
+        
+        ! Check if we're doing diff analysis
+        if (config%enable_diff) then
+            exit_code = analyze_coverage_diff(config)
+            return
         end if
         
         ! Find coverage files in source directories
@@ -576,5 +591,229 @@ contains
             call handle_incomplete_coverage("all files", error_ctx)
         end if
     end function parse_all_coverage_files_safe
+
+    ! Analyze coverage data imported from JSON file
+    function analyze_imported_json(config) result(exit_code)
+        use json_coverage_io, only: import_json_coverage_safe
+        use file_utils, only: file_exists, read_file_content
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        type(coverage_data_t) :: coverage_data
+        type(coverage_stats_t) :: line_stats
+        character(len=:), allocatable :: json_content
+        logical :: error_occurred, file_error
+        class(coverage_reporter_t), allocatable :: reporter
+        logical :: reporter_error
+        
+        exit_code = EXIT_SUCCESS
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Importing coverage data from JSON file: ", config%import_file
+        end if
+        
+        ! Check if import file exists
+        if (.not. file_exists(config%import_file)) then
+            if (.not. config%quiet) then
+                print *, "Error: Import file not found: ", config%import_file
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Read JSON file content
+        call read_file_content(config%import_file, json_content, file_error)
+        if (file_error) then
+            if (.not. config%quiet) then
+                print *, "Error: Failed to read import file: ", config%import_file
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Parse JSON content
+        call import_json_coverage_safe(json_content, coverage_data, error_occurred)
+        if (error_occurred) then
+            if (.not. config%quiet) then
+                print *, "Error: Failed to parse JSON coverage data from: ", &
+                        config%import_file
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Successfully imported coverage data for", &
+                    size(coverage_data%files), "files"
+        end if
+        
+        ! Calculate coverage statistics
+        line_stats = calculate_line_coverage(coverage_data)
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Line coverage:", line_stats%percentage, "%"
+        end if
+        
+        ! Generate report
+        call create_reporter(config%output_format, reporter, reporter_error)
+        if (reporter_error) then
+            if (.not. config%quiet) then
+                print *, "Error: Unsupported output format '" // &
+                        trim(config%output_format) // &
+                        "'. Supported formats: markdown, md"
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        call reporter%generate_report(coverage_data, config%output_path, &
+                                     reporter_error)
+        if (reporter_error) then
+            if (.not. config%quiet) then
+                print *, "Error: Failed to generate report at: ", &
+                        config%output_path
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Check coverage threshold
+        if (line_stats%percentage < config%minimum_coverage) then
+            if (.not. config%quiet) then
+                print *, "Coverage threshold not met:", line_stats%percentage, &
+                        "% <", config%minimum_coverage, "%"
+            end if
+            exit_code = EXIT_THRESHOLD_NOT_MET
+        end if
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "JSON import completed successfully"
+        end if
+    end function analyze_imported_json
+
+    ! Analyze coverage diff between baseline and current files
+    function analyze_coverage_diff(config) result(exit_code)
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        type(coverage_data_t) :: baseline_coverage, current_coverage
+        type(coverage_diff_t) :: diff_result
+        logical :: baseline_error, current_error
+        class(coverage_reporter_t), allocatable :: reporter
+        logical :: reporter_error
+        
+        exit_code = EXIT_SUCCESS
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Starting coverage diff analysis..."
+            print *, "Baseline file:", trim(config%diff_baseline_file)
+            print *, "Current file:", trim(config%diff_current_file)
+        end if
+        
+        ! Import baseline coverage data
+        block
+            character(len=:), allocatable :: baseline_json_content
+            logical :: file_error
+            
+            call read_file_content(config%diff_baseline_file, &
+                                  baseline_json_content, file_error)
+            if (file_error) then
+                print *, "Error: Failed to read baseline coverage file: ", &
+                        trim(config%diff_baseline_file)
+                exit_code = EXIT_FAILURE
+                return
+            end if
+            
+            call import_json_coverage_safe(baseline_json_content, &
+                                          baseline_coverage, baseline_error)
+            if (baseline_error) then
+                print *, "Error: Failed to parse baseline coverage JSON from: ", &
+                        trim(config%diff_baseline_file)
+                exit_code = EXIT_FAILURE
+                return
+            end if
+        end block
+        
+        ! Import current coverage data
+        block
+            character(len=:), allocatable :: current_json_content
+            logical :: file_error
+            
+            call read_file_content(config%diff_current_file, &
+                                  current_json_content, file_error)
+            if (file_error) then
+                print *, "Error: Failed to read current coverage file: ", &
+                        trim(config%diff_current_file)
+                exit_code = EXIT_FAILURE
+                return
+            end if
+            
+            call import_json_coverage_safe(current_json_content, &
+                                          current_coverage, current_error)
+            if (current_error) then
+                print *, "Error: Failed to parse current coverage JSON from: ", &
+                        trim(config%diff_current_file)
+                exit_code = EXIT_FAILURE
+                return
+            end if
+        end block
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Computing coverage diff..."
+        end if
+        
+        ! Compute coverage diff
+        diff_result = compute_coverage_diff(baseline_coverage, current_coverage, &
+                                           config%include_unchanged, &
+                                           config%diff_threshold)
+        
+        ! Generate output report
+        call create_reporter(config%output_format, reporter, reporter_error)
+        if (reporter_error) then
+            print *, "Error: Failed to create reporter"
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Note: This would require extending the reporter interface to support diff output
+        ! For now, just output a summary
+        call output_diff_summary(diff_result, config)
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Coverage diff analysis completed successfully"
+        end if
+    end function analyze_coverage_diff
+    
+    ! Output diff summary to console/file
+    subroutine output_diff_summary(diff_result, config)
+        type(coverage_diff_t), intent(in) :: diff_result
+        type(config_t), intent(in) :: config
+        integer :: i, j
+        
+        if (.not. config%quiet) then
+            print *, "=== Coverage Diff Summary ==="
+            print *, "Total files with changes:", size(diff_result%file_diffs)
+            print *, "Total lines added:", diff_result%total_added_lines
+            print *, "Total lines removed:", diff_result%total_removed_lines
+            print *, "Total lines changed:", diff_result%total_changed_lines
+            print *, "Total newly covered lines:", diff_result%total_newly_covered_lines
+            print *, "Total newly uncovered lines:", diff_result%total_newly_uncovered_lines
+            
+            if (size(diff_result%file_diffs) > 0) then
+                print *, ""
+                print *, "File details:"
+                do i = 1, size(diff_result%file_diffs)
+                    print *, "File:", trim(diff_result%file_diffs(i)%filename)
+                    print *, "  Coverage change:", diff_result%file_diffs(i)%coverage_percentage_delta, "%"
+                    print *, "  Added lines:", diff_result%file_diffs(i)%added_lines
+                    print *, "  Removed lines:", diff_result%file_diffs(i)%removed_lines
+                    print *, "  Changed lines:", diff_result%file_diffs(i)%changed_lines
+                    print *, "  Newly covered:", diff_result%file_diffs(i)%newly_covered_lines
+                    print *, "  Newly uncovered:", diff_result%file_diffs(i)%newly_uncovered_lines
+                    print *, ""
+                end do
+            end if
+        end if
+    end subroutine output_diff_summary
 
 end module coverage_engine

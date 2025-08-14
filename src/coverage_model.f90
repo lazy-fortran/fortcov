@@ -9,6 +9,9 @@ module coverage_model
     public :: coverage_function_t
     public :: coverage_file_t
     public :: coverage_data_t
+    public :: coverage_diff_t
+    public :: line_diff_t
+    public :: file_diff_t
     
     ! Source location type
     type :: source_location_t
@@ -84,6 +87,67 @@ module coverage_model
         procedure :: deserialize => coverage_data_deserialize
         procedure :: init => coverage_data_init
     end type coverage_data_t
+
+    ! Line change types for diff analysis
+    integer, parameter :: DIFF_UNCHANGED = 0
+    integer, parameter :: DIFF_ADDED = 1
+    integer, parameter :: DIFF_REMOVED = 2
+    integer, parameter :: DIFF_CHANGED = 3
+
+    public :: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
+
+    ! Line difference type
+    type :: line_diff_t
+        integer :: line_number = 0
+        type(coverage_line_t) :: baseline_line
+        type(coverage_line_t) :: current_line
+        integer :: diff_type = DIFF_UNCHANGED
+        integer :: execution_count_delta = 0
+        real :: coverage_percentage_delta = 0.0
+        logical :: is_newly_covered = .false.
+        logical :: is_newly_uncovered = .false.
+    contains
+        procedure :: init => line_diff_init
+        procedure :: calculate_delta => line_diff_calculate_delta
+    end type line_diff_t
+
+    ! File difference type
+    type :: file_diff_t
+        character(len=:), allocatable :: filename
+        type(line_diff_t), allocatable :: line_diffs(:)
+        integer :: added_lines = 0
+        integer :: removed_lines = 0
+        integer :: changed_lines = 0
+        integer :: unchanged_lines = 0
+        real :: baseline_coverage_percentage = 0.0
+        real :: current_coverage_percentage = 0.0
+        real :: coverage_percentage_delta = 0.0
+        integer :: newly_covered_lines = 0
+        integer :: newly_uncovered_lines = 0
+    contains
+        procedure :: init => file_diff_init
+        procedure :: calculate_summary => file_diff_calculate_summary
+    end type file_diff_t
+
+    ! Coverage difference type for complete diff analysis
+    type :: coverage_diff_t
+        type(file_diff_t), allocatable :: file_diffs(:)
+        integer :: total_added_lines = 0
+        integer :: total_removed_lines = 0
+        integer :: total_changed_lines = 0
+        integer :: total_unchanged_lines = 0
+        real :: baseline_total_coverage = 0.0
+        real :: current_total_coverage = 0.0
+        real :: total_coverage_delta = 0.0
+        integer :: total_newly_covered_lines = 0
+        integer :: total_newly_uncovered_lines = 0
+        logical :: include_unchanged = .false.
+        real :: significance_threshold = 0.0
+    contains
+        procedure :: init => coverage_diff_init
+        procedure :: calculate_totals => coverage_diff_calculate_totals
+        procedure :: filter_by_threshold => coverage_diff_filter_by_threshold
+    end type coverage_diff_t
     
     ! Constructor interfaces
     interface coverage_line_t
@@ -105,6 +169,18 @@ module coverage_model
     interface coverage_data_t
         module procedure :: new_coverage_data
     end interface coverage_data_t
+
+    interface line_diff_t
+        module procedure :: new_line_diff
+    end interface line_diff_t
+
+    interface file_diff_t
+        module procedure :: new_file_diff
+    end interface file_diff_t
+
+    interface coverage_diff_t
+        module procedure :: new_coverage_diff
+    end interface coverage_diff_t
     
 contains
 
@@ -382,5 +458,219 @@ contains
         associate(dummy => serialized)
         end associate
     end subroutine coverage_data_deserialize
+
+    ! Line diff constructor
+    function new_line_diff(baseline_line, current_line, diff_type) result(line_diff)
+        type(coverage_line_t), intent(in) :: baseline_line
+        type(coverage_line_t), intent(in) :: current_line
+        integer, intent(in) :: diff_type
+        type(line_diff_t) :: line_diff
+        
+        call line_diff%init(baseline_line, current_line, diff_type)
+    end function new_line_diff
+
+    ! Line diff initialization
+    subroutine line_diff_init(this, baseline_line, current_line, diff_type)
+        class(line_diff_t), intent(inout) :: this
+        type(coverage_line_t), intent(in) :: baseline_line
+        type(coverage_line_t), intent(in) :: current_line
+        integer, intent(in) :: diff_type
+        
+        this%line_number = current_line%line_number
+        this%baseline_line = baseline_line
+        this%current_line = current_line
+        this%diff_type = diff_type
+        call this%calculate_delta()
+    end subroutine line_diff_init
+
+    ! Calculate line diff deltas
+    subroutine line_diff_calculate_delta(this)
+        class(line_diff_t), intent(inout) :: this
+        
+        this%execution_count_delta = this%current_line%execution_count - &
+                                   this%baseline_line%execution_count
+        
+        ! Check for newly covered/uncovered lines
+        select case (this%diff_type)
+        case (DIFF_CHANGED)
+            ! Newly covered: went from 0 to >0 execution count
+            this%is_newly_covered = (this%baseline_line%execution_count == 0 .and. &
+                                   this%current_line%execution_count > 0)
+            ! Newly uncovered: went from >0 to 0 execution count
+            this%is_newly_uncovered = (this%baseline_line%execution_count > 0 .and. &
+                                     this%current_line%execution_count == 0)
+        case (DIFF_ADDED)
+            ! Added lines don't count as newly covered/uncovered - they're just added
+            this%is_newly_covered = .false.
+            this%is_newly_uncovered = .false.
+        case (DIFF_REMOVED)
+            ! Removed lines don't count as newly covered/uncovered - they're just removed  
+            this%is_newly_covered = .false.
+            this%is_newly_uncovered = .false.
+        case default
+            this%is_newly_covered = .false.
+            this%is_newly_uncovered = .false.
+        end select
+    end subroutine line_diff_calculate_delta
+
+    ! File diff constructor
+    function new_file_diff(filename, line_diffs) result(file_diff)
+        character(len=*), intent(in) :: filename
+        type(line_diff_t), intent(in) :: line_diffs(:)
+        type(file_diff_t) :: file_diff
+        
+        call file_diff%init(filename, line_diffs)
+    end function new_file_diff
+
+    ! File diff initialization
+    subroutine file_diff_init(this, filename, line_diffs)
+        class(file_diff_t), intent(inout) :: this
+        character(len=*), intent(in) :: filename
+        type(line_diff_t), intent(in) :: line_diffs(:)
+        
+        this%filename = filename
+        if (allocated(this%line_diffs)) deallocate(this%line_diffs)
+        allocate(this%line_diffs, source=line_diffs)
+        call this%calculate_summary()
+    end subroutine file_diff_init
+
+    ! Calculate file diff summary statistics
+    subroutine file_diff_calculate_summary(this)
+        class(file_diff_t), intent(inout) :: this
+        integer :: i
+        
+        this%added_lines = 0
+        this%removed_lines = 0
+        this%changed_lines = 0
+        this%unchanged_lines = 0
+        this%newly_covered_lines = 0
+        this%newly_uncovered_lines = 0
+        
+        do i = 1, size(this%line_diffs)
+            select case (this%line_diffs(i)%diff_type)
+            case (DIFF_ADDED)
+                this%added_lines = this%added_lines + 1
+            case (DIFF_REMOVED)
+                this%removed_lines = this%removed_lines + 1
+            case (DIFF_CHANGED)
+                this%changed_lines = this%changed_lines + 1
+            case (DIFF_UNCHANGED)
+                this%unchanged_lines = this%unchanged_lines + 1
+            end select
+            
+            if (this%line_diffs(i)%is_newly_covered) then
+                this%newly_covered_lines = this%newly_covered_lines + 1
+            end if
+            if (this%line_diffs(i)%is_newly_uncovered) then
+                this%newly_uncovered_lines = this%newly_uncovered_lines + 1
+            end if
+        end do
+        
+        ! Calculate coverage percentage delta
+        this%coverage_percentage_delta = this%current_coverage_percentage - &
+                                       this%baseline_coverage_percentage
+    end subroutine file_diff_calculate_summary
+
+    ! Coverage diff constructor
+    function new_coverage_diff(file_diffs, include_unchanged, threshold) &
+           result(coverage_diff)
+        type(file_diff_t), intent(in) :: file_diffs(:)
+        logical, intent(in), optional :: include_unchanged
+        real, intent(in), optional :: threshold
+        type(coverage_diff_t) :: coverage_diff
+        
+        call coverage_diff%init(file_diffs, include_unchanged, threshold)
+    end function new_coverage_diff
+
+    ! Coverage diff initialization
+    subroutine coverage_diff_init(this, file_diffs, include_unchanged, threshold)
+        class(coverage_diff_t), intent(inout) :: this
+        type(file_diff_t), intent(in) :: file_diffs(:)
+        logical, intent(in), optional :: include_unchanged
+        real, intent(in), optional :: threshold
+        
+        if (allocated(this%file_diffs)) deallocate(this%file_diffs)
+        allocate(this%file_diffs, source=file_diffs)
+        
+        if (present(include_unchanged)) then
+            this%include_unchanged = include_unchanged
+        else
+            this%include_unchanged = .false.
+        end if
+        
+        if (present(threshold)) then
+            this%significance_threshold = threshold
+        else
+            this%significance_threshold = 0.0
+        end if
+        
+        call this%calculate_totals()
+    end subroutine coverage_diff_init
+
+    ! Calculate total diff statistics
+    subroutine coverage_diff_calculate_totals(this)
+        class(coverage_diff_t), intent(inout) :: this
+        integer :: i
+        
+        this%total_added_lines = 0
+        this%total_removed_lines = 0
+        this%total_changed_lines = 0
+        this%total_unchanged_lines = 0
+        this%total_newly_covered_lines = 0
+        this%total_newly_uncovered_lines = 0
+        
+        do i = 1, size(this%file_diffs)
+            this%total_added_lines = this%total_added_lines + &
+                                    this%file_diffs(i)%added_lines
+            this%total_removed_lines = this%total_removed_lines + &
+                                     this%file_diffs(i)%removed_lines
+            this%total_changed_lines = this%total_changed_lines + &
+                                     this%file_diffs(i)%changed_lines
+            this%total_unchanged_lines = this%total_unchanged_lines + &
+                                       this%file_diffs(i)%unchanged_lines
+            this%total_newly_covered_lines = this%total_newly_covered_lines + &
+                                           this%file_diffs(i)%newly_covered_lines
+            this%total_newly_uncovered_lines = this%total_newly_uncovered_lines + &
+                                             this%file_diffs(i)%newly_uncovered_lines
+        end do
+        
+        this%total_coverage_delta = this%current_total_coverage - &
+                                  this%baseline_total_coverage
+    end subroutine coverage_diff_calculate_totals
+
+    ! Filter diff results by significance threshold
+    subroutine coverage_diff_filter_by_threshold(this)
+        class(coverage_diff_t), intent(inout) :: this
+        type(file_diff_t), allocatable :: filtered_diffs(:)
+        integer :: i, filtered_count
+        
+        ! Count files that meet the threshold
+        filtered_count = 0
+        do i = 1, size(this%file_diffs)
+            if (abs(this%file_diffs(i)%coverage_percentage_delta) >= &
+                this%significance_threshold) then
+                filtered_count = filtered_count + 1
+            end if
+        end do
+        
+        ! Create filtered array
+        allocate(filtered_diffs(filtered_count))
+        filtered_count = 0
+        do i = 1, size(this%file_diffs)
+            if (abs(this%file_diffs(i)%coverage_percentage_delta) >= &
+                this%significance_threshold) then
+                filtered_count = filtered_count + 1
+                filtered_diffs(filtered_count) = this%file_diffs(i)
+            end if
+        end do
+        
+        ! Replace original array
+        deallocate(this%file_diffs)
+        allocate(this%file_diffs, source=filtered_diffs)
+        deallocate(filtered_diffs)
+        
+        ! Recalculate totals
+        call this%calculate_totals()
+    end subroutine coverage_diff_filter_by_threshold
 
 end module coverage_model

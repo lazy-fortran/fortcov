@@ -14,6 +14,8 @@ module file_utils
     public :: read_binary_file_safe
     public :: write_text_file_safe
     public :: ensure_directory_safe
+    public :: file_exists
+    public :: read_file_content
 
 contains
 
@@ -229,5 +231,56 @@ contains
         ! Use secure command executor directly
         call safe_mkdir(path, error_ctx)
     end subroutine ensure_directory_safe
+
+    ! Check if file exists
+    function file_exists(filename) result(exists)
+        character(len=*), intent(in) :: filename
+        logical :: exists
+        
+        inquire(file=filename, exist=exists)
+    end function file_exists
+
+    ! Read text file content
+    subroutine read_file_content(filename, content, error_flag)
+        character(len=*), intent(in) :: filename
+        character(len=:), allocatable, intent(out) :: content
+        logical, intent(out) :: error_flag
+        
+        integer :: unit, iostat, file_size
+        character(len=1), allocatable :: buffer(:)
+        
+        error_flag = .false.
+        
+        ! Open file and get size
+        open(newunit=unit, file=filename, status='old', action='read', &
+             form='unformatted', access='stream', iostat=iostat)
+        if (iostat /= 0) then
+            error_flag = .true.
+            return
+        end if
+        
+        ! Get file size
+        inquire(unit=unit, size=file_size)
+        if (file_size <= 0) then
+            allocate(character(len=0) :: content)
+            close(unit)
+            return
+        end if
+        
+        ! Read entire file
+        allocate(buffer(file_size))
+        read(unit, iostat=iostat) buffer
+        close(unit)
+        
+        if (iostat /= 0) then
+            error_flag = .true.
+            if (allocated(buffer)) deallocate(buffer)
+            return
+        end if
+        
+        ! Convert buffer to string
+        content = transfer(buffer, repeat(' ', file_size))
+        deallocate(buffer)
+    end subroutine read_file_content
 
 end module file_utils

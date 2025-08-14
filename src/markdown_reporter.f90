@@ -72,8 +72,8 @@ contains
     function generate_table_header() result(header)
         character(len=:), allocatable :: header
         
-        header = "| Filename | Stmts | Miss | Cover | Missing |" // new_line('A') // &
-                "|----------|-------|------|-------|---------|"
+        header = "| Filename | Stmts | Covered | Cover | Missing |" // new_line('A') // &
+                "|----------|-------|---------|-------|---------|"
     end function generate_table_header
 
     ! Generate a single table row for a file
@@ -111,7 +111,7 @@ contains
         ! Build the row
         row = "| " // escaped_name // " | " // &
               int_to_string(stats%total_count) // " | " // &
-              int_to_string(missed_count) // " | " // &
+              int_to_string(stats%covered_count) // " | " // &
               percentage_str // " | " // &
               missing_str // " |"
     end function generate_table_row
@@ -124,23 +124,14 @@ contains
         integer, allocatable :: uncovered_lines(:)
         integer :: uncovered_count
         
-        total_lines = 0
-        covered_lines = 0
-        uncovered_count = 0
+        ! Use file's built-in methods which are working correctly
+        total_lines = file%get_executable_line_count()
+        covered_lines = file%get_covered_line_count()
         
-        ! First pass: count lines
-        do line_idx = 1, size(file%lines)
-            if (file%lines(line_idx)%is_executable) then
-                total_lines = total_lines + 1
-                if (file%lines(line_idx)%is_covered()) then
-                    covered_lines = covered_lines + 1
-                else
-                    uncovered_count = uncovered_count + 1
-                end if
-            end if
-        end do
+        ! Count uncovered lines for missing ranges
+        uncovered_count = total_lines - covered_lines
         
-        ! Second pass: collect uncovered line numbers
+        ! Collect uncovered line numbers
         if (uncovered_count > 0) then
             allocate(uncovered_lines(uncovered_count))
             uncovered_count = 0  ! Reset for collection
@@ -157,9 +148,9 @@ contains
         
         ! Calculate statistics
         if (total_lines == 0) then
-            call stats%init(100.0_8, 0, 0, "")
+            call stats%init(100.0, 0, 0, "")
         else
-            call stats%init((real(covered_lines, 8) / real(total_lines, 8)) * 100.0_8, &
+            call stats%init(file%get_line_coverage_percentage(), &
                            covered_lines, total_lines, &
                            compress_ranges(uncovered_lines))
         end if

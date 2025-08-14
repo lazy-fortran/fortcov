@@ -56,6 +56,9 @@ program test_fortcov_config
     ! Test 16: Validate coverage file extensions (NEW - RED PHASE)
     all_tests_passed = all_tests_passed .and. test_validate_coverage_extensions()
     
+    ! Test 17: Parse import flag for JSON import (NEW - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_parse_import_flag()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -520,5 +523,42 @@ contains
             print *, "    PASSED"
         end if
     end function test_validate_coverage_extensions
+
+    function test_parse_import_flag() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        
+        print *, "  Test 17: Parse import flag for JSON import"
+        
+        allocate(character(len=30) :: args(1))
+        args(1) = "--import=coverage.json"
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Expected behavior after implementation:
+        ! - success = .true.
+        ! - config%import_file = "coverage.json"
+        ! - config%input_format = "json" (should be set automatically)
+        passed = success .and. &
+                (config%import_file == "coverage.json") .and. &
+                (config%input_format == "json")
+        
+        if (.not. passed) then
+            if (.not. success) then
+                print *, "    FAILED: Config parsing failed: ", trim(error_message)
+            else if (config%import_file /= "coverage.json") then
+                print *, "    FAILED: Import file not set correctly: ", config%import_file
+            else if (config%input_format /= "json") then
+                print *, "    FAILED: Input format not set to json: ", config%input_format
+            else
+                print *, "    FAILED: Unknown reason"
+            end if
+        else
+            print *, "    PASSED"
+        end if
+    end function test_parse_import_flag
 
 end program test_fortcov_config

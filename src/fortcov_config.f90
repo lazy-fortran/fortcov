@@ -37,6 +37,14 @@ module fortcov_config
         logical :: show_help
         logical :: show_version
         character(len=:), allocatable :: config_file
+        ! Diff functionality fields
+        logical :: enable_diff
+        character(len=:), allocatable :: diff_baseline_file
+        character(len=:), allocatable :: diff_current_file
+        logical :: include_unchanged
+        real :: diff_threshold
+        ! Import functionality fields
+        character(len=:), allocatable :: import_file
     end type config_t
 
 contains
@@ -127,6 +135,12 @@ contains
                 cycle
             end if
             
+            ! Check for include-unchanged flag
+            if (arg == "--include-unchanged") then
+                config%include_unchanged = .true.
+                cycle
+            end if
+            
             ! Parse key=value arguments
             eq_pos = index(arg, "=")
             if (eq_pos > 0) then
@@ -158,6 +172,38 @@ contains
                     
                 case ("--gcov")
                     config%gcov_executable = trim(value)
+                    
+                case ("--diff")
+                    ! Parse diff with two file arguments
+                    config%enable_diff = .true.
+                    if (index(value, ',') > 0) then
+                        ! Format: --diff=baseline.json,current.json
+                        config%diff_baseline_file = trim(value(1:index(value, ',')-1))
+                        config%diff_current_file = trim(value(index(value, ',')+1:))
+                    else
+                        ! Single file format (assume baseline, current from next arg)
+                        config%diff_baseline_file = trim(value)
+                        ! Need to handle second file in next iteration or different way
+                    end if
+                    
+                case ("--threshold")
+                    ! Threshold is only valid in diff mode - check if diff enabled
+                    if (.not. config%enable_diff) then
+                        success = .false.
+                        error_message = "Unknown option: " // trim(key)
+                        return
+                    end if
+                    ! Parse threshold value for coverage diff reporting
+                    call parse_real(value, config%diff_threshold, success)
+                    if (.not. success) then
+                        error_message = "Invalid threshold value: " // trim(value)
+                        return
+                    end if
+                    
+                case ("--import")
+                    config%import_file = trim(value)
+                    ! When importing JSON, set input format to json automatically
+                    config%input_format = "json"
                     
                 case ("--config")
                     config%config_file = trim(value)
@@ -191,30 +237,62 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
+        character(len=MAX_PATH_LENGTH) :: filtered_positionals(MAX_ARRAY_SIZE)
+        integer :: filtered_count
+        integer :: i
+        
         success = .true.
         error_message = ""
+        filtered_count = 0
         
         if (positional_count > 0) then
-            ! Validate coverage file extensions
-            call validate_coverage_files(positionals(1:positional_count), &
-                                       success, error_message)
-            if (.not. success) return
+            ! Filter out executable paths and keep only .gcov files
+            do i = 1, positional_count
+                if (is_executable_path(positionals(i))) then
+                    ! Skip executable paths silently
+                    cycle
+                else
+                    filtered_count = filtered_count + 1
+                    filtered_positionals(filtered_count) = positionals(i)
+                end if
+            end do
             
-            ! Store coverage files (deallocate first if already allocated)
-            if (allocated(config%coverage_files)) deallocate(config%coverage_files)
-            allocate(character(len=MAX_PATH_LENGTH) :: &
-                    config%coverage_files(positional_count))
-            config%coverage_files(1:positional_count) = &
-                positionals(1:positional_count)
+            ! Only validate remaining files
+            if (filtered_count > 0) then
+                call validate_coverage_files(filtered_positionals(1:filtered_count), &
+                                           success, error_message)
+                if (.not. success) return
+                
+                ! Store coverage files (deallocate first if already allocated)
+                if (allocated(config%coverage_files)) deallocate(config%coverage_files)
+                allocate(character(len=MAX_PATH_LENGTH) :: &
+                        config%coverage_files(filtered_count))
+                config%coverage_files(1:filtered_count) = &
+                    filtered_positionals(1:filtered_count)
+            end if
         end if
     end subroutine process_positional_arguments
+
+    ! Helper function to detect executable paths
+    function is_executable_path(arg) result(is_executable)
+        character(len=*), intent(in) :: arg
+        logical :: is_executable
+        
+        ! Check if this looks like an executable path
+        ! Executables typically contain "/", end with "fortcov", or are in build directories
+        is_executable = (index(arg, "/") > 0 .and. &
+                        (index(arg, "fortcov") > 0 .or. &
+                         index(arg, "/build/") > 0 .or. &
+                         index(arg, "/app/") > 0))
+    end function is_executable_path
 
     ! Helper function to detect flag arguments
     function is_flag_argument(arg) result(is_flag)
         character(len=*), intent(in) :: arg
         logical :: is_flag
         
-        is_flag = (len_trim(arg) > 2) .and. (arg(1:2) == "--")
+        ! Check for both -- and - flags
+        is_flag = (len_trim(arg) > 1) .and. (arg(1:1) == "-")
     end function is_flag_argument
     
     ! Classify arguments into flags and positional arguments
@@ -424,7 +502,7 @@ contains
         print *, "Usage: fortcov [OPTIONS]"
         print *, ""
         print *, "Options:"
-        print *, "  --input-format=FORMAT     Input format (gcov, lcov) [default: gcov]"
+        print *, "  --input-format=FORMAT     Input format (gcov, lcov, json) [default: gcov]"
         print *, "  --output-format=FORMAT    Output format (markdown, json, xml) [default: markdown]"
         print *, "  --output=FILE             Output file path [default: stdout]"
         print *, "  --source=PATH             Source directory to include (can be repeated)"
@@ -432,6 +510,10 @@ contains
         print *, "  --gcov=EXECUTABLE         Path to gcov executable [default: gcov]"
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
         print *, "  --config=FILE             Load configuration from namelist file"
+        print *, "  --import=FILE             Import coverage data from JSON file"
+        print *, "  --diff=BASELINE,CURRENT   Compare two coverage datasets (diff mode)"
+        print *, "  --include-unchanged       Include unchanged lines in diff output"
+        print *, "  --threshold=PERCENT       Diff significance threshold [default: 0.0]"
         print *, "  --verbose, -v             Enable verbose output"
         print *, "  --quiet, -q               Suppress all non-error output"
         print *, "  --help, -h                Show this help message"
@@ -440,6 +522,8 @@ contains
         print *, "  fortcov --output=coverage.md --source=src"
         print *, "  fortcov --fail-under=80 --exclude='*.mod' --verbose"
         print *, "  fortcov --gcov=/usr/bin/gcov-10 --config=fortcov.nml"
+        print *, "  fortcov --import=coverage.json --output-format=markdown"
+        print *, "  fortcov --diff=baseline.json,current.json --threshold=5.0"
         print *, ""
         print *, "Configuration File Format (Fortran namelist):"
         print *, "  Create a file (e.g., fortcov.nml) with:"
@@ -479,6 +563,14 @@ contains
         config%show_help = .false.
         config%show_version = .false.
         config%config_file = ""
+        ! Diff functionality defaults
+        config%enable_diff = .false.
+        config%diff_baseline_file = ""
+        config%diff_current_file = ""
+        config%include_unchanged = .false.
+        config%diff_threshold = 0.0
+        ! Import functionality defaults
+        config%import_file = ""
     end subroutine initialize_config
 
     subroutine add_to_array(value, array, count, max_size, type_name)
@@ -603,12 +695,13 @@ contains
         
         ! Validate input/output formats
         if (trim(config%input_format) /= "gcov" .and. &
-            trim(config%input_format) /= "lcov") then
+            trim(config%input_format) /= "lcov" .and. &
+            trim(config%input_format) /= "json") then
             error_ctx%error_code = ERROR_INVALID_CONFIG
             call safe_write_message(error_ctx, &
                 "Unsupported input format: " // trim(config%input_format))
             call safe_write_suggestion(error_ctx, &
-                "Use supported input formats: gcov, lcov")
+                "Use supported input formats: gcov, lcov, json")
             call safe_write_context(error_ctx, "input format validation")
             return
         end if
