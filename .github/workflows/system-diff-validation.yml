@@ -33,12 +33,12 @@ jobs:
     
     - name: Install Fortran Package Manager
       run: |
-        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.10.0-linux-x86_64 -o fpm
+        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux-x86_64 -o fpm
         chmod +x fpm
         sudo mv fpm /usr/local/bin/
     
     - name: Setup Python environment
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.9'
     
@@ -130,7 +130,7 @@ jobs:
         fi
     
     - name: Archive test artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: always()
       with:
         name: system-diff-validation-artifacts
