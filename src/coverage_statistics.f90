@@ -127,9 +127,8 @@ contains
                     if (allocated(coverage_data%files(file_idx)%functions(func_idx)%branches)) then
                         do branch_idx = 1, size(coverage_data%files(file_idx)%functions(func_idx)%branches)
                             total_branches = total_branches + 1
-                            ! Branch is covered if both paths are taken
-                            if (coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%taken_count > 0 .and. &
-                                coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%not_taken_count > 0) then
+                            ! Branch is covered if taken path has been executed (lcov standard)
+                            if (coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%taken_count > 0) then
                                 covered_branches = covered_branches + 1
                             end if
                         end do
@@ -211,8 +210,7 @@ contains
                         if (allocated(coverage_data%files(file_idx)%functions(func_idx)%branches)) then
                             do branch_idx = 1, size(coverage_data%files(file_idx)%functions(func_idx)%branches)
                                 stats%total_branches = stats%total_branches + 1
-                                if (coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%taken_count > 0 .and. &
-                                    coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%not_taken_count > 0) then
+                                if (coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%taken_count > 0) then
                                     stats%covered_branches = stats%covered_branches + 1
                                 end if
                             end do
