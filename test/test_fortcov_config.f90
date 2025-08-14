@@ -44,6 +44,18 @@ program test_fortcov_config
     ! Test 12: Load config from file
     all_tests_passed = all_tests_passed .and. test_load_config_file()
     
+    ! Test 13: Parse single positional argument (NEW - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_parse_single_positional()
+    
+    ! Test 14: Parse multiple positional arguments (NEW - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_parse_multiple_positional()
+    
+    ! Test 15: Parse mixed positional and flag arguments (NEW - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_parse_mixed_positional_flags()
+    
+    ! Test 16: Validate coverage file extensions (NEW - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_validate_coverage_extensions()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -373,5 +385,140 @@ contains
             print *, "    PASSED - Namelist config loaded successfully"
         end if
     end function test_load_config_file
+
+    ! RED PHASE: These tests will FAIL until implementation is complete
+    function test_parse_single_positional() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        
+        print *, "  Test 13: Parse single positional argument"
+        
+        allocate(character(len=20) :: args(1))
+        args(1) = "test_file.gcov"
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Expected behavior after implementation:
+        ! - success = .true.
+        ! - config%coverage_files should contain ["test_file.gcov"]
+        passed = success .and. &
+                 allocated(config%coverage_files) .and. &
+                 size(config%coverage_files) == 1 .and. &
+                 config%coverage_files(1) == "test_file.gcov"
+        
+        if (.not. passed) then
+            print *, "    FAILED: Expected success=T, coverage_files=['test_file.gcov']"
+            if (.not. success) then
+                print *, "      Error: ", trim(error_message)
+            end if
+        else
+            print *, "    PASSED"
+        end if
+    end function test_parse_single_positional
+
+    function test_parse_multiple_positional() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        
+        print *, "  Test 14: Parse multiple positional arguments"
+        
+        allocate(character(len=20) :: args(3))
+        args(1) = "file1.gcov"
+        args(2) = "file2.gcov"
+        args(3) = "module.gcov"
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Expected behavior after implementation:
+        ! - success = .true.
+        ! - config%coverage_files should contain all three files
+        passed = success .and. &
+                 allocated(config%coverage_files) .and. &
+                 size(config%coverage_files) == 3 .and. &
+                 config%coverage_files(1) == "file1.gcov" .and. &
+                 config%coverage_files(2) == "file2.gcov" .and. &
+                 config%coverage_files(3) == "module.gcov"
+        
+        if (.not. passed) then
+            print *, "    FAILED: Expected success=T with 3 coverage files"
+            if (.not. success) then
+                print *, "      Error: ", trim(error_message)
+            end if
+        else
+            print *, "    PASSED"
+        end if
+    end function test_parse_multiple_positional
+
+    function test_parse_mixed_positional_flags() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        
+        print *, "  Test 15: Parse mixed positional and flag arguments"
+        
+        allocate(character(len=25) :: args(4))
+        args(1) = "coverage.gcov"
+        args(2) = "module.gcov"
+        args(3) = "--output-format=json"
+        args(4) = "--verbose"
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Expected behavior after implementation:
+        ! - success = .true.
+        ! - coverage_files should contain the .gcov files
+        ! - flags should be processed correctly
+        passed = success .and. &
+                 allocated(config%coverage_files) .and. &
+                 size(config%coverage_files) == 2 .and. &
+                 config%coverage_files(1) == "coverage.gcov" .and. &
+                 config%coverage_files(2) == "module.gcov" .and. &
+                 config%output_format == "json" .and. &
+                 config%verbose
+        
+        if (.not. passed) then
+            print *, "    FAILED: Mixed args not parsed correctly"
+            if (.not. success) then
+                print *, "      Error: ", trim(error_message)
+            end if
+        else
+            print *, "    PASSED"
+        end if
+    end function test_parse_mixed_positional_flags
+
+    function test_validate_coverage_extensions() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        
+        print *, "  Test 16: Validate coverage file extensions"
+        
+        allocate(character(len=20) :: args(2))
+        args(1) = "valid.gcov"
+        args(2) = "invalid.txt"
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Expected behavior after implementation:
+        ! - success = .false. due to invalid extension
+        ! - error_message should mention invalid file extension
+        passed = (.not. success) .and. (len_trim(error_message) > 0)
+        
+        if (.not. passed) then
+            print *, "    FAILED: Expected validation error for invalid extension"
+        else
+            print *, "    PASSED"
+        end if
+    end function test_validate_coverage_extensions
 
 end program test_fortcov_config

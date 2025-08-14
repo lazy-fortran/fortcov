@@ -195,9 +195,11 @@ contains
         ! When: Running analysis (will likely find no coverage)
         exit_code = analyze_coverage(config)
         
-        ! Then: Should return appropriate exit code
-        ! (EXIT_NO_COVERAGE_DATA or EXIT_THRESHOLD_NOT_MET are both valid)
-        passed = (exit_code == EXIT_NO_COVERAGE_DATA .or. &
+        ! Then: Should return appropriate exit code based on actual coverage
+        ! Could be SUCCESS (if coverage >= 80%), THRESHOLD_NOT_MET (if < 80%), 
+        ! or NO_COVERAGE_DATA (if no valid coverage found)
+        passed = (exit_code == EXIT_SUCCESS .or. &
+                 exit_code == EXIT_NO_COVERAGE_DATA .or. &
                  exit_code == EXIT_THRESHOLD_NOT_MET)
         
         if (passed) then

@@ -29,6 +29,7 @@ module fortcov_config
         character(len=:), allocatable :: output_path
         character(len=:), allocatable :: source_paths(:)
         character(len=:), allocatable :: exclude_patterns(:)
+        character(len=:), allocatable :: coverage_files(:)
         character(len=:), allocatable :: gcov_executable
         real :: minimum_coverage
         logical :: verbose
@@ -46,16 +47,45 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        integer :: i, argc
+        character(len=:), allocatable :: flags(:)
+        character(len=:), allocatable :: positionals(:)
+        integer :: flag_count, positional_count
+        
+        ! Initialize config with defaults
+        call initialize_config(config)
+        
+        success = .true.
+        error_message = ""
+        
+        ! Two-pass parsing: classify arguments first
+        call classify_arguments(args, flags, flag_count, positionals, &
+                               positional_count)
+        
+        ! Pass 1: Process flag arguments
+        call process_flags(flags, flag_count, config, success, error_message)
+        if (.not. success) return
+        
+        ! Pass 2: Process positional arguments as coverage files
+        call process_positional_arguments(positionals, positional_count, &
+                                        config, success, error_message)
+        if (.not. success) return
+    end subroutine parse_config
+    
+    ! Process flag arguments using existing logic
+    subroutine process_flags(flags, flag_count, config, success, error_message)
+        character(len=*), intent(in) :: flags(:)
+        integer, intent(in) :: flag_count
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: i
         character(len=:), allocatable :: arg
         character(len=:), allocatable :: key, value
         integer :: eq_pos
         character(len=:), allocatable :: temp_sources(:)
         character(len=:), allocatable :: temp_excludes(:)
         integer :: num_sources, num_excludes
-        
-        ! Initialize config with defaults
-        call initialize_config(config)
         
         success = .true.
         error_message = ""
@@ -66,15 +96,10 @@ contains
         num_sources = 0
         num_excludes = 0
         
-        argc = size(args)
-        
-        do i = 1, argc
-            arg = trim(args(i))
+        do i = 1, flag_count
+            arg = trim(flags(i))
             
             if (len_trim(arg) == 0) cycle
-            
-            ! Skip executable paths (they should not be treated as arguments)
-            if (is_executable_path(arg)) cycle
             
             ! Check for help flag
             if (arg == "--help" .or. arg == "-h") then
@@ -155,7 +180,121 @@ contains
         call finalize_array(temp_sources, num_sources, config%source_paths)
         call finalize_array(temp_excludes, num_excludes, &
                            config%exclude_patterns)
-    end subroutine parse_config
+    end subroutine process_flags
+    
+    ! Process positional arguments as coverage files
+    subroutine process_positional_arguments(positionals, positional_count, &
+                                          config, success, error_message)
+        character(len=*), intent(in) :: positionals(:)
+        integer, intent(in) :: positional_count
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        success = .true.
+        error_message = ""
+        
+        if (positional_count > 0) then
+            ! Validate coverage file extensions
+            call validate_coverage_files(positionals(1:positional_count), &
+                                       success, error_message)
+            if (.not. success) return
+            
+            ! Store coverage files (deallocate first if already allocated)
+            if (allocated(config%coverage_files)) deallocate(config%coverage_files)
+            allocate(character(len=MAX_PATH_LENGTH) :: &
+                    config%coverage_files(positional_count))
+            config%coverage_files(1:positional_count) = &
+                positionals(1:positional_count)
+        end if
+    end subroutine process_positional_arguments
+
+    ! Helper function to detect flag arguments
+    function is_flag_argument(arg) result(is_flag)
+        character(len=*), intent(in) :: arg
+        logical :: is_flag
+        
+        is_flag = (len_trim(arg) > 2) .and. (arg(1:2) == "--")
+    end function is_flag_argument
+    
+    ! Classify arguments into flags and positional arguments
+    subroutine classify_arguments(args, flags, flag_count, positionals, &
+                                 positional_count)
+        character(len=*), intent(in) :: args(:)
+        character(len=:), allocatable, intent(out) :: flags(:)
+        integer, intent(out) :: flag_count
+        character(len=:), allocatable, intent(out) :: positionals(:)
+        integer, intent(out) :: positional_count
+        
+        integer :: i, argc
+        character(len=MAX_PATH_LENGTH) :: temp_flags(MAX_ARRAY_SIZE)
+        character(len=MAX_PATH_LENGTH) :: temp_positionals(MAX_ARRAY_SIZE)
+        
+        argc = size(args)
+        flag_count = 0
+        positional_count = 0
+        
+        ! Classify each argument
+        do i = 1, argc
+            if (len_trim(args(i)) == 0) cycle
+            
+            if (is_flag_argument(args(i))) then
+                flag_count = flag_count + 1
+                temp_flags(flag_count) = trim(args(i))
+            else
+                positional_count = positional_count + 1
+                temp_positionals(positional_count) = trim(args(i))
+            end if
+        end do
+        
+        ! Allocate and copy flags
+        if (flag_count > 0) then
+            allocate(character(len=MAX_PATH_LENGTH) :: flags(flag_count))
+            flags(1:flag_count) = temp_flags(1:flag_count)
+        else
+            allocate(character(len=MAX_PATH_LENGTH) :: flags(0))
+        end if
+        
+        ! Allocate and copy positionals
+        if (positional_count > 0) then
+            allocate(character(len=MAX_PATH_LENGTH) :: positionals(positional_count))
+            positionals(1:positional_count) = temp_positionals(1:positional_count)
+        else
+            allocate(character(len=MAX_PATH_LENGTH) :: positionals(0))
+        end if
+    end subroutine classify_arguments
+    
+    ! Validate coverage file extensions and security
+    subroutine validate_coverage_files(files, success, error_message)
+        character(len=*), intent(in) :: files(:)
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: i
+        character(len=:), allocatable :: file_ext
+        
+        success = .true.
+        error_message = ""
+        
+        do i = 1, size(files)
+            if (len_trim(files(i)) == 0) cycle
+            
+            ! Check for .gcov extension
+            if (len_trim(files(i)) < 5) then
+                success = .false.
+                error_message = "Invalid file name: " // trim(files(i))
+                return
+            end if
+            
+            file_ext = files(i)(len_trim(files(i))-4:len_trim(files(i)))
+            if (file_ext /= ".gcov") then
+                success = .false.
+                error_message = "Invalid file extension: " // trim(files(i)) // &
+                              " (expected .gcov)"
+                return
+            end if
+        end do
+    end subroutine validate_coverage_files
 
     subroutine parse_real(str, value, success)
         character(len=*), intent(in) :: str
@@ -333,6 +472,7 @@ contains
         config%gcov_executable = "gcov"  ! Default to system gcov
         allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
         allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
+        allocate(character(len=MAX_PATH_LENGTH) :: config%coverage_files(0))
         config%minimum_coverage = MIN_COVERAGE
         config%verbose = .false.
         config%quiet = .false.
@@ -486,34 +626,5 @@ contains
             return
         end if
     end subroutine validate_config
-
-    ! Helper function to detect if an argument is likely an executable path
-    function is_executable_path(arg) result(is_exec)
-        character(len=*), intent(in) :: arg
-        logical :: is_exec
-        
-        ! Detect executable paths by checking for:
-        ! 1. Absolute paths starting with /
-        ! 2. Paths containing /build/ (common in FPM builds)
-        ! 3. Paths ending with common executable names
-        is_exec = .false.
-        
-        ! Check for absolute path starting with /
-        if (len_trim(arg) > 0 .and. arg(1:1) == '/') then
-            ! Check if it contains typical build directories
-            if (index(arg, '/build/') > 0 .or. &
-                index(arg, '/app/') > 0 .or. &
-                index(arg, 'fortcov') > 0) then
-                is_exec = .true.
-                return
-            end if
-        end if
-        
-        ! Check for paths ending with executable names
-        if (index(arg, 'fortcov') > 0 .and. &
-            (index(arg, '/') > 0 .or. index(arg, '\') > 0)) then
-            is_exec = .true.
-        end if
-    end function is_executable_path
 
 end module fortcov_config
