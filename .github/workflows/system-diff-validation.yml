@@ -22,9 +22,8 @@ jobs:
         fetch-depth: 10  # Need history for commit comparisons
     
     - name: Setup Fortran environment
-      uses: fortls/setup-fortls@v1
-      with:
-        fortls-version: latest
+      run: |
+        echo "Using system gfortran - fortls not required for CI"
     
     - name: Install gfortran
       run: |
