@@ -1,0 +1,11 @@
+name = "do_loops_test"
+version = "0.1.0"
+description = "Test fixture for do loop coverage"
+
+[build]
+auto-executables = true
+
+[[executable]]
+name = "test_loops"
+source-dir = "."
+main = "test_loops.f90"

@@ -69,16 +69,19 @@ contains
         end if
         
         ! Parse coverage data from all files
-        merged_coverage = parse_all_coverage_files(filtered_files, config, &
-                                                  parser_error)
-        
-        if (parser_error) then
-            if (.not. config%quiet) then
-                print *, "Error: Failed to parse coverage data"
+        block
+            character(len=:), allocatable :: parse_error_context
+            merged_coverage = parse_all_coverage_files(filtered_files, config, &
+                                                      parser_error, parse_error_context)
+            
+            if (parser_error) then
+                if (.not. config%quiet) then
+                    print *, "Error: Coverage parsing failed - " // parse_error_context
+                end if
+                exit_code = EXIT_FAILURE
+                return
             end if
-            exit_code = EXIT_FAILURE
-            return
-        end if
+        end block
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(merged_coverage)
@@ -91,8 +94,9 @@ contains
         call create_reporter(config%output_format, reporter, reporter_error)
         if (reporter_error) then
             if (.not. config%quiet) then
-                print *, "Error: Unsupported output format: ", &
-                        config%output_format
+                print *, "Error: Unsupported output format '" // &
+                        trim(config%output_format) // &
+                        "'. Supported formats: markdown, md"
             end if
             exit_code = EXIT_FAILURE
             return
@@ -266,11 +270,12 @@ contains
     end function matches_pattern
 
     ! Parse coverage data from all files and merge
-    function parse_all_coverage_files(files, config, error_flag) &
+    function parse_all_coverage_files(files, config, error_flag, error_context) &
             result(merged_coverage)
         character(len=*), intent(in) :: files(:)
         type(config_t), intent(in) :: config
         logical, intent(out) :: error_flag
+        character(len=:), allocatable, intent(out) :: error_context
         type(coverage_data_t) :: merged_coverage
         
         class(coverage_parser_t), allocatable :: parser
@@ -280,6 +285,7 @@ contains
         integer :: i, total_files, current_files
         
         error_flag = .false.
+        error_context = ""
         total_files = 0
         
         ! Create parser based on first file (auto-detection)
@@ -287,10 +293,12 @@ contains
             call create_parser(files(1), parser, parser_error)
             if (parser_error) then
                 error_flag = .true.
+                error_context = "Unsupported coverage file format: " // trim(files(1))
                 return
             end if
         else
             error_flag = .true.
+            error_context = "No coverage files provided to parser"
             return
         end if
         
@@ -330,9 +338,9 @@ contains
             ! No coverage data found
             allocate(all_files(0))
             call merged_coverage%init(all_files)
-            if (.not. config%quiet) then
-                print *, "Warning: No coverage data could be parsed"
-            end if
+            error_flag = .true.
+            error_context = "No valid coverage data found in any of the " // &
+                           trim(int_to_string(size(files))) // " coverage files"
         end if
     end function parse_all_coverage_files
 
@@ -350,5 +358,15 @@ contains
             end if
         end do
     end function to_lower
+
+    ! Convert integer to string (helper function)
+    function int_to_string(value) result(str)
+        integer, intent(in) :: value
+        character(len=:), allocatable :: str
+        character(len=20) :: temp
+        
+        write(temp, '(I0)') value
+        str = trim(temp)
+    end function int_to_string
 
 end module coverage_engine

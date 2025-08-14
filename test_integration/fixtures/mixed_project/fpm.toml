@@ -1,0 +1,11 @@
+name = "mixed_project_test"
+version = "0.1.0"
+description = "Test fixture for mixed project coverage"
+
+[build]
+auto-executables = true
+
+[[executable]]
+name = "test_mixed"
+source-dir = "."
+main = "test_mixed.f90"

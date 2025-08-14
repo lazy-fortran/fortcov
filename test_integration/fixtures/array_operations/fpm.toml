@@ -1,0 +1,11 @@
+name = "array_operations_test"
+version = "0.1.0"
+description = "Test fixture for array operations coverage"
+
+[build]
+auto-executables = true
+
+[[executable]]
+name = "test_arrays"
+source-dir = "."
+main = "test_arrays.f90"

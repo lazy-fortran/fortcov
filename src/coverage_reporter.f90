@@ -26,6 +26,7 @@ module coverage_reporter
     
     ! Concrete markdown reporter implementation
     type, extends(coverage_reporter_t) :: markdown_reporter_t
+        character(len=:), allocatable :: last_error
     contains
         procedure :: generate_report => markdown_generate_report
         procedure :: get_format_name => markdown_get_format_name
@@ -109,6 +110,10 @@ contains
             open(newunit=unit, file=output_path, status='replace', iostat=stat)
             if (stat /= 0) then
                 error_flag = .true.
+                ! Store error context in reporter instance for later retrieval
+                this%last_error = "Cannot write to output file '" // &
+                                 trim(output_path) // "' (iostat=" // &
+                                 trim(int_to_string(stat)) // ")"
                 return
             end if
         end if
@@ -195,5 +200,15 @@ contains
         associate(dummy => reporter)
         end associate
     end subroutine suppress_unused_warning_reporter
+
+    ! Helper function to convert integer to string
+    function int_to_string(value) result(str)
+        integer, intent(in) :: value
+        character(len=:), allocatable :: str
+        character(len=20) :: temp
+        
+        write(temp, '(I0)') value
+        str = trim(temp)
+    end function int_to_string
 
 end module coverage_reporter
