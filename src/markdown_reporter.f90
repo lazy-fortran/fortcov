@@ -82,10 +82,14 @@ contains
         type(coverage_stats_t), intent(in) :: stats
         character(len=:), allocatable :: row
         character(len=:), allocatable :: escaped_name, percentage_str, missing_str
+        character(len=:), allocatable :: clean_filename
         integer :: missed_count
         
+        ! Clean filename by removing "0:Source:" prefix
+        clean_filename = clean_gcov_filename(filename)
+        
         ! Escape markdown special characters in filename
-        escaped_name = escape_markdown(filename)
+        escaped_name = escape_markdown(clean_filename)
         
         ! Format percentage
         percentage_str = format_percentage(real(stats%percentage), 2)
@@ -237,5 +241,22 @@ contains
         write(buffer, '(I0)') int_val
         str = trim(buffer)
     end function int_to_string
+
+    ! Clean gcov filename by removing "0:Source:" prefix
+    function clean_gcov_filename(filename) result(cleaned)
+        character(len=*), intent(in) :: filename
+        character(len=:), allocatable :: cleaned
+        integer :: colon_pos
+        
+        ! Find the pattern "0:Source:"
+        colon_pos = index(filename, ":Source:")
+        if (colon_pos > 0) then
+            ! Remove the "0:Source:" prefix
+            cleaned = filename(colon_pos + 8:)
+        else
+            ! No prefix found, return as-is
+            cleaned = trim(filename)
+        end if
+    end function clean_gcov_filename
 
 end module markdown_reporter
