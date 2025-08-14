@@ -37,15 +37,8 @@ contains
             
             output = input / 2
             
-            ! Call deeply nested procedure
-            call deeply_nested_procedure()
-            
-        contains
-            
-            subroutine deeply_nested_procedure()
-                ! This represents deeply nested structure
-                value = value + 1
-            end subroutine deeply_nested_procedure
+            ! Simple nested calculation without deeply nested contains
+            value = value + 1
             
         end function nested_function
         

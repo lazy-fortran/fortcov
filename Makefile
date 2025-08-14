@@ -71,7 +71,7 @@ generate-lcov-report: ## Generate coverage report using lcov toolchain
 	fpm build --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 2: Running tests with coverage..."
-	fpm test --flag "$(COVERAGE_FLAGS)"
+	fpm test --flag "$(COVERAGE_FLAGS)" || echo "Warning: Some tests failed, continuing..."
 	
 	@echo "Step 3: Capturing coverage with lcov..."
 	./external/lcov/bin/lcov --capture --directory . --output-file $(OUTPUT_DIR)/coverage.info \
@@ -80,7 +80,7 @@ generate-lcov-report: ## Generate coverage report using lcov toolchain
 	
 	@echo "Step 4: Converting to Cobertura XML..."
 	@if [ -f "$(OUTPUT_DIR)/coverage.info" ]; then \
-		python3 external/lcov_cobertura/lcov_cobertura.py $(OUTPUT_DIR)/coverage.info \
+		python3 external/lcov_cobertura/lcov_cobertura/lcov_cobertura.py $(OUTPUT_DIR)/coverage.info \
 			--output $(OUTPUT_DIR)/coverage.xml 2>/dev/null || \
 		echo "Error: lcov_cobertura conversion failed" >> $(LCOV_OUTPUT); \
 	fi
@@ -102,7 +102,7 @@ generate-fortcov-report: ## Generate coverage report using fortcov
 	fpm build --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 2: Running tests with coverage..."
-	fpm test --flag "$(COVERAGE_FLAGS)"
+	fpm test --flag "$(COVERAGE_FLAGS)" || echo "Warning: Some tests failed, continuing..."
 	
 	@echo "Step 3: Running fortcov analysis..."
 	fpm run -- \

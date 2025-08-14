@@ -23,6 +23,7 @@ contains
     
     function test_array_constructor() result(result_array)
         integer :: result_array(5)
+        integer :: i
         
         ! Array constructor with implied do
         result_array = [(i*i, i = 1, 5)]
