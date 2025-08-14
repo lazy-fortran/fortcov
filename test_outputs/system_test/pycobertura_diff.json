@@ -1,0 +1,22 @@
+{
+    "files": [
+        {
+            "Filename": "src/coverage_model.f90",
+            "Stmts": "0",
+            "Miss": "-1",
+            "Cover": "+33.33%"
+        },
+        {
+            "Filename": "src/coverage_parser.f90",
+            "Stmts": "0",
+            "Miss": "+1",
+            "Cover": "-50.00%"
+        }
+    ],
+    "total": {
+        "Filename": "TOTAL",
+        "Stmts": "0",
+        "Miss": "0",
+        "Cover": "+100.00%"
+    }
+}

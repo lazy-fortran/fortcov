@@ -1,0 +1,32 @@
+
+Coverage Diff Comparison Report
+===============================
+
+Summary:
+  Total checks: 4
+  Passed: 2
+  Failed: 2
+  Success rate: 50.0%
+
+Detailed Results:
+
+1. [PASS] File structure matches (2 files)
+   Details:
+     file_count: 2
+
+2. [FAIL] Coverage percentages differ beyond tolerance
+   Details:
+     mismatches: [{'file': 'src/coverage_model.f90', 'fortcov': 0.8, 'pycobertura': 0.3333, 'difference': 0.46670000000000006, 'tolerance': 0.001}, {'file': 'src/coverage_parser.f90', 'fortcov': 0.8, 'pycobertura': -0.5, 'difference': 1.3, 'tolerance': 0.001}]
+
+3. [FAIL] Coverage deltas differ beyond tolerance
+   Details:
+     mismatches: [{'file': 'src/coverage_model.f90', 'fortcov_delta': 0.05, 'pycobertura_delta': 0.3333, 'difference': 0.2833, 'tolerance': 0.01}, {'file': 'src/coverage_parser.f90', 'fortcov_delta': 0.05, 'pycobertura_delta': -0.5, 'difference': 0.55, 'tolerance': 0.01}]
+
+4. [PASS] Coverage classifications equivalent (simplified check)
+   Details:
+     note: Full implementation depends on fortcov diff format
+
+Tolerance Configuration:
+  Coverage percentage: ±0.100%
+  Execution count: ±0
+  Delta calculations: ±1.000%
