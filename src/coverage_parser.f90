@@ -160,7 +160,9 @@ contains
                 ! Skip graph and data header lines
                 cycle
             else if (index(line, "function ") > 0 .and. index(line, " called ") > 0) then
-                ! Skip function summary lines
+                ! Parse function summary lines instead of skipping them
+                call parse_function_summary_line(line, source_filename, files_array, &
+                                                files_count)
                 cycle
             end if
             
@@ -273,6 +275,119 @@ contains
         
         deallocate(temp_array)
     end subroutine resize_lines_array
+    
+    ! Parse function summary line and add function to appropriate file
+    ! Format: "function FUNCTION_NAME called N returned P%"
+    subroutine parse_function_summary_line(line, current_filename, files_array, &
+                                          files_count)
+        character(len=*), intent(in) :: line
+        character(len=*), intent(in) :: current_filename  
+        type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
+        integer, intent(inout) :: files_count
+        
+        character(len=:), allocatable :: function_name, temp_str
+        integer :: function_call_count, return_percentage
+        integer :: func_start, func_end, called_pos, returned_pos
+        integer :: iostat_val
+        type(coverage_function_t) :: new_function
+        
+        ! Extract function name
+        func_start = index(line, "function ") + 9
+        called_pos = index(line, " called ")
+        
+        if (func_start <= 9 .or. called_pos <= 0 .or. called_pos <= func_start) then
+            return ! Malformed line, skip
+        end if
+        
+        func_end = called_pos - 1
+        function_name = trim(line(func_start:func_end))
+        
+        if (len(function_name) == 0) then
+            return ! Empty function name, skip
+        end if
+        
+        ! Extract call count
+        called_pos = called_pos + 8  ! Move past " called "
+        returned_pos = index(line, " returned ")
+        
+        if (returned_pos <= 0 .or. returned_pos <= called_pos) then
+            return ! Malformed line, skip
+        end if
+        
+        temp_str = trim(line(called_pos:returned_pos-1))
+        read(temp_str, *, iostat=iostat_val) function_call_count
+        
+        if (iostat_val /= 0) then
+            function_call_count = 0  ! Default to 0 if parsing fails
+        end if
+        
+        ! Extract return percentage (optional, for future use)
+        returned_pos = returned_pos + 10  ! Move past " returned "
+        temp_str = trim(line(returned_pos:))
+        
+        ! Remove '%' if present
+        if (len(temp_str) > 0 .and. temp_str(len(temp_str):len(temp_str)) == '%') then
+            temp_str = temp_str(1:len(temp_str)-1)
+        end if
+        
+        read(temp_str, *, iostat=iostat_val) return_percentage
+        
+        if (iostat_val /= 0) then
+            return_percentage = 0  ! Default if parsing fails
+        end if
+        
+        ! Create function object with parsed data
+        call new_function%init(name=function_name, parent_module="", &
+                              is_module_procedure=.false., &
+                              execution_count=function_call_count, &
+                              line_number=0, filename=current_filename)
+        
+        ! Add function to the current file (find or create file entry)
+        call add_function_to_current_file(new_function, current_filename, &
+                                         files_array, files_count)
+    end subroutine parse_function_summary_line
+    
+    ! Add function to current file in files array
+    subroutine add_function_to_current_file(func, filename, files_array, files_count)
+        type(coverage_function_t), intent(in) :: func
+        character(len=*), intent(in) :: filename
+        type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
+        integer, intent(inout) :: files_count
+        
+        integer :: file_idx
+        type(coverage_function_t), allocatable :: temp_functions(:)
+        integer :: current_func_count
+        
+        ! Find the current file in the array
+        file_idx = 0
+        do file_idx = 1, files_count
+            if (files_array(file_idx)%filename == filename) then
+                exit
+            end if
+        end do
+        
+        ! If file not found, this function will be added when file is created
+        ! For now, we'll store it for later association
+        if (file_idx > files_count) then
+            return  ! File not found, skip for now
+        end if
+        
+        ! Add function to the file's function array
+        if (.not. allocated(files_array(file_idx)%functions)) then
+            allocate(files_array(file_idx)%functions(1))
+            files_array(file_idx)%functions(1) = func
+        else
+            ! Extend the functions array
+            current_func_count = size(files_array(file_idx)%functions)
+            allocate(temp_functions(current_func_count + 1))
+            temp_functions(1:current_func_count) = files_array(file_idx)%functions
+            temp_functions(current_func_count + 1) = func
+            
+            deallocate(files_array(file_idx)%functions)
+            allocate(files_array(file_idx)%functions, source=temp_functions)
+            deallocate(temp_functions)
+        end if
+    end subroutine add_function_to_current_file
     
     ! Helper subroutine to add a file to the files array
     subroutine add_file_to_array(files_array, files_count, filename, lines)
