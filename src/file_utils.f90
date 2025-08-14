@@ -255,7 +255,7 @@ contains
         
         if (error_flag) then
             if (file_size == 0) then
-                error_ctx%error_code = ERROR_INVALID_GCNO_FORMAT
+                error_ctx%error_code = ERROR_INVALID_CONFIG
                 write(error_ctx%message, '(A,A)') &
                     "Empty file: ", trim(filename)
                 write(error_ctx%suggestion, '(A)') &

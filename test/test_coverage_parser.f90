@@ -63,12 +63,12 @@ contains
         print *, "  Test 2: Parser can identify supported files"
         
         ! Given: A gcov_parser instance
-        ! When: Calling can_parse("data.gcda")
+        ! When: Calling can_parse("data.gcov") (text format only after cleanup)
         ! Then: Should return .true.
-        passed = parser%can_parse("data.gcda")
+        passed = parser%can_parse("data.gcov")
         
         if (.not. passed) then
-            print *, "    FAILED: gcov_parser should support .gcda files"
+            print *, "    FAILED: gcov_parser should support .gcov files"
         else
             print *, "    PASSED"
         end if
@@ -101,19 +101,19 @@ contains
         
         ! Given: A gcov_parser instance
         ! When: Calling get_required_files()
-        ! Then: Should return [".gcda", ".gcno"]
+        ! Then: Should return [".gcov"] (text format only after cleanup)
         extensions = parser%get_required_files()
         
-        passed = (size(extensions) == 2) .and. &
-                 ((trim(extensions(1)) == ".gcda" .and. &
-                   trim(extensions(2)) == ".gcno") .or. &
-                  (trim(extensions(1)) == ".gcno" .and. &
-                   trim(extensions(2)) == ".gcda"))
+        passed = (size(extensions) == 1) .and. &
+                 (trim(extensions(1)) == ".gcov")
         
         if (.not. passed) then
-            print *, "    FAILED: Expected ['.gcda', '.gcno']"
+            print *, "    FAILED: Expected ['.gcov']"
             if (allocated(extensions)) then
                 print *, "    Got", size(extensions), "extensions"
+                if (size(extensions) > 0) then
+                    print *, "    First extension:", trim(extensions(1))
+                end if
             end if
         else
             print *, "    PASSED"
@@ -127,19 +127,19 @@ contains
         
         print *, "  Test 5: Parser factory selects correct parser"
         
-        ! Given: A file path "coverage.gcda"
+        ! Given: A file path "coverage.gcov" (text format only after cleanup)
         ! When: Calling create_parser(path)
         ! Then: Should return gcov_parser instance
-        call create_parser("coverage.gcda", parser, error_flag)
+        call create_parser("coverage.gcov", parser, error_flag)
         
         passed = (.not. error_flag) .and. allocated(parser)
         if (passed) then
             ! Check that it's the right type by testing a known behavior
-            passed = parser%can_parse("test.gcda")
+            passed = parser%can_parse("test.gcov")
         end if
         
         if (.not. passed) then
-            print *, "    FAILED: Factory should create gcov_parser for .gcda"
+            print *, "    FAILED: Factory should create gcov_parser for .gcov"
             print *, "    Error flag:", error_flag
         else
             print *, "    PASSED"

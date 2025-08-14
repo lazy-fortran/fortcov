@@ -147,10 +147,10 @@ contains
         if (size(config%source_paths) == 0) then
             ! Auto-detect parser format and search for appropriate files
             if (trim(config%input_format) == "gcov") then
-                temp_files = find_files("*.gcda")
+                temp_files = find_files("*.gcov")
             else
                 ! Default to gcov format
-                temp_files = find_files("*.gcda")
+                temp_files = find_files("*.gcov")
             end if
             total_count = size(temp_files)
             if (total_count > 0) then
@@ -161,9 +161,9 @@ contains
             ! Search in each specified source directory
             do i = 1, size(config%source_paths)
                 if (trim(config%input_format) == "gcov") then
-                    search_pattern = trim(config%source_paths(i)) // "/*.gcda"
+                    search_pattern = trim(config%source_paths(i)) // "/*.gcov"
                 else
-                    search_pattern = trim(config%source_paths(i)) // "/*.gcda"
+                    search_pattern = trim(config%source_paths(i)) // "/*.gcov"
                 end if
                 
                 temp_files = find_files(search_pattern)
@@ -504,7 +504,13 @@ contains
         if (size(files) > 0) then
             call create_parser(files(1), parser, parser_error)
             if (parser_error) then
-                call handle_gcno_corruption(files(1), error_ctx)
+                error_ctx%error_code = ERROR_INVALID_CONFIG
+                write(error_ctx%message, '(A,A,A)') &
+                    "Unsupported coverage file format: ", trim(files(1)), &
+                    ". Parser could not be created."
+                write(error_ctx%suggestion, '(A)') &
+                    "Ensure coverage files are in .gcov text format."
+                error_ctx%recoverable = .false.
                 return
             end if
         else

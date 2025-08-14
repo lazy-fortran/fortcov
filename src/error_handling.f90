@@ -5,9 +5,6 @@ module error_handling
     
     ! Error code enumeration
     integer, parameter, public :: ERROR_SUCCESS = 0
-    integer, parameter, public :: ERROR_INVALID_GCNO_FORMAT = 1001
-    integer, parameter, public :: ERROR_INVALID_GCDA_FORMAT = 1002
-    integer, parameter, public :: ERROR_VERSION_MISMATCH = 1003
     integer, parameter, public :: ERROR_MISSING_SOURCE_FILE = 1004
     integer, parameter, public :: ERROR_PERMISSION_DENIED = 1005
     integer, parameter, public :: ERROR_OUT_OF_MEMORY = 1006
@@ -36,8 +33,6 @@ module error_handling
     end type error_context_t
     
     ! Public procedures
-    public :: handle_gcno_corruption
-    public :: handle_version_mismatch
     public :: handle_missing_source
     public :: handle_permission_denied
     public :: handle_out_of_memory
@@ -56,41 +51,6 @@ module error_handling
 
 contains
 
-    ! Handle corrupted GCNO file errors
-    subroutine handle_gcno_corruption(filename, error_ctx)
-        character(len=*), intent(in) :: filename
-        type(error_context_t), intent(out) :: error_ctx
-        
-        error_ctx%error_code = ERROR_INVALID_GCNO_FORMAT
-        error_ctx%recoverable = .false.
-        
-        write(error_ctx%message, '(A,A,A)') &
-            "Invalid GCNO file format: ", trim(filename), &
-            ". File may be corrupted or from incompatible GCC version."
-        
-        write(error_ctx%suggestion, '(A)') &
-            "Try recompiling with coverage flags or check file integrity."
-        
-        write(error_ctx%context, '(A)') "GCNO file validation"
-    end subroutine handle_gcno_corruption
-
-    ! Handle version mismatch between GCNO and GCDA files
-    subroutine handle_version_mismatch(gcno_file, gcda_file, error_ctx)
-        character(len=*), intent(in) :: gcno_file, gcda_file
-        type(error_context_t), intent(out) :: error_ctx
-        
-        error_ctx%error_code = ERROR_VERSION_MISMATCH
-        error_ctx%recoverable = .true.
-        
-        write(error_ctx%message, '(A,A,A,A,A)') &
-            "GCC version mismatch between GCNO (", trim(gcno_file), &
-            ") and GCDA (", trim(gcda_file), ") files."
-        
-        write(error_ctx%suggestion, '(A)') &
-            "Recompile and run tests with same GCC version for best results."
-        
-        write(error_ctx%context, '(A)') "Coverage file compatibility check"
-    end subroutine handle_version_mismatch
 
     ! Handle missing source files referenced in coverage data
     subroutine handle_missing_source(source_file, error_ctx)
@@ -227,20 +187,20 @@ contains
         write(error_ctx%context, '(A)') "Module dependency analysis"
     end subroutine handle_circular_dependency_detection
 
-    ! Handle incomplete coverage data (GCNO without GCDA)
-    subroutine handle_incomplete_coverage(gcno_file, error_ctx)
-        character(len=*), intent(in) :: gcno_file
+    ! Handle incomplete coverage data
+    subroutine handle_incomplete_coverage(coverage_file, error_ctx)
+        character(len=*), intent(in) :: coverage_file
         type(error_context_t), intent(out) :: error_ctx
         
         error_ctx%error_code = ERROR_INCOMPLETE_COVERAGE
         error_ctx%recoverable = .true.
         
         write(error_ctx%message, '(A,A,A)') &
-            "Incomplete coverage data: ", trim(gcno_file), &
-            " has no corresponding GCDA file. Reporting 0% coverage."
+            "Incomplete coverage data: ", trim(coverage_file), &
+            " contains no valid coverage information. Reporting 0% coverage."
         
         write(error_ctx%suggestion, '(A)') &
-            "Run tests with coverage to generate GCDA files."
+            "Run tests with coverage flags to generate coverage data."
         
         write(error_ctx%context, '(A)') "Coverage data validation"
     end subroutine handle_incomplete_coverage
@@ -400,8 +360,8 @@ contains
         logical :: corrupted
         
         integer :: unit, stat
-        integer(kind=1) :: magic_bytes(4)
         logical :: file_exists
+        character(len=256) :: first_line
         
         corrupted = .true.  ! Assume corrupted until proven otherwise
         
@@ -409,21 +369,18 @@ contains
         inquire(file=filename, exist=file_exists)
         if (.not. file_exists) return
         
-        ! Open file and check magic number
-        open(newunit=unit, file=filename, access='stream', &
-             status='old', iostat=stat)
+        ! Open file and try to read first line
+        open(newunit=unit, file=filename, status='old', iostat=stat)
         if (stat /= 0) return
         
-        read(unit, iostat=stat) magic_bytes
+        read(unit, '(A)', iostat=stat) first_line
         close(unit)
         
         if (stat /= 0) return
         
-        ! Check for valid GCNO (oncg) or GCDA (adcg) magic numbers
-        if ((magic_bytes(1) == 111_1 .and. magic_bytes(2) == 110_1 .and. &
-             magic_bytes(3) == 99_1 .and. magic_bytes(4) == 103_1) .or. &
-            (magic_bytes(1) == 97_1 .and. magic_bytes(2) == 100_1 .and. &
-             magic_bytes(3) == 99_1 .and. magic_bytes(4) == 103_1)) then
+        ! For .gcov text files, first line should start with version info
+        ! or be readable text format
+        if (len_trim(first_line) > 0) then
             corrupted = .false.
         end if
     end function is_file_corrupted
