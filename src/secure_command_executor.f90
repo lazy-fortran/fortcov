@@ -65,26 +65,21 @@ contains
             return
         end if
         
-        ! Build command using safe construction with validated arguments
-        if (len_trim(safe_working_dir) > 0) then
-            ! Use cd with safe directory path
-            command = "cd " // escape_shell_argument(safe_working_dir) // " && "
+        ! Execute gcov command with safer working directory handling
+        if (len_trim(safe_working_dir) > 0 .and. safe_working_dir /= ".") then
+            ! For non-current directories, use a safer approach
+            ! First, change to the working directory using chdir-like approach
+            call safe_execute_in_directory(safe_working_dir, safe_gcov_path, &
+                                         safe_source_path, branch_coverage, &
+                                         safe_output_path, stat)
         else
-            command = ""
+            ! Execute in current directory - build command safely
+            call build_safe_gcov_command(safe_gcov_path, safe_source_path, &
+                                       branch_coverage, safe_output_path, command)
+            
+            ! Execute the safely constructed command
+            call execute_command_line(command, exitstat=stat)
         end if
-        
-        command = trim(command) // escape_shell_argument(safe_gcov_path)
-        
-        if (branch_coverage) then
-            command = trim(command) // " -b"
-        end if
-        
-        command = trim(command) // " " // escape_shell_argument(safe_source_path)
-        command = trim(command) // " > " // escape_shell_argument(safe_output_path)
-        command = trim(command) // " 2>&1"
-        
-        ! Execute the safely constructed command
-        call execute_command_line(command, exitstat=stat)
         
         if (stat /= 0) then
             error_ctx%error_code = ERROR_INVALID_CONFIG
@@ -212,19 +207,22 @@ contains
         
         integer :: i, path_len
         logical :: has_dangerous_chars
+        character(len=:), allocatable :: working_path
         
         call clear_error_context(error_ctx)
         path_len = len_trim(path)
         
-        ! Check for empty or excessively long paths
+        ! Handle empty paths by defaulting to current directory
+        ! This is a common case for working directories
         if (path_len == 0) then
-            error_ctx%error_code = ERROR_INVALID_CONFIG
-            call safe_write_message(error_ctx, "Empty path provided")
-            call safe_write_suggestion(error_ctx, "Provide a valid file path")
-            safe_path = ""
-            return
+            working_path = "."
+        else
+            working_path = trim(path)
         end if
         
+        path_len = len_trim(working_path)
+        
+        ! Check for excessively long paths
         if (path_len > MAX_PATH_LENGTH) then
             error_ctx%error_code = ERROR_INVALID_CONFIG
             call safe_write_message(error_ctx, "Path too long (exceeds 4096 characters)")
@@ -237,22 +235,23 @@ contains
         has_dangerous_chars = .false.
         
         ! Look for shell metacharacters that could enable injection
-        if (index(path, ';') > 0 .or. index(path, '&') > 0 .or. &
-            index(path, '|') > 0 .or. index(path, '`') > 0 .or. &
-            index(path, '$') > 0 .or. index(path, '"') > 0 .or. &
-            index(path, "'") > 0 .or. index(path, '\') > 0) then
+        if (index(working_path, ';') > 0 .or. index(working_path, '&') > 0 .or. &
+            index(working_path, '|') > 0 .or. index(working_path, '`') > 0 .or. &
+            index(working_path, '$') > 0 .or. index(working_path, '"') > 0 .or. &
+            index(working_path, "'") > 0 .or. index(working_path, '\') > 0 .or. &
+            index(working_path, char(0)) > 0) then
             has_dangerous_chars = .true.
         end if
         
         ! Check for directory traversal attempts
-        if (index(path, '../') > 0 .or. index(path, '/..') > 0) then
+        if (index(working_path, '../') > 0 .or. index(working_path, '/..') > 0) then
             has_dangerous_chars = .true.
         end if
         
         if (has_dangerous_chars) then
             error_ctx%error_code = ERROR_INVALID_CONFIG
             call safe_write_message(error_ctx, &
-                "Path contains dangerous characters: " // trim(path))
+                "Path contains dangerous characters: " // trim(working_path))
             call safe_write_suggestion(error_ctx, &
                 "Use only alphanumeric characters, dots, dashes, and forward slashes")
             safe_path = ""
@@ -260,7 +259,7 @@ contains
         end if
         
         ! Path is safe to use
-        safe_path = trim(path)
+        safe_path = working_path
     end subroutine validate_path_security
 
     ! Validate executable path and ensure it exists
@@ -397,5 +396,72 @@ contains
         write(temp_str, '(I0)') int_val
         str_val = trim(temp_str)
     end function int_to_string
+
+    ! Build gcov command safely without shell concatenation vulnerabilities
+    subroutine build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
+                                      output_path, command)
+        character(len=*), intent(in) :: gcov_path, source_path, output_path
+        logical, intent(in) :: branch_coverage
+        character(len=*), intent(out) :: command
+        
+        ! Build command with safe argument construction
+        command = escape_shell_argument(gcov_path)
+        
+        if (branch_coverage) then
+            command = trim(command) // " -b"
+        end if
+        
+        command = trim(command) // " " // escape_shell_argument(source_path)
+        command = trim(command) // " > " // escape_shell_argument(output_path)
+        command = trim(command) // " 2>&1"
+    end subroutine build_safe_gcov_command
+
+    ! Execute command in specified directory using safer process-level approach
+    subroutine safe_execute_in_directory(working_dir, gcov_path, source_path, &
+                                        branch_coverage, output_path, exit_status)
+        character(len=*), intent(in) :: working_dir, gcov_path, source_path, output_path
+        logical, intent(in) :: branch_coverage
+        integer, intent(out) :: exit_status
+        
+        character(len=MAX_COMMAND_LENGTH) :: command
+        character(len=:), allocatable :: temp_script_name
+        integer :: unit, stat
+        
+        ! For security, create a temporary script that handles directory change
+        ! This avoids shell injection in the cd command
+        call create_secure_temp_filename(temp_script_name)
+        temp_script_name = trim(temp_script_name) // ".sh"
+        
+        ! Write safe script that changes directory and executes command
+        open(newunit=unit, file=temp_script_name, status='replace', iostat=stat)
+        if (stat /= 0) then
+            exit_status = 1
+            return
+        end if
+        
+        write(unit, '(A)') "#!/bin/bash"
+        write(unit, '(A)') "set -e"  ! Exit on any error
+        write(unit, '(A)') "cd " // escape_shell_argument(working_dir)
+        
+        ! Build the gcov command
+        call build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
+                                   output_path, command)
+        write(unit, '(A)') trim(command)
+        close(unit)
+        
+        ! Make script executable and run it
+        call execute_command_line("chmod +x " // escape_shell_argument(temp_script_name), &
+                                 exitstat=stat)
+        if (stat == 0) then
+            call execute_command_line(escape_shell_argument(temp_script_name), &
+                                     exitstat=exit_status)
+        else
+            exit_status = 1
+        end if
+        
+        ! Clean up temporary script
+        call execute_command_line("rm -f " // escape_shell_argument(temp_script_name), &
+                                 exitstat=stat)
+    end subroutine safe_execute_in_directory
 
 end module secure_command_executor

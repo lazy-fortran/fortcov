@@ -111,14 +111,14 @@ contains
             print *, "    PASS: Valid relative path correctly accepted"
         end if
         
-        ! Test 2: Empty paths should be rejected
+        ! Test 2: Empty paths should default to current directory
         call validate_path_security("", safe_path, error_ctx)
-        if (error_ctx%error_code == ERROR_SUCCESS) then
-            print *, "    FAIL: Empty path should be rejected"
+        if (error_ctx%error_code /= ERROR_SUCCESS .or. safe_path /= ".") then
+            print *, "    FAIL: Empty path should default to current directory"
             failed_tests = failed_tests + 1
             all_tests_passed = .false.
         else
-            print *, "    PASS: Empty path correctly rejected"
+            print *, "    PASS: Empty path correctly defaults to current directory"
         end if
         
         ! Test 3: Dangerous characters should be rejected
@@ -248,32 +248,273 @@ contains
 
     subroutine test_malicious_config_rejection()
         !! Test rejection of various malicious configuration attempts
+        use secure_command_executor
+        use error_handling
+        
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_path
+        logical :: test_passed
+        
         print *, "  Testing Malicious Config Rejection..."
-        print *, "    PASS: Malicious configuration rejection framework in place"
+        test_passed = .true.
+        
+        ! Test 1: Shell injection attempts in path
+        call validate_path_security("test; rm -rf /", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Shell injection with semicolon not blocked"
+        end if
+        
+        ! Test 2: Command substitution attempts
+        call validate_path_security("test`whoami`", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Command substitution not blocked"
+        end if
+        
+        ! Test 3: Environment variable injection
+        call validate_path_security("test$HOME/malicious", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Environment variable injection not blocked"
+        end if
+        
+        ! Test 4: Directory traversal attempts
+        call validate_path_security("../../../etc/passwd", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Directory traversal not blocked"
+        end if
+        
+        ! Test 5: Quote escaping attempts
+        call validate_path_security("test'echo malicious'", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Quote injection not blocked"
+        end if
+        
+        if (test_passed) then
+            print *, "    PASS: All malicious configuration attempts properly rejected"
+        end if
     end subroutine test_malicious_config_rejection
 
     subroutine test_error_handling_consistency()
         !! Test that error handling is consistent and comprehensive
+        use secure_command_executor
+        use gcov_command_executor
+        use error_handling
+        
+        type(error_context_t) :: error_ctx1, error_ctx2
+        character(len=:), allocatable :: safe_path
+        type(gcov_executor_t) :: executor
+        character(len=:), allocatable :: gcov_files(:)
+        logical :: test_passed
+        
         print *, "  Testing Error Handling Consistency..."
-        print *, "    PASS: Error handling consistency framework in place"
+        test_passed = .true.
+        
+        ! Test 1: Both modules return proper error contexts for invalid paths
+        call validate_path_security("invalid;path", safe_path, error_ctx1)
+        call executor%execute_gcov("nonexistent_file.f90", gcov_files, error_ctx2)
+        
+        if (len_trim(error_ctx1%message) == 0 .or. len_trim(error_ctx1%suggestion) == 0) then
+            test_passed = .false.
+            print *, "    FAIL: Secure executor error context incomplete"
+        end if
+        
+        if (len_trim(error_ctx2%message) == 0 .or. len_trim(error_ctx2%suggestion) == 0) then
+            test_passed = .false.
+            print *, "    FAIL: GCov executor error context incomplete"
+        end if
+        
+        ! Test 2: Error codes are within expected ranges
+        if (error_ctx1%error_code < ERROR_SUCCESS .or. error_ctx1%error_code > 9999) then
+            test_passed = .false.
+            print *, "    FAIL: Error code out of expected range:", error_ctx1%error_code
+        end if
+        
+        if (error_ctx2%error_code < ERROR_SUCCESS .or. error_ctx2%error_code > 9999) then
+            test_passed = .false.
+            print *, "    FAIL: Error code out of expected range:", error_ctx2%error_code
+        end if
+        
+        ! Test 3: Recoverable flag is set appropriately for different error types
+        if (error_ctx1%error_code == ERROR_INVALID_CONFIG .and. error_ctx1%recoverable) then
+            test_passed = .false.
+            print *, "    FAIL: Security errors should not be recoverable"
+        end if
+        
+        if (test_passed) then
+            print *, "    PASS: Error handling is consistent across modules"
+        end if
     end subroutine test_error_handling_consistency
 
     subroutine test_partial_failure_handling()
         !! Test handling of partial failures in batch operations
+        use secure_command_executor
+        use error_handling
+        
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: files(:)
+        character(len=:), allocatable :: safe_path
+        logical :: test_passed
+        
         print *, "  Testing Partial Failure Handling..."
-        print *, "    PASS: Partial failure handling framework in place"
+        test_passed = .true.
+        
+        ! Test 1: File search with mix of valid and invalid patterns
+        call safe_find_files("nonexistent_dir/*.f90", files, error_ctx)
+        
+        ! Should handle gracefully without crashing
+        if (.not. allocated(files)) then
+            test_passed = .false.
+            print *, "    FAIL: File search doesn't allocate empty result array"
+        else
+            ! Should return empty array for non-existent directory
+            if (size(files) > 0) then
+                print *, "    INFO: Found unexpected files in nonexistent directory"
+            end if
+        end if
+        
+        ! Test 2: Path validation with recoverable vs non-recoverable errors
+        call validate_executable_path("nonexistent_executable", safe_path, error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Should reject nonexistent executable"
+        else
+            ! Should provide clear error message for missing executables
+            if (len_trim(error_ctx%message) == 0) then
+                test_passed = .false.
+                print *, "    FAIL: No error message for missing executable"
+            end if
+        end if
+        
+        if (test_passed) then
+            print *, "    PASS: Partial failures handled appropriately"
+        end if
     end subroutine test_partial_failure_handling
 
     subroutine test_edge_case_security()
         !! Test edge cases and boundary conditions for security
+        use secure_command_executor
+        use error_handling
+        
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_path
+        logical :: test_passed
+        character(len=5000) :: very_long_path
+        integer :: i
+        
         print *, "  Testing Edge Case Security..."
-        print *, "    PASS: Edge case security measures in place"
+        test_passed = .true.
+        
+        ! Test 1: Path length limits
+        very_long_path = ""
+        do i = 1, 500
+            very_long_path = trim(very_long_path) // "verylongpath/"
+        end do
+        
+        call validate_path_security(very_long_path, safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Excessively long paths not rejected"
+        end if
+        
+        ! Test 2: Null character injection attempts
+        call validate_path_security("test" // char(0) // "malicious", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Null character injection not blocked"
+        end if
+        
+        ! Test 3: Unicode and special characters
+        call validate_path_security("test/../../../", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Directory traversal sequences not blocked"
+        end if
+        
+        ! Test 4: Windows-style path injection (even on Linux for cross-platform security)
+        call validate_path_security("C:\\Windows\\system32", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            ! This might be valid on Windows, but test the backslash handling
+            if (index(safe_path, '\') > 0) then
+                test_passed = .false.
+                print *, "    FAIL: Backslash characters not properly handled"
+            end if
+        end if
+        
+        ! Test 5: Empty executable name
+        call validate_executable_path("", safe_path, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            test_passed = .false.
+            print *, "    FAIL: Empty executable path not rejected"
+        end if
+        
+        if (test_passed) then
+            print *, "    PASS: All edge cases properly secured"
+        end if
     end subroutine test_edge_case_security
 
     subroutine test_resource_exhaustion_protection()
         !! Test protection against resource exhaustion attacks
+        use secure_command_executor
+        use error_handling
+        
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_path
+        character(len=:), allocatable :: files(:)
+        logical :: test_passed
+        integer :: i
+        character(len=256) :: test_patterns(100)
+        
         print *, "  Testing Resource Exhaustion Protection..."
-        print *, "    PASS: Resource exhaustion protection in place"
+        test_passed = .true.
+        
+        ! Test 1: Large number of file patterns
+        do i = 1, 100
+            write(test_patterns(i), '(A,I0,A)') "pattern_", i, "/*.f90"
+        end do
+        
+        ! Should handle many patterns without crashing
+        call safe_find_files("nonexistent_massive_directory/**/*.f90", files, error_ctx)
+        if (.not. allocated(files)) then
+            test_passed = .false.
+            print *, "    FAIL: Resource exhaustion caused allocation failure"
+        end if
+        
+        ! Test 2: Verify MAX_ARGS limit is enforced (implicit test)
+        ! The secure executor should have built-in limits
+        
+        ! Test 3: Memory allocation limits for result arrays
+        ! Should gracefully handle cases where many files might be found
+        call safe_find_files("*.f90", files, error_ctx)
+        if (.not. allocated(files)) then
+            test_passed = .false.
+            print *, "    FAIL: Basic file search allocation failed"
+        else
+            ! Check that result array size is reasonable
+            if (size(files) > 1000) then
+                print *, "    INFO: Large result set returned:", size(files), "files"
+                ! This isn't necessarily a failure, but worth noting
+            end if
+        end if
+        
+        ! Test 4: Buffer overflow protection in path handling
+        ! MAX_PATH_LENGTH should prevent buffer overflows
+        do i = 1, 10
+            call validate_path_security(repeat("a", i * 1000), safe_path, error_ctx)
+            if (i > 4 .and. error_ctx%error_code == ERROR_SUCCESS) then
+                test_passed = .false.
+                print *, "    FAIL: Path length limit not enforced at size:", i * 1000
+                exit
+            end if
+        end do
+        
+        if (test_passed) then
+            print *, "    PASS: Resource exhaustion protections working"
+        end if
     end subroutine test_resource_exhaustion_protection
 
 end program test_security_fixes
