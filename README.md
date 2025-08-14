@@ -82,7 +82,6 @@ fortcov/
 ├── src/                    # Core library modules
 │   ├── coverage_model.f90      # Data structures
 │   ├── coverage_parser.f90     # Parser abstraction
-│   ├── gcov_binary_format.f90  # Binary format parser
 │   ├── coverage_statistics.f90 # Metric calculations
 │   ├── coverage_reporter.f90   # Reporter abstraction
 │   └── markdown_reporter.f90   # Markdown generation
@@ -118,9 +117,10 @@ Contributions are welcome! Please ensure:
 ## Roadmap
 
 ### Current (MVP)
-- [x] GCC/gfortran binary format support
-- [x] Markdown report generation
-- [x] Basic line coverage
+- [x] Architecture foundation
+- [x] Coverage data model
+- [x] Markdown report generation framework
+- [ ] GCC gcov text parsing implementation
 - [ ] Command-line interface
 - [ ] Configuration file support
 

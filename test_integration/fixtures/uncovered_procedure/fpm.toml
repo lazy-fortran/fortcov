@@ -1,0 +1,11 @@
+name = "uncovered_procedure_test"
+version = "0.1.0"
+description = "Test fixture for uncovered procedure detection"
+
+[build]
+auto-executables = true
+
+[[executable]]
+name = "test_uncovered"
+source-dir = "."
+main = "test_uncovered.f90"

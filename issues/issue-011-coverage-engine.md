@@ -12,15 +12,15 @@ As a fortcov user, I want a central engine that orchestrates the coverage analys
 
 ## Test Specifications (RED Phase)
 
-### Test 1: End-to-end coverage analysis
-**Given**: GCov files and configuration for markdown output
-**When**: Running analyze_coverage()
-**Then**: Should produce markdown report with correct statistics
+### Test 1: End-to-end coverage analysis  
+**Given**: Source files with .gcno/.gcda coverage data
+**When**: Running analyze_coverage() with gcov text parsing
+**Then**: Should execute gcov commands and produce markdown report
 
-### Test 2: Parser auto-detection
-**Given**: Directory with .gcda/.gcno files
-**When**: No explicit format specified
-**Then**: Should automatically select gcov_parser
+### Test 2: Gcov command execution workflow
+**Given**: Directory with Fortran source files and coverage data  
+**When**: Processing coverage with simplified pipeline
+**Then**: Should run gcov, parse .gcov text files, generate markdown
 
 ### Test 3: Multiple source directories
 **Given**: Config with source_paths=["src", "lib"]
@@ -37,15 +37,15 @@ As a fortcov user, I want a central engine that orchestrates the coverage analys
 **When**: Completing analysis
 **Then**: Should return non-zero exit code
 
-### Test 6: Handle missing coverage files
-**Given**: No .gcda files (code not executed)
-**When**: Running analysis
-**Then**: Should report 0% coverage for all files
+### Test 6: Handle missing coverage data
+**Given**: No .gcda files (code not executed) 
+**When**: Running gcov analysis with -n flag
+**Then**: Should generate .gcov files showing 0% coverage
 
-### Test 7: Parser error handling
-**Given**: Corrupted .gcda file
-**When**: Parsing coverage
-**Then**: Should report error and continue with other files
+### Test 7: Gcov command error handling
+**Given**: gcov command fails or missing gcov tool
+**When**: Executing coverage analysis
+**Then**: Should report clear error and continue with other files
 
 ### Test 8: Reporter error handling
 **Given**: Invalid output path (no permissions)

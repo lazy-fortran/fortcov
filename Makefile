@@ -67,7 +67,8 @@ coverage-comparison: clean-coverage build external ## Generate both coverage rep
 
 generate-lcov-report: ## Generate coverage report using lcov toolchain
 	@echo "📊 Generating coverage using lcov toolchain..."
-	@echo "Step 1: Building with coverage flags..."
+	@echo "Step 1: Clean and build with coverage flags..."
+	fpm clean --skip
 	fpm build --flag "$(COVERAGE_FLAGS)"
 	
 	@echo "Step 2: Running tests with coverage..."
@@ -75,23 +76,47 @@ generate-lcov-report: ## Generate coverage report using lcov toolchain
 	
 	@echo "Step 3: Capturing coverage with lcov..."
 	./external/lcov/bin/lcov --capture --directory . --output-file $(OUTPUT_DIR)/coverage.info \
-		--exclude '/usr/*' --exclude '*/build/*' --exclude '*/test/*' --quiet 2>/dev/null || \
-	echo "# LCOV Toolchain Report\n\nError: lcov capture failed" > $(LCOV_OUTPUT)
+		--exclude '*/test/*' --ignore-errors inconsistent,unused,path
+	@echo "Validating lcov capture output..."
+	@if [ ! -f "$(OUTPUT_DIR)/coverage.info" ] || [ ! -s "$(OUTPUT_DIR)/coverage.info" ]; then \
+		echo "Error: lcov capture failed - no coverage.info generated" >&2; \
+		echo "# LCOV Toolchain Report\n\nError: lcov capture failed" > $(LCOV_OUTPUT); \
+		exit 1; \
+	fi
+	@if ! grep -q "^TN:" $(OUTPUT_DIR)/coverage.info; then \
+		echo "Error: lcov capture failed - invalid coverage.info format" >&2; \
+		echo "# LCOV Toolchain Report\n\nError: invalid lcov format" > $(LCOV_OUTPUT); \
+		exit 1; \
+	fi
 	
 	@echo "Step 4: Converting to Cobertura XML..."
-	@if [ -f "$(OUTPUT_DIR)/coverage.info" ]; then \
-		python3 external/lcov_cobertura/lcov_cobertura.py $(OUTPUT_DIR)/coverage.info \
-			--output $(OUTPUT_DIR)/coverage.xml 2>/dev/null || \
-		echo "Error: lcov_cobertura conversion failed" >> $(LCOV_OUTPUT); \
+	python3 external/lcov_cobertura/lcov_cobertura/lcov_cobertura.py $(OUTPUT_DIR)/coverage.info \
+		--output $(OUTPUT_DIR)/coverage.xml
+	@echo "Validating Cobertura XML output..."
+	@if [ ! -f "$(OUTPUT_DIR)/coverage.xml" ] || [ ! -s "$(OUTPUT_DIR)/coverage.xml" ]; then \
+		echo "Error: lcov_cobertura conversion failed - no XML generated" >&2; \
+		echo "# LCOV Toolchain Report\n\nError: XML conversion failed" > $(LCOV_OUTPUT); \
+		exit 1; \
+	fi
+	@if ! grep -q "<coverage" $(OUTPUT_DIR)/coverage.xml; then \
+		echo "Error: lcov_cobertura conversion failed - invalid XML format" >&2; \
+		echo "# LCOV Toolchain Report\n\nError: invalid XML format" > $(LCOV_OUTPUT); \
+		exit 1; \
 	fi
 	
 	@echo "Step 5: Converting to Markdown with pycobertura..."
-	@if [ -f "$(OUTPUT_DIR)/coverage.xml" ]; then \
-		cd external/pycobertura && python3 -m pycobertura report ../../$(OUTPUT_DIR)/coverage.xml \
-			--format markdown --output ../../$(LCOV_OUTPUT) 2>/dev/null || \
-		echo "# LCOV Toolchain Report\n\nError: pycobertura conversion failed" > ../../$(LCOV_OUTPUT); \
-	else \
-		echo "# LCOV Toolchain Report\n\nError: No coverage XML generated" > $(LCOV_OUTPUT); \
+	python3 -m pycobertura show $(OUTPUT_DIR)/coverage.xml \
+		--format markdown --output $(LCOV_OUTPUT)
+	@echo "Validating Markdown output..."
+	@if [ ! -f "$(LCOV_OUTPUT)" ] || [ ! -s "$(LCOV_OUTPUT)" ]; then \
+		echo "Error: pycobertura conversion failed - no Markdown generated" >&2; \
+		echo "# LCOV Toolchain Report\n\nError: Markdown conversion failed" > $(LCOV_OUTPUT); \
+		exit 1; \
+	fi
+	@if ! grep -q "Filename" $(LCOV_OUTPUT); then \
+		echo "Error: pycobertura conversion failed - invalid Markdown format" >&2; \
+		echo "# LCOV Toolchain Report\n\nError: invalid Markdown format" > $(LCOV_OUTPUT); \
+		exit 1; \
 	fi
 	
 	@echo "✅ LCOV toolchain report: $(LCOV_OUTPUT)"
@@ -106,11 +131,22 @@ generate-fortcov-report: ## Generate coverage report using fortcov
 	
 	@echo "Step 3: Running fortcov analysis..."
 	fpm run -- \
-		--input-format gcov \
-		--output-format markdown \
-		--output-path $(FORTCOV_OUTPUT) \
-		--verbose 2>/dev/null || \
-	echo "# FortCov Report\n\nError: Could not generate report with fortcov" > $(FORTCOV_OUTPUT)
+		--input-format=gcov \
+		--output-format=markdown \
+		--output=$(FORTCOV_OUTPUT) \
+		--source=build/**/ \
+		--verbose
+	@echo "Validating FortCov output..."
+	@if [ ! -f "$(FORTCOV_OUTPUT)" ] || [ ! -s "$(FORTCOV_OUTPUT)" ]; then \
+		echo "Error: FortCov analysis failed - no report generated" >&2; \
+		echo "# FortCov Report\n\nError: Analysis failed" > $(FORTCOV_OUTPUT); \
+		exit 1; \
+	fi
+	@if ! grep -q "Coverage Report" $(FORTCOV_OUTPUT); then \
+		echo "Error: FortCov analysis failed - invalid report format" >&2; \
+		echo "# FortCov Report\n\nError: Invalid format" > $(FORTCOV_OUTPUT); \
+		exit 1; \
+	fi
 	
 	@echo "✅ FortCov report: $(FORTCOV_OUTPUT)"
 

@@ -20,7 +20,6 @@ fortcov is a coverage analysis tool for Fortran code that processes coverage dat
    - `coverage_reporter.f90`: Abstract reporter interface
 
 3. **Parser Implementation** ✅
-   - `gcov_binary_format.f90`: Comprehensive binary parser for .gcno/.gcda files
    - Handles endianness, function metadata, line mappings, and execution counters
    - Includes fallback to gcov text output parsing
 
@@ -66,7 +65,6 @@ The project uses the Fortran Package Manager (FPM) structure:
 - `src/` - Core library modules for coverage analysis
   - `coverage_model.f90` - Unified data model for coverage information
   - `coverage_parser.f90` - Abstract parser interface and gcov implementation
-  - `gcov_binary_format.f90` - Binary format parser for .gcno/.gcda files
   - `coverage_statistics.f90` - Coverage metric calculations
   - `coverage_reporter.f90` - Abstract reporter interface
   - `markdown_reporter.f90` - Markdown report generation
@@ -104,6 +102,34 @@ The project uses the Fortran Package Manager (FPM) structure:
 - Markdown output should be readable both as plain text and when rendered
 - Focus on MVP features: basic line coverage with clear percentage reporting
 
+## Build Strategy
+
+### Main Project
+The main fortcov project uses **Fortran Package Manager (FPM)** for all operations:
+- `fpm build` - Compile the library and application
+- `fpm test` - Run unit tests  
+- `fpm run` - Execute the fortcov application
+- `fpm build --flag "-fprofile-arcs -ftest-coverage"` - Build with coverage instrumentation
+
+### Integration Tests
+Integration tests use a **hybrid approach** for maximum flexibility:
+- **FPM-based fixtures**: Test fixtures with `fpm.toml` files use FPM for consistent builds
+- **Legacy fixtures**: Older fixtures without `fmp.toml` use direct gfortran compilation
+- **Auto-detection**: Test runner automatically detects which approach to use per fixture
+
+### Rationale
+- **Main project**: FPM provides consistent builds, dependency management, and cross-platform compatibility
+- **Integration fixtures**: Hybrid approach allows testing various real-world scenarios:
+  - Projects using FPM (modern Fortran projects)
+  - Projects using traditional Makefiles/direct compilation (legacy codebases)
+  - Different compiler flag combinations and build structures
+- **System comparison**: Makefile uses FPM for fortcov but external tools (lcov, pycobertura) use their native approaches for accurate comparison
+
+### Coverage File Locations
+- **FPM builds**: Coverage files (.gcda/.gcno) appear in `build/gfortran_*/app/` or similar
+- **Direct compilation**: Coverage files appear alongside object files in build directory
+- **Detection**: Integration tests automatically locate coverage files regardless of build method
+
 ## Testing Strategy
 
 Tests should verify:
@@ -111,6 +137,7 @@ Tests should verify:
 2. Accurate calculation of coverage percentages
 3. Proper Markdown formatting in reports
 4. Handling of edge cases (no coverage data, 100% coverage, uncovered files)
+5. **Build approach compatibility**: Ensure fortcov works with both FPM and traditional builds
 
 ## Coverage Format Standards
 

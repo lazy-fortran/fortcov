@@ -1,0 +1,11 @@
+name = "submodules_test"
+version = "0.1.0"
+description = "Test fixture for submodules coverage"
+
+[build]
+auto-executables = true
+
+[[executable]]
+name = "test_submodules"
+source-dir = "."
+main = "test_submodules.f90"
