@@ -1,8 +1,53 @@
-external/
-build/
-*.gcda
-*.gcno
-*.gcov
-coverage/
-*.mod
+# Compiled Object files
 *.o
+*.obj
+
+# Fortran module files
+*.mod
+*.smod
+
+# Libraries
+*.lib
+*.a
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Build directories
+build/
+bin/
+
+# Coverage files (never commit binary coverage data)
+*.gcno
+*.gcda
+*.gcov
+*.info
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+/tmp/
