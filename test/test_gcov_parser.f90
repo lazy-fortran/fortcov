@@ -98,11 +98,11 @@ contains
         ! Should support .gcov files
         call assert(parser%can_parse("test.gcov"), "can parse gcov", "true", "true")
         
-        ! Should NOT support .gcda files (binary parsing removed)
+        ! Should NOT support .gcda files (binary format not supported)
         call assert(.not. parser%can_parse("test.gcda"), "cannot parse gcda", "false", &
                    merge("false", "true ", .not. parser%can_parse("test.gcda")))
         
-        ! Should NOT support .gcno files (binary parsing removed)
+        ! Should NOT support .gcno files (binary format not supported)
         call assert(.not. parser%can_parse("test.gcno"), "cannot parse gcno", "false", &
                    merge("false", "true ", .not. parser%can_parse("test.gcno")))
         

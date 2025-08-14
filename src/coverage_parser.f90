@@ -82,12 +82,12 @@ contains
         end if
         
         ! Select parser based on extension  
-        ! Binary parsing removed - text parsing not yet implemented
+        ! Select parser based on file extension
         select case (trim(extension))
         case (".gcov")
             allocate(gcov_parser_t :: parser)
         case (".gcda", ".gcno")
-            ! Binary parsing has been removed
+            ! Binary formats not supported - use gcov text output
             error_flag = .true.
         case default
             ! Unsupported file format
@@ -95,14 +95,14 @@ contains
         end select
     end subroutine create_parser
 
-    ! GCov parser implementation - currently returns error until text parsing is implemented
+    ! GCov parser implementation - text parsing to be implemented in Issue #23
     function gcov_parse(this, path, error_flag) result(coverage_data)
         class(gcov_parser_t), intent(in) :: this
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag
         type(coverage_data_t) :: coverage_data
         
-        ! Binary parsing has been removed - text parsing not yet implemented
+        ! Text parsing not yet implemented - see Issue #23
         error_flag = .true.
         coverage_data = coverage_data_t()
         
