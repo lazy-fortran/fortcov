@@ -343,19 +343,13 @@ Instead of creating minimal binary files:
 
 ## Summary: Why This Approach Wins
 
-### Before (Binary Parsing Complexity)
-- 1000+ lines of binary format parsing code
-- Endianness handling, checksum validation, arc graph reconstruction
-- Fragile parsing that breaks with GCC version changes  
-- Difficult testing with mock binary data
-- Slow development cycle due to complexity
-
-### After (Text Parsing Simplicity)  
-- ~200 lines of text parsing code
+### Simplified Architecture Benefits
+- Minimal text parsing code (~200 lines)
 - Simple line-by-line parsing with well-documented format
 - Robust: leverages GCC's own gcov tool for format handling
 - Easy testing with real .gcov files
 - **Fast path to working markdown reports**
+- No complex binary format handling required
 
 ### Implementation Priority
 1. **gcov command execution** (execute_command_line)
