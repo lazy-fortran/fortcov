@@ -124,7 +124,7 @@ contains
             if (.not. config%quiet) then
                 print *, "Error: Unsupported output format '" // &
                         trim(config%output_format) // &
-                        "'. Supported formats: markdown, md"
+                        "'. Supported formats: markdown, md, json, xml"
             end if
             exit_code = EXIT_FAILURE
             return
@@ -487,7 +487,7 @@ contains
             write(error_ctx%message, '(A,A)') &
                 "Unsupported output format: ", config%output_format
             write(error_ctx%suggestion, '(A)') &
-                "Use supported formats: markdown, html, xml."
+                "Use supported formats: markdown, md, json, xml."
             error_ctx%recoverable = .false.
             exit_code = EXIT_FAILURE
             return
@@ -671,7 +671,7 @@ contains
             if (.not. config%quiet) then
                 print *, "Error: Unsupported output format '" // &
                         trim(config%output_format) // &
-                        "'. Supported formats: markdown, md"
+                        "'. Supported formats: markdown, md, json, xml"
             end if
             exit_code = EXIT_FAILURE
             return
