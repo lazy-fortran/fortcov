@@ -84,7 +84,7 @@ contains
         if (total_lines > 0) then
             percentage = real(covered_lines) / real(total_lines) * 100.0
         else
-            percentage = 100.0  ! No executable lines means 100% coverage
+            percentage = 0.0  ! No executable lines means 0% coverage
         end if
         
         ! Input validation: Clamp percentage to valid range
@@ -144,7 +144,7 @@ contains
         if (total_branches > 0) then
             percentage = real(covered_branches) / real(total_branches) * 100.0
         else
-            percentage = 100.0  ! No branches means 100% coverage
+            percentage = 0.0  ! No branches means 0% coverage
         end if
         
         ! Input validation: Clamp percentage to valid range
@@ -180,7 +180,7 @@ contains
         if (total_functions > 0) then
             percentage = real(covered_functions) / real(total_functions) * 100.0
         else
-            percentage = 100.0  ! No functions means 100% coverage
+            percentage = 0.0  ! No functions means 0% coverage
         end if
         
         ! Input validation: Clamp percentage to valid range
