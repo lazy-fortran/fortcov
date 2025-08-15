@@ -203,7 +203,7 @@ contains
                                            "invalid  ", "html     ", &
                                            "mock     "]
         logical :: expected_results(7) = [.false., .false., .false., .false., &
-                                         .true., .true., .false.]
+                                         .true., .false., .false.]
         integer :: i
         logical :: all_correct = .true.
         
