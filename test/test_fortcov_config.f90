@@ -378,9 +378,21 @@ contains
                 print *, "    FAILED: " // trim(error_message)
             else
                 print *, "    FAILED: Config values not loaded correctly"
-                print *, "      input_format: ", config%input_format
-                print *, "      output_format: ", config%output_format
-                print *, "      output_path: ", config%output_path
+                if (allocated(config%input_format)) then
+                    print *, "      input_format: ", config%input_format
+                else
+                    print *, "      input_format: <not allocated>"
+                end if
+                if (allocated(config%output_format)) then
+                    print *, "      output_format: ", config%output_format
+                else
+                    print *, "      output_format: <not allocated>"
+                end if
+                if (allocated(config%output_path)) then
+                    print *, "      output_path: ", config%output_path
+                else
+                    print *, "      output_path: <not allocated>"
+                end if
                 print *, "      minimum_coverage: ", config%minimum_coverage
                 print *, "      verbose: ", config%verbose
             end if
