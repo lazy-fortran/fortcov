@@ -97,7 +97,7 @@ contains
         close(unit)
         
         ! Generate XML output
-        call execute_command_line('fmp run fortcov -- ' // trim(gcov_file) // &
+        call execute_command_line('fpm run fortcov -- ' // trim(gcov_file) // &
                                 ' --output-format=xml --output=test_issue_103.xml')
         
         ! Check XML file for clean filename

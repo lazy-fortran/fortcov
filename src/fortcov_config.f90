@@ -21,6 +21,10 @@ module fortcov_config
     public :: show_version
     public :: initialize_config
     public :: validate_config
+    public :: load_config_file
+    
+    ! Public constants
+    public :: MAX_ARRAY_SIZE
     
     ! Configuration type
     type :: config_t
