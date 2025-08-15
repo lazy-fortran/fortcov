@@ -1,8 +1,10 @@
 module report_engine
+    use iso_fortran_env, only: real64
     use coverage_model
     use data_transformer
     use theme_manager
     use syntax_highlighter
+    use tui_main_loop
     implicit none
     private
     
@@ -271,9 +273,8 @@ contains
             return
         end if
         
-        ! In interactive mode, would start the full TUI here
-        ! For now, just indicate success
-        success = .true.
+        ! In interactive mode, start the full TUI with proper loop control
+        call start_interactive_tui(session, terminal_output, success, error_msg)
     end subroutine report_engine_launch_terminal_browser
     
     ! Generate diff report
@@ -617,5 +618,52 @@ contains
         write(temp_str, '(F0.1)') num
         str = trim(temp_str)
     end function real_to_str
+    
+    ! Start interactive TUI with proper main loop
+    subroutine start_interactive_tui(session, display_content, success, error_msg)
+        type(terminal_session_t), intent(inout) :: session
+        character(len=*), intent(in) :: display_content
+        logical, intent(out) :: success
+        character(len=:), allocatable, intent(out) :: error_msg
+        
+        type(tui_engine_t) :: tui
+        type(tui_config_t) :: tui_config
+        
+        success = .false.
+        error_msg = ""
+        
+        ! Configure TUI engine
+        call tui_config%init()
+        tui_config%enable_colors = session%colors_enabled
+        tui_config%input_timeout_ms = 50  ! 20 FPS for responsive UI
+        tui_config%max_iterations = 5000  ! Safety limit
+        tui_config%debug_mode = .false.
+        
+        ! Initialize TUI engine
+        call tui%init(tui_config)
+        
+        ! Set display content
+        tui%display_buffer = display_content
+        
+        ! Display initial content
+        if (session%colors_enabled) then
+            print *, char(27)//'[2J'//char(27)//'[H'  ! Clear screen and home cursor
+        end if
+        print *, trim(display_content)
+        print *, ""
+        print *, "Interactive TUI Mode - Press Ctrl+C to exit"
+        print *, "Frame rate limited to prevent system issues"
+        
+        ! Run the TUI main loop with proper controls
+        call tui%run_main_loop(.true., 30.0_real64)  ! Interactive, 30 second max
+        
+        ! Clean up
+        if (session%colors_enabled) then
+            print *, char(27)//'[0m'  ! Reset terminal colors
+        end if
+        
+        call tui%cleanup()
+        success = .true.
+    end subroutine start_interactive_tui
 
 end module report_engine
