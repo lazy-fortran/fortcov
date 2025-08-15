@@ -63,10 +63,24 @@ contains
         call tokenize_json(json_content, tokens, token_count, error_caught)
         if (error_caught) return
         
-        ! Parse tokens into coverage data
+        ! Parse tokens into coverage data - detect format
         current_pos = 1
-        call parse_coverage_object(tokens, current_pos, token_count, coverage_data, &
-                                  error_caught)
+        
+        if (token_count > 0) then
+            if (tokens(1)%value == '{') then
+                ! Object-wrapped format: {"files": [...]}
+                call parse_coverage_object(tokens, current_pos, token_count, &
+                                          coverage_data, error_caught)
+            else if (tokens(1)%value == '[') then
+                ! Array format: [{...}, {...}]
+                call parse_coverage_array(tokens, current_pos, token_count, &
+                                         coverage_data, error_caught)
+            else
+                error_caught = .true.
+            end if
+        else
+            error_caught = .true.
+        end if
         
         if (error_caught) then
             ! Clean up and return empty data
@@ -298,6 +312,29 @@ contains
         
         if (allocated(files)) deallocate(files)
     end subroutine parse_coverage_object
+
+    ! Parse JSON array format: [{...}, {...}]
+    subroutine parse_coverage_array(tokens, current_pos, token_count, &
+                                   coverage_data, error_caught)
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        integer, intent(in) :: token_count
+        type(coverage_data_t), intent(out) :: coverage_data
+        logical, intent(out) :: error_caught
+        
+        type(coverage_file_t), allocatable :: files(:)
+        integer :: files_count
+        
+        error_caught = .false.
+        
+        ! Parse array of file objects directly (parse_files_array handles brackets)
+        call parse_files_array(tokens, current_pos, token_count, files, &
+                              files_count, error_caught)
+        if (error_caught) return
+        
+        ! Initialize coverage data with parsed files
+        call coverage_data%init(files)
+    end subroutine parse_coverage_array
 
     ! Skip to specified key in JSON object
     subroutine skip_to_key(tokens, current_pos, token_count, key_name, error_caught)
