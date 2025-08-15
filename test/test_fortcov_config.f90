@@ -44,6 +44,9 @@ program test_fortcov_config
     ! Test 12: Load config from file
     all_tests_passed = all_tests_passed .and. test_load_config_file()
     
+    ! Test 12a: Load config with comma-separated values (NEW - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_load_config_comma_separated()
+    
     ! Test 13: Parse single positional argument (NEW - RED PHASE)
     all_tests_passed = all_tests_passed .and. test_parse_single_positional()
     
@@ -346,8 +349,8 @@ contains
             write(unit, '(A)') "  input_format = 'lcov'"
             write(unit, '(A)') "  output_format = 'json'"
             write(unit, '(A)') "  output_path = 'test_output.json'"
-            write(unit, '(A)') "  source_paths = 'src/', 'lib/', 'test/'"
-            write(unit, '(A)') "  exclude_patterns = '*.mod', '*.o', 'build/*'"
+            write(unit, '(A)') "  source_paths = 'src/,lib/,test/'"
+            write(unit, '(A)') "  exclude_patterns = '*.mod,*.o,build/*'"
             write(unit, '(A)') "  minimum_coverage = 85.5"
             write(unit, '(A)') "  verbose = .true."
             write(unit, '(A)') "/"
@@ -400,6 +403,111 @@ contains
             print *, "    PASSED - Namelist config loaded successfully"
         end if
     end function test_load_config_file
+
+    function test_load_config_comma_separated() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        integer :: unit, iostat
+        character(len=:), allocatable :: test_file
+        
+        print *, "  Test 12a: Load config with comma-separated values"
+        
+        ! Create a test namelist file with comma-separated format
+        test_file = "test_comma_config.nml"
+        open(newunit=unit, file=test_file, status='replace', iostat=iostat)
+        if (iostat == 0) then
+            write(unit, '(A)') "&fortcov_config"
+            write(unit, '(A)') "  input_format = 'gcov'"
+            write(unit, '(A)') "  output_format = 'markdown'"
+            write(unit, '(A)') "  output_path = 'test.md'"
+            write(unit, '(A)') "  source_paths = 'src/,lib/,app/'"
+            write(unit, '(A)') "  exclude_patterns = '*.mod,build/*,test/*'"
+            write(unit, '(A)') "  gcov_executable = 'gcov'"
+            write(unit, '(A)') "  minimum_coverage = 0.0"
+            write(unit, '(A)') "  verbose = .true."
+            write(unit, '(A)') "  quiet = .false."
+            write(unit, '(A)') "/"
+            close(unit)
+        end if
+        
+        allocate(character(len=30) :: args(1))
+        args(1) = "--config=" // test_file
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Clean up test file
+        open(newunit=unit, file=test_file, status='old', iostat=iostat)
+        if (iostat == 0) then
+            close(unit, status='delete')
+        end if
+        
+        ! After implementation, this should work with comma-separated values
+        passed = success .and. &
+                 config%input_format == "gcov" .and. &
+                 config%output_format == "markdown" .and. &
+                 config%output_path == "test.md" .and. &
+                 config%verbose
+        
+        ! Check source paths array safely
+        if (passed .and. allocated(config%source_paths)) then
+            if (size(config%source_paths) == 3) then
+                if (size(config%source_paths) >= 1) passed = passed .and. config%source_paths(1) == "src/"
+                if (size(config%source_paths) >= 2) passed = passed .and. config%source_paths(2) == "lib/"
+                if (size(config%source_paths) >= 3) passed = passed .and. config%source_paths(3) == "app/"
+            else
+                passed = .false.
+            end if
+        else
+            passed = .false.
+        end if
+        
+        ! Check exclude patterns array safely
+        if (passed .and. allocated(config%exclude_patterns)) then
+            if (size(config%exclude_patterns) == 3) then
+                if (size(config%exclude_patterns) >= 1) passed = passed .and. config%exclude_patterns(1) == "*.mod"
+                if (size(config%exclude_patterns) >= 2) passed = passed .and. config%exclude_patterns(2) == "build/*"
+                if (size(config%exclude_patterns) >= 3) passed = passed .and. config%exclude_patterns(3) == "test/*"
+            else
+                passed = .false.
+            end if
+        else
+            passed = .false.
+        end if
+        
+        if (.not. passed) then
+            if (.not. success) then
+                print *, "    FAILED (RED PHASE EXPECTED): " // trim(error_message)
+            else
+                print *, "    FAILED: Comma-separated parsing not implemented yet"
+                print *, "      success: ", success
+                print *, "      input_format: ", config%input_format
+                print *, "      output_format: ", config%output_format  
+                print *, "      output_path: ", config%output_path
+                print *, "      verbose: ", config%verbose
+                if (allocated(config%source_paths)) then
+                    print *, "      source_paths allocated: T, size: ", size(config%source_paths)
+                    if (size(config%source_paths) > 0) then
+                        print *, "      source_paths(1): '", config%source_paths(1), "'"
+                    end if
+                else
+                    print *, "      source_paths allocated: F"
+                end if
+                if (allocated(config%exclude_patterns)) then
+                    print *, "      exclude_patterns allocated: T, size: ", size(config%exclude_patterns)
+                    if (size(config%exclude_patterns) > 0) then
+                        print *, "      exclude_patterns(1): '", config%exclude_patterns(1), "'"
+                    end if
+                else
+                    print *, "      exclude_patterns allocated: F"
+                end if
+            end if
+        else
+            print *, "    PASSED - Comma-separated config loaded successfully"
+        end if
+    end function test_load_config_comma_separated
 
     ! RED PHASE: These tests will FAIL until implementation is complete
     function test_parse_single_positional() result(passed)
