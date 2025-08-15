@@ -234,10 +234,13 @@ contains
             end if
         end do
         
-        ! Finalize arrays
-        call finalize_array(temp_sources, num_sources, config%source_paths)
-        call finalize_array(temp_excludes, num_excludes, &
-                           config%exclude_patterns)
+        ! Finalize arrays - only override if config file didn't already populate them
+        if (.not. allocated(config%source_paths) .or. size(config%source_paths) == 0) then
+            call finalize_array(temp_sources, num_sources, config%source_paths)
+        end if
+        if (.not. allocated(config%exclude_patterns) .or. size(config%exclude_patterns) == 0) then
+            call finalize_array(temp_excludes, num_excludes, config%exclude_patterns)
+        end if
     end subroutine process_flags
     
     ! Process positional arguments as coverage files
@@ -401,18 +404,20 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        ! Namelist variables
+        ! Namelist variables - use single strings for comma-separated values
         character(len=256) :: input_format
         character(len=256) :: output_format
         character(len=256) :: output_path
-        character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths
-        character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
+        character(len=1024) :: source_paths      ! Single string with delimiters
+        character(len=1024) :: exclude_patterns  ! Single string with delimiters
         character(len=256) :: gcov_executable
         real :: minimum_coverage
         logical :: verbose
         logical :: quiet
         integer :: unit, iostat, i, count
         logical :: file_exists
+        character(len=:), allocatable :: split_sources(:)
+        character(len=:), allocatable :: split_patterns(:)
         
         namelist /fortcov_config/ input_format, output_format, output_path, &
                                   source_paths, exclude_patterns, &
@@ -432,8 +437,8 @@ contains
         input_format = config%input_format
         output_format = config%output_format
         output_path = config%output_path
-        source_paths = ''
-        exclude_patterns = ''
+        source_paths = ''           ! Empty string, will be filled by namelist
+        exclude_patterns = ''       ! Empty string, will be filled by namelist
         gcov_executable = config%gcov_executable
         minimum_coverage = config%minimum_coverage
         verbose = config%verbose
@@ -461,38 +466,42 @@ contains
         config%output_path = trim(adjustl(output_path))
         config%gcov_executable = trim(adjustl(gcov_executable))
         
-        ! Process source paths array
+        ! Process source paths from comma-separated string
         if (allocated(config%source_paths)) deallocate(config%source_paths)
-        count = 0
-        do i = 1, MAX_ARRAY_SIZE
-            if (len_trim(source_paths(i)) > 0) then
-                count = count + 1
+        if (len_trim(source_paths) > 0) then
+            split_sources = split(trim(source_paths), ',')
+            if (size(split_sources) > 0) then
+                allocate(character(len=MAX_PATH_LENGTH) :: &
+                        config%source_paths(size(split_sources)))
+                do i = 1, size(split_sources)
+                    config%source_paths(i) = trim(adjustl(split_sources(i)))
+                end do
             else
-                exit
+                ! Allocate empty array if no split results
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
             end if
-        end do
-        if (count > 0) then
-            allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(count))
-            do i = 1, count
-                config%source_paths(i) = trim(adjustl(source_paths(i)))
-            end do
+        else
+            ! Allocate empty array if no source paths string
+            allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
         end if
         
-        ! Process exclude patterns array
+        ! Process exclude patterns from comma-separated string
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        count = 0
-        do i = 1, MAX_ARRAY_SIZE
-            if (len_trim(exclude_patterns(i)) > 0) then
-                count = count + 1
+        if (len_trim(exclude_patterns) > 0) then
+            split_patterns = split(trim(exclude_patterns), ',')
+            if (size(split_patterns) > 0) then
+                allocate(character(len=MAX_PATH_LENGTH) :: &
+                        config%exclude_patterns(size(split_patterns)))
+                do i = 1, size(split_patterns)
+                    config%exclude_patterns(i) = trim(adjustl(split_patterns(i)))
+                end do
             else
-                exit
+                ! Allocate empty array if no split results
+                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
             end if
-        end do
-        if (count > 0) then
-            allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(count))
-            do i = 1, count
-                config%exclude_patterns(i) = trim(adjustl(exclude_patterns(i)))
-            end do
+        else
+            ! Allocate empty array if no exclude patterns string
+            allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
         end if
         
         ! Update other fields
@@ -547,8 +556,8 @@ contains
         print *, "    input_format = 'gcov'"
         print *, "    output_format = 'markdown'"
         print *, "    output_path = 'coverage.md'"
-        print *, "    source_paths = 'src/', 'lib/', 'app/'"
-        print *, "    exclude_patterns = '*.mod', 'test/*', 'build/*'"
+        print *, "    source_paths = 'src/,lib/,app/'"
+        print *, "    exclude_patterns = '*.mod,test/*,build/*'"
         print *, "    gcov_executable = 'gcov'"
         print *, "    minimum_coverage = 80.0"
         print *, "    verbose = .true."
