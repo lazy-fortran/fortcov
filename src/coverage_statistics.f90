@@ -52,21 +52,35 @@ contains
         this%missing_ranges = missing_ranges
     end subroutine stats_init
 
-    ! Calculate line coverage percentage
+    ! Calculate line coverage percentage with optimized single-pass algorithm
     function calculate_line_coverage(coverage_data) result(stats)
         use string_utils, only: compress_ranges
         type(coverage_data_t), intent(in) :: coverage_data
         type(coverage_stats_t) :: stats
         integer :: total_lines, covered_lines, file_idx, line_idx
         integer, allocatable :: missing_line_numbers(:)
-        integer :: missing_count
+        integer :: missing_count, max_possible_missing
         real :: percentage
         
         total_lines = 0
         covered_lines = 0
         missing_count = 0
         
-        ! Count executable lines across all files
+        ! Pre-calculate maximum possible missing lines for allocation
+        max_possible_missing = 0
+        do file_idx = 1, size(coverage_data%files)
+            max_possible_missing = max_possible_missing + &
+                                  size(coverage_data%files(file_idx)%lines)
+        end do
+        
+        ! Allocate once for efficiency
+        if (max_possible_missing > 0) then
+            allocate(missing_line_numbers(max_possible_missing))
+        else
+            allocate(missing_line_numbers(0))
+        end if
+        
+        ! OPTIMIZED SINGLE PASS: Count and collect in one iteration
         do file_idx = 1, size(coverage_data%files)
             do line_idx = 1, size(coverage_data%files(file_idx)%lines)
                 if (coverage_data%files(file_idx)%lines(line_idx)%is_executable) then
@@ -74,7 +88,10 @@ contains
                     if (coverage_data%files(file_idx)%lines(line_idx)%execution_count > 0) then
                         covered_lines = covered_lines + 1
                     else
+                        ! Collect missing line in same pass
                         missing_count = missing_count + 1
+                        missing_line_numbers(missing_count) = &
+                            coverage_data%files(file_idx)%lines(line_idx)%line_number
                     end if
                 end if
             end do
@@ -90,23 +107,10 @@ contains
         ! Input validation: Clamp percentage to valid range
         percentage = clamp_percentage(percentage)
         
-        ! Collect missing line numbers for range compression
+        ! Process missing line numbers for range compression
         if (missing_count > 0) then
-            allocate(missing_line_numbers(missing_count))
-            missing_count = 0
-            do file_idx = 1, size(coverage_data%files)
-                do line_idx = 1, size(coverage_data%files(file_idx)%lines)
-                    if (coverage_data%files(file_idx)%lines(line_idx)%is_executable .and. &
-                        coverage_data%files(file_idx)%lines(line_idx)%execution_count == 0) then
-                        missing_count = missing_count + 1
-                        missing_line_numbers(missing_count) = &
-                            coverage_data%files(file_idx)%lines(line_idx)%line_number
-                    end if
-                end do
-            end do
-            
             call stats%init(percentage, covered_lines, total_lines, &
-                           compress_ranges(missing_line_numbers))
+                           compress_ranges(missing_line_numbers(1:missing_count)))
         else
             call stats%init(percentage, covered_lines, total_lines, "")
         end if
