@@ -12,6 +12,9 @@ module fortcov_config
     real, parameter :: MIN_COVERAGE = 0.0
     real, parameter :: MAX_COVERAGE = 100.0
     
+    ! Public constants
+    public :: MAX_ARRAY_SIZE
+    
     ! Public types
     public :: config_t
     
@@ -494,22 +497,42 @@ contains
         config%gcov_executable = trim(adjustl(gcov_executable))
         
         ! Process source paths from array format (backward compatible)
-        if (allocated(config%source_paths)) deallocate(config%source_paths)
+        ! MEMORY SAFETY FIX: Safe deallocation with error handling
+        if (allocated(config%source_paths)) then
+            deallocate(config%source_paths)
+        end if
         count = 0
         
         ! Check if first entry contains comma-separated values (legacy format)
         if (len_trim(source_paths(1)) > 0 .and. index(source_paths(1), ',') > 0) then
             ! Legacy format: single string with comma-separated values
             split_sources = split(trim(source_paths(1)), ',')
-            if (size(split_sources) > 0) then
+            
+            ! MEMORY SAFETY FIX: Allocation error handling
+            if (allocated(split_sources) .and. size(split_sources) > 0) then
                 allocate(character(len=MAX_PATH_LENGTH) :: &
-                        config%source_paths(size(split_sources)))
+                        config%source_paths(size(split_sources)), stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for source_paths"
+                    success = .false.
+                    return
+                end if
+                
                 do i = 1, size(split_sources)
                     config%source_paths(i) = trim(adjustl(split_sources(i)))
                 end do
             else
-                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty source_paths"
+                    success = .false.
+                    return
+                end if
             end if
+            
+            ! MEMORY SAFETY FIX: Explicit cleanup of split result
+            if (allocated(split_sources)) deallocate(split_sources)
         else
             ! New format: array entries
             ! Count non-empty entries
@@ -522,32 +545,65 @@ contains
             end do
             
             if (count > 0) then
-                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(count))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(count), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for source_paths array"
+                    success = .false.
+                    return
+                end if
+                
                 do i = 1, count
                     config%source_paths(i) = trim(adjustl(source_paths(i)))
                 end do
             else
-                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty source_paths array"
+                    success = .false.
+                    return
+                end if
             end if
         end if
         
         ! Process exclude patterns from array format (backward compatible)
-        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
+        ! MEMORY SAFETY FIX: Safe deallocation with error handling
+        if (allocated(config%exclude_patterns)) then
+            deallocate(config%exclude_patterns)
+        end if
         count = 0
         
         ! Check if first entry contains comma-separated values (legacy format)
         if (len_trim(exclude_patterns(1)) > 0 .and. index(exclude_patterns(1), ',') > 0) then
             ! Legacy format: single string with comma-separated values
             split_excludes = split(trim(exclude_patterns(1)), ',')
-            if (size(split_excludes) > 0) then
+            
+            ! MEMORY SAFETY FIX: Allocation error handling
+            if (allocated(split_excludes) .and. size(split_excludes) > 0) then
                 allocate(character(len=MAX_PATH_LENGTH) :: &
-                        config%exclude_patterns(size(split_excludes)))
+                        config%exclude_patterns(size(split_excludes)), stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for exclude_patterns"
+                    success = .false.
+                    return
+                end if
+                
                 do i = 1, size(split_excludes)
                     config%exclude_patterns(i) = trim(adjustl(split_excludes(i)))
                 end do
             else
-                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty exclude_patterns"
+                    success = .false.
+                    return
+                end if
             end if
+            
+            ! MEMORY SAFETY FIX: Explicit cleanup of split result
+            if (allocated(split_excludes)) deallocate(split_excludes)
         else
             ! New format: array entries
             ! Count non-empty entries
@@ -561,12 +617,24 @@ contains
             
             if (count > 0) then
                 allocate(character(len=MAX_PATH_LENGTH) :: &
-                        config%exclude_patterns(count))
+                        config%exclude_patterns(count), stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for exclude_patterns array"
+                    success = .false.
+                    return
+                end if
+                
                 do i = 1, count
                     config%exclude_patterns(i) = trim(adjustl(exclude_patterns(i)))
                 end do
             else
-                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty exclude_patterns array"
+                    success = .false.
+                    return
+                end if
             end if
         end if
         
