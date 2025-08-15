@@ -1,0 +1,10 @@
+        -:    0:Source:test_module.f90
+        -:    0:Graph:test_module.gcno
+        -:    0:Data:test_module.gcda
+        -:    1:module test_module
+2147483647:    2:    integer :: test_var = 42
+        -:    3:contains
+999999999999:    4:    subroutine test_procedure()
+        -:    5:        write(*,*) "test"
+        1:    6:    end subroutine
+        -:    7:end module
