@@ -8,6 +8,9 @@ module string_utils
     public :: format_integer
     public :: split
     public :: trim_string
+    public :: validate_string_input
+    public :: sanitize_filename
+    public :: is_safe_path
     
 contains
 
@@ -144,5 +147,99 @@ contains
         write(buffer, '(I0)') int_val
         str = trim(buffer)
     end function int_to_string
+
+    ! Security: Validate string input for safety constraints
+    function validate_string_input(input_str, max_length) result(is_valid)
+        character(len=*), intent(in) :: input_str
+        integer, intent(in) :: max_length
+        logical :: is_valid
+        integer :: i, char_code
+        
+        is_valid = .true.
+        
+        ! Check length limit
+        if (len_trim(input_str) > max_length) then
+            is_valid = .false.
+            return
+        end if
+        
+        ! Check for dangerous characters
+        do i = 1, len_trim(input_str)
+            char_code = ichar(input_str(i:i))
+            
+            ! Reject null characters and most control characters
+            if (char_code == 0 .or. (char_code < 32 .and. char_code /= 9 .and. char_code /= 10)) then
+                is_valid = .false.
+                return
+            end if
+            
+            ! Reject shell command injection characters
+            if (index(';|&`$<>', input_str(i:i)) > 0) then
+                is_valid = .false.
+                return
+            end if
+        end do
+    end function validate_string_input
+
+    ! Security: Sanitize filename by removing dangerous characters
+    function sanitize_filename(filename) result(safe_filename)
+        character(len=*), intent(in) :: filename
+        character(len=:), allocatable :: safe_filename
+        character(len=len(filename)) :: temp_filename
+        integer :: i, j
+        
+        temp_filename = ''
+        j = 1
+        
+        do i = 1, len_trim(filename)
+            ! Keep alphanumeric, period, underscore, hyphen, forward slash
+            if (verify(filename(i:i), &
+                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') == 0) then
+                temp_filename(j:j) = filename(i:i)
+                j = j + 1
+            end if
+        end do
+        
+        safe_filename = trim(temp_filename)
+        
+        ! Security: Enforce maximum length
+        if (len(safe_filename) > 1024) then
+            safe_filename = safe_filename(1:1024)
+        end if
+    end function sanitize_filename
+
+    ! Security: Check if path is safe (no directory traversal)
+    function is_safe_path(path) result(is_safe)
+        character(len=*), intent(in) :: path
+        logical :: is_safe
+        
+        is_safe = .true.
+        
+        ! Reject directory traversal attempts
+        if (index(path, '../') > 0 .or. index(path, '..\\') > 0) then
+            is_safe = .false.
+            return
+        end if
+        
+        ! Reject absolute paths starting with sensitive directories
+        if (index(path, '/etc/') == 1 .or. index(path, '/root/') == 1 .or. &
+            index(path, '/boot/') == 1 .or. index(path, '/sys/') == 1) then
+            is_safe = .false.
+            return
+        end if
+        
+        ! Reject Windows system paths
+        if (index(path, 'C:\Windows') == 1 .or. index(path, 'C:\System') == 1 .or. &
+            index(path, 'C:\\Windows') == 1 .or. index(path, 'C:\\System') == 1) then
+            is_safe = .false.
+            return
+        end if
+        
+        ! Basic validation
+        if (.not. validate_string_input(path, 2048)) then
+            is_safe = .false.
+            return
+        end if
+    end function is_safe_path
 
 end module string_utils

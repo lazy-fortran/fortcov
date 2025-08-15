@@ -515,6 +515,8 @@ contains
                 if (iostat /= 0) then
                     error_message = "Memory allocation failed for source_paths"
                     success = .false.
+                    ! MEMORY SAFETY: Clean up split_sources before returning
+                    if (allocated(split_sources)) deallocate(split_sources)
                     return
                 end if
                 
@@ -527,6 +529,8 @@ contains
                 if (iostat /= 0) then
                     error_message = "Memory allocation failed for empty source_paths"
                     success = .false.
+                    ! MEMORY SAFETY: Clean up split_sources before returning
+                    if (allocated(split_sources)) deallocate(split_sources)
                     return
                 end if
             end if
@@ -586,6 +590,8 @@ contains
                 if (iostat /= 0) then
                     error_message = "Memory allocation failed for exclude_patterns"
                     success = .false.
+                    ! MEMORY SAFETY: Clean up split_excludes before returning
+                    if (allocated(split_excludes)) deallocate(split_excludes)
                     return
                 end if
                 
@@ -598,6 +604,8 @@ contains
                 if (iostat /= 0) then
                     error_message = "Memory allocation failed for empty exclude_patterns"
                     success = .false.
+                    ! MEMORY SAFETY: Clean up split_excludes before returning
+                    if (allocated(split_excludes)) deallocate(split_excludes)
                     return
                 end if
             end if

@@ -257,10 +257,26 @@ contains
         type(config_t), intent(in) :: config
         character(len=:), allocatable :: filtered(:)
         
-        character(len=256) :: temp_filtered(size(files))
+        character(len=:), allocatable :: temp_filtered(:)
         integer :: i, count
         logical :: exclude_file
+        integer :: max_filename_len
         
+        ! Security: Find maximum filename length to prevent buffer issues
+        max_filename_len = 0
+        do i = 1, size(files)
+            max_filename_len = max(max_filename_len, len_trim(files(i)))
+        end do
+        
+        ! Security: Enforce reasonable filename length limits
+        if (max_filename_len > 4096) then
+            ! Extremely long filenames could indicate an attack
+            allocate(character(len=256) :: filtered(0))
+            return
+        end if
+        
+        ! Memory safety: Use dynamic allocation with proper sizing
+        allocate(character(len=max(max_filename_len, 256)) :: temp_filtered(size(files)))
         count = 0
         
         do i = 1, size(files)
@@ -272,11 +288,15 @@ contains
         end do
         
         if (count > 0) then
-            allocate(character(len=256) :: filtered(count))
+            ! Memory safety: Allocate result with exact size needed
+            allocate(character(len=max(max_filename_len, 256)) :: filtered(count))
             filtered = temp_filtered(1:count)
         else
             allocate(character(len=256) :: filtered(0))
         end if
+        
+        ! Memory safety: Clean up temporary array
+        deallocate(temp_filtered)
     end function filter_files_by_patterns
 
     ! Check if file matches any exclude pattern
