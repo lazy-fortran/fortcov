@@ -239,6 +239,7 @@ contains
 
     ! Helper function to extract source filename from "Source:filename" line
     ! Fix for Issue #103: Clean extraction to avoid malformed filenames
+    ! Handles gcov format: "        -:    0:Source:src/coverage_engine.f90"
     function extract_source_filename(line) result(filename)
         character(len=*), intent(in) :: line
         character(len=:), allocatable :: filename
@@ -247,8 +248,13 @@ contains
         ! Look specifically for "Source:" pattern to avoid gcov formatting
         source_pos = index(line, "Source:")
         if (source_pos > 0) then
-            ! Extract filename after "Source:" (7 characters)
-            filename = trim(line(source_pos + 7:))
+            ! Extract everything after "Source:" with bounds checking
+            source_pos = source_pos + 7  ! Length of "Source:"
+            if (source_pos <= len(line)) then
+                filename = trim(line(source_pos:))
+            else
+                filename = "unknown"
+            end if
         else
             filename = "unknown"
         end if
