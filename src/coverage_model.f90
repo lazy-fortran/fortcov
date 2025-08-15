@@ -460,19 +460,56 @@ contains
         class(coverage_data_t), intent(in) :: this
         character(len=:), allocatable :: serialized
         character(len=:), allocatable :: result_str
-        character(len=200) :: line_str
+        character(len=:), allocatable :: line_str
         integer :: i, j
+        integer :: required_length
+        integer :: max_filename_len, max_line_num, max_count
         
-        ! Simple format: filename:line:count|filename:line:count...
+        ! Security: Calculate maximum required buffer size for any line
+        ! This prevents buffer overflow by ensuring adequate space
+        max_filename_len = 0
+        max_line_num = 0
+        max_count = 0
+        
+        ! Find maximum values to calculate safe buffer size
+        do i = 1, size(this%files)
+            max_filename_len = max(max_filename_len, len_trim(this%files(i)%filename))
+            do j = 1, size(this%files(i)%lines)
+                max_line_num = max(max_line_num, this%files(i)%lines(j)%line_number)
+                max_count = max(max_count, this%files(i)%lines(j)%execution_count)
+            end do
+        end do
+        
+        ! Calculate safe buffer size with security margins
+        ! Format: filename:line:count| 
+        ! Add extra space for formatting and safety margin
+        ! Estimate digits needed for integers (max 10 digits each + separators)
+        required_length = max_filename_len + 50  ! Safe margin for numbers and separators
+        
+        ! Security: Enforce maximum filename length to prevent abuse
+        if (max_filename_len > 4096) then
+            ! Extremely long filenames could indicate an attack
+            serialized = "ERROR: Filename too long for security"
+            return
+        end if
+        
+        ! Initialize result string
         result_str = ""
         
         do i = 1, size(this%files)
             do j = 1, size(this%files(i)%lines)
+                ! Dynamically allocate line_str with calculated safe size
+                allocate(character(len=required_length) :: line_str)
+                
                 write(line_str, '(A,A,I0,A,I0,A)') &
                     trim(this%files(i)%filename), ":", &
                     this%files(i)%lines(j)%line_number, ":", &
                     this%files(i)%lines(j)%execution_count, "|"
+                
                 result_str = result_str // trim(line_str)
+                
+                ! Clean up line_str for next iteration
+                deallocate(line_str)
             end do
         end do
         
