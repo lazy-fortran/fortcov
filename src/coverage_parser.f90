@@ -238,14 +238,22 @@ contains
     end function gcov_parse
 
     ! Helper function to extract source filename from "Source:filename" line
+    ! Handles gcov format: "        -:    0:Source:src/coverage_engine.f90"
     function extract_source_filename(line) result(filename)
         character(len=*), intent(in) :: line
         character(len=:), allocatable :: filename
-        integer :: colon_pos
+        integer :: source_pos
         
-        colon_pos = index(line, ":")
-        if (colon_pos > 0 .and. colon_pos < len(line)) then
-            filename = trim(line(colon_pos+1:))
+        ! Find "Source:" in the line to handle gcov prefix formatting
+        source_pos = index(line, "Source:")
+        if (source_pos > 0) then
+            ! Extract everything after "Source:"
+            source_pos = source_pos + 7  ! Length of "Source:"
+            if (source_pos <= len(line)) then
+                filename = trim(line(source_pos:))
+            else
+                filename = "unknown"
+            end if
         else
             filename = "unknown"
         end if
