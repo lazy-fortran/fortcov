@@ -1,0 +1,44 @@
+
+# Fortran build artifacts
+*.mod
+*.o
+*.a
+*.so
+*.exe
+
+# Coverage files
+*.gcov
+*.gcda
+*.gcno
+
+# Test output files
+test_*.json
+baseline_*.json
+current_*.json
+io_test_*.json
+test_*.out
+test.html
+test_output.html
+
+# Build directories
+build/
+.build/
+
+# FPM artifacts
+fpm_artifacts/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+simple_test
+test_wd.f90
+
