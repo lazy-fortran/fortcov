@@ -5,6 +5,7 @@ module string_utils
     ! Public procedures
     public :: compress_ranges
     public :: format_percentage
+    public :: format_integer
     public :: split
     public :: trim_string
     
@@ -78,6 +79,16 @@ contains
         
         formatted = trim(adjustl(buffer))
     end function format_percentage
+
+    ! Format integer as string
+    function format_integer(value) result(formatted)
+        integer, intent(in) :: value
+        character(len=:), allocatable :: formatted
+        character(len=20) :: buffer
+        
+        write(buffer, '(I0)') value
+        formatted = trim(buffer)
+    end function format_integer
 
     ! Split string by delimiter
     function split(input_string, delimiter) result(parts)
