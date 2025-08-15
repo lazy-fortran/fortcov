@@ -96,7 +96,22 @@ module coverage_model
 
     public :: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
 
-    ! Line difference type
+    ! Enhanced threshold-based classification types
+    integer, parameter :: CRITICAL_DEGRADATION = -3
+    integer, parameter :: MAJOR_DEGRADATION = -2
+    integer, parameter :: MINOR_DEGRADATION = -1
+    integer, parameter :: UNCHANGED_COVERAGE = 0
+    integer, parameter :: MINOR_IMPROVEMENT = 1
+    integer, parameter :: MAJOR_IMPROVEMENT = 2
+    integer, parameter :: CRITICAL_IMPROVEMENT = 3
+    integer, parameter :: NEW_COVERAGE = 10
+    integer, parameter :: LOST_COVERAGE = -10
+
+    public :: CRITICAL_DEGRADATION, MAJOR_DEGRADATION, MINOR_DEGRADATION
+    public :: UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, CRITICAL_IMPROVEMENT
+    public :: NEW_COVERAGE, LOST_COVERAGE
+
+    ! Line difference type with enhanced threshold-based classification
     type :: line_diff_t
         integer :: line_number = 0
         type(coverage_line_t) :: baseline_line
@@ -106,12 +121,16 @@ module coverage_model
         real :: coverage_percentage_delta = 0.0
         logical :: is_newly_covered = .false.
         logical :: is_newly_uncovered = .false.
+        ! Enhanced threshold-based classification
+        integer :: significance_classification = UNCHANGED_COVERAGE
+        real :: statistical_confidence = 1.0
     contains
         procedure :: init => line_diff_init
         procedure :: calculate_delta => line_diff_calculate_delta
+        procedure :: apply_threshold_classification => line_diff_apply_classification
     end type line_diff_t
 
-    ! File difference type
+    ! File difference type with enhanced threshold-based analysis
     type :: file_diff_t
         character(len=:), allocatable :: filename
         type(line_diff_t), allocatable :: line_diffs(:)
@@ -124,9 +143,16 @@ module coverage_model
         real :: coverage_percentage_delta = 0.0
         integer :: newly_covered_lines = 0
         integer :: newly_uncovered_lines = 0
+        ! Enhanced threshold-based classification
+        integer :: overall_significance_classification = UNCHANGED_COVERAGE
+        real :: statistical_confidence = 1.0
+        integer :: total_executable_lines = 0
+        character(len=:), allocatable :: significance_description
     contains
         procedure :: init => file_diff_init
         procedure :: calculate_summary => file_diff_calculate_summary
+        procedure :: apply_threshold_analysis => file_diff_apply_threshold_analysis
+        procedure :: get_significance_description => file_diff_get_significance_description
     end type file_diff_t
 
     ! Coverage difference type for complete diff analysis
@@ -148,6 +174,17 @@ module coverage_model
         procedure :: calculate_totals => coverage_diff_calculate_totals
         procedure :: filter_by_threshold => coverage_diff_filter_by_threshold
     end type coverage_diff_t
+    
+    ! Enhanced threshold configuration for sophisticated diff analysis
+    type, public :: diff_thresholds_t
+        real :: critical_threshold = 5.0      ! ≥5% change (critical)
+        real :: major_threshold = 2.0         ! ≥2% change (major)
+        real :: minor_threshold = 0.5         ! ≥0.5% change (minor)
+        real :: significance_threshold = 0.1  ! Minimum for reporting
+    contains
+        procedure :: init => diff_thresholds_init
+        procedure :: classify_change => classify_coverage_change
+    end type diff_thresholds_t
     
     ! Constructor interfaces
     interface coverage_line_t
@@ -672,5 +709,135 @@ contains
         ! Recalculate totals
         call this%calculate_totals()
     end subroutine coverage_diff_filter_by_threshold
+
+    ! Enhanced threshold-based analysis implementations
+
+    ! Initialize diff thresholds with custom values
+    subroutine diff_thresholds_init(this, critical, major, minor, significance)
+        class(diff_thresholds_t), intent(inout) :: this
+        real, intent(in), optional :: critical, major, minor, significance
+        
+        if (present(critical)) this%critical_threshold = critical
+        if (present(major)) this%major_threshold = major
+        if (present(minor)) this%minor_threshold = minor
+        if (present(significance)) this%significance_threshold = significance
+    end subroutine diff_thresholds_init
+
+    ! Classify coverage change using threshold-based analysis
+    function classify_coverage_change(this, baseline_pct, current_pct) result(classification)
+        class(diff_thresholds_t), intent(in) :: this
+        real, intent(in) :: baseline_pct, current_pct
+        integer :: classification
+        
+        real :: abs_change
+        
+        abs_change = current_pct - baseline_pct
+        
+        ! Handle edge cases for new/lost coverage
+        if (baseline_pct == 0.0 .and. current_pct > 0.0) then
+            classification = NEW_COVERAGE
+            return
+        else if (baseline_pct > 0.0 .and. current_pct == 0.0) then
+            classification = LOST_COVERAGE
+            return
+        end if
+        
+        ! Apply threshold-based classification
+        if (abs(abs_change) < this%significance_threshold) then
+            classification = UNCHANGED_COVERAGE
+        else if (abs(abs_change) >= this%critical_threshold) then
+            classification = merge(CRITICAL_IMPROVEMENT, CRITICAL_DEGRADATION, abs_change > 0)
+        else if (abs(abs_change) >= this%major_threshold) then
+            classification = merge(MAJOR_IMPROVEMENT, MAJOR_DEGRADATION, abs_change > 0)
+        else if (abs(abs_change) >= this%minor_threshold) then
+            classification = merge(MINOR_IMPROVEMENT, MINOR_DEGRADATION, abs_change > 0)
+        else
+            classification = UNCHANGED_COVERAGE
+        end if
+    end function classify_coverage_change
+
+    ! Apply threshold classification to line diff
+    subroutine line_diff_apply_classification(this, thresholds)
+        class(line_diff_t), intent(inout) :: this
+        type(diff_thresholds_t), intent(in) :: thresholds
+        
+        real :: baseline_pct, current_pct
+        
+        ! Convert execution counts to coverage percentages for the line
+        baseline_pct = merge(100.0, 0.0, this%baseline_line%execution_count > 0)
+        current_pct = merge(100.0, 0.0, this%current_line%execution_count > 0)
+        
+        ! Apply threshold-based classification
+        this%significance_classification = thresholds%classify_change(baseline_pct, current_pct)
+        
+        ! Set confidence based on change magnitude and line context
+        if (this%significance_classification == UNCHANGED_COVERAGE) then
+            this%statistical_confidence = 1.0
+        else
+            ! Higher confidence for more significant changes
+            this%statistical_confidence = min(1.0, abs(current_pct - baseline_pct) / 10.0)
+        end if
+    end subroutine line_diff_apply_classification
+
+    ! Apply threshold analysis to file diff
+    subroutine file_diff_apply_threshold_analysis(this, thresholds)
+        class(file_diff_t), intent(inout) :: this
+        type(diff_thresholds_t), intent(in) :: thresholds
+        
+        integer :: i
+        
+        ! Apply classification based on overall file coverage change
+        this%overall_significance_classification = &
+            thresholds%classify_change(this%baseline_coverage_percentage, &
+                                     this%current_coverage_percentage)
+        
+        ! Calculate statistical confidence based on sample size and change magnitude
+        this%total_executable_lines = max(1, this%added_lines + this%removed_lines + &
+                                        this%changed_lines + this%unchanged_lines)
+        
+        ! Higher confidence with more lines and larger changes
+        this%statistical_confidence = min(1.0, &
+            (abs(this%coverage_percentage_delta) / 10.0) * &
+            sqrt(real(this%total_executable_lines) / 100.0))
+        
+        ! Apply classification to individual line diffs
+        if (allocated(this%line_diffs)) then
+            do i = 1, size(this%line_diffs)
+                call this%line_diffs(i)%apply_threshold_classification(thresholds)
+            end do
+        end if
+        
+        ! Generate significance description
+        this%significance_description = this%get_significance_description()
+    end subroutine file_diff_apply_threshold_analysis
+
+    ! Get human-readable significance description
+    function file_diff_get_significance_description(this) result(description)
+        class(file_diff_t), intent(in) :: this
+        character(len=:), allocatable :: description
+        
+        select case (this%overall_significance_classification)
+        case (CRITICAL_IMPROVEMENT)
+            description = "Critical improvement (≥5% coverage increase)"
+        case (MAJOR_IMPROVEMENT)
+            description = "Major improvement (≥2% coverage increase)"
+        case (MINOR_IMPROVEMENT)
+            description = "Minor improvement (≥0.5% coverage increase)"
+        case (UNCHANGED_COVERAGE)
+            description = "No significant change (<0.1% difference)"
+        case (MINOR_DEGRADATION)
+            description = "Minor degradation (≥0.5% coverage decrease)"
+        case (MAJOR_DEGRADATION)
+            description = "Major degradation (≥2% coverage decrease)"
+        case (CRITICAL_DEGRADATION)
+            description = "Critical degradation (≥5% coverage decrease)"
+        case (NEW_COVERAGE)
+            description = "New coverage added"
+        case (LOST_COVERAGE)
+            description = "Coverage completely lost"
+        case default
+            description = "Unknown classification"
+        end select
+    end function file_diff_get_significance_description
 
 end module coverage_model
