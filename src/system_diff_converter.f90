@@ -13,6 +13,7 @@ module system_diff_converter
     public :: validate_structural_equivalence
     public :: check_numerical_tolerance
     public :: calculate_coverage_rates
+    public :: parse_cobertura_xml
     
     ! XML namespace and schema constants
     character(len=*), parameter :: XML_HEADER = &
@@ -77,9 +78,15 @@ contains
         
         success = .false.
         
+        ! Initialize output to prevent segfaults
+        json_output = ''
+        
         ! Parse XML content into coverage data structure
         call parse_cobertura_xml(xml_content, coverage_data, success)
-        if (.not. success) return
+        if (.not. success) then
+            json_output = '{"error": "XML parsing failed"}'
+            return
+        end if
         
         ! Export as JSON
         call export_json_coverage(coverage_data, json_output)
@@ -384,7 +391,7 @@ contains
         file_count = 0
         
         ! Count files by counting class elements
-        file_count = count_xml_elements(xml_content, '<class')
+        file_count = count_xml_elements(xml_content, '<class ')
         if (file_count == 0) then
             call coverage_data%init()
             success = .true.
@@ -414,6 +421,16 @@ contains
         do
             pos = index(xml_content(start_search:), element_name)
             if (pos == 0) exit
+            
+            ! Check that this is not a closing tag (avoid counting </class as <class)
+            if (start_search + pos - 2 > 0) then
+                if (xml_content(start_search + pos - 2:start_search + pos - 2) == '/') then
+                    start_search = start_search + pos + len(element_name) - 1
+                    if (start_search > len(xml_content)) exit
+                    cycle
+                end if
+            end if
+            
             count = count + 1
             start_search = start_search + pos + len(element_name) - 1
             if (start_search > len(xml_content)) exit
@@ -444,11 +461,11 @@ contains
             end if
             class_start = class_start + pos - 1
             
-            ! Extract filename
+            ! Extract filename - with bounds checking
             call extract_filename_from_class(xml_content(class_start:), filename, success)
             if (.not. success) return
             
-            ! Find end of this class
+            ! Find end of this class - with bounds checking
             class_end = index(xml_content(class_start:), '</class>')
             if (class_end == 0) then
                 success = .false.
@@ -456,13 +473,19 @@ contains
             end if
             class_end = class_end + class_start - 1
             
+            ! Validate bounds
+            if (class_start > len(xml_content) .or. class_end > len(xml_content)) then
+                success = .false.
+                return
+            end if
+            
             ! Parse lines within this class
             call parse_lines_from_class(xml_content(class_start:class_end), lines, success)
             if (.not. success) return
             
             ! Create file object
             call files(i)%init(filename, lines)
-            deallocate(lines)
+            if (allocated(lines)) deallocate(lines)
             
             ! Move position for next class
             pos = class_end + 8  ! length of '</class>'
@@ -486,10 +509,16 @@ contains
         if (start_pos == 0) return
         start_pos = start_pos + 10  ! length of 'filename="'
         
+        ! Bounds check
+        if (start_pos > len(class_xml)) return
+        
         ! Find closing quote
         end_pos = index(class_xml(start_pos:), '"')
         if (end_pos == 0) return
         end_pos = start_pos + end_pos - 2
+        
+        ! Final bounds check
+        if (end_pos < start_pos .or. end_pos > len(class_xml)) return
         
         filename = class_xml(start_pos:end_pos)
         success = .true.
@@ -524,15 +553,25 @@ contains
             if (line_start == 0) return
             line_start = line_start + pos - 1
             
+            ! Bounds check
+            if (line_start > len(class_xml)) return
+            
             ! Extract line number and hits
             call extract_line_attributes(class_xml(line_start:), line_number, hits, success)
             if (.not. success) return
             
-            ! Create line object
-            call lines(i)%init(hits, line_number, 'filename_placeholder', .true.)
+            ! Create line object - use dummy filename since we'll get it from parent
+            call lines(i)%init(hits, line_number, 'dummy.f90', .true.)
             
-            ! Move position for next line
-            pos = line_start + 20  ! skip past current line tag
+            ! Move position for next line - find actual end of current line element
+            pos = index(class_xml(line_start:), '/>')
+            if (pos == 0) then
+                pos = index(class_xml(line_start:), '</line>')
+                if (pos == 0) return
+                pos = line_start + pos + 6  ! length of '</line>'
+            else
+                pos = line_start + pos + 1  ! length of '/>'
+            end if
         end do
         
         success = .true.
@@ -544,36 +583,50 @@ contains
         integer, intent(out) :: line_number, hits
         logical, intent(out) :: success
         
-        integer :: num_start, num_end, hits_start, hits_end
+        integer :: num_start, num_end, hits_start, hits_end, iostat_var
         character(len=20) :: temp_str
         
         success = .false.
+        line_number = 0
+        hits = 0
         
         ! Extract line number
         num_start = index(line_xml, 'number="')
         if (num_start == 0) return
         num_start = num_start + 8  ! length of 'number="'
         
+        ! Bounds check
+        if (num_start > len(line_xml)) return
+        
         num_end = index(line_xml(num_start:), '"')
         if (num_end == 0) return
         num_end = num_start + num_end - 2
         
+        ! Final bounds check
+        if (num_end < num_start .or. num_end > len(line_xml)) return
+        
         temp_str = adjustl(line_xml(num_start:num_end))
-        read(temp_str, *, iostat=num_start) line_number
-        if (num_start /= 0) return
+        read(temp_str, *, iostat=iostat_var) line_number
+        if (iostat_var /= 0) return
         
         ! Extract hits
         hits_start = index(line_xml, 'hits="')
         if (hits_start == 0) return
         hits_start = hits_start + 6  ! length of 'hits="'
         
+        ! Bounds check
+        if (hits_start > len(line_xml)) return
+        
         hits_end = index(line_xml(hits_start:), '"')
         if (hits_end == 0) return
         hits_end = hits_start + hits_end - 2
         
+        ! Final bounds check
+        if (hits_end < hits_start .or. hits_end > len(line_xml)) return
+        
         temp_str = adjustl(line_xml(hits_start:hits_end))
-        read(temp_str, *, iostat=hits_start) hits
-        if (hits_start /= 0) return
+        read(temp_str, *, iostat=iostat_var) hits
+        if (iostat_var /= 0) return
         
         success = .true.
         
