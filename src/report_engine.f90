@@ -452,29 +452,12 @@ contains
         type(color_scheme_t), intent(in) :: theme
         character(len=:), allocatable :: html
         
-        html = '<!DOCTYPE html>' // new_line('a') // &
-               '<html lang="en">' // new_line('a') // &
-               '<head>' // new_line('a') // &
-               '    <meta charset="UTF-8">' // new_line('a') // &
-               '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' // new_line('a') // &
-               '    <title>Coverage Report</title>' // new_line('a') // &
-               '    <style>' // new_line('a') // &
-               css_vars // new_line('a') // &
-               '        body { font-family: monospace; background: var(--background-color); color: var(--text-color); }' // new_line('a') // &
-               '        .cyberpunk { border: 1px solid var(--accent-color); }' // new_line('a') // &
-               '        .keyword { color: var(--accent-color); font-weight: bold; }' // new_line('a') // &
-               '        .comment { color: #888; font-style: italic; }' // new_line('a') // &
-               '    </style>' // new_line('a') // &
-               '</head>' // new_line('a') // &
-               '<body>' // new_line('a') // &
-               '    <h1>Coverage Report</h1>' // new_line('a') // &
-               '    <div class="cyberpunk">' // new_line('a') // &
-               '        <p>Theme: ' // theme%name // '</p>' // new_line('a') // &
-               '        <p>Files: ' // int_to_str(data%summary%total_files) // '</p>' // new_line('a') // &
-               '        <p>Coverage: ' // real_to_str(data%summary%coverage_percentage) // '%</p>' // new_line('a') // &
-               '    </div>' // new_line('a') // &
-               '</body>' // new_line('a') // &
-               '</html>'
+        ! Temporarily simplified HTML generation to debug compilation
+        html = '<!DOCTYPE html><html><head><title>Coverage Report</title></head>' // &
+               '<body><h1>Coverage Report</h1>' // &
+               '<p>Files: ' // int_to_str(data%summary%total_files) // '</p>' // &
+               '<p>Coverage: ' // real_to_str(data%summary%coverage_percentage) // '%</p>' // &
+               '</body></html>'
     end function generate_html_structure
     
     subroutine generate_terminal_display(data, theme, output)
