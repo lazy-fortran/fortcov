@@ -48,9 +48,9 @@ program test_cli
 
 contains
 
-    ! Test 1: Basic execution with gcov files
+    ! Test 1: Basic execution with gcov files (Issue #102 behavior)
     ! Given: Directory with .gcda/.gcno files
-    ! When: Running fortcov
+    ! When: Running fortcov with source directory specified
     ! Then: Should generate markdown report to stdout
     function test_basic_execution_gcov_files() result(passed)
         logical :: passed
@@ -61,20 +61,22 @@ contains
         
         print *, "  Test 1: Basic execution with gcov files"
         
-        ! Setup: Empty args array (default behavior)
-        allocate(character(len=10) :: args(0))
+        ! Setup: Args with source directory (not empty - Issue #102)
+        allocate(character(len=15) :: args(1))
+        args(1) = "--source=."
         
         ! Execute
         call parse_config(args, config, success, error_message)
         
-        ! Verify: Should succeed with default configuration
+        ! Verify: Should succeed with specified source and defaults
         passed = success .and. &
                  (config%input_format == "gcov") .and. &
                  (config%output_format == "markdown") .and. &
                  (config%output_path == "-")
         
         if (.not. passed) then
-            print *, "    FAILED: Expected defaults gcov/markdown/stdout"
+            print *, "    FAILED: Expected defaults gcov/markdown/stdout with source"
+            print *, "      Got success=", success, ", input=", config%input_format
         else
             print *, "    PASSED"
         end if
@@ -201,8 +203,8 @@ contains
         end if
     end function test_invalid_arguments
 
-    ! Test 6: No coverage files found
-    ! Given: Directory with no coverage files
+    ! Test 6: No coverage files found (Issue #102 behavior)
+    ! Given: Directory with no coverage files but with source specified
     ! When: Running fortcov
     ! Then: Should display warning and generate empty report
     function test_no_coverage_files_found() result(passed)
@@ -214,20 +216,20 @@ contains
         
         print *, "  Test 6: No coverage files found"
         
-        ! Setup: Default configuration (this test verifies behavior at 
-        ! engine level, config parsing should succeed)
-        allocate(character(len=10) :: args(0))
+        ! Setup: With source directory specified (not empty - Issue #102)
+        allocate(character(len=15) :: args(1))
+        args(1) = "--source=."
         
         ! Execute
         call parse_config(args, config, success, error_message)
         
-        ! Verify: Config parsing should succeed
+        ! Verify: Config parsing should succeed with source specified
         passed = success
         
         if (.not. passed) then
-            print *, "    FAILED: Config parsing should succeed"
+            print *, "    FAILED: Config parsing should succeed with source"
         else
-            print *, "    PASSED - Config parsing succeeds"
+            print *, "    PASSED - Config parsing succeeds with source"
         end if
     end function test_no_coverage_files_found
 
