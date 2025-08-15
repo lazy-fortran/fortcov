@@ -9,6 +9,7 @@ module coverage_engine
     use error_handling
     use coverage_diff
     use json_coverage_io
+    use report_engine
     implicit none
     private
     
@@ -59,6 +60,12 @@ contains
             return
         end if
         
+        ! Check if we're launching TUI mode (Issue #106)
+        if (config%tui_mode) then
+            exit_code = launch_tui_mode(config)
+            return
+        end if
+        
         ! Find coverage files in source directories
         coverage_files = find_coverage_files(config)
         
@@ -66,7 +73,12 @@ contains
             if (.not. config%quiet) then
                 print *, "Warning: No coverage files found"
             end if
-            exit_code = EXIT_NO_COVERAGE_DATA
+            ! Issue #109: Differentiate between strict and default modes
+            if (config%strict_mode) then
+                exit_code = EXIT_NO_COVERAGE_DATA  ! Error exit (code 3) 
+            else
+                exit_code = EXIT_SUCCESS           ! Success exit (code 0)
+            end if
             return
         end if
         
@@ -77,7 +89,12 @@ contains
             if (.not. config%quiet) then
                 print *, "Warning: All coverage files were excluded"
             end if
-            exit_code = EXIT_NO_COVERAGE_DATA
+            ! Issue #109: Differentiate between strict and default modes
+            if (config%strict_mode) then
+                exit_code = EXIT_NO_COVERAGE_DATA  ! Error exit (code 3)
+            else
+                exit_code = EXIT_SUCCESS           ! Success exit (code 0)
+            end if
             return
         end if
         
@@ -139,6 +156,12 @@ contains
             end if
             exit_code = EXIT_FAILURE
             return
+        end if
+        
+        ! Provide user feedback for HTML report creation (Issue #104)
+        if (.not. config%quiet .and. trim(config%output_format) == "html" .and. &
+            config%output_path /= "-") then
+            print *, "HTML report saved to: ", trim(config%output_path)
         end if
         
         ! Check coverage threshold
@@ -440,8 +463,14 @@ contains
             write(error_ctx%suggestion, '(A)') &
                 "Ensure tests are run with coverage flags " // &
                 "(-fprofile-arcs -ftest-coverage)."
-            error_ctx%recoverable = .false.
-            exit_code = EXIT_NO_COVERAGE_DATA
+            ! Issue #109: Differentiate between strict and default modes
+            if (config%strict_mode) then
+                error_ctx%recoverable = .false.
+                exit_code = EXIT_NO_COVERAGE_DATA
+            else
+                error_ctx%recoverable = .true.
+                exit_code = EXIT_SUCCESS
+            end if
             return
         end if
         
@@ -454,8 +483,14 @@ contains
                 "All coverage files excluded by patterns."
             write(error_ctx%suggestion, '(A)') &
                 "Review exclude patterns in configuration."
-            error_ctx%recoverable = .true.
-            exit_code = EXIT_NO_COVERAGE_DATA
+            ! Issue #109: Differentiate between strict and default modes
+            if (config%strict_mode) then
+                error_ctx%recoverable = .false.
+                exit_code = EXIT_NO_COVERAGE_DATA
+            else
+                error_ctx%recoverable = .true.
+                exit_code = EXIT_SUCCESS
+            end if
             return
         end if
         
@@ -499,6 +534,12 @@ contains
             call handle_permission_denied(config%output_path, error_ctx)
             exit_code = EXIT_FAILURE
             return
+        end if
+        
+        ! Provide user feedback for HTML report creation (Issue #104)
+        if (.not. config%quiet .and. trim(config%output_format) == "html" .and. &
+            config%output_path /= "-") then
+            print *, "HTML report saved to: ", trim(config%output_path)
         end if
         
         ! Check coverage threshold with enhanced messaging
@@ -688,6 +729,12 @@ contains
             return
         end if
         
+        ! Provide user feedback for HTML report creation (Issue #104)
+        if (.not. config%quiet .and. trim(config%output_format) == "html" .and. &
+            config%output_path /= "-") then
+            print *, "HTML report saved to: ", trim(config%output_path)
+        end if
+        
         ! Check coverage threshold
         if (line_stats%percentage < config%minimum_coverage) then
             if (.not. config%quiet) then
@@ -826,5 +873,101 @@ contains
             end if
         end if
     end subroutine output_diff_summary
+
+    ! Launch TUI mode with coverage analysis (Issue #106)
+    function launch_tui_mode(config) result(exit_code)
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        character(len=:), allocatable :: coverage_files(:)
+        character(len=:), allocatable :: filtered_files(:)
+        type(coverage_data_t) :: merged_coverage
+        type(coverage_stats_t) :: line_stats
+        type(report_engine_t) :: engine
+        type(terminal_session_t) :: session
+        logical :: success, engine_error
+        character(len=:), allocatable :: error_msg
+        
+        exit_code = EXIT_SUCCESS
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "Launching TUI mode..."
+        end if
+        
+        ! Find and parse coverage data (same as regular analysis)
+        coverage_files = find_coverage_files(config)
+        
+        if (size(coverage_files) == 0) then
+            if (.not. config%quiet) then
+                print *, "Warning: No coverage files found for TUI"
+            end if
+            ! Issue #109: Differentiate between strict and default modes
+            if (config%strict_mode) then
+                exit_code = EXIT_NO_COVERAGE_DATA  ! Error exit (code 3)
+            else
+                exit_code = EXIT_SUCCESS           ! Success exit (code 0)
+            end if
+            return
+        end if
+        
+        filtered_files = filter_files_by_patterns(coverage_files, config)
+        
+        if (size(filtered_files) == 0) then
+            if (.not. config%quiet) then
+                print *, "Warning: All coverage files were excluded"
+            end if
+            ! Issue #109: Differentiate between strict and default modes
+            if (config%strict_mode) then
+                exit_code = EXIT_NO_COVERAGE_DATA  ! Error exit (code 3)
+            else
+                exit_code = EXIT_SUCCESS           ! Success exit (code 0)
+            end if
+            return
+        end if
+        
+        ! Parse coverage data
+        block
+            type(error_context_t) :: parse_error_ctx
+            merged_coverage = parse_all_coverage_files_safe(filtered_files, &
+                                                          config, parse_error_ctx)
+            
+            if (parse_error_ctx%error_code /= ERROR_SUCCESS .and. &
+                .not. parse_error_ctx%recoverable) then
+                if (.not. config%quiet) then
+                    print *, "Error: Coverage parsing failed for TUI - " // &
+                            trim(parse_error_ctx%message)
+                end if
+                exit_code = EXIT_FAILURE
+                return
+            end if
+        end block
+        
+        ! Initialize report engine
+        call engine%init(success, error_msg)
+        if (.not. success) then
+            if (.not. config%quiet) then
+                print *, "Error: Failed to initialize TUI engine - " // error_msg
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Load coverage data into engine
+        engine%source_data = merged_coverage
+        
+        ! Launch terminal browser
+        call engine%launch_terminal_browser(session, .true., success, error_msg)
+        if (.not. success) then
+            if (.not. config%quiet) then
+                print *, "Error: Failed to launch TUI - " // error_msg
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "TUI session completed"
+        end if
+    end function launch_tui_mode
 
 end module coverage_engine

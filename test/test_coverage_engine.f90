@@ -35,6 +35,9 @@ program test_coverage_engine
     ! Test 6: Handle missing coverage files
     all_tests_passed = all_tests_passed .and. test_missing_coverage_files()
     
+    ! Test 6b: Handle missing coverage files in strict mode (Issue #109)
+    all_tests_passed = all_tests_passed .and. test_missing_coverage_files_strict()
+    
     ! Test 7: Parser error handling
     all_tests_passed = all_tests_passed .and. test_parser_error_handling()
     
@@ -217,28 +220,58 @@ contains
         type(config_t) :: config
         integer :: exit_code
         
-        print *, "  Test 6: Handle missing coverage files"
+        print *, "  Test 6: Handle missing coverage files (Issue #109 - default mode)"
         
-        ! Given: No .gcda files (code not executed)
+        ! Given: No .gcov files (code not executed) in default (non-strict) mode
         call initialize_config(config)
         config%quiet = .true.
+        config%strict_mode = .false.  ! Explicit non-strict mode
         
         if (allocated(config%source_paths)) deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(1))
         config%source_paths(1) = "/nonexistent/directory"
         
-        ! When: Running analysis with missing files
+        ! When: Running analysis with missing files in default mode
         exit_code = analyze_coverage(config)
         
-        ! Then: Should report no coverage data
+        ! Then: Should report warning but return success (Issue #109)
+        passed = (exit_code == EXIT_SUCCESS)
+        
+        if (passed) then
+            print *, "    PASSED - Default mode returns success with warning"
+        else
+            print *, "    FAILED: Expected EXIT_SUCCESS in default mode, got:", exit_code
+        end if
+    end function test_missing_coverage_files
+
+    function test_missing_coverage_files_strict() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        integer :: exit_code
+        
+        print *, "  Test 6b: Handle missing coverage files in strict mode (Issue #109)"
+        
+        ! Given: No .gcov files (code not executed) in strict mode
+        call initialize_config(config)
+        config%quiet = .true.
+        config%strict_mode = .true.  ! Enable strict mode
+        
+        if (allocated(config%source_paths)) deallocate(config%source_paths)
+        allocate(character(len=256) :: config%source_paths(1))
+        config%source_paths(1) = "/nonexistent/directory"
+        
+        ! When: Running analysis with missing files in strict mode
+        exit_code = analyze_coverage(config)
+        
+        ! Then: Should report error exit code (Issue #109)
         passed = (exit_code == EXIT_NO_COVERAGE_DATA)
         
         if (passed) then
-            print *, "    PASSED - Correctly handled missing files"
+            print *, "    PASSED - Strict mode returns error exit code"
         else
-            print *, "    FAILED: Expected EXIT_NO_COVERAGE_DATA, got:", exit_code
+            print *, "    FAILED: Expected EXIT_NO_COVERAGE_DATA in strict mode, got:", exit_code
         end if
-    end function test_missing_coverage_files
+    end function test_missing_coverage_files_strict
 
     function test_parser_error_handling() result(passed)
         logical :: passed

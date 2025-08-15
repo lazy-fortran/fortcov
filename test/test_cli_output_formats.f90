@@ -14,12 +14,14 @@ program test_cli_output_formats
     call test_validate_config_accepts_xml()
     call test_validate_config_accepts_markdown()
     call test_validate_config_accepts_md()
+    call test_validate_config_accepts_html()
     
     ! Test 2: Create reporter now works for all advertised formats
     call test_create_reporter_json_works()
     call test_create_reporter_xml_works()
     call test_create_reporter_markdown_works()
     call test_create_reporter_md_works()
+    call test_create_reporter_html_works()
     
     ! Test 3: Help text consistency
     call test_help_text_matches_implementation()
@@ -212,25 +214,67 @@ contains
     end subroutine test_create_reporter_md_works
     
     ! Test help text vs implementation consistency (Issue #85 - now fixed)
-    ! Given: Help text advertises json, xml, markdown, md
+    ! Given: Help text advertises json, xml, markdown, md, html
     ! When: Implementation supports all advertised formats
     ! Then: All formats should work correctly
     subroutine test_help_text_matches_implementation()
         class(coverage_reporter_t), allocatable :: reporter
-        logical :: json_error, xml_error, md_error, markdown_error
+        logical :: json_error, xml_error, md_error, markdown_error, html_error
         
         ! Test what create_reporter actually supports
         call create_reporter("json", reporter, json_error)
         call create_reporter("xml", reporter, xml_error)
         call create_reporter("markdown", reporter, markdown_error)
         call create_reporter("md", reporter, md_error)
+        call create_reporter("html", reporter, html_error)
         
         ! All advertised formats should work (Issue #85 fixed)
         call assert(.not. json_error .and. .not. xml_error .and. &
-                   .not. markdown_error .and. .not. md_error, &
+                   .not. markdown_error .and. .not. md_error .and. &
+                   .not. html_error, &
                    "help text matches implementation", &
                    "all formats work", &
                    "all formats implemented")
     end subroutine test_help_text_matches_implementation
+    
+    ! Test validate_config accepts html format
+    ! Given: config with output_format = "html"
+    ! When: Calling validate_config()
+    ! Then: Should not raise validation error
+    subroutine test_validate_config_accepts_html()
+        use error_handling
+        type(config_t) :: config
+        type(error_context_t) :: error_ctx
+        
+        ! Given: Config with html output format
+        call initialize_config(config)
+        config%output_format = "html"
+        
+        ! When: Validate config
+        call validate_config(config, error_ctx)
+        
+        ! Then: Should not have validation error
+        call assert(error_ctx%error_code == ERROR_SUCCESS, &
+                   "validate_config accepts html", "ERROR_SUCCESS", &
+                   "validation error")
+    end subroutine test_validate_config_accepts_html
+    
+    ! Test create_reporter works for html
+    ! Given: format = "html"
+    ! When: Calling create_reporter()
+    ! Then: Should set error_flag = .false.
+    subroutine test_create_reporter_html_works()
+        class(coverage_reporter_t), allocatable :: reporter
+        logical :: error_flag
+        
+        ! Given: html format
+        ! When: Create reporter
+        call create_reporter("html", reporter, error_flag)
+        
+        ! Then: Should succeed
+        call assert(error_flag .eqv. .false., &
+                   "create_reporter html works", ".false.", &
+                   merge(".true. ", ".false.", error_flag))
+    end subroutine test_create_reporter_html_works
     
 end program test_cli_output_formats

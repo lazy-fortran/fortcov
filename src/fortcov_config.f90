@@ -48,6 +48,10 @@ module fortcov_config
         ! Missing CLI flags (Issue #59)
         logical :: keep_gcov_files
         character(len=:), allocatable :: gcov_args
+        ! TUI mode flag (Issue #106)
+        logical :: tui_mode
+        ! Strict mode flag (Issue #109)
+        logical :: strict_mode
     end type config_t
 
 contains
@@ -85,6 +89,9 @@ contains
         ! Only enforce this when no arguments provided or only output flags without sources
         call validate_input_sources(args, config, success, error_message)
         if (.not. success) return
+        
+        ! Pass 4: Apply HTML default filename logic (Issue #104)
+        call apply_html_default_filename(config)
     end subroutine parse_config
     
     ! Process flag arguments using existing logic
@@ -152,6 +159,18 @@ contains
             ! Check for keep-gcov-files flag (Issue #59)
             if (arg == "--keep-gcov-files") then
                 config%keep_gcov_files = .true.
+                cycle
+            end if
+            
+            ! Check for TUI flag (Issue #106)
+            if (arg == "--tui") then
+                config%tui_mode = .true.
+                cycle
+            end if
+            
+            ! Check for strict flag (Issue #109)
+            if (arg == "--strict") then
+                config%strict_mode = .true.
                 cycle
             end if
             
@@ -536,6 +555,8 @@ contains
         print *, "  --gcov=EXECUTABLE         Path to gcov executable [default: gcov]"
         print *, "  --gcov-args=ARGS          Additional arguments to pass to gcov"
         print *, "  --keep-gcov-files         Preserve .gcov files after processing"
+        print *, "  --tui                     Launch interactive terminal browser"
+        print *, "  --strict                  Exit with error if no coverage files found"
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
         print *, "  --config=FILE             Load configuration from namelist file"
         print *, "  --import=FILE             Import coverage data from JSON file"
@@ -553,6 +574,7 @@ contains
         print *, "  fortcov --import=coverage.json --output-format=markdown"
         print *, "  fortcov --diff=baseline.json,current.json --threshold=5.0"
         print *, "  fortcov --keep-gcov-files --gcov-args='--branch-probabilities'"
+        print *, "  fortcov --tui --source=src"
         print *, ""
         print *, "Configuration File Format (Fortran namelist):"
         print *, "  Create a file (e.g., fortcov.nml) with:"
@@ -603,6 +625,10 @@ contains
         ! Missing CLI flags defaults (Issue #59)
         config%keep_gcov_files = .false.
         config%gcov_args = ""
+        ! TUI mode default (Issue #106)
+        config%tui_mode = .false.
+        ! Strict mode default (Issue #109)
+        config%strict_mode = .false.
     end subroutine initialize_config
 
     subroutine add_to_array(value, array, count, max_size, type_name)
@@ -778,5 +804,18 @@ contains
                           "Use --help for usage information."
         end if
     end subroutine validate_input_sources
+
+    ! Apply HTML default filename logic (Issue #104)
+    ! When HTML format is specified without explicit output file,
+    ! automatically set default filename to avoid stdout mixing
+    subroutine apply_html_default_filename(config)
+        type(config_t), intent(inout) :: config
+        
+        ! Only apply to HTML format without explicit output file
+        if (trim(config%output_format) == "html" .and. &
+            trim(config%output_path) == "-") then
+            config%output_path = "coverage_report.html"
+        end if
+    end subroutine apply_html_default_filename
 
 end module fortcov_config
