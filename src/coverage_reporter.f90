@@ -1,6 +1,7 @@
 module coverage_reporter
     use coverage_model
     use markdown_reporter, only: generate_markdown_report, markdown_report_options_t
+    use report_engine
     implicit none
     private
     
@@ -14,6 +15,7 @@ module coverage_reporter
     public :: markdown_reporter_t
     public :: json_reporter_t
     public :: xml_reporter_t
+    public :: html_reporter_t
     public :: mock_reporter_t
     
     ! Public procedures
@@ -53,6 +55,17 @@ module coverage_reporter
         procedure :: get_format_name => xml_get_format_name
         procedure :: supports_diff => xml_supports_diff
     end type xml_reporter_t
+    
+    ! HTML reporter using report_engine_t
+    type, extends(coverage_reporter_t) :: html_reporter_t
+        type(report_engine_t) :: engine
+        logical :: initialized = .false.
+        character(len=:), allocatable :: last_error
+    contains
+        procedure :: generate_report => html_generate_report
+        procedure :: get_format_name => html_get_format_name
+        procedure :: supports_diff => html_supports_diff
+    end type html_reporter_t
     
     ! Mock reporter for testing
     type, extends(coverage_reporter_t) :: mock_reporter_t
@@ -107,6 +120,8 @@ contains
             allocate(json_reporter_t :: reporter)
         case ("xml")
             allocate(xml_reporter_t :: reporter)
+        case ("html")
+            allocate(html_reporter_t :: reporter)
         case ("mock")
             allocate(mock_reporter_t :: reporter)
         case default
@@ -406,6 +421,59 @@ contains
         
         call suppress_unused_warning(this)
     end function xml_supports_diff
+
+    ! HTML reporter implementations
+    subroutine html_generate_report(this, coverage_data, output_path, error_flag)
+        class(html_reporter_t), intent(inout) :: this
+        type(coverage_data_t), intent(in) :: coverage_data
+        character(len=*), intent(in) :: output_path
+        logical, intent(out) :: error_flag
+        logical :: init_success
+        character(len=:), allocatable :: init_error
+        
+        error_flag = .false.
+        
+        ! Initialize report engine if not already done
+        if (.not. this%initialized) then
+            call this%engine%init(init_success, init_error)
+            if (.not. init_success) then
+                this%last_error = "Failed to initialize HTML report engine: " // init_error
+                error_flag = .true.
+                return
+            end if
+            this%initialized = .true.
+        end if
+        
+        ! Set source data in the engine
+        this%engine%source_data = coverage_data
+        
+        ! Generate HTML report using the report engine
+        call this%engine%generate_html_report(output_path, init_success, init_error)
+        if (.not. init_success) then
+            this%last_error = "Failed to generate HTML report: " // init_error
+            error_flag = .true.
+            return
+        end if
+    end subroutine html_generate_report
+    
+    function html_get_format_name(this) result(format_name)
+        class(html_reporter_t), intent(in) :: this
+        character(len=:), allocatable :: format_name
+        
+        format_name = "html"
+        
+        call suppress_unused_warning(this)
+    end function html_get_format_name
+    
+    function html_supports_diff(this) result(supported)
+        class(html_reporter_t), intent(in) :: this
+        logical :: supported
+        
+        ! HTML reporter supports diff through report engine
+        supported = .true.
+        
+        call suppress_unused_warning(this)
+    end function html_supports_diff
 
     ! Mock reporter implementations
     subroutine mock_generate_report(this, coverage_data, output_path, error_flag)

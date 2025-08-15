@@ -524,7 +524,7 @@ contains
         print *, ""
         print *, "Options:"
         print *, "  --input-format=FORMAT     Input format (gcov, lcov, json) [default: gcov]"
-        print *, "  --output-format=FORMAT    Output format (markdown, json, xml) [default: markdown]"
+        print *, "  --output-format=FORMAT    Output format (markdown, json, xml, html) [default: markdown]"
         print *, "  --output=FILE             Output file path [default: stdout]"
         print *, "  --source=PATH             Source directory to include (can be repeated)"
         print *, "  --exclude=PATTERN         Pattern to exclude (can be repeated)"
@@ -736,12 +736,13 @@ contains
         if (trim(config%output_format) /= "markdown" .and. &
             trim(config%output_format) /= "md" .and. &
             trim(config%output_format) /= "json" .and. &
-            trim(config%output_format) /= "xml") then
+            trim(config%output_format) /= "xml" .and. &
+            trim(config%output_format) /= "html") then
             error_ctx%error_code = ERROR_INVALID_CONFIG
             call safe_write_message(error_ctx, &
                 "Unsupported output format: " // trim(config%output_format))
             call safe_write_suggestion(error_ctx, &
-                "Use supported output formats: markdown, md, json, xml")
+                "Use supported output formats: markdown, md, json, xml, html")
             call safe_write_context(error_ctx, "output format validation")
             return
         end if

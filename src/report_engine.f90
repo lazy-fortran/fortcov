@@ -385,7 +385,7 @@ contains
         
         type(transformed_data_t) :: transformed_data
         type(color_scheme_t) :: theme
-        character(len=:), allocatable :: source_content, highlighted_content
+        character(len=:), allocatable :: source_content, highlighted_content, css_variables
         
         success = .false.
         error_msg = ""
@@ -424,9 +424,8 @@ contains
             end if
             
             ! Add theme CSS variables
-            output = '<style>' // new_line('a')
-            call this%theme_manager%generate_css_variables(theme, output)
-            output = output // new_line('a') // '</style>' // new_line('a') // highlighted_content
+            call this%theme_manager%generate_css_variables(theme, css_variables)
+            output = '<style>' // new_line('a') // css_variables // new_line('a') // '</style>' // new_line('a') // highlighted_content
             
         case ("terminal")
             call this%highlighter%highlight_for_terminal(source_content, highlighted_content, success)

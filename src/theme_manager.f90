@@ -55,7 +55,7 @@ contains
     subroutine theme_manager_generate_css_variables(this, theme, css_variables)
         class(theme_manager_t), intent(inout) :: this
         type(color_scheme_t), intent(in) :: theme
-        character(len=*), intent(out) :: css_variables
+        character(len=:), allocatable, intent(out) :: css_variables
         
         ! Generate minimal CSS variables
         css_variables = ":root { " // &
