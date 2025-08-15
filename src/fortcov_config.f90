@@ -45,6 +45,9 @@ module fortcov_config
         real :: diff_threshold
         ! Import functionality fields
         character(len=:), allocatable :: import_file
+        ! Missing CLI flags (Issue #59)
+        logical :: keep_gcov_files
+        character(len=:), allocatable :: gcov_args
     end type config_t
 
 contains
@@ -141,6 +144,12 @@ contains
                 cycle
             end if
             
+            ! Check for keep-gcov-files flag (Issue #59)
+            if (arg == "--keep-gcov-files") then
+                config%keep_gcov_files = .true.
+                cycle
+            end if
+            
             ! Parse key=value arguments
             eq_pos = index(arg, "=")
             if (eq_pos > 0) then
@@ -172,6 +181,9 @@ contains
                     
                 case ("--gcov")
                     config%gcov_executable = trim(value)
+                    
+                case ("--gcov-args")
+                    config%gcov_args = trim(value)
                     
                 case ("--diff")
                     ! Parse diff with two file arguments
@@ -508,6 +520,8 @@ contains
         print *, "  --source=PATH             Source directory to include (can be repeated)"
         print *, "  --exclude=PATTERN         Pattern to exclude (can be repeated)"
         print *, "  --gcov=EXECUTABLE         Path to gcov executable [default: gcov]"
+        print *, "  --gcov-args=ARGS          Additional arguments to pass to gcov"
+        print *, "  --keep-gcov-files         Preserve .gcov files after processing"
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
         print *, "  --config=FILE             Load configuration from namelist file"
         print *, "  --import=FILE             Import coverage data from JSON file"
@@ -524,6 +538,7 @@ contains
         print *, "  fortcov --gcov=/usr/bin/gcov-10 --config=fortcov.nml"
         print *, "  fortcov --import=coverage.json --output-format=markdown"
         print *, "  fortcov --diff=baseline.json,current.json --threshold=5.0"
+        print *, "  fortcov --keep-gcov-files --gcov-args='--branch-probabilities'"
         print *, ""
         print *, "Configuration File Format (Fortran namelist):"
         print *, "  Create a file (e.g., fortcov.nml) with:"
@@ -571,6 +586,9 @@ contains
         config%diff_threshold = 0.0
         ! Import functionality defaults
         config%import_file = ""
+        ! Missing CLI flags defaults (Issue #59)
+        config%keep_gcov_files = .false.
+        config%gcov_args = ""
     end subroutine initialize_config
 
     subroutine add_to_array(value, array, count, max_size, type_name)
