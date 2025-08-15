@@ -239,7 +239,7 @@ contains
         call suppress_unused_warning(this)
     end subroutine json_generate_report
 
-    ! Ultra-optimized JSON generation with minimal I/O operations
+    ! Secure JSON generation with chunked writing to avoid memory issues
     subroutine write_json_optimized(unit, coverage_data, line_stats, &
                                     branch_stats, func_stats)
         use coverage_statistics
@@ -247,177 +247,90 @@ contains
         type(coverage_data_t), intent(in) :: coverage_data
         type(coverage_stats_t), intent(in) :: line_stats, branch_stats, &
                                               func_stats
-        integer :: i, j, line_count, total_lines, buffer_size
-        character(len=100000) :: mega_buffer
-        character(len=200) :: temp_str
-        integer :: pos, temp_len
+        integer :: i, j, line_count
         logical :: first_file, first_line
         
-        ! Calculate total lines for sizing
-        total_lines = 0
-        do i = 1, size(coverage_data%files)
-            total_lines = total_lines + size(coverage_data%files(i)%lines)
-        end do
+        ! Secure approach: Write JSON directly without large string building
+        ! This eliminates buffer overflow risks and memory scalability issues
         
-        ! Use adaptive buffer size based on data size
-        buffer_size = min(100000, max(10000, total_lines * 50))
+        ! Write JSON header directly
+        write(unit, '(A)', advance='no') '{"coverage_report":{"line_coverage":'
+        write(unit, '(A)', advance='no') real_to_string(line_stats%percentage)
+        write(unit, '(A)', advance='no') ',"lines_covered":'
+        write(unit, '(A)', advance='no') int_to_string(line_stats%covered_count)
+        write(unit, '(A)', advance='no') ',"lines_total":'
+        write(unit, '(A)', advance='no') int_to_string(line_stats%total_count)
+        write(unit, '(A)', advance='no') ',"branch_coverage":'
+        write(unit, '(A)', advance='no') real_to_string(branch_stats%percentage)
+        write(unit, '(A)', advance='no') ',"branches_covered":'
+        write(unit, '(A)', advance='no') int_to_string(branch_stats%covered_count)
+        write(unit, '(A)', advance='no') ',"branches_total":'
+        write(unit, '(A)', advance='no') int_to_string(branch_stats%total_count)
+        write(unit, '(A)', advance='no') ',"function_coverage":'
+        write(unit, '(A)', advance='no') real_to_string(func_stats%percentage)
+        write(unit, '(A)', advance='no') ',"functions_covered":'
+        write(unit, '(A)', advance='no') int_to_string(func_stats%covered_count)
+        write(unit, '(A)', advance='no') ',"functions_total":'
+        write(unit, '(A)', advance='no') int_to_string(func_stats%total_count)
+        write(unit, '(A)', advance='no') ',"files":['
         
-        pos = 1
-        mega_buffer = ''
-        
-        ! Build JSON header in memory with safer approach
-        mega_buffer = '{"coverage_report":{"line_coverage":'
-        pos = len_trim(mega_buffer) + 1
-        
-        write(temp_str, '(F0.2)') line_stats%percentage
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+15) = ',"lines_covered":'
-        pos = pos + 16
-        
-        write(temp_str, '(I0)') line_stats%covered_count
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+13) = ',"lines_total":'
-        pos = pos + 14
-        
-        write(temp_str, '(I0)') line_stats%total_count
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+17) = ',"branch_coverage":'
-        pos = pos + 18
-        
-        write(temp_str, '(F0.2)') branch_stats%percentage
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+18) = ',"branches_covered":'
-        pos = pos + 19
-        
-        write(temp_str, '(I0)') branch_stats%covered_count
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+16) = ',"branches_total":'
-        pos = pos + 17
-        
-        write(temp_str, '(I0)') branch_stats%total_count
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+19) = ',"function_coverage":'
-        pos = pos + 20
-        
-        write(temp_str, '(F0.2)') func_stats%percentage
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+20) = ',"functions_covered":'
-        pos = pos + 21
-        
-        write(temp_str, '(I0)') func_stats%covered_count
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+18) = ',"functions_total":'
-        pos = pos + 19
-        
-        write(temp_str, '(I0)') func_stats%total_count
-        temp_len = len_trim(temp_str)
-        mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-        pos = pos + temp_len
-        
-        mega_buffer(pos:pos+8) = ',"files":['
-        pos = pos + 9
-        
-        ! Process files with minimal operations
+        ! Process files with direct writing
         first_file = .true.
         do i = 1, size(coverage_data%files)
             line_count = size(coverage_data%files(i)%lines)
             
             ! Add file separator
             if (.not. first_file) then
-                mega_buffer(pos:pos) = ','
-                pos = pos + 1
+                write(unit, '(A)', advance='no') ','
             end if
             first_file = .false.
             
-            ! File header
-            write(temp_str, '(A,A,A,I0,A)') &
-                '{"filename":"', trim(coverage_data%files(i)%filename), &
-                '","line_count":', line_count, ',"lines":['
-            temp_len = len_trim(temp_str)
-            
-            ! Check if we need to flush buffer
-            if (pos + temp_len + 10000 > buffer_size) then
-                write(unit, '(A)', advance='no') mega_buffer(1:pos-1)
-                pos = 1
-            end if
-            
-            mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-            pos = pos + temp_len
+            ! Write file header
+            write(unit, '(A)', advance='no') '{"filename":"'
+            write(unit, '(A)', advance='no') trim(coverage_data%files(i)%filename)
+            write(unit, '(A)', advance='no') '","line_count":'
+            write(unit, '(A)', advance='no') int_to_string(line_count)
+            write(unit, '(A)', advance='no') ',"lines":['
             
             ! Process all lines for this file
             first_line = .true.
             do j = 1, line_count
                 if (.not. first_line) then
-                    mega_buffer(pos:pos) = ','
-                    pos = pos + 1
+                    write(unit, '(A)', advance='no') ','
                 end if
                 first_line = .false.
                 
-                ! Highly compressed line format
+                ! Write line entry directly
+                write(unit, '(A)', advance='no') '{"line_number":'
+                write(unit, '(A)', advance='no') int_to_string(coverage_data%files(i)%lines(j)%line_number)
+                write(unit, '(A)', advance='no') ',"execution_count":'
+                write(unit, '(A)', advance='no') int_to_string(coverage_data%files(i)%lines(j)%execution_count)
+                write(unit, '(A)', advance='no') ',"is_executable":'
+                
                 if (coverage_data%files(i)%lines(j)%is_executable) then
-                    write(temp_str, '(A,I0,A,I0,A)') &
-                        '{"line_number":', &
-                        coverage_data%files(i)%lines(j)%line_number, &
-                        ',"execution_count":', &
-                        coverage_data%files(i)%lines(j)%execution_count, &
-                        ',"is_executable":true}'
+                    write(unit, '(A)', advance='no') 'true}'
                 else
-                    write(temp_str, '(A,I0,A,I0,A)') &
-                        '{"line_number":', &
-                        coverage_data%files(i)%lines(j)%line_number, &
-                        ',"execution_count":', &
-                        coverage_data%files(i)%lines(j)%execution_count, &
-                        ',"is_executable":false}'
+                    write(unit, '(A)', advance='no') 'false}'
                 end if
-                
-                temp_len = len_trim(temp_str)
-                
-                ! Check buffer space again
-                if (pos + temp_len + 100 > buffer_size) then
-                    write(unit, '(A)', advance='no') mega_buffer(1:pos-1)
-                    pos = 1
-                end if
-                
-                mega_buffer(pos:pos+temp_len-1) = temp_str(1:temp_len)
-                pos = pos + temp_len
             end do
             
             ! Close file
-            mega_buffer(pos:pos+1) = ']}'
-            pos = pos + 2
+            write(unit, '(A)', advance='no') ']}'
         end do
         
-        ! Add JSON footer
-        mega_buffer(pos:pos+1) = ']}'
-        pos = pos + 2
-        
-        ! Final write
-        write(unit, '(A)') mega_buffer(1:pos-1)
+        ! Write JSON footer
+        write(unit, '(A)') ']}}'
     end subroutine write_json_optimized
+    
+    ! Helper function to convert real to string
+    function real_to_string(num) result(str)
+        real, intent(in) :: num
+        character(len=:), allocatable :: str
+        character(len=20) :: temp_str
+        
+        write(temp_str, '(F0.2)') num
+        str = trim(temp_str)
+    end function real_to_string
 
     function json_get_format_name(this) result(format_name)
         class(json_reporter_t), intent(in) :: this
@@ -427,6 +340,16 @@ contains
         
         call suppress_unused_warning(this)
     end function json_get_format_name
+    
+    ! Helper function to convert integer to string  
+    function int_to_string(num) result(str)
+        integer, intent(in) :: num
+        character(len=:), allocatable :: str
+        character(len=20) :: temp_str
+        
+        write(temp_str, '(I0)') num
+        str = trim(temp_str)
+    end function int_to_string
 
     function json_supports_diff(this) result(supported)
         class(json_reporter_t), intent(in) :: this
@@ -641,14 +564,5 @@ contains
         end associate
     end subroutine suppress_unused_warning_reporter
 
-    ! Helper function to convert integer to string
-    function int_to_string(value) result(str)
-        integer, intent(in) :: value
-        character(len=:), allocatable :: str
-        character(len=20) :: temp
-        
-        write(temp, '(I0)') value
-        str = trim(temp)
-    end function int_to_string
 
 end module coverage_reporter
