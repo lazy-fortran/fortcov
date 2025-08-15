@@ -47,6 +47,9 @@ program test_coverage_engine
     ! Test 10: Quiet mode
     all_tests_passed = all_tests_passed .and. test_quiet_mode()
     
+    ! Test 11: User-specified coverage files (Issue #82 fix)
+    all_tests_passed = all_tests_passed .and. test_user_specified_coverage_files()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -387,5 +390,48 @@ contains
             print *, "           test/src/main.f90:", match5, "(should be F)"
         end if
     end function test_middle_wildcard_patterns
+
+    function test_user_specified_coverage_files() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: found_files(:)
+        
+        print *, "  Test 11: User-specified coverage files (Issue #82)"
+        
+        ! Given: Config with user-specified coverage files
+        call initialize_config(config)
+        
+        ! Allocate and set specific coverage files as user would provide
+        if (allocated(config%coverage_files)) deallocate(config%coverage_files)
+        allocate(character(len=256) :: config%coverage_files(2))
+        config%coverage_files(1) = "test_coverage_sample/sample.f90.gcov"
+        config%coverage_files(2) = "test_data/sample.f90.gcov"
+        
+        ! When: Finding coverage files
+        found_files = find_coverage_files(config)
+        
+        ! Then: Should return exactly the user-specified files
+        passed = size(found_files) == 2
+        if (passed .and. size(found_files) >= 2) then
+            passed = passed .and. &
+                    trim(found_files(1)) == "test_coverage_sample/sample.f90.gcov" .and. &
+                    trim(found_files(2)) == "test_data/sample.f90.gcov"
+        end if
+        
+        if (passed) then
+            print *, "    PASSED - User-specified files are used correctly"
+        else
+            print *, "    FAILED - Expected 2 user files, got:"
+            print *, "             Files found:", size(found_files)
+            if (size(found_files) > 0) then
+                print *, "             First file:", trim(found_files(1))
+                if (size(found_files) > 1) then
+                    print *, "             Second file:", trim(found_files(2))
+                end if
+            else
+                print *, "             No files found"
+            end if
+        end if
+    end function test_user_specified_coverage_files
 
 end program test_coverage_engine

@@ -167,6 +167,17 @@ contains
         character(len=:), allocatable :: search_pattern
         integer :: i, total_count, current_count
         
+        ! Priority 1: Use user-specified coverage files if provided
+        if (allocated(config%coverage_files) .and. size(config%coverage_files) > 0) then
+            ! User provided specific files - use them directly
+            allocate(character(len=256) :: files(size(config%coverage_files)))
+            do i = 1, size(config%coverage_files)
+                files(i) = config%coverage_files(i)
+            end do
+            return
+        end if
+        
+        ! Priority 2: Fall back to directory search
         total_count = 0
         
         ! If no source paths specified, search current directory
