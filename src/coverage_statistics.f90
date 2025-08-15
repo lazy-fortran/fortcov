@@ -80,12 +80,15 @@ contains
             end do
         end do
         
-        ! Calculate percentage
+        ! Calculate percentage with validation
         if (total_lines > 0) then
             percentage = real(covered_lines) / real(total_lines) * 100.0
         else
             percentage = 100.0  ! No executable lines means 100% coverage
         end if
+        
+        ! Input validation: Clamp percentage to valid range
+        percentage = clamp_percentage(percentage)
         
         ! Collect missing line numbers for range compression
         if (missing_count > 0) then
@@ -137,12 +140,15 @@ contains
             end if
         end do
         
-        ! Calculate percentage
+        ! Calculate percentage with validation
         if (total_branches > 0) then
             percentage = real(covered_branches) / real(total_branches) * 100.0
         else
             percentage = 100.0  ! No branches means 100% coverage
         end if
+        
+        ! Input validation: Clamp percentage to valid range
+        percentage = clamp_percentage(percentage)
         
         call stats%init(percentage, covered_branches, total_branches, "")
     end function calculate_branch_coverage
@@ -170,12 +176,15 @@ contains
             end if
         end do
         
-        ! Calculate percentage
+        ! Calculate percentage with validation
         if (total_functions > 0) then
             percentage = real(covered_functions) / real(total_functions) * 100.0
         else
             percentage = 100.0  ! No functions means 100% coverage
         end if
+        
+        ! Input validation: Clamp percentage to valid range
+        percentage = clamp_percentage(percentage)
         
         call stats%init(percentage, covered_functions, total_functions, "")
     end function calculate_function_coverage
@@ -220,15 +229,17 @@ contains
             end if
         end do
         
-        ! Calculate percentages
+        ! Calculate percentages with validation
         if (stats%total_functions > 0) then
             stats%function_percentage = real(stats%covered_functions) / real(stats%total_functions) * 100.0
+            stats%function_percentage = clamp_percentage(stats%function_percentage)
         else
             stats%function_percentage = 0.0
         end if
         
         if (stats%total_branches > 0) then
             stats%branch_percentage = real(stats%covered_branches) / real(stats%total_branches) * 100.0
+            stats%branch_percentage = clamp_percentage(stats%branch_percentage)
         else
             stats%branch_percentage = 0.0
         end if
@@ -237,5 +248,22 @@ contains
         ! For now, set to 0 as the test expects
         stats%line_percentage = 0.0
     end function calculate_module_coverage
+
+    ! Input validation: Clamp percentage values to valid range [0.0, 100.0]
+    function clamp_percentage(percentage) result(clamped)
+        real, intent(in) :: percentage
+        real :: clamped
+        
+        ! Handle NaN and infinite values
+        if (percentage /= percentage) then  ! NaN check
+            clamped = 0.0
+        else if (percentage < 0.0) then
+            clamped = 0.0  ! Clamp negative percentages to 0
+        else if (percentage > 100.0) then
+            clamped = 100.0  ! Clamp excessive percentages to 100
+        else
+            clamped = percentage
+        end if
+    end function clamp_percentage
 
 end module coverage_statistics
