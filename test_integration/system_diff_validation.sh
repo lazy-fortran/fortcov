@@ -150,8 +150,9 @@ create_mock_coverage_json() {
         local line_count
         line_count=$(wc -l < "$source_file" || echo "10")
         
-        json_content="${json_content}"'{"filename": "'$(basename "$source_file")'",'
-        json_content="${json_content}"'"lines": ['
+        filename=$(basename "$source_file")
+        json_content="${json_content}{\"filename\": \"${filename}\","
+        json_content="${json_content}\"lines\": ["
         
         # Create mock line coverage (some covered, some not)
         for ((i=1; i<=line_count && i<=10; i++)); do
@@ -159,10 +160,10 @@ create_mock_coverage_json() {
                 json_content="${json_content},"
             fi
             local hits=$((RANDOM % 10))
-            json_content="${json_content}"'{"line_number": '"$i"', "execution_count": '"$hits"', "is_executable": true}'
+            json_content="${json_content}"'{"line_number": '"${i}"', "execution_count": '"${hits}"', "is_executable": true}'
         done
         
-        json_content="${json_content}"]}"
+        json_content="${json_content}]}"
     done
     
     json_content="${json_content}]}"
