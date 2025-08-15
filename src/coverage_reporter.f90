@@ -12,6 +12,8 @@ module coverage_reporter
     ! Public types
     public :: coverage_reporter_t
     public :: markdown_reporter_t
+    public :: json_reporter_t
+    public :: xml_reporter_t
     public :: mock_reporter_t
     
     ! Public procedures
@@ -33,6 +35,24 @@ module coverage_reporter
         procedure :: get_format_name => markdown_get_format_name
         procedure :: supports_diff => markdown_supports_diff
     end type markdown_reporter_t
+    
+    ! Concrete JSON reporter implementation
+    type, extends(coverage_reporter_t) :: json_reporter_t
+        character(len=:), allocatable :: last_error
+    contains
+        procedure :: generate_report => json_generate_report
+        procedure :: get_format_name => json_get_format_name
+        procedure :: supports_diff => json_supports_diff
+    end type json_reporter_t
+    
+    ! Concrete XML reporter implementation
+    type, extends(coverage_reporter_t) :: xml_reporter_t
+        character(len=:), allocatable :: last_error
+    contains
+        procedure :: generate_report => xml_generate_report
+        procedure :: get_format_name => xml_get_format_name
+        procedure :: supports_diff => xml_supports_diff
+    end type xml_reporter_t
     
     ! Mock reporter for testing
     type, extends(coverage_reporter_t) :: mock_reporter_t
@@ -83,6 +103,10 @@ contains
         select case (trim(format))
         case ("markdown", "md")
             allocate(markdown_reporter_t :: reporter)
+        case ("json")
+            allocate(json_reporter_t :: reporter)
+        case ("xml")
+            allocate(xml_reporter_t :: reporter)
         case ("mock")
             allocate(mock_reporter_t :: reporter)
         case default
@@ -154,6 +178,234 @@ contains
         
         call suppress_unused_warning(this)
     end function markdown_supports_diff
+
+    ! JSON reporter implementations
+    subroutine json_generate_report(this, coverage_data, output_path, &
+                                   error_flag)
+        use coverage_statistics
+        class(json_reporter_t), intent(inout) :: this
+        type(coverage_data_t), intent(in) :: coverage_data
+        character(len=*), intent(in) :: output_path
+        logical, intent(out) :: error_flag
+        integer :: unit, stat, i, j
+        logical :: use_stdout
+        type(coverage_stats_t) :: line_stats, branch_stats, func_stats
+        
+        error_flag = .false.
+        use_stdout = (trim(output_path) == "-")
+        
+        ! Calculate coverage statistics
+        line_stats = calculate_line_coverage(coverage_data)
+        branch_stats = calculate_branch_coverage(coverage_data)
+        func_stats = calculate_function_coverage(coverage_data)
+        
+        ! Open output stream
+        if (use_stdout) then
+            unit = 6  ! Standard output
+        else
+            open(newunit=unit, file=output_path, status='replace', iostat=stat)
+            if (stat /= 0) then
+                error_flag = .true.
+                this%last_error = "Cannot write to output file '" // &
+                                 trim(output_path) // "' (iostat=" // &
+                                 trim(int_to_string(stat)) // ")"
+                return
+            end if
+        end if
+        
+        ! Generate JSON structure
+        write(unit, '(A)') "{"
+        write(unit, '(A)') '  "coverage_report": {'
+        write(unit, '(A,F0.2,A)') '    "line_coverage": ', &
+                                  line_stats%percentage, ','
+        write(unit, '(A,I0,A)') '    "lines_covered": ', &
+                               line_stats%covered_count, ','
+        write(unit, '(A,I0,A)') '    "lines_total": ', &
+                               line_stats%total_count, ','
+        write(unit, '(A,F0.2,A)') '    "branch_coverage": ', &
+                                  branch_stats%percentage, ','
+        write(unit, '(A,I0,A)') '    "branches_covered": ', &
+                               branch_stats%covered_count, ','
+        write(unit, '(A,I0,A)') '    "branches_total": ', &
+                               branch_stats%total_count, ','
+        write(unit, '(A,F0.2,A)') '    "function_coverage": ', &
+                                  func_stats%percentage, ','
+        write(unit, '(A,I0,A)') '    "functions_covered": ', &
+                               func_stats%covered_count, ','
+        write(unit, '(A,I0,A)') '    "functions_total": ', &
+                               func_stats%total_count, ','
+        write(unit, '(A)') '    "files": ['
+        
+        ! File-level details
+        do i = 1, size(coverage_data%files)
+            write(unit, '(A)') '      {'
+            write(unit, '(A,A,A)') '        "filename": "', &
+                trim(coverage_data%files(i)%filename), '",'
+            write(unit, '(A,I0,A)') '        "line_count": ', &
+                size(coverage_data%files(i)%lines), ','
+            write(unit, '(A)') '        "lines": ['
+            
+            ! Line details
+            do j = 1, size(coverage_data%files(i)%lines)
+                write(unit, '(A)') '          {'
+                write(unit, '(A,I0,A)') '            "line_number": ', &
+                    coverage_data%files(i)%lines(j)%line_number, ','
+                write(unit, '(A,I0,A)') '            "execution_count": ', &
+                    coverage_data%files(i)%lines(j)%execution_count, ','
+                write(unit, '(A,L1)') '            "is_executable": ', &
+                    coverage_data%files(i)%lines(j)%is_executable
+                
+                if (j < size(coverage_data%files(i)%lines)) then
+                    write(unit, '(A)') '          },'
+                else
+                    write(unit, '(A)') '          }'
+                end if
+            end do
+            
+            write(unit, '(A)') '        ]'
+            if (i < size(coverage_data%files)) then
+                write(unit, '(A)') '      },'
+            else
+                write(unit, '(A)') '      }'
+            end if
+        end do
+        
+        write(unit, '(A)') '    ]'
+        write(unit, '(A)') '  }'
+        write(unit, '(A)') "}"
+        
+        if (.not. use_stdout) close(unit)
+        
+        call suppress_unused_warning(this)
+    end subroutine json_generate_report
+
+    function json_get_format_name(this) result(format_name)
+        class(json_reporter_t), intent(in) :: this
+        character(len=:), allocatable :: format_name
+        
+        format_name = "json"
+        
+        call suppress_unused_warning(this)
+    end function json_get_format_name
+
+    function json_supports_diff(this) result(supported)
+        class(json_reporter_t), intent(in) :: this
+        logical :: supported
+        
+        ! JSON reporter supports diff through structured data
+        supported = .true.
+        
+        call suppress_unused_warning(this)
+    end function json_supports_diff
+
+    ! XML reporter implementations
+    subroutine xml_generate_report(this, coverage_data, output_path, error_flag)
+        use coverage_statistics
+        class(xml_reporter_t), intent(inout) :: this
+        type(coverage_data_t), intent(in) :: coverage_data
+        character(len=*), intent(in) :: output_path
+        logical, intent(out) :: error_flag
+        integer :: unit, stat, i, j
+        logical :: use_stdout
+        type(coverage_stats_t) :: line_stats, branch_stats, func_stats
+        
+        error_flag = .false.
+        use_stdout = (trim(output_path) == "-")
+        
+        ! Calculate coverage statistics
+        line_stats = calculate_line_coverage(coverage_data)
+        branch_stats = calculate_branch_coverage(coverage_data)
+        func_stats = calculate_function_coverage(coverage_data)
+        
+        ! Open output stream
+        if (use_stdout) then
+            unit = 6  ! Standard output
+        else
+            open(newunit=unit, file=output_path, status='replace', iostat=stat)
+            if (stat /= 0) then
+                error_flag = .true.
+                this%last_error = "Cannot write to output file '" // &
+                                 trim(output_path) // "' (iostat=" // &
+                                 trim(int_to_string(stat)) // ")"
+                return
+            end if
+        end if
+        
+        ! Generate XML structure (Cobertura-style)
+        write(unit, '(A)') '<?xml version="1.0" encoding="UTF-8"?>'
+        write(unit, '(A)') '<coverage version="1.0">'
+        write(unit, '(A,F0.2,A)') '  <summary line-rate="', &
+                                  line_stats%percentage/100.0, '"'
+        write(unit, '(A,F0.2,A)') '           branch-rate="', &
+                                  branch_stats%percentage/100.0, '"'
+        write(unit, '(A,I0,A)') '           lines-covered="', &
+                               line_stats%covered_count, '"'
+        write(unit, '(A,I0,A)') '           lines-valid="', &
+                               line_stats%total_count, '"'
+        write(unit, '(A,I0,A)') '           branches-covered="', &
+                               branch_stats%covered_count, '"'
+        write(unit, '(A,I0,A)') '           branches-valid="', &
+                               branch_stats%total_count, '"'
+        write(unit, '(A)') '           complexity="0.0"/>'
+        write(unit, '(A)') '  <sources>'
+        write(unit, '(A)') '    <source>.</source>'
+        write(unit, '(A)') '  </sources>'
+        write(unit, '(A)') '  <packages>'
+        write(unit, '(A)') '    <package name="fortran_project" complexity="0.0">'
+        write(unit, '(A)') '      <classes>'
+        
+        ! File-level details
+        do i = 1, size(coverage_data%files)
+            write(unit, '(A,A,A)') '        <class name="', &
+                trim(coverage_data%files(i)%filename), '" filename="', &
+                trim(coverage_data%files(i)%filename), '"'
+            write(unit, '(A)') '               complexity="0.0">'
+            write(unit, '(A)') '          <methods/>'
+            write(unit, '(A)') '          <lines>'
+            
+            ! Line details
+            do j = 1, size(coverage_data%files(i)%lines)
+                if (coverage_data%files(i)%lines(j)%is_executable) then
+                    write(unit, '(A,I0,A,I0,A)') '            <line number="', &
+                        coverage_data%files(i)%lines(j)%line_number, &
+                        '" hits="', &
+                        coverage_data%files(i)%lines(j)%execution_count, &
+                        '" branch="false"/>'
+                end if
+            end do
+            
+            write(unit, '(A)') '          </lines>'
+            write(unit, '(A)') '        </class>'
+        end do
+        
+        write(unit, '(A)') '      </classes>'
+        write(unit, '(A)') '    </package>'
+        write(unit, '(A)') '  </packages>'
+        write(unit, '(A)') '</coverage>'
+        
+        if (.not. use_stdout) close(unit)
+        
+        call suppress_unused_warning(this)
+    end subroutine xml_generate_report
+
+    function xml_get_format_name(this) result(format_name)
+        class(xml_reporter_t), intent(in) :: this
+        character(len=:), allocatable :: format_name
+        
+        format_name = "xml"
+        
+        call suppress_unused_warning(this)
+    end function xml_get_format_name
+
+    function xml_supports_diff(this) result(supported)
+        class(xml_reporter_t), intent(in) :: this
+        logical :: supported
+        
+        ! XML reporter supports diff through structured data
+        supported = .true.
+        
+        call suppress_unused_warning(this)
+    end function xml_supports_diff
 
     ! Mock reporter implementations
     subroutine mock_generate_report(this, coverage_data, output_path, error_flag)
