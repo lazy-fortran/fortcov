@@ -131,9 +131,12 @@ def main():
     output_path = '{fortcov_output}'
     source_paths = '{fortcov_root}/src/'
     exclude_patterns = '*.mod', 'build/*', 'test/*'
+    gcov_executable = 'gcov'
+    minimum_coverage = 0.0
     verbose = .false.
     quiet = .true.
-/"""
+/
+"""
         config_file.write_text(config_content)
         
         # Find fortcov executable
@@ -205,6 +208,10 @@ def main():
         
         # === Compare results ===
         print("\n📊 Comparing results...")
+        
+        # Initialize variables
+        fortcov_stats = {}
+        reference_stats = {}
         
         if fortcov_output.exists():
             fortcov_content = fortcov_output.read_text()

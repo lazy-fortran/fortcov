@@ -3,39 +3,33 @@
 ! Copy this file to fortcov.nml and modify as needed
 ! Then run: fortcov --config=fortcov.nml
 !
-! All settings are optional. Uncomment and modify as needed.
+! All settings are optional. Remove or modify lines as needed.
+! 
+! NOTE: Fortran namelists do NOT support comments inside the namelist block.
+! All comments must be OUTSIDE the &fortcov_config ... / block.
+!
+! Input format options: 'gcov' (default), 'lcov', 'cobertura' (future)
+! Output format options: 'markdown' (default), 'json', 'xml', 'html' (future)
+! Output path: Use '-' for stdout (default)
+! Source paths: Up to 100 paths, processed in order
+! Exclude patterns: Up to 100 glob-style patterns
+! Minimum coverage: 0.0 to 100.0, exit with error code 2 if below threshold
+! Verbose: Enable detailed output
 
 &fortcov_config
-    ! Input format for coverage data
-    ! Options: 'gcov' (default), 'lcov', 'cobertura' (future)
     input_format = 'gcov'
-    
-    ! Output format for coverage report
-    ! Options: 'markdown' (default), 'json', 'xml', 'html' (future)
     output_format = 'markdown'
-    
-    ! Output file path
-    ! Use '-' for stdout (default)
     output_path = 'coverage.md'
-    
-    ! Source directories to include (up to 100 paths)
-    ! Paths are processed in order
     source_paths = 'src/', 
                    'lib/', 
                    'app/'
-    
-    ! Patterns to exclude from coverage (up to 100 patterns)
-    ! Uses glob-style patterns
-    exclude_patterns = '*.mod',     ! Fortran module files
-                       '*.o',       ! Object files
-                       'build/*',   ! Build directory
-                       'test/*',    ! Test files
-                       'external/*' ! External libraries
-    
-    ! Minimum coverage threshold (0.0 to 100.0)
-    ! Exit with error code 2 if coverage is below this
+    exclude_patterns = '*.mod',
+                       '*.o',
+                       'build/*',
+                       'test/*',
+                       'external/*'
+    gcov_executable = 'gcov'
     minimum_coverage = 80.0
-    
-    ! Enable verbose output
     verbose = .false.
+    quiet = .false.
 /
