@@ -270,7 +270,7 @@ contains
         
         logical :: exists
         character(len=256) :: resolved_path
-        integer :: stat
+        integer :: stat = 0  ! Initialize to prevent undefined behavior
         
         call clear_error_context(error_ctx)
         

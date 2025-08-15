@@ -34,6 +34,9 @@ program test_security_fixes
     call test_edge_case_security()
     call test_resource_exhaustion_protection()
     
+    ! Test memory safety issues
+    call test_memory_safety_validation()
+    
     if (all_tests_passed) then
         print *, "All security tests passed!"
     else
@@ -516,5 +519,84 @@ contains
             print *, "    PASS: Resource exhaustion protections working"
         end if
     end subroutine test_resource_exhaustion_protection
+
+    subroutine test_memory_safety_validation()
+        !! Test memory safety issues and uninitialized variable usage
+        !! This specifically tests for Issue #89 - uninitialized stat variable
+        use secure_command_executor
+        use error_handling
+        
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_executable
+        logical :: test_passed
+        integer :: i
+        
+        print *, "  Testing Memory Safety Validation..."
+        test_count = test_count + 5
+        test_passed = .true.
+        
+        ! Test 1: Validate executable with command name only (triggers which command)
+        ! This exposes the uninitialized stat variable issue in line 287-289
+        call validate_executable_path("definitely_nonexistent_cmd_12345", safe_executable, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            print *, "    FAIL: Non-existent command should be rejected"
+            failed_tests = failed_tests + 1
+            all_tests_passed = .false.
+        else
+            print *, "    PASS: Non-existent command correctly rejected"
+        end if
+        
+        ! Test 2: Multiple calls to ensure consistent behavior (memory safety)
+        do i = 1, 3
+            call validate_executable_path("another_nonexistent_cmd", safe_executable, error_ctx)
+            if (error_ctx%error_code == ERROR_SUCCESS) then
+                test_passed = .false.
+                print *, "    FAIL: Memory safety issue - inconsistent behavior on call", i
+                exit
+            end if
+        end do
+        if (test_passed) then
+            print *, "    PASS: Consistent behavior across multiple calls"
+        else
+            failed_tests = failed_tests + 1
+            all_tests_passed = .false.
+        end if
+        
+        ! Test 3: Test with executable that exists in PATH (like 'ls' or 'cat')
+        call validate_executable_path("ls", safe_executable, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            print *, "    FAIL: Valid executable 'ls' should be accepted"
+            failed_tests = failed_tests + 1
+            all_tests_passed = .false.
+        else
+            print *, "    PASS: Valid executable 'ls' correctly accepted"
+        end if
+        
+        ! Test 4: Test with absolute path to non-existent executable
+        call validate_executable_path("/usr/bin/nonexistent_absolute_path", safe_executable, error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            print *, "    FAIL: Non-existent absolute path should be rejected"
+            failed_tests = failed_tests + 1
+            all_tests_passed = .false.
+        else
+            print *, "    PASS: Non-existent absolute path correctly rejected"
+        end if
+        
+        ! Test 5: Stress test - many rapid calls to check for memory corruption
+        do i = 1, 10
+            call validate_executable_path("stress_test_nonexistent", safe_executable, error_ctx)
+            if (error_ctx%error_code == ERROR_SUCCESS) then
+                test_passed = .false.
+                print *, "    FAIL: Stress test failed at iteration", i
+                exit
+            end if
+        end do
+        if (test_passed) then
+            print *, "    PASS: Stress test completed without memory corruption"
+        else
+            failed_tests = failed_tests + 1
+            all_tests_passed = .false.
+        end if
+    end subroutine test_memory_safety_validation
 
 end program test_security_fixes
