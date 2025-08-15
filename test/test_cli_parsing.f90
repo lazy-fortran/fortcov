@@ -403,10 +403,10 @@ contains
         end if
     end function test_unknown_flag_rejection
 
-    ! Test 5.1: No arguments execution
+    ! Test 5.1: No arguments execution (Issue #102 behavior)
     ! Given: Empty arguments array
     ! When: Parsing configuration
-    ! Then: Should succeed with default configuration
+    ! Then: Should show help instead of using defaults (Issue #102 fix)
     function test_no_arguments_execution() result(passed)
         logical :: passed
         type(config_t) :: config
@@ -422,23 +422,21 @@ contains
         ! Execute
         call parse_config(args, config, success, error_message)
         
-        ! Verify: Should succeed with defaults
-        passed = success .and. &
-                 (config%input_format == "gcov") .and. &
-                 (config%output_format == "markdown") .and. &
-                 (config%output_path == "-")
+        ! Verify: Should show help (Issue #102 fix)
+        passed = (.not. success) .and. config%show_help
         
         if (.not. passed) then
-            print *, "    FAILED: Expected success with default configuration"
+            print *, "    FAILED: Expected show_help=T when no args (Issue #102)"
+            print *, "      Got success=", success, ", show_help=", config%show_help
         else
             print *, "    PASSED"
         end if
     end function test_no_arguments_execution
 
-    ! Test 5.2: Empty arguments execution (zero-length array)
+    ! Test 5.2: Empty arguments execution (zero-length array) (Issue #102 behavior)
     ! Given: Zero-length arguments array
     ! When: Parsing configuration
-    ! Then: Should succeed with default configuration
+    ! Then: Should show help instead of using defaults (Issue #102 fix)
     function test_empty_arguments_execution() result(passed)
         logical :: passed
         type(config_t) :: config
@@ -454,11 +452,12 @@ contains
         ! Execute
         call parse_config(args, config, success, error_message)
         
-        ! Verify: Should succeed with defaults
-        passed = success .and. len_trim(error_message) == 0
+        ! Verify: Should show help (Issue #102 fix)
+        passed = (.not. success) .and. config%show_help
         
         if (.not. passed) then
-            print *, "    FAILED: Expected success with empty args array"
+            print *, "    FAILED: Expected show_help=T with empty args (Issue #102)"
+            print *, "      Got success=", success, ", show_help=", config%show_help
         else
             print *, "    PASSED"
         end if

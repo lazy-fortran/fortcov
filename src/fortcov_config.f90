@@ -80,6 +80,11 @@ contains
         call process_positional_arguments(positionals, positional_count, &
                                         config, success, error_message)
         if (.not. success) return
+        
+        ! Pass 3: Validate that input sources are provided (Issue #102)
+        ! Only enforce this when no arguments provided or only output flags without sources
+        call validate_input_sources(args, config, success, error_message)
+        if (.not. success) return
     end subroutine parse_config
     
     ! Process flag arguments using existing logic
@@ -747,5 +752,31 @@ contains
             return
         end if
     end subroutine validate_config
+
+    ! Validate that input sources are provided (Issue #102)
+    subroutine validate_input_sources(args, config, success, error_message)
+        character(len=*), intent(in) :: args(:)
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        success = .true.
+        error_message = ""
+        
+        ! Skip validation if help or version flags are already set
+        if (config%show_help .or. config%show_version) then
+            return
+        end if
+        
+        ! Show help when no arguments provided at all (Issue #102)
+        ! This addresses the main issue where running `fortcov` with no args
+        ! should show help instead of attempting to run coverage analysis
+        if (size(args) == 0) then
+            config%show_help = .true.
+            success = .false.
+            error_message = "No arguments provided. " // &
+                          "Use --help for usage information."
+        end if
+    end subroutine validate_input_sources
 
 end module fortcov_config

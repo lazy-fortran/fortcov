@@ -62,6 +62,9 @@ program test_fortcov_config
     ! Test 17: Parse import flag for JSON import (NEW - RED PHASE)
     all_tests_passed = all_tests_passed .and. test_parse_import_flag()
     
+    ! Test 18: Show help when no input sources provided (Issue #102 - RED PHASE)
+    all_tests_passed = all_tests_passed .and. test_show_help_no_input_sources()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -148,16 +151,19 @@ contains
         character(len=256) :: error_message
         logical :: success
         
-        print *, "  Test 4: Default to stdout"
+        print *, "  Test 4: Show help when no arguments (Issue #102 behavior)"
         
         allocate(character(len=10) :: args(0))
         
         call parse_config(args, config, success, error_message)
         
-        passed = success .and. (config%output_path == "-")
+        ! After Issue #102 fix: no arguments should trigger help
+        passed = (.not. success) .and. config%show_help
         
         if (.not. passed) then
-            print *, "    FAILED: Expected output_path='-', success=T"
+            print *, "    FAILED: Expected show_help=T when no args (Issue #102)"
+            print *, "      success: ", success
+            print *, "      show_help: ", config%show_help
         else
             print *, "    PASSED"
         end if
@@ -680,5 +686,57 @@ contains
             print *, "    PASSED"
         end if
     end function test_parse_import_flag
+
+    ! Critical test for Issue #102
+    function test_show_help_no_input_sources() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=:), allocatable :: args(:)
+        character(len=256) :: error_message
+        logical :: success
+        
+        print *, "  Test 18: Show help when no input sources provided (Issue #102)"
+        
+        ! Test case 1: No arguments at all
+        allocate(character(len=10) :: args(0))
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! Expected behavior after implementation:
+        ! - success = .false. (triggers help display)
+        ! - config%show_help = .true.
+        ! - This should cause help to be displayed instead of running analysis
+        passed = (.not. success) .and. config%show_help
+        
+        if (.not. passed) then
+            print *, "    FAILED: Expected show_help=T when no args provided"
+            print *, "      success: ", success
+            print *, "      show_help: ", config%show_help
+            if (len_trim(error_message) > 0) then
+                print *, "      error: ", trim(error_message)
+            end if
+        end if
+        
+        ! Test case 2: Only flags but no input sources should NOT trigger help
+        ! (this is for unit testing individual flags)
+        deallocate(args)
+        allocate(character(len=20) :: args(2))
+        args(1) = "--verbose"
+        args(2) = "--output=test.md"
+        
+        call parse_config(args, config, success, error_message)
+        
+        ! For unit testing individual flags, success should be true
+        ! Only no-args-at-all should trigger help (Issue #102)
+        passed = passed .and. success .and. (.not. config%show_help)
+        
+        if (.not. passed) then
+            print *, "    FAILED: Individual flag tests should not trigger help"
+            print *, "      success: ", success  
+            print *, "      show_help: ", config%show_help
+        else
+            print *, "    PASSED"
+        end if
+    end function test_show_help_no_input_sources
 
 end program test_fortcov_config
