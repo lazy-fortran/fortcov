@@ -68,8 +68,8 @@ test_generate_coverage_data() {
     # Run tests to generate .gcda files
     if fpm test --flag "-fprofile-arcs -ftest-coverage" >/dev/null 2>&1 || true; then
         # Count generated coverage files
-        local gcno_count=$(find . -name "*.gcno" | wc -l)
-        local gcda_count=$(find . -name "*.gcda" | wc -l)
+        local gcno_count=$(find . -name "*.gcno" 2>/dev/null | wc -l)
+        local gcda_count=$(find . -name "*.gcda" 2>/dev/null | wc -l)
         
         echo "Found $gcno_count .gcno files and $gcda_count .gcda files"
         
@@ -93,7 +93,7 @@ test_directory_auto_detection() {
     local output_file="$TEST_DIR/autodetect_coverage.md"
     
     # Find a build directory with coverage files
-    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; | head -1)
+    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; 2>/dev/null | head -1)
     
     if [ -z "$build_dir" ]; then
         echo "No build directory with coverage data found"
@@ -130,7 +130,7 @@ test_multiple_directories() {
     local output_file="$TEST_DIR/multi_dir_coverage.md"
     
     # Find multiple build directories
-    local build_dirs=($(find build -name "*.gcda" -exec dirname {} \; | head -3))
+    local build_dirs=($(find build -name "*.gcda" -exec dirname {} \; 2>/dev/null | head -3))
     
     if [ ${#build_dirs[@]} -lt 2 ]; then
         echo "Not enough build directories found, creating test scenario"
@@ -172,7 +172,7 @@ test_mixed_input_types() {
 EOF
     
     # Find a build directory
-    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; | head -1)
+    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; 2>/dev/null | head -1)
     if [ -z "$build_dir" ]; then
         build_dir="build/"
     fi
@@ -197,14 +197,14 @@ test_keep_gcov_files_flag() {
     cd "$PROJECT_ROOT"
     
     local output_file="$TEST_DIR/keep_files_coverage.md"
-    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; | head -1)
+    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; 2>/dev/null | head -1)
     
     if [ -z "$build_dir" ]; then
         build_dir="build/"
     fi
     
     # Count .gcov files before
-    local gcov_before=$(find . -name "*.gcov" | wc -l)
+    local gcov_before=$(find . -name "*.gcov" 2>/dev/null | wc -l)
     
     # Run fortcov with --keep-gcov-files
     if timeout 60 ./build/gfortran_*/app/fortcov "$build_dir" \
@@ -214,7 +214,7 @@ test_keep_gcov_files_flag() {
            --quiet 2>/dev/null || true; then
         
         # Count .gcov files after
-        local gcov_after=$(find . -name "*.gcov" | wc -l)
+        local gcov_after=$(find . -name "*.gcov" 2>/dev/null | wc -l)
         
         echo "Gcov files before: $gcov_before, after: $gcov_after"
         
@@ -237,7 +237,7 @@ test_gcov_args_flag() {
     cd "$PROJECT_ROOT"
     
     local output_file="$TEST_DIR/gcov_args_coverage.md"
-    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; | head -1)
+    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; 2>/dev/null | head -1)
     
     if [ -z "$build_dir" ]; then
         build_dir="build/"
@@ -320,7 +320,7 @@ test_cleanup_verification() {
     cd "$PROJECT_ROOT"
     
     local output_file="$TEST_DIR/cleanup_coverage.md"
-    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; | head -1)
+    local build_dir=$(find build -name "*.gcda" -exec dirname {} \; 2>/dev/null | head -1)
     
     if [ -z "$build_dir" ]; then
         build_dir="build/"
