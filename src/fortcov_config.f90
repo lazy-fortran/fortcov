@@ -12,6 +12,9 @@ module fortcov_config
     real, parameter :: MIN_COVERAGE = 0.0
     real, parameter :: MAX_COVERAGE = 100.0
     
+    ! Public constants
+    public :: MAX_ARRAY_SIZE
+    
     ! Public types
     public :: config_t
     
@@ -21,6 +24,7 @@ module fortcov_config
     public :: show_version
     public :: initialize_config
     public :: validate_config
+    public :: load_config_file
     
     ! Configuration type
     type :: config_t
@@ -48,6 +52,10 @@ module fortcov_config
         ! Missing CLI flags (Issue #59)
         logical :: keep_gcov_files
         character(len=:), allocatable :: gcov_args
+        ! TUI mode flag (Issue #106)
+        logical :: tui_mode
+        ! Strict mode flag (Issue #109)
+        logical :: strict_mode
     end type config_t
 
 contains
@@ -85,6 +93,9 @@ contains
         ! Only enforce this when no arguments provided or only output flags without sources
         call validate_input_sources(args, config, success, error_message)
         if (.not. success) return
+        
+        ! Pass 4: Apply HTML default filename logic (Issue #104)
+        call apply_html_default_filename(config)
     end subroutine parse_config
     
     ! Process flag arguments using existing logic
@@ -152,6 +163,18 @@ contains
             ! Check for keep-gcov-files flag (Issue #59)
             if (arg == "--keep-gcov-files") then
                 config%keep_gcov_files = .true.
+                cycle
+            end if
+            
+            ! Check for TUI flag (Issue #106)
+            if (arg == "--tui") then
+                config%tui_mode = .true.
+                cycle
+            end if
+            
+            ! Check for strict flag (Issue #109)
+            if (arg == "--strict") then
+                config%strict_mode = .true.
                 cycle
             end if
             
@@ -409,12 +432,12 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        ! Namelist variables - use single strings for comma-separated values
+        ! Namelist variables - support both single string and array formats
         character(len=256) :: input_format
         character(len=256) :: output_format
         character(len=256) :: output_path
-        character(len=1024) :: source_paths      ! Single string with delimiters
-        character(len=1024) :: exclude_patterns  ! Single string with delimiters
+        character(len=256) :: source_paths(MAX_ARRAY_SIZE)  ! Array format
+        character(len=256) :: exclude_patterns(MAX_ARRAY_SIZE)  ! Array format
         character(len=256) :: gcov_executable
         real :: minimum_coverage
         logical :: verbose
@@ -422,7 +445,7 @@ contains
         integer :: unit, iostat, i, count
         logical :: file_exists
         character(len=:), allocatable :: split_sources(:)
-        character(len=:), allocatable :: split_patterns(:)
+        character(len=:), allocatable :: split_excludes(:)
         
         namelist /fortcov_config/ input_format, output_format, output_path, &
                                   source_paths, exclude_patterns, &
@@ -442,8 +465,8 @@ contains
         input_format = config%input_format
         output_format = config%output_format
         output_path = config%output_path
-        source_paths = ''           ! Empty string, will be filled by namelist
-        exclude_patterns = ''       ! Empty string, will be filled by namelist
+        source_paths = ''           ! Initialize all array elements to empty
+        exclude_patterns = ''       ! Initialize all array elements to empty
         gcov_executable = config%gcov_executable
         minimum_coverage = config%minimum_coverage
         verbose = config%verbose
@@ -461,7 +484,9 @@ contains
         close(unit)
         
         if (iostat /= 0) then
-            error_message = "Invalid namelist format in config file"
+            write(error_message, '(A,I0)') &
+                "Invalid namelist format in config file (iostat=", iostat
+            error_message = trim(error_message) // ")"
             return
         end if
         
@@ -471,42 +496,146 @@ contains
         config%output_path = trim(adjustl(output_path))
         config%gcov_executable = trim(adjustl(gcov_executable))
         
-        ! Process source paths from comma-separated string
-        if (allocated(config%source_paths)) deallocate(config%source_paths)
-        if (len_trim(source_paths) > 0) then
-            split_sources = split(trim(source_paths), ',')
-            if (size(split_sources) > 0) then
+        ! Process source paths from array format (backward compatible)
+        ! MEMORY SAFETY FIX: Safe deallocation with error handling
+        if (allocated(config%source_paths)) then
+            deallocate(config%source_paths)
+        end if
+        count = 0
+        
+        ! Check if first entry contains comma-separated values (legacy format)
+        if (len_trim(source_paths(1)) > 0 .and. index(source_paths(1), ',') > 0) then
+            ! Legacy format: single string with comma-separated values
+            split_sources = split(trim(source_paths(1)), ',')
+            
+            ! MEMORY SAFETY FIX: Allocation error handling
+            if (allocated(split_sources) .and. size(split_sources) > 0) then
                 allocate(character(len=MAX_PATH_LENGTH) :: &
-                        config%source_paths(size(split_sources)))
+                        config%source_paths(size(split_sources)), stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for source_paths"
+                    success = .false.
+                    return
+                end if
+                
                 do i = 1, size(split_sources)
                     config%source_paths(i) = trim(adjustl(split_sources(i)))
                 end do
             else
-                ! Allocate empty array if no split results
-                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty source_paths"
+                    success = .false.
+                    return
+                end if
             end if
+            
+            ! MEMORY SAFETY FIX: Explicit cleanup of split result
+            if (allocated(split_sources)) deallocate(split_sources)
         else
-            ! Allocate empty array if no source paths string
-            allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0))
-        end if
-        
-        ! Process exclude patterns from comma-separated string
-        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        if (len_trim(exclude_patterns) > 0) then
-            split_patterns = split(trim(exclude_patterns), ',')
-            if (size(split_patterns) > 0) then
-                allocate(character(len=MAX_PATH_LENGTH) :: &
-                        config%exclude_patterns(size(split_patterns)))
-                do i = 1, size(split_patterns)
-                    config%exclude_patterns(i) = trim(adjustl(split_patterns(i)))
+            ! New format: array entries
+            ! Count non-empty entries
+            do i = 1, MAX_ARRAY_SIZE
+                if (len_trim(source_paths(i)) > 0) then
+                    count = count + 1
+                else
+                    exit  ! Stop at first empty entry
+                end if
+            end do
+            
+            if (count > 0) then
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(count), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for source_paths array"
+                    success = .false.
+                    return
+                end if
+                
+                do i = 1, count
+                    config%source_paths(i) = trim(adjustl(source_paths(i)))
                 end do
             else
-                ! Allocate empty array if no split results
-                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
+                allocate(character(len=MAX_PATH_LENGTH) :: config%source_paths(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty source_paths array"
+                    success = .false.
+                    return
+                end if
             end if
+        end if
+        
+        ! Process exclude patterns from array format (backward compatible)
+        ! MEMORY SAFETY FIX: Safe deallocation with error handling
+        if (allocated(config%exclude_patterns)) then
+            deallocate(config%exclude_patterns)
+        end if
+        count = 0
+        
+        ! Check if first entry contains comma-separated values (legacy format)
+        if (len_trim(exclude_patterns(1)) > 0 .and. index(exclude_patterns(1), ',') > 0) then
+            ! Legacy format: single string with comma-separated values
+            split_excludes = split(trim(exclude_patterns(1)), ',')
+            
+            ! MEMORY SAFETY FIX: Allocation error handling
+            if (allocated(split_excludes) .and. size(split_excludes) > 0) then
+                allocate(character(len=MAX_PATH_LENGTH) :: &
+                        config%exclude_patterns(size(split_excludes)), stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for exclude_patterns"
+                    success = .false.
+                    return
+                end if
+                
+                do i = 1, size(split_excludes)
+                    config%exclude_patterns(i) = trim(adjustl(split_excludes(i)))
+                end do
+            else
+                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty exclude_patterns"
+                    success = .false.
+                    return
+                end if
+            end if
+            
+            ! MEMORY SAFETY FIX: Explicit cleanup of split result
+            if (allocated(split_excludes)) deallocate(split_excludes)
         else
-            ! Allocate empty array if no exclude patterns string
-            allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0))
+            ! New format: array entries
+            ! Count non-empty entries
+            do i = 1, MAX_ARRAY_SIZE
+                if (len_trim(exclude_patterns(i)) > 0) then
+                    count = count + 1
+                else
+                    exit  ! Stop at first empty entry
+                end if
+            end do
+            
+            if (count > 0) then
+                allocate(character(len=MAX_PATH_LENGTH) :: &
+                        config%exclude_patterns(count), stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for exclude_patterns array"
+                    success = .false.
+                    return
+                end if
+                
+                do i = 1, count
+                    config%exclude_patterns(i) = trim(adjustl(exclude_patterns(i)))
+                end do
+            else
+                allocate(character(len=MAX_PATH_LENGTH) :: config%exclude_patterns(0), &
+                        stat=iostat)
+                if (iostat /= 0) then
+                    error_message = "Memory allocation failed for empty exclude_patterns array"
+                    success = .false.
+                    return
+                end if
+            end if
         end if
         
         ! Update other fields
@@ -536,6 +665,8 @@ contains
         print *, "  --gcov=EXECUTABLE         Path to gcov executable [default: gcov]"
         print *, "  --gcov-args=ARGS          Additional arguments to pass to gcov"
         print *, "  --keep-gcov-files         Preserve .gcov files after processing"
+        print *, "  --tui                     Launch interactive terminal browser"
+        print *, "  --strict                  Exit with error if no coverage files found"
         print *, "  --fail-under=THRESHOLD    Minimum coverage threshold (0-100)"
         print *, "  --config=FILE             Load configuration from namelist file"
         print *, "  --import=FILE             Import coverage data from JSON file"
@@ -553,6 +684,7 @@ contains
         print *, "  fortcov --import=coverage.json --output-format=markdown"
         print *, "  fortcov --diff=baseline.json,current.json --threshold=5.0"
         print *, "  fortcov --keep-gcov-files --gcov-args='--branch-probabilities'"
+        print *, "  fortcov --tui --source=src"
         print *, ""
         print *, "Configuration File Format (Fortran namelist):"
         print *, "  Create a file (e.g., fortcov.nml) with:"
@@ -603,6 +735,10 @@ contains
         ! Missing CLI flags defaults (Issue #59)
         config%keep_gcov_files = .false.
         config%gcov_args = ""
+        ! TUI mode default (Issue #106)
+        config%tui_mode = .false.
+        ! Strict mode default (Issue #109)
+        config%strict_mode = .false.
     end subroutine initialize_config
 
     subroutine add_to_array(value, array, count, max_size, type_name)
@@ -778,5 +914,18 @@ contains
                           "Use --help for usage information."
         end if
     end subroutine validate_input_sources
+
+    ! Apply HTML default filename logic (Issue #104)
+    ! When HTML format is specified without explicit output file,
+    ! automatically set default filename to avoid stdout mixing
+    subroutine apply_html_default_filename(config)
+        type(config_t), intent(inout) :: config
+        
+        ! Only apply to HTML format without explicit output file
+        if (trim(config%output_format) == "html" .and. &
+            trim(config%output_path) == "-") then
+            config%output_path = "coverage_report.html"
+        end if
+    end subroutine apply_html_default_filename
 
 end module fortcov_config
