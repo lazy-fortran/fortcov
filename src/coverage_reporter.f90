@@ -240,6 +240,7 @@ contains
     end subroutine json_generate_report
 
     ! Secure JSON generation with chunked writing to avoid memory issues
+    ! FIXED: Issue #136 - Use diff-compatible format for CLI JSON output
     subroutine write_json_optimized(unit, coverage_data, line_stats, &
                                     branch_stats, func_stats)
         use coverage_statistics
@@ -253,26 +254,9 @@ contains
         ! Secure approach: Write JSON directly without large string building
         ! This eliminates buffer overflow risks and memory scalability issues
         
-        ! Write JSON header directly
-        write(unit, '(A)', advance='no') '{"coverage_report":{"line_coverage":'
-        write(unit, '(A)', advance='no') real_to_string(line_stats%percentage)
-        write(unit, '(A)', advance='no') ',"lines_covered":'
-        write(unit, '(A)', advance='no') int_to_string(line_stats%covered_count)
-        write(unit, '(A)', advance='no') ',"lines_total":'
-        write(unit, '(A)', advance='no') int_to_string(line_stats%total_count)
-        write(unit, '(A)', advance='no') ',"branch_coverage":'
-        write(unit, '(A)', advance='no') real_to_string(branch_stats%percentage)
-        write(unit, '(A)', advance='no') ',"branches_covered":'
-        write(unit, '(A)', advance='no') int_to_string(branch_stats%covered_count)
-        write(unit, '(A)', advance='no') ',"branches_total":'
-        write(unit, '(A)', advance='no') int_to_string(branch_stats%total_count)
-        write(unit, '(A)', advance='no') ',"function_coverage":'
-        write(unit, '(A)', advance='no') real_to_string(func_stats%percentage)
-        write(unit, '(A)', advance='no') ',"functions_covered":'
-        write(unit, '(A)', advance='no') int_to_string(func_stats%covered_count)
-        write(unit, '(A)', advance='no') ',"functions_total":'
-        write(unit, '(A)', advance='no') int_to_string(func_stats%total_count)
-        write(unit, '(A)', advance='no') ',"files":['
+        ! FIXED: Issue #136 - Use simple diff-compatible format {"files": [...]}
+        ! This format is compatible with both diff parser and export functions
+        write(unit, '(A)', advance='no') '{"files":['
         
         ! Process files with direct writing
         first_file = .true.
@@ -318,8 +302,8 @@ contains
             write(unit, '(A)', advance='no') ']}'
         end do
         
-        ! Write JSON footer
-        write(unit, '(A)') ']}}'
+        ! FIXED: Issue #136 - Use simple closing bracket for diff compatibility
+        write(unit, '(A)') ']}'
     end subroutine write_json_optimized
     
     ! Helper function to convert real to string
