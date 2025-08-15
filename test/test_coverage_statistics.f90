@@ -94,7 +94,7 @@ contains
         stats = calculate_line_coverage(coverage_data)
         
         ! Then: Should return 100.0%
-        call assert(abs(stats%percentage - 100.0) < 0.01, &
+        call assert(abs(stats%percentage - 100.0) < 0.001, &
                    "100% line coverage", "100.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_calculate_100_percent_line_coverage
@@ -125,7 +125,7 @@ contains
         stats = calculate_line_coverage(coverage_data)
         
         ! Then: Should return 70.0%
-        call assert(abs(stats%percentage - 70.0) < 0.01, &
+        call assert(abs(stats%percentage - 70.0) < 0.001, &
                    "70% line coverage", "70.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
         
@@ -159,7 +159,7 @@ contains
         stats = calculate_line_coverage(coverage_data)
         
         ! Then: Should return 0.0%
-        call assert(abs(stats%percentage - 0.0) < 0.01, &
+        call assert(abs(stats%percentage - 0.0) < 0.001, &
                    "0% line coverage", "0.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_calculate_zero_coverage
@@ -201,7 +201,7 @@ contains
         stats = calculate_branch_coverage(coverage_data)
         
         ! Then: Should return 75.0% (3 out of 4 branches covered per lcov)
-        call assert(abs(stats%percentage - 75.0) < 0.01, &
+        call assert(abs(stats%percentage - 75.0) < 0.001, &
                    "75% branch coverage (lcov)", "75.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_calculate_branch_coverage
@@ -237,7 +237,7 @@ contains
         stats = calculate_function_coverage(coverage_data)
         
         ! Then: Should return 60.0%
-        call assert(abs(stats%percentage - 60.0) < 0.01, &
+        call assert(abs(stats%percentage - 60.0) < 0.001, &
                    "60% function coverage", "60.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_calculate_function_coverage
@@ -329,7 +329,7 @@ contains
         stats = calculate_line_coverage(coverage_data)
         
         ! Then: Should return 80.0% (8 covered / 10 executable)
-        call assert(abs(stats%percentage - 80.0) < 0.01, &
+        call assert(abs(stats%percentage - 80.0) < 0.001, &
                    "non-executable lines", "80.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_handle_nonexecutable_lines
@@ -401,7 +401,7 @@ contains
         stats = calculate_line_coverage(coverage_data)
         
         ! Then: Should return 100.0% (no executable lines to cover)
-        call assert(abs(stats%percentage - 100.0) < 0.01, &
+        call assert(abs(stats%percentage - 100.0) < 0.001, &
                    "empty file handling", "100.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_empty_file_handling

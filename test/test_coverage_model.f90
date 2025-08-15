@@ -169,7 +169,7 @@ contains
         actual_percentage = file_cov%get_line_coverage_percentage()
         
         ! Allow small floating point tolerance
-        passed = abs(actual_percentage - expected_percentage) < 0.01
+        passed = abs(actual_percentage - expected_percentage) < 0.001
         
         if (.not. passed) then
             print *, "    FAILED: Expected 70.0%, got ", actual_percentage, "%"
