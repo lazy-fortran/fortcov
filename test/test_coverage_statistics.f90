@@ -1,7 +1,7 @@
 program test_coverage_statistics
     use coverage_model
     use coverage_statistics
-    use string_utils
+    use string_utils, only: format_percentage, format_integer, compress_ranges
     implicit none
     
     ! Test results tracking
@@ -39,6 +39,9 @@ program test_coverage_statistics
     
     ! Test 10: Empty file handling
     call test_empty_file_handling()
+    
+    ! Test 11: Branch coverage lcov compliance
+    call test_branch_coverage_lcov_compliance()
     
     ! Report results
     write(*,*) ""
@@ -161,10 +164,10 @@ contains
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_calculate_zero_coverage
 
-    ! Test 4: Calculate branch coverage
-    ! Given: 4 branches: 2 fully covered, 1 partial, 1 uncovered
-    ! When: Calling calculate_branch_coverage()
-    ! Then: Should return percentage=50.0 (2/4 fully covered)
+    ! Test 4: Calculate branch coverage  
+    ! Given: 4 branches with different coverage patterns
+    ! When: Calling calculate_branch_coverage() with lcov standard
+    ! Then: Should return percentage=75.0 (3/4 branches covered)
     subroutine test_calculate_branch_coverage()
         type(coverage_data_t) :: coverage_data
         type(coverage_stats_t) :: stats
@@ -172,19 +175,19 @@ contains
         type(coverage_function_t) :: func
         type(coverage_file_t) :: file_cov
         
-        ! Given: Create branches with different coverage
+        ! Given: Create branches with different coverage patterns
         branches(1) = coverage_branch_t(taken_count=5, not_taken_count=3, &
                                        branch_id=1, line_number=10, &
-                                       filename="test.f90")  ! Fully covered
+                                       filename="test.f90")  ! Covered (lcov)
         branches(2) = coverage_branch_t(taken_count=2, not_taken_count=4, &
                                        branch_id=2, line_number=15, &
-                                       filename="test.f90")  ! Fully covered
+                                       filename="test.f90")  ! Covered (lcov)
         branches(3) = coverage_branch_t(taken_count=1, not_taken_count=0, &
                                        branch_id=3, line_number=20, &
-                                       filename="test.f90")  ! Partial
+                                       filename="test.f90")  ! Covered (lcov)
         branches(4) = coverage_branch_t(taken_count=0, not_taken_count=0, &
                                        branch_id=4, line_number=25, &
-                                       filename="test.f90")  ! Uncovered
+                                       filename="test.f90")  ! Not covered
         
         func = coverage_function_t("test_func", "test_mod", .false., 1, &
                                   5, "test.f90")
@@ -197,9 +200,9 @@ contains
         ! When: Calculate branch coverage
         stats = calculate_branch_coverage(coverage_data)
         
-        ! Then: Should return 50.0% (2 out of 4 fully covered)
-        call assert(abs(stats%percentage - 50.0) < 0.001, &
-                   "50% branch coverage", "50.0", &
+        ! Then: Should return 75.0% (3 out of 4 branches covered per lcov)
+        call assert(abs(stats%percentage - 75.0) < 0.001, &
+                   "75% branch coverage (lcov)", "75.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_calculate_branch_coverage
 
@@ -402,5 +405,50 @@ contains
                    "empty file handling", "100.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_empty_file_handling
+
+    ! Test 11: Branch coverage lcov compliance  
+    ! Given: Branches with only taken_count > 0 (no not_taken_count)
+    ! When: Calculating branch coverage with lcov standard
+    ! Then: Should count branch as covered (current implementation fails)
+    subroutine test_branch_coverage_lcov_compliance()
+        type(coverage_data_t) :: coverage_data
+        type(coverage_stats_t) :: stats
+        type(coverage_branch_t) :: branches(3)
+        type(coverage_function_t) :: func
+        type(coverage_file_t) :: file_cov
+        
+        ! Given: Create branches following lcov standard:
+        ! Branch 1: taken=5, not_taken=0 (should be covered per lcov)
+        ! Branch 2: taken=3, not_taken=2 (fully covered)  
+        ! Branch 3: taken=0, not_taken=0 (not covered)
+        call branches(1)%init(taken_count=5, not_taken_count=0, branch_id=1, &
+                             line_number=10, filename="test.f90")
+        call branches(2)%init(taken_count=3, not_taken_count=2, branch_id=2, &
+                             line_number=15, filename="test.f90")
+        call branches(3)%init(taken_count=0, not_taken_count=0, branch_id=3, &
+                             line_number=20, filename="test.f90")
+        
+        call func%init(name="test_func", parent_module="test_mod", &
+                       is_module_procedure=.false., execution_count=1, &
+                       line_number=10, filename="test.f90")
+        func%branches = branches
+        call file_cov%init("test.f90", [coverage_line_t(1, 10, &
+                                  "test.f90", .true.)])
+        file_cov%functions = [func]
+        coverage_data = coverage_data_t([file_cov])
+        
+        ! When: Calculate branch coverage
+        stats = calculate_branch_coverage(coverage_data)
+        
+        ! Then: Should return 66.67% (2/3 branches covered per lcov standard)
+        ! Current implementation incorrectly returns 33.33% (1/3)
+        call assert(abs(stats%percentage - 66.67) < 0.01, &
+                   "lcov compliant branch coverage", "66.67", &
+                   trim(format_percentage(real(stats%percentage), 2)))
+                   
+        call assert(stats%covered_count == 2, &
+                   "lcov covered branch count", "2", &
+                   trim(format_integer(stats%covered_count)))
+    end subroutine test_branch_coverage_lcov_compliance
 
 end program test_coverage_statistics

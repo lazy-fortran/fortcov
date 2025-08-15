@@ -1,0 +1,16 @@
+{
+    "tool": "fortcov",
+    "version": "0.1.0",
+    "file_diffs": [
+        {
+            "filename": "src/coverage_model.f90",
+            "current_coverage_percentage": 1.0000,
+            "coverage_percentage_delta": 0.5000
+        },
+        {
+            "filename": "src/coverage_parser.f90", 
+            "current_coverage_percentage": 0.5000,
+            "coverage_percentage_delta": -0.8000
+        }
+    ]
+}

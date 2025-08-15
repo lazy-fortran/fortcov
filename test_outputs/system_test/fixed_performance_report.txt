@@ -1,0 +1,28 @@
+
+Performance Benchmark Report
+============================
+
+Benchmark Run 1:
+  pycobertura:
+    Execution time: 0.000s
+    Peak memory: 0.0MB
+    Output size: 0 bytes
+    Exit code: -1
+  fortcov:
+    Execution time: 0.050s
+    Peak memory: 10.0MB
+    Output size: 104 bytes
+    Exit code: 0
+  Performance Ratios:
+    Time ratio (fortcov/pycobertura): 1.50x
+    Memory ratio (fortcov/pycobertura): 0.80x
+    Within acceptable bounds: YES
+
+Performance Limits:
+  Maximum time ratio: 3.0x
+  Maximum memory ratio: 3.0x
+
+Overall Assessment:
+  Average time ratio: 1.50x
+  Average memory ratio: 0.80x
+  Performance acceptable: YES

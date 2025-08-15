@@ -22,9 +22,8 @@ jobs:
         fetch-depth: 10  # Need history for commit comparisons
     
     - name: Setup Fortran environment
-      uses: fortls/setup-fortls@v1
-      with:
-        fortls-version: latest
+      run: |
+        echo "Using system gfortran - fortls not required for CI"
     
     - name: Install gfortran
       run: |
@@ -75,8 +74,8 @@ jobs:
         python3 test_integration/diff_comparator.py \
           test_outputs/system_test/fortcov_diff_mock.json \
           test_outputs/system_test/pycobertura_diff.json \
-          --tolerance 0.5 \
-          --report test_outputs/system_test/ci_comparison_report.txt || true
+          --tolerance 0.05 \
+          --report test_outputs/system_test/ci_comparison_report.txt
         echo "Diff comparison framework tested"
     
     - name: Run performance benchmark
@@ -88,9 +87,9 @@ jobs:
           --baseline-json test_outputs/system_test/baseline.json \
           --current-json test_outputs/system_test/current.json \
           --runs 2 \
-          --max-time-ratio 10.0 \
-          --max-memory-ratio 10.0 \
-          --report test_outputs/system_test/ci_performance_report.txt || true
+          --max-time-ratio 3.0 \
+          --max-memory-ratio 3.0 \
+          --report test_outputs/system_test/ci_performance_report.txt
         echo "Performance benchmark completed"
     
     - name: Validate system test completeness
