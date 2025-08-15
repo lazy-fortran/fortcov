@@ -43,6 +43,12 @@ program test_coverage_statistics
     ! Test 11: Branch coverage lcov compliance
     call test_branch_coverage_lcov_compliance()
     
+    ! Test 12: Zero division edge case - Issue #88
+    call test_zero_division_edge_case()
+    
+    ! Test 13: No coverage data edge case - Issue #88
+    call test_no_coverage_data_edge_case()
+    
     ! Report results
     write(*,*) ""
     write(*,'(A,I0,A,I0,A,I0,A)') "Tests: ", test_count, ", Passed: ", &
@@ -383,10 +389,10 @@ contains
                    trim(format_percentage(real(stats%function_percentage), 2)))
     end subroutine test_module_level_statistics
 
-    ! Test 10: Empty file handling
+    ! Test 10: Empty file handling  
     ! Given: coverage_data_t with no executable lines
     ! When: Calculating statistics
-    ! Then: Should return 100.0% (no lines to cover)
+    ! Then: Should return 0.0% (0/0 should be 0% per Issue #88)
     subroutine test_empty_file_handling()
         type(coverage_data_t) :: coverage_data
         type(coverage_stats_t) :: stats
@@ -400,9 +406,9 @@ contains
         ! When: Calculate coverage
         stats = calculate_line_coverage(coverage_data)
         
-        ! Then: Should return 100.0% (no executable lines to cover)
-        call assert(abs(stats%percentage - 100.0) < 0.001, &
-                   "empty file handling", "100.0", &
+        ! Then: Should return 0.0% (Issue #88 fix: 0/0 = 0% not 100%)
+        call assert(abs(stats%percentage - 0.0) < 0.001, &
+                   "empty file handling", "0.0", &
                    trim(format_percentage(real(stats%percentage), 1)))
     end subroutine test_empty_file_handling
 
@@ -450,5 +456,75 @@ contains
                    "lcov covered branch count", "2", &
                    trim(format_integer(stats%covered_count)))
     end subroutine test_branch_coverage_lcov_compliance
+
+    ! Test 12: Zero division edge case - Issue #88
+    ! Given: No executable lines (total_lines = 0)
+    ! When: Calculating line coverage
+    ! Then: Should return 0.0% not 100.0% (0/0 should be 0%)
+    subroutine test_zero_division_edge_case()
+        type(coverage_data_t) :: coverage_data
+        type(coverage_stats_t) :: stats
+        type(coverage_line_t) :: lines(3)
+        type(coverage_file_t) :: file_cov
+        integer :: i
+        
+        ! Given: Create file with no executable lines (all comments/blanks)
+        do i = 1, 3
+            lines(i) = coverage_line_t(execution_count=0, line_number=i, &
+                                     filename="comments.f90", &
+                                     is_executable=.false.)
+        end do
+        
+        file_cov = coverage_file_t("comments.f90", lines)
+        coverage_data = coverage_data_t([file_cov])
+        
+        ! When: Calculate line coverage (0 covered / 0 total)
+        stats = calculate_line_coverage(coverage_data)
+        
+        ! Then: Should return 0.0% not 100.0% (Issue #88 fix)
+        call assert(abs(stats%percentage - 0.0) < 0.001, &
+                   "zero division edge case", "0.0", &
+                   trim(format_percentage(real(stats%percentage), 1)))
+        
+        call assert(stats%total_count == 0, &
+                   "zero total count", "0", &
+                   trim(format_integer(stats%total_count)))
+        
+        call assert(stats%covered_count == 0, &
+                   "zero covered count", "0", &
+                   trim(format_integer(stats%covered_count)))
+    end subroutine test_zero_division_edge_case
+
+    ! Test 13: No coverage data edge case - Issue #88  
+    ! Given: No branches and no functions
+    ! When: Calculating branch/function coverage
+    ! Then: Should return 0.0% not 100.0%
+    subroutine test_no_coverage_data_edge_case()
+        type(coverage_data_t) :: coverage_data
+        type(coverage_stats_t) :: branch_stats, func_stats
+        type(coverage_file_t) :: file_cov
+        
+        ! Given: File with no functions or branches
+        file_cov = coverage_file_t("empty.f90", [coverage_line_t(0, 1, &
+                                  "empty.f90", .false.)])
+        ! No functions allocated (default)
+        coverage_data = coverage_data_t([file_cov])
+        
+        ! When: Calculate branch coverage (0 covered / 0 total)
+        branch_stats = calculate_branch_coverage(coverage_data)
+        
+        ! Then: Should return 0.0% not 100.0% (Issue #88 fix)
+        call assert(abs(branch_stats%percentage - 0.0) < 0.001, &
+                   "no branches edge case", "0.0", &
+                   trim(format_percentage(real(branch_stats%percentage), 1)))
+        
+        ! When: Calculate function coverage (0 covered / 0 total)
+        func_stats = calculate_function_coverage(coverage_data)
+        
+        ! Then: Should return 0.0% not 100.0% (Issue #88 fix)
+        call assert(abs(func_stats%percentage - 0.0) < 0.001, &
+                   "no functions edge case", "0.0", &
+                   trim(format_percentage(real(func_stats%percentage), 1)))
+    end subroutine test_no_coverage_data_edge_case
 
 end program test_coverage_statistics
