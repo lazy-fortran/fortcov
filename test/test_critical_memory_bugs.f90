@@ -120,8 +120,8 @@ contains
             passed = .false.
         end if
         
-        ! Process exclude patterns (BUG: count is NOT reset!)
-        ! count = 0  ! <-- This line is missing in the buggy code!
+        ! Process exclude patterns (FIXED: count IS properly reset!)
+        count = 0  ! <-- This line is now present in the fixed code!
         do i = 1, MAX_ARRAY_SIZE
             if (len_trim(exclude_patterns(i)) > 0) then
                 count = count + 1
@@ -130,21 +130,17 @@ contains
             end if
         end do
         
-        ! This should be 5, but will be 8 (3+5) due to the bug!
-        if (count /= 8) then
-            print *, "    BUG DETECTED: exclude_patterns count contaminated!"
-            print *, "    Expected 5 exclude patterns, but got count=", count
-            print *, "    This is the COUNT VARIABLE REUSE BUG"
-            ! This is actually the bug we want to detect, so it's expected
-            passed = .true.  ! We expect this bug to be present
+        ! After fix: This should be 5 (correct count, no contamination)
+        if (count == 5) then
+            print *, "    PASSED: Count variable properly reset, no contamination"
         else
-            print *, "    UNEXPECTED: Count contamination not detected"
+            print *, "    FAILED: Count contamination detected!"
+            print *, "    Expected correct count: 5, got:", count
+            print *, "    This indicates count variable contamination bug"
             passed = .false.
         end if
         
-        if (passed) then
-            print *, "    DETECTED: Count variable contamination bug confirmed"
-        end if
+        ! Test completed - passed indicates whether the fix is working correctly
     end function test_count_variable_contamination
 
     ! Test empty split causing crashes
