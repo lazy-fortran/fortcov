@@ -74,5 +74,20 @@ test_*.info
 debug_*
 *.log
 
+# Temporary test executables and analysis files
+acceptance_test_*
+performance_analysis
+security_penetration_test
+stress_test_*
+test_escape_sequence_vulnerabilities
+test_fortcov_integration
+test_gcov_security
+test_legitimate_commands
+test_path_traversal_specific
+test_security_isolated
+test_sequence_debug
+test_specific_buffer_overflow
+*_TEST_REPORT_*.md
+
 # Python package installations
 site-packages/
