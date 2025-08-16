@@ -396,6 +396,14 @@ contains
             dangerous = .true.
         end if
         
+        ! SECURITY FIX Issue #148: Check for escape sequence injection
+        if (index(command, '\n') > 0 .or. index(command, '\t') > 0 .or. &
+            index(command, '\r') > 0 .or. index(command, '\v') > 0 .or. &
+            index(command, '\f') > 0 .or. index(command, '\b') > 0 .or. &
+            index(command, '\a') > 0 .or. index(command, '\\') > 0) then
+            dangerous = .true.
+        end if
+        
         ! Check for suspicious redirection attempts
         if (index(command, '> /') > 0 .or. index(command, '>> /') > 0 .or. &
             index(command, '| rm') > 0 .or. index(command, '| sudo') > 0) then

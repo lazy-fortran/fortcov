@@ -89,13 +89,25 @@ static int validate_command_security(const char* command) {
     /* Block shell metacharacters that enable injection */
     const char* dangerous_patterns[] = {
         ";", "&&", "||", "|", "`", "$", "$(", "${", 
-        ">", ">>", "<", "<<", "&", "~", "*", "?",
-        "\n", "\r", "\t", NULL
+        ">", ">>", "<", "<<", "&", "~", "*", "?", NULL
+    };
+    
+    /* SECURITY FIX Issue #148: Block all escape sequence injections */
+    const char* escape_sequences[] = {
+        "\\n", "\\t", "\\r", "\\v", "\\f", "\\b", "\\a", "\\\\",
+        "\n", "\r", "\t", "\v", "\f", "\b", "\a", NULL
     };
     
     for (int i = 0; dangerous_patterns[i] != NULL; i++) {
         if (strstr(command, dangerous_patterns[i]) != NULL) {
             return 0; /* Dangerous pattern found */
+        }
+    }
+    
+    /* Check for escape sequence injections */
+    for (int i = 0; escape_sequences[i] != NULL; i++) {
+        if (strstr(command, escape_sequences[i]) != NULL) {
+            return 0; /* Escape sequence injection found */
         }
     }
     

@@ -24,6 +24,7 @@ program test_timeout_security_fixes
     call test_memory_allocation_safety()
     call test_malicious_command_sanitization()
     call test_buffer_overflow_prevention()
+    call test_escape_sequence_prevention()
     call test_concurrent_timeout_safety()
     
     ! Report results
@@ -330,6 +331,118 @@ contains
         call destroy_timeout_executor(executor, error_ctx)
         call pass_test(TEST_NAME, test_passed)
     end subroutine test_buffer_overflow_prevention
+    
+    subroutine test_escape_sequence_prevention()
+        !! Test that commands with escape sequences are blocked (Issue #148)
+        type(timeout_command_executor_t) :: executor
+        type(error_context_t) :: error_ctx
+        character(len=*), parameter :: TEST_NAME = &
+            'Escape Sequence Prevention'
+        logical :: test_passed = .false.
+        
+        call start_test(TEST_NAME)
+        
+        call create_timeout_executor(executor, 5, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, "Failed to create executor")
+            return
+        end if
+        
+        ! Test 1: Newline injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\nrm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Newline injection was allowed - CRITICAL VULNERABILITY Issue #148")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 2: Tab injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\trm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Tab injection was allowed - CRITICAL VULNERABILITY Issue #148")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 3: Carriage return injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\rrm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Carriage return injection was allowed - CRITICAL VULNERABILITY")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 4: Vertical tab injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\vrm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Vertical tab injection was allowed - CRITICAL VULNERABILITY")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 5: Form feed injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\frm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Form feed injection was allowed - CRITICAL VULNERABILITY")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 6: Backspace injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\brm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Backspace injection was allowed - CRITICAL VULNERABILITY")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 7: Alert/bell injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\arm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Alert injection was allowed - CRITICAL VULNERABILITY")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 8: Backslash escape injection should be blocked
+        call execute_with_timeout(executor, 'echo hello\\rm file', error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            call fail_test(TEST_NAME, &
+                "Backslash injection was allowed - CRITICAL VULNERABILITY")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        ! Test 9: Safe command should still work
+        call execute_with_timeout(executor, 'echo hello world', error_ctx)
+        
+        if (error_ctx%error_code /= ERROR_SUCCESS .and. &
+            executor%status /= STATUS_COMPLETED .and. &
+            executor%status /= STATUS_TIMEOUT) then
+            call fail_test(TEST_NAME, "Safe command was blocked incorrectly")
+            call destroy_timeout_executor(executor, error_ctx)
+            return
+        end if
+        
+        test_passed = .true.
+        call destroy_timeout_executor(executor, error_ctx)
+        call pass_test(TEST_NAME, test_passed)
+    end subroutine test_escape_sequence_prevention
     
     subroutine test_concurrent_timeout_safety()
         !! Test that concurrent timeout operations don't cause race conditions
