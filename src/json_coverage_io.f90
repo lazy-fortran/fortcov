@@ -30,6 +30,68 @@ module json_coverage_io
 
 contains
 
+    ! Helper subroutine to convert string to lowercase in place
+    subroutine to_lower_inplace(str)
+        character(len=*), intent(inout) :: str
+        integer :: i, ascii_val
+        
+        do i = 1, len(str)
+            ascii_val = iachar(str(i:i))
+            if (ascii_val >= 65 .and. ascii_val <= 90) then  ! A-Z
+                str(i:i) = achar(ascii_val + 32)  ! Convert to a-z
+            end if
+        end do
+    end subroutine to_lower_inplace
+
+    ! Helper subroutine to unescape JSON string content
+    subroutine unescape_json_string(escaped_str, unescaped_str)
+        character(len=*), intent(in) :: escaped_str
+        character(len=:), allocatable, intent(out) :: unescaped_str
+        
+        character(len=len(escaped_str)) :: temp_str
+        integer :: i, j, escaped_len
+        
+        escaped_len = len(escaped_str)
+        j = 1
+        i = 1
+        
+        do while (i <= escaped_len)
+            if (escaped_str(i:i) == '\' .and. i < escaped_len) then
+                ! Handle escape sequence
+                select case (escaped_str(i+1:i+1))
+                case ('"')
+                    temp_str(j:j) = '"'
+                    i = i + 2
+                case ('\')
+                    temp_str(j:j) = '\'
+                    i = i + 2
+                case ('/')
+                    temp_str(j:j) = '/'
+                    i = i + 2
+                case ('n')
+                    temp_str(j:j) = new_line('A')
+                    i = i + 2
+                case ('r')
+                    temp_str(j:j) = achar(13)  ! Carriage return
+                    i = i + 2
+                case ('t')
+                    temp_str(j:j) = achar(9)   ! Tab
+                    i = i + 2
+                case default
+                    ! Unknown escape sequence, keep as is
+                    temp_str(j:j) = escaped_str(i:i)
+                    i = i + 1
+                end select
+            else
+                temp_str(j:j) = escaped_str(i:i)
+                i = i + 1
+            end if
+            j = j + 1
+        end do
+        
+        unescaped_str = temp_str(1:j-1)
+    end subroutine unescape_json_string
+
     ! Import coverage data from JSON string
     subroutine import_json_coverage(json_content, coverage_data)
         character(len=*), intent(in) :: json_content
@@ -213,10 +275,28 @@ contains
                 pos = pos + 1
                 
             case ('"')
-                ! String token
+                ! String token with escape sequence handling
                 pos = pos + 1  ! Skip opening quote
                 start_pos = pos
-                do while (pos <= content_length .and. json_content(pos:pos) /= '"')
+                do while (pos <= content_length)
+                    if (json_content(pos:pos) == '"') then
+                        ! Found closing quote, check if it's escaped
+                        if (pos > start_pos .and. json_content(pos-1:pos-1) == '\') then
+                            ! Check for double-escaped backslash
+                            if (pos > start_pos + 1 .and. &
+                                json_content(pos-2:pos-1) == '\\') then
+                                ! This is a properly escaped quote after escaped backslash
+                                exit
+                            else
+                                ! This is an escaped quote, continue looking
+                                pos = pos + 1
+                                cycle
+                            end if
+                        else
+                            ! Unescaped closing quote found
+                            exit
+                        end if
+                    end if
                     pos = pos + 1
                 end do
                 if (pos > content_length) then
@@ -225,7 +305,9 @@ contains
                 end if
                 
                 temp_tokens(token_count)%type = JSON_STRING
-                temp_tokens(token_count)%value = json_content(start_pos:pos-1)
+                ! Unescape the string content
+                call unescape_json_string(json_content(start_pos:pos-1), &
+                                         temp_tokens(token_count)%value)
                 temp_tokens(token_count)%start_pos = start_pos
                 temp_tokens(token_count)%end_pos = pos - 1
                 pos = pos + 1  ! Skip closing quote
@@ -243,22 +325,48 @@ contains
                 temp_tokens(token_count)%start_pos = start_pos
                 temp_tokens(token_count)%end_pos = pos - 1
                 
-            case ('t', 'f')
-                ! Boolean token
-                if (pos + 3 <= content_length .and. &
-                    json_content(pos:pos+3) == 'true') then
-                    temp_tokens(token_count)%type = JSON_BOOLEAN
-                    temp_tokens(token_count)%value = 'true'
-                    pos = pos + 4
-                else if (pos + 4 <= content_length .and. &
-                         json_content(pos:pos+4) == 'false') then
-                    temp_tokens(token_count)%type = JSON_BOOLEAN
-                    temp_tokens(token_count)%value = 'false'
-                    pos = pos + 5
-                else
-                    error_caught = .true.
-                    return
-                end if
+            case ('t', 'f', 'T', 'F')
+                ! Boolean token (case-insensitive)
+                block
+                    logical :: found_boolean
+                    found_boolean = .false.
+                    
+                    ! First check for 'true' (4 characters)
+                    if (pos + 3 <= content_length) then
+                        block
+                            character(len=4) :: bool_text
+                            bool_text = json_content(pos:pos+3)
+                            call to_lower_inplace(bool_text)
+                            if (bool_text == 'true') then
+                                temp_tokens(token_count)%type = JSON_BOOLEAN
+                                temp_tokens(token_count)%value = 'true'
+                                pos = pos + 4
+                                found_boolean = .true.
+                            end if
+                        end block
+                    end if
+                    
+                    ! Then check for 'false' (5 characters) if true not found
+                    if (.not. found_boolean .and. pos + 4 <= content_length) then
+                        block
+                            character(len=5) :: bool_text
+                            bool_text = json_content(pos:pos+4)
+                            call to_lower_inplace(bool_text)
+                            if (bool_text == 'false') then
+                                temp_tokens(token_count)%type = JSON_BOOLEAN
+                                temp_tokens(token_count)%value = 'false'
+                                pos = pos + 5
+                                found_boolean = .true.
+                            end if
+                        end block
+                    end if
+                    
+                    ! If neither true nor false matched, it's an error
+                    if (.not. found_boolean) then
+                        error_caught = .true.
+                        return
+                    end if
+                end block
                 temp_tokens(token_count)%start_pos = start_pos
                 temp_tokens(token_count)%end_pos = pos - 1
                 
@@ -480,8 +588,10 @@ contains
         if (lines_count > 0) then
             call file_obj%init(filename, lines(1:lines_count))
         else
-            ! Create empty lines array for file
-            allocate(lines(0))
+            ! Create empty lines array for file if not already allocated
+            if (.not. allocated(lines)) then
+                allocate(lines(0))
+            end if
             call file_obj%init(filename, lines)
         end if
         
