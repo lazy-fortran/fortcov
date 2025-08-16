@@ -309,6 +309,12 @@ contains
         
         should_exclude = .false.
         
+        ! Check if exclude patterns are allocated and not empty
+        if (.not. allocated(config%exclude_patterns) .or. &
+            size(config%exclude_patterns) == 0) then
+            return
+        end if
+        
         do i = 1, size(config%exclude_patterns)
             if (matches_pattern(filepath, config%exclude_patterns(i))) then
                 should_exclude = .true.
@@ -326,9 +332,9 @@ contains
         character(len=:), allocatable :: pattern_lower, filepath_lower
         integer :: star_pos
         
-        ! Convert to lowercase for case-insensitive matching
-        pattern_lower = to_lower(trim(pattern))
-        filepath_lower = to_lower(trim(filepath))
+        ! For now, do case-sensitive matching (to_lower not available)
+        pattern_lower = trim(pattern)
+        filepath_lower = trim(filepath)
         
         star_pos = index(pattern_lower, "*")
         
