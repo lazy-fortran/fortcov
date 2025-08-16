@@ -40,8 +40,47 @@ This creates `.gcno` (compile-time) and `.gcda` (runtime) files.
 
 ### Running FortCov
 
+#### Method 1: Auto-discovery (Recommended)
+
 ```bash
-fortcov your_code.gcno  # Analyze coverage data
+fortcov --source=src --output=coverage.md
+```
+
+This automatically finds all `.gcov` files in the source directory and generates a markdown report.
+
+#### Method 2: Complete workflow
+
+```bash
+# 1. Compile with coverage flags
+gfortran -fprofile-arcs -ftest-coverage your_code.f90 -o your_program
+
+# 2. Run your program to generate runtime data
+./your_program
+
+# 3. Generate .gcov files using gcov
+gcov your_code.f90
+
+# 4. Run fortcov to analyze the .gcov files
+fortcov --source=. --output=coverage.md
+```
+
+#### Additional Examples
+
+```bash
+# Set minimum coverage threshold
+fortcov --source=src --fail-under=80 --output=coverage.md
+
+# Exclude specific patterns
+fortcov --source=src --exclude='*.mod' --exclude='test/*' --output=coverage.md
+
+# Use custom gcov executable
+fortcov --source=src --gcov=/usr/bin/gcov-10 --output=coverage.md
+
+# Interactive terminal browser
+fortcov --source=src --tui
+
+# Import from JSON and convert to markdown
+fortcov --import=coverage.json --output-format=markdown --output=report.md
 ```
 
 This generates a markdown report showing:
@@ -57,6 +96,72 @@ This generates a markdown report showing:
 | src/module_a.f90                  |     100 |     10 | 90.00%  | 45-48, 72-77       |
 | src/module_b.f90                  |      50 |      0 | 100.00% |                    |
 | TOTAL                             |     150 |     10 | 93.33%  |                    |
+```
+
+## Troubleshooting
+
+### "No coverage files found"
+
+**Problem**: fortcov can't find any `.gcov` files to process.
+
+**Solution**:
+1. Make sure you compiled with coverage flags: `-fprofile-arcs -ftest-coverage`
+2. Run your program to generate `.gcda` files
+3. Generate `.gcov` files using: `gcov your_source_files.f90`
+4. Check that `.gcov` files exist in your source directory
+
+### "Command not found: fortcov"
+
+**Problem**: fortcov executable is not in your PATH.
+
+**Solution**:
+```bash
+# Option 1: Run directly
+./build/gfortran_*/app/fortcov --source=src
+
+# Option 2: Install to PATH
+fpm install --prefix=/usr/local
+
+# Option 3: Use fpm run
+fpm run -- --source=src --output=coverage.md
+```
+
+### "Permission denied" errors
+
+**Problem**: fortcov can't read files or write output.
+
+**Solution**:
+1. Check file permissions on source directory
+2. Ensure output directory is writable
+3. Run with appropriate permissions
+
+### Integration with CI/CD
+
+#### GitHub Actions
+
+```yaml
+- name: Generate Coverage
+  run: |
+    fpm build --flag "-fprofile-arcs -ftest-coverage"
+    fpm test --flag "-fprofile-arcs -ftest-coverage"
+    gcov src/*.f90
+    fortcov --source=src --output=coverage.md --fail-under=80
+```
+
+#### GitLab CI
+
+```yaml
+coverage:
+  script:
+    - fpm build --flag "-fprofile-arcs -ftest-coverage"
+    - fpm test --flag "-fprofile-arcs -ftest-coverage"
+    - gcov src/*.f90
+    - fortcov --source=src --output=coverage.md
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 ```
 
 ## Development
