@@ -40,6 +40,7 @@ contains
         call initialize_config(config)
         
         ! Set up exclude patterns
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
         allocate(character(len=256) :: config%exclude_patterns(2))
         config%exclude_patterns(1) = "test*"
         config%exclude_patterns(2) = "*.mod"
@@ -117,6 +118,7 @@ contains
         call initialize_config(config)
         
         ! Set up empty exclude patterns array
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
         allocate(character(len=256) :: config%exclude_patterns(0))
         
         ! This should not exclude anything
