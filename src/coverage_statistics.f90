@@ -1,5 +1,6 @@
 module coverage_statistics
     use coverage_model
+    use string_utils, only: compress_ranges
     implicit none
     private
     
@@ -54,7 +55,6 @@ contains
 
     ! Calculate line coverage percentage with optimized single-pass algorithm
     function calculate_line_coverage(coverage_data) result(stats)
-        use string_utils, only: compress_ranges
         type(coverage_data_t), intent(in) :: coverage_data
         type(coverage_stats_t) :: stats
         integer :: total_lines, covered_lines, file_idx, line_idx
@@ -258,10 +258,8 @@ contains
         real, intent(in) :: percentage
         real :: clamped
         
-        ! Handle NaN and infinite values
-        if (percentage /= percentage) then  ! NaN check
-            clamped = 0.0
-        else if (percentage < 0.0) then
+        ! Handle invalid values (clamp to valid range)
+        if (percentage < 0.0) then
             clamped = 0.0  ! Clamp negative percentages to 0
         else if (percentage > 100.0) then
             clamped = 100.0  ! Clamp excessive percentages to 100
