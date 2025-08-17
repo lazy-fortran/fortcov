@@ -169,7 +169,7 @@ contains
             
             ! Reject null characters and most control characters
             if (char_code == 0 .or. (char_code < 32 .and. char_code /= 9 .and. &
-                & char_code /= 10)) then
+                char_code /= 10)) then
                 is_valid = .false.
                 return
             end if
@@ -196,7 +196,7 @@ contains
             ! Keep alphanumeric, period, underscore, hyphen, forward slash
             if (verify(filename(i:i), &
                 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' // &
-                & '0123456789._-/') == 0) then
+                '0123456789._-/') == 0) then
                 temp_filename(j:j) = filename(i:i)
                 j = j + 1
             end if
