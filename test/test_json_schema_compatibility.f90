@@ -144,13 +144,16 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: escaped_quotes = &
-            '{"files": [{"filename": "test_quoted.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test_quoted.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         character(len=*), parameter :: escaped_backslash = &
-            '{"files": [{"filename": "test_path.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test_path.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         character(len=*), parameter :: unicode_chars = &
-            '{"files": [{"filename": "test_unicode.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test_unicode.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
