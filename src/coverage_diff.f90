@@ -316,8 +316,8 @@ contains
     end function compute_coverage_diff_with_thresholds
 
     ! Enhanced file diff with threshold-based analysis
-    function compute_enhanced_file_diff(baseline_file, current_file, &
-                                       & thresholds) result(file_diff)
+    function compute_enhanced_file_diff(baseline_file, current_file, thresholds) &
+             & result(file_diff)
         type(coverage_file_t), intent(in) :: baseline_file, current_file
         type(diff_thresholds_t), intent(in) :: thresholds
         type(file_diff_t) :: file_diff
@@ -343,8 +343,8 @@ contains
     end function compute_enhanced_file_diff_new
 
     ! Enhanced file diff for removed file with threshold analysis
-    function compute_enhanced_file_diff_removed(baseline_file, &
-                                               & thresholds) result(file_diff)
+    function compute_enhanced_file_diff_removed(baseline_file, thresholds) &
+             & result(file_diff)
         type(coverage_file_t), intent(in) :: baseline_file
         type(diff_thresholds_t), intent(in) :: thresholds
         type(file_diff_t) :: file_diff
@@ -431,8 +431,7 @@ contains
         end if
         
         ! Fallback to basic threshold check
-        if (abs(file_diff%coverage_percentage_delta) >= &
-            & thresholds%significance_threshold) then
+        if (abs(file_diff%coverage_percentage_delta) >= thresholds%significance_threshold) then
             significant = .true.
         end if
     end function is_statistically_significant
