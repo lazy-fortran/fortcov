@@ -52,7 +52,8 @@ module data_transformer
         character(len=:), allocatable :: path
         logical :: is_directory = .false.
         real :: coverage_percentage = 0.0
-        ! Note: Removed recursive children component to avoid module interface corruption
+        ! Note: Removed recursive children component to avoid module &
+        ! interface corruption
         ! Hierarchical structure can be handled externally if needed
     contains
         procedure :: init => navigation_node_init
@@ -233,7 +234,8 @@ contains
     end subroutine transformer_init_with_cache
     
     ! Initialize transformer with memory limits
-    subroutine transformer_init_with_limits(this, max_memory_mb, chunk_size_lines)
+    subroutine transformer_init_with_limits(this, max_memory_mb, &
+                                            chunk_size_lines)
         class(data_transformer_t), intent(out) :: this
         integer, intent(in) :: max_memory_mb
         integer, intent(in) :: chunk_size_lines
@@ -244,8 +246,8 @@ contains
     end subroutine transformer_init_with_limits
     
     ! Transform coverage data to enriched format
-    subroutine transformer_transform_data(this, input_data, output_data, success, &
-                                           error_msg)
+    subroutine transformer_transform_data(this, input_data, output_data, &
+                                           success, error_msg)
         class(data_transformer_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: input_data
         type(transformed_data_t), intent(out) :: output_data
@@ -278,7 +280,8 @@ contains
         covered_lines = 0
         
         do i = 1, size(input_data%files)
-            call transform_single_file(this, input_data%files(i), output_data%files(i))
+            call transform_single_file(this, input_data%files(i), &
+                                       output_data%files(i))
             
             ! Accumulate statistics
             if (allocated(input_data%files(i)%lines)) then
@@ -326,10 +329,12 @@ contains
             
             do i = 1, size(input_file%lines)
                 call output_file%lines(i)%init()
-                output_file%lines(i)%line_number = input_file%lines(i)%line_number
+                output_file%lines(i)%line_number = &
+                    input_file%lines(i)%line_number
                 output_file%lines(i)%execution_count = &
                     input_file%lines(i)%execution_count
-                output_file%lines(i)%is_executable = input_file%lines(i)%is_executable
+                output_file%lines(i)%is_executable = &
+                    input_file%lines(i)%is_executable
                 output_file%lines(i)%is_covered = &
                     input_file%lines(i)%execution_count > 0
                 
@@ -378,7 +383,8 @@ contains
         source_file%filename = file_path
         
         ! Read file content
-        open(newunit=unit, file=file_path, status='old', action='read', iostat=iostat)
+        open(newunit=unit, file=file_path, status='old', action='read', &
+             iostat=iostat)
         if (iostat /= 0) then
             error_msg = "Failed to open source file: " // file_path
             return
@@ -481,7 +487,8 @@ contains
             
             do i = 1, size(coverage_file%lines)
                 call annotated_file%lines(i)%init()
-                annotated_file%lines(i)%line_number = coverage_file%lines(i)%line_number
+                annotated_file%lines(i)%line_number = &
+                    coverage_file%lines(i)%line_number
                 annotated_file%lines(i)%execution_count = &
                     coverage_file%lines(i)%execution_count
                 annotated_file%lines(i)%is_executable = &
@@ -499,7 +506,8 @@ contains
     end subroutine transformer_annotate_coverage
     
     ! Build navigation tree from coverage data
-    subroutine transformer_build_navigation_tree(this, input_data, nav_tree, success)
+    subroutine transformer_build_navigation_tree(this, input_data, &
+                                                  nav_tree, success)
         class(data_transformer_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: input_data
         type(navigation_tree_t), intent(out) :: nav_tree
@@ -539,7 +547,8 @@ contains
     end subroutine transformer_build_navigation_tree
     
     ! Initialize file streaming for large files
-    subroutine transformer_init_file_streaming(this, file_path, streamer, success)
+    subroutine transformer_init_file_streaming(this, file_path, &
+                                               streamer, success)
         class(data_transformer_t), intent(inout) :: this
         character(len=*), intent(in) :: file_path
         type(large_file_streamer_t), intent(out) :: streamer
@@ -562,7 +571,8 @@ contains
         streamer%chunk_size_lines = this%chunk_size_lines
         
         ! Count total lines to determine chunks
-        open(newunit=unit, file=file_path, status='old', action='read', iostat=iostat)
+        open(newunit=unit, file=file_path, status='old', action='read', &
+             iostat=iostat)
         if (iostat /= 0) then
             return
         end if

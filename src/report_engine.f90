@@ -180,7 +180,8 @@ contains
     end subroutine report_engine_init
     
     ! Generate HTML report
-    subroutine report_engine_generate_html_report(this, output_path, success, error_msg)
+    subroutine report_engine_generate_html_report(this, output_path, &
+                                                   success, error_msg)
         class(report_engine_t), intent(inout) :: this
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: success
@@ -212,7 +213,8 @@ contains
         call this%theme_manager%generate_css_variables(theme, css_variables)
         
         ! Build HTML content
-        html_content = generate_html_structure(transformed_data, css_variables, theme)
+        html_content = generate_html_structure(transformed_data, &
+                                               css_variables, theme)
         
         ! Write to file
         open(newunit=unit, file=output_path, status='replace', action='write', &
@@ -278,7 +280,8 @@ contains
     end subroutine report_engine_launch_terminal_browser
     
     ! Generate diff report
-    subroutine report_engine_generate_diff_report(this, baseline_data, current_data, &
+    subroutine report_engine_generate_diff_report(this, baseline_data, &
+                                                   current_data, &
                                                  diff_output, success, error_msg)
         class(report_engine_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: baseline_data, current_data
@@ -430,7 +433,8 @@ contains
             
             ! Add theme CSS variables
             call this%theme_manager%generate_css_variables(theme, css_variables)
-            output = '<style>' // new_line('a') // css_variables // new_line('a') // &
+            output = '<style>' // new_line('a') // css_variables // &
+                     new_line('a') // &
                      & '</style>' // new_line('a') // highlighted_content
             
         case ("terminal")

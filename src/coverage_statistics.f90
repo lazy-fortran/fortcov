@@ -40,7 +40,8 @@ module coverage_statistics
 contains
 
     ! Initialize statistics with values
-    subroutine stats_init(this, percentage, covered_count, total_count, missing_ranges)
+    subroutine stats_init(this, percentage, covered_count, total_count, &
+                          missing_ranges)
         class(coverage_stats_t), intent(inout) :: this
         real, intent(in) :: percentage
         integer, intent(in) :: covered_count
@@ -83,16 +84,18 @@ contains
         ! OPTIMIZED SINGLE PASS: Count and collect in one iteration
         do file_idx = 1, size(coverage_data%files)
             do line_idx = 1, size(coverage_data%files(file_idx)%lines)
-                if (coverage_data%files(file_idx)%lines(line_idx)%is_executable) then
+                if (coverage_data%files(file_idx)%lines(line_idx) &
+                        %is_executable) then
                     total_lines = total_lines + 1
-                    if (coverage_data%files(file_idx)%lines(line_idx)%execution_count &
-                        > 0) then
+                    if (coverage_data%files(file_idx)%lines(line_idx) &
+                            %execution_count > 0) then
                         covered_lines = covered_lines + 1
                     else
                         ! Collect missing line in same pass
                         missing_count = missing_count + 1
                         missing_line_numbers(missing_count) = &
-                            coverage_data%files(file_idx)%lines(line_idx)%line_number
+                            coverage_data%files(file_idx)%lines(line_idx) &
+                            %line_number
                     end if
                 end if
             end do
@@ -111,7 +114,8 @@ contains
         ! Process missing line numbers for range compression
         if (missing_count > 0) then
             call stats%init(percentage, covered_lines, total_lines, &
-                           compress_ranges(missing_line_numbers(1:missing_count)))
+                           compress_ranges(missing_line_numbers( &
+                               1:missing_count)))
         else
             call stats%init(percentage, covered_lines, total_lines, "")
         end if
@@ -132,10 +136,11 @@ contains
         do file_idx = 1, size(coverage_data%files)
             if (allocated(coverage_data%files(file_idx)%functions)) then
                 do func_idx = 1, size(coverage_data%files(file_idx)%functions)
-                    if (allocated(coverage_data%files(file_idx)%functions(func_idx) &
-                                  %branches)) then
+                    if (allocated(coverage_data%files(file_idx) &
+                                      %functions(func_idx)%branches)) then
                         do branch_idx = 1, size(coverage_data%files(file_idx) &
-                                              %functions(func_idx)%branches)
+                                              %functions(func_idx) &
+                                              %branches)
                             total_branches = total_branches + 1
                             ! Branch is covered if taken path has been executed
                             if (coverage_data%files(file_idx)%functions(func_idx) &
@@ -230,7 +235,8 @@ contains
                         if (allocated(coverage_data%files(file_idx) &
                                       %functions(func_idx)%branches)) then
                             do branch_idx = 1, size(coverage_data%files(file_idx) &
-                                              %functions(func_idx)%branches)
+                                              %functions(func_idx) &
+                                              %branches)
                                 stats%total_branches = stats%total_branches + 1
                                 if (coverage_data%files(file_idx)%functions(func_idx) &
                                     %branches(branch_idx)%taken_count > 0) then
