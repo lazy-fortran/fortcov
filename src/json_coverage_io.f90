@@ -383,7 +383,7 @@ contains
 
     ! Parse coverage object from tokens
     subroutine parse_coverage_object(tokens, current_pos, token_count, coverage_data, &
-                                   error_caught)
+                                   & error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -422,12 +422,11 @@ contains
     end subroutine parse_coverage_object
 
     ! Parse JSON array format: [{...}, {...}]
-    subroutine parse_coverage_array(tokens, current_pos, token_count, &
-                                   coverage_data, error_caught)
+    subroutine parse_coverage_array(tokens, pos, count, data, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        integer, intent(in) :: token_count
-        type(coverage_data_t), intent(out) :: coverage_data
+        integer, intent(inout) :: pos
+        integer, intent(in) :: count
+        type(coverage_data_t), intent(out) :: data
         logical, intent(out) :: error_caught
         
         type(coverage_file_t), allocatable :: files(:)
@@ -436,12 +435,12 @@ contains
         error_caught = .false.
         
         ! Parse array of file objects directly (parse_files_array handles brackets)
-        call parse_files_array(tokens, current_pos, token_count, files, &
+        call parse_files_array(tokens, pos, count, files, &
                               files_count, error_caught)
         if (error_caught) return
         
         ! Initialize coverage data with parsed files
-        call coverage_data%init(files)
+        call data%init(files)
     end subroutine parse_coverage_array
 
     ! Skip to specified key in JSON object
@@ -478,7 +477,7 @@ contains
 
     ! Parse files array from JSON
     subroutine parse_files_array(tokens, current_pos, token_count, files, files_count, &
-                                error_caught)
+                                & error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -607,7 +606,7 @@ contains
 
     ! Parse lines array from JSON
     subroutine parse_lines_array(tokens, current_pos, token_count, filename, lines, &
-                                lines_count, error_caught)
+                                & lines_count, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -665,7 +664,7 @@ contains
 
     ! Parse individual line object from JSON
     subroutine parse_line_object(tokens, current_pos, token_count, filename, line_obj, &
-                               error_caught)
+                               & error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -745,7 +744,7 @@ contains
 
     ! Try to parse functions array (optional field)
     subroutine try_parse_functions_array(tokens, current_pos, token_count, filename, &
-                                       functions, functions_count)
+                                       & functions, functions_count)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -815,7 +814,7 @@ contains
 
     ! Parse individual function object from JSON
     subroutine parse_function_object(tokens, current_pos, token_count, filename, &
-                                   func_obj, error_caught)
+                                   & func_obj, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
