@@ -144,18 +144,18 @@ fi
 echo "Creating mock fortcov diff output..."
 cat > "${RESULTS_DIR}/fortcov_diff_mock.json" << 'EOF'
 {
-    "files": [
+    "file_diffs": [
         {
             "filename": "src/coverage_model.f90",
-            "Stmts": "0",
-            "Miss": "-1", 
-            "Cover": "+33.33%"
+            "baseline_coverage_percentage": 0.667,
+            "current_coverage_percentage": 1.000,
+            "coverage_percentage_delta": 0.3333
         },
         {
             "filename": "src/coverage_parser.f90",
-            "Stmts": "0",
-            "Miss": "-2",
-            "Cover": "+25.00%"
+            "baseline_coverage_percentage": 1.000,
+            "current_coverage_percentage": 0.500,
+            "coverage_percentage_delta": -0.5000
         }
     ]
 }
