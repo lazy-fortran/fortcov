@@ -168,8 +168,7 @@ contains
             char_code = ichar(input_str(i:i))
             
             ! Reject null characters and most control characters
-            if (char_code == 0 .or. (char_code < 32 .and. char_code /= 9 .and. &
-                char_code /= 10)) then
+            if (char_code == 0 .or. (char_code < 32 .and. char_code /= 9 .and. char_code /= 10)) then
                 is_valid = .false.
                 return
             end if
@@ -195,8 +194,8 @@ contains
         do i = 1, len_trim(filename)
             ! Keep alphanumeric, period, underscore, hyphen, forward slash
             if (verify(filename(i:i), &
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ' // &
-                '0123456789._-/') == 0) then
+                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') &
+                == 0) then
                 temp_filename(j:j) = filename(i:i)
                 j = j + 1
             end if
