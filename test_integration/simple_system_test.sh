@@ -146,13 +146,13 @@ cat > "${RESULTS_DIR}/fortcov_diff_mock.json" << 'EOF'
 {
     "files": [
         {
-            "Filename": "src/coverage_model.f90",
+            "filename": "src/coverage_model.f90",
             "Stmts": "0",
             "Miss": "-1", 
             "Cover": "+33.33%"
         },
         {
-            "Filename": "src/coverage_parser.f90",
+            "filename": "src/coverage_parser.f90",
             "Stmts": "0",
             "Miss": "-2",
             "Cover": "+25.00%"
