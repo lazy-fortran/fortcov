@@ -20,7 +20,7 @@ A coverage analysis tool specifically designed for Fortran projects, processing 
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/fortcov.git
+git clone https://github.com/krystophny/fortcov.git
 cd fortcov
 fpm build --profile release
 ```
