@@ -1,8 +1,14 @@
 module secure_command_executor
-    !! Secure command execution module with injection protection
+    !! Secure command execution module with comprehensive injection protection
     !! 
     !! This module provides safe command execution functionality that prevents
-    !! shell injection attacks through proper argument validation and escaping.
+    !! multiple classes of security vulnerabilities including:
+    !! - Shell injection attacks (command chaining, pipes, redirects)
+    !! - Path traversal attacks (directory escape attempts)
+    !! - System file access (Unix/Linux system directories)  
+    !! - Windows device exploitation (CON, NUL, COM, LPT, etc.)
+    !! - Unicode-based attacks (handled via unicode_secure_validator)
+    !! - File redirection exploitation (>, <, >>, <<)
     !! All shell commands are constructed using safe patterns that avoid
     !! concatenation of unsanitized user input.
     use iso_fortran_env, only: error_unit
@@ -199,7 +205,20 @@ contains
         end if
     end subroutine safe_mkdir
 
-    ! Validate path for security - prevent directory traversal and injection
+    ! Validate path for comprehensive security protection
+    !! 
+    !! Performs multi-layer security validation to prevent:
+    !! - Shell injection attacks (semicolons, pipes, redirects, command substitution)
+    !! - Directory traversal attacks (../, /..)
+    !! - System file access (/proc/, /sys/, /dev/, /etc/)
+    !! - Windows device name exploitation (CON, PRN, NUL, etc.)
+    !! - UNC path attacks (\\server\share)
+    !! - File redirection attacks (>, <, >>, <<)
+    !! - NULL byte injection attacks
+    !!
+    !! @param path Input path to validate
+    !! @param safe_path Validated safe path (allocated on success)
+    !! @param error_ctx Error context for detailed error reporting
     subroutine validate_path_security(path, safe_path, error_ctx)
         character(len=*), intent(in) :: path
         character(len=:), allocatable, intent(out) :: safe_path
@@ -239,12 +258,31 @@ contains
             index(working_path, '|') > 0 .or. index(working_path, '`') > 0 .or. &
             index(working_path, '$') > 0 .or. index(working_path, '"') > 0 .or. &
             index(working_path, "'") > 0 .or. index(working_path, '\') > 0 .or. &
+            index(working_path, '>') > 0 .or. index(working_path, '<') > 0 .or. &
             index(working_path, char(0)) > 0) then
             has_dangerous_chars = .true.
         end if
         
         ! Check for directory traversal attempts
         if (index(working_path, '../') > 0 .or. index(working_path, '/..') > 0) then
+            has_dangerous_chars = .true.
+        end if
+        
+        ! Check for system file access attempts (Unix/Linux)
+        if (index(working_path, '/proc/') == 1 .or. index(working_path, '/sys/') == 1 .or. &
+            index(working_path, '/dev/') == 1 .or. index(working_path, '/etc/') == 1) then
+            has_dangerous_chars = .true.
+        end if
+        
+        ! Check for Windows device names
+        if (index(working_path, 'CON') > 0 .or. index(working_path, 'PRN') > 0 .or. &
+            index(working_path, 'AUX') > 0 .or. index(working_path, 'NUL') > 0 .or. &
+            index(working_path, 'COM') > 0 .or. index(working_path, 'LPT') > 0) then
+            has_dangerous_chars = .true.
+        end if
+        
+        ! Check for UNC path attempts (Windows network paths)
+        if (index(working_path, '\\') == 1) then
             has_dangerous_chars = .true.
         end if
         
