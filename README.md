@@ -135,6 +135,47 @@ fpm run -- --source=src --output=coverage.md
 2. Ensure output directory is writable
 3. Run with appropriate permissions
 
+## Security
+
+FortCov implements comprehensive security protections against common attack vectors:
+
+### Built-in Security Features
+
+- **Command Injection Protection**: All external commands are validated and escaped to prevent shell injection attacks
+- **Path Validation**: File paths are sanitized to block directory traversal and injection attempts  
+- **Unicode Security**: Handles Unicode normalization attacks and malformed UTF-8 sequences
+- **Secure Temporary Files**: Atomic temporary file creation prevents race conditions and symlink attacks
+- **Timeout Protection**: Commands are automatically terminated to prevent DoS attacks
+
+### Security Best Practices
+
+When using fortcov in production environments:
+
+```bash
+# Use absolute paths to prevent path injection
+fortcov --source=/full/path/to/src --output=/full/path/to/report.md
+
+# Validate input files before processing
+find src/ -name "*.gcov" -type f | head -10  # Check for suspicious files
+
+# Run with minimal privileges
+fortcov --source=src --output=coverage.md  # No sudo required
+```
+
+### Security Configuration
+
+Configure timeout protection in `fortcov.nml`:
+
+```fortran
+&timeout_config
+    default_command_timeout = 30
+    gcov_timeout = 60
+    max_concurrent_commands = 10
+/
+```
+
+**Note**: FortCov automatically rejects dangerous file patterns and validates all inputs. No additional security configuration is required for normal usage.
+
 ### Integration with CI/CD
 
 #### GitHub Actions

@@ -98,7 +98,8 @@ contains
         logical, intent(inout) :: passed
         
         character(len=*), parameter :: escaped_json = &
-            '{"files": [{"filename": "test\"quoted.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test""quoted.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
