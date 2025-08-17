@@ -34,7 +34,7 @@ module syntax_highlighter
     character(len=*), parameter :: ANSI_COMMENT = char(27)//'[32m'      ! Green
     character(len=*), parameter :: ANSI_STRING = char(27)//'[33m'       ! Yellow
     character(len=*), parameter :: ANSI_NUMBER = char(27)//'[35m'       ! Magenta
-    character(len=*), parameter :: ANSI_COVERED = char(27)//'[42m'      ! Green background
+    character(len=*), parameter :: ANSI_COVERED = char(27)//'[42m'  ! Green bg
     character(len=*), parameter :: ANSI_UNCOVERED = char(27)//'[41m'    ! Red background
     
     type :: syntax_token_t
@@ -88,7 +88,8 @@ module syntax_highlighter
         procedure :: tokenize_source => syntax_highlighter_tokenize_source
         procedure :: highlight_for_html => syntax_highlighter_highlight_for_html
         procedure :: highlight_for_terminal => syntax_highlighter_highlight_for_terminal
-        procedure :: highlight_with_coverage => syntax_highlighter_highlight_with_coverage
+        procedure :: highlight_with_coverage => &
+            syntax_highlighter_highlight_with_coverage
     end type syntax_highlighter_t
 
 contains
@@ -334,7 +335,8 @@ contains
             start_pos = pos
             
             ! Skip whitespace
-            if (char == ' ' .or. char == achar(9) .or. char == achar(10) .or. char == achar(13)) then
+            if (char == ' ' .or. char == achar(9) .or. &
+                char == achar(10) .or. char == achar(13)) then
                 call skip_whitespace(source_code, pos, source_len)
                 cycle
             end if
@@ -398,7 +400,8 @@ contains
     end subroutine syntax_highlighter_tokenize_source
     
     ! Generate HTML output with syntax highlighting
-    subroutine syntax_highlighter_highlight_for_html(this, source_code, html_output, success)
+    subroutine syntax_highlighter_highlight_for_html(this, source_code, &
+                                                      html_output, success)
         class(syntax_highlighter_t), intent(inout) :: this
         character(len=*), intent(in) :: source_code
         character(len=:), allocatable, intent(out) :: html_output
@@ -449,7 +452,8 @@ contains
     end subroutine syntax_highlighter_highlight_for_html
     
     ! Generate ANSI colored output for terminal
-    subroutine syntax_highlighter_highlight_for_terminal(this, source_code, ansi_output, success)
+    subroutine syntax_highlighter_highlight_for_terminal(this, source_code, &
+                                                         ansi_output, success)
         class(syntax_highlighter_t), intent(inout) :: this
         character(len=*), intent(in) :: source_code
         character(len=:), allocatable, intent(out) :: ansi_output
@@ -472,7 +476,8 @@ contains
         do i = 1, tokens%token_count
             ! Add any text between last token and this token
             if (tokens%tokens(i)%start_pos > last_pos) then
-                temp_output = temp_output // source_code(last_pos:tokens%tokens(i)%start_pos-1)
+                temp_output = temp_output // &
+                    source_code(last_pos:tokens%tokens(i)%start_pos-1)
             end if
             
             ! Add colored token
@@ -496,7 +501,8 @@ contains
     end subroutine syntax_highlighter_highlight_for_terminal
     
     ! Highlight with coverage annotations
-    subroutine syntax_highlighter_highlight_with_coverage(this, source_code, coverage_lines, &
+    subroutine syntax_highlighter_highlight_with_coverage(this, source_code, &
+                                                          coverage_lines, &
                                                          output, success)
         class(syntax_highlighter_t), intent(inout) :: this
         character(len=*), intent(in) :: source_code
@@ -737,6 +743,8 @@ contains
         
         integer :: start_pos
         
+        ! Note: rules parameter reserved for future operator-specific parsing
+        
         call token%init()
         start_pos = pos
         
@@ -784,11 +792,14 @@ contains
         integer, intent(out) :: line_count
         
         integer :: i, start_pos, text_len
-        character(len=1000) :: temp_lines(100)  ! Maximum 100 lines for now
+        character(len=1000), allocatable :: temp_lines(:)  ! Dynamic allocation
         
         text_len = len(text)
         line_count = 0
         start_pos = 1
+        
+        ! Allocate temporary array for line processing
+        allocate(temp_lines(100))
         
         do i = 1, text_len
             if (text(i:i) == achar(10) .or. i == text_len) then
@@ -805,7 +816,7 @@ contains
         end do
         
         ! Allocate and copy result
-        allocate(character(len=1000) :: lines(line_count))  ! Arbitrary line length limit
+        allocate(character(len=1000) :: lines(line_count))  ! Line length limit
         lines(1:line_count) = temp_lines(1:line_count)
     end subroutine split_lines
 

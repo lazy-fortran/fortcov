@@ -203,7 +203,7 @@ contains
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: module_name
         type(module_stats_t) :: stats
-        integer :: file_idx, func_idx, line_idx, branch_idx
+        integer :: file_idx, func_idx, branch_idx
         
         ! Initialize all counters
         stats%total_lines = 0

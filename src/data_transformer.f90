@@ -51,8 +51,9 @@ module data_transformer
         character(len=:), allocatable :: name
         character(len=:), allocatable :: path
         logical :: is_directory = .false.
-        type(navigation_node_t), allocatable :: children(:)
         real :: coverage_percentage = 0.0
+        ! Note: Removed recursive children component to avoid module interface corruption
+        ! Hierarchical structure can be handled externally if needed
     contains
         procedure :: init => navigation_node_init
     end type navigation_node_t
@@ -243,7 +244,8 @@ contains
     end subroutine transformer_init_with_limits
     
     ! Transform coverage data to enriched format
-    subroutine transformer_transform_data(this, input_data, output_data, success, error_msg)
+    subroutine transformer_transform_data(this, input_data, output_data, success, &
+                                           error_msg)
         class(data_transformer_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: input_data
         type(transformed_data_t), intent(out) :: output_data
@@ -298,7 +300,8 @@ contains
         end if
         
         ! Generate metadata JSON
-        call generate_metadata_json(this, output_data%summary, output_data%metadata_json)
+        call generate_metadata_json(this, output_data%summary, &
+                                     output_data%metadata_json)
         
         success = .true.
     end subroutine transformer_transform_data
@@ -324,9 +327,11 @@ contains
             do i = 1, size(input_file%lines)
                 call output_file%lines(i)%init()
                 output_file%lines(i)%line_number = input_file%lines(i)%line_number
-                output_file%lines(i)%execution_count = input_file%lines(i)%execution_count
+                output_file%lines(i)%execution_count = &
+                    input_file%lines(i)%execution_count
                 output_file%lines(i)%is_executable = input_file%lines(i)%is_executable
-                output_file%lines(i)%is_covered = input_file%lines(i)%execution_count > 0
+                output_file%lines(i)%is_covered = &
+                    input_file%lines(i)%execution_count > 0
                 
                 if (input_file%lines(i)%is_executable) then
                     executable_lines = executable_lines + 1
@@ -345,7 +350,8 @@ contains
     end subroutine transform_single_file
     
     ! Load source file with caching
-    subroutine transformer_load_source_file(this, file_path, source_file, success, error_msg)
+    subroutine transformer_load_source_file(this, file_path, source_file, &
+                                             success, error_msg)
         class(data_transformer_t), intent(inout) :: this
         character(len=*), intent(in) :: file_path
         type(source_file_t), intent(out) :: source_file
@@ -417,7 +423,8 @@ contains
     end subroutine transformer_load_source_file
     
     ! Extract line context from coverage data
-    subroutine transformer_extract_line_context(this, coverage_file, source_file, success)
+    subroutine transformer_extract_line_context(this, coverage_file, &
+                                                 source_file, success)
         class(data_transformer_t), intent(inout) :: this
         type(coverage_file_t), intent(in) :: coverage_file
         type(source_file_t), intent(inout) :: source_file
@@ -438,10 +445,14 @@ contains
         if (allocated(coverage_file%lines)) then
             do i = 1, size(coverage_file%lines)
                 do j = 1, size(source_file%lines)
-                    if (source_file%lines(j)%line_number == coverage_file%lines(i)%line_number) then
-                        source_file%lines(j)%execution_count = coverage_file%lines(i)%execution_count
-                        source_file%lines(j)%is_executable = coverage_file%lines(i)%is_executable
-                        source_file%lines(j)%is_covered = coverage_file%lines(i)%execution_count > 0
+                    if (source_file%lines(j)%line_number == &
+                        coverage_file%lines(i)%line_number) then
+                        source_file%lines(j)%execution_count = &
+                            coverage_file%lines(i)%execution_count
+                        source_file%lines(j)%is_executable = &
+                            coverage_file%lines(i)%is_executable
+                        source_file%lines(j)%is_covered = &
+                            coverage_file%lines(i)%execution_count > 0
                         exit
                     end if
                 end do
@@ -452,7 +463,8 @@ contains
     end subroutine transformer_extract_line_context
     
     ! Annotate coverage data onto source file
-    subroutine transformer_annotate_coverage(this, coverage_file, annotated_file, success)
+    subroutine transformer_annotate_coverage(this, coverage_file, &
+                                              annotated_file, success)
         class(data_transformer_t), intent(inout) :: this
         type(coverage_file_t), intent(in) :: coverage_file
         type(source_file_t), intent(out) :: annotated_file
@@ -470,13 +482,17 @@ contains
             do i = 1, size(coverage_file%lines)
                 call annotated_file%lines(i)%init()
                 annotated_file%lines(i)%line_number = coverage_file%lines(i)%line_number
-                annotated_file%lines(i)%execution_count = coverage_file%lines(i)%execution_count
-                annotated_file%lines(i)%is_executable = coverage_file%lines(i)%is_executable
-                annotated_file%lines(i)%is_covered = coverage_file%lines(i)%execution_count > 0
+                annotated_file%lines(i)%execution_count = &
+                    coverage_file%lines(i)%execution_count
+                annotated_file%lines(i)%is_executable = &
+                    coverage_file%lines(i)%is_executable
+                annotated_file%lines(i)%is_covered = &
+                    coverage_file%lines(i)%execution_count > 0
             end do
             
             ! Calculate coverage percentage
-            annotated_file%coverage_percentage = coverage_file%get_line_coverage_percentage()
+            annotated_file%coverage_percentage = &
+                coverage_file%get_line_coverage_percentage()
         end if
         
         success = .true.
@@ -592,7 +608,8 @@ contains
     end subroutine generate_metadata_json
 
     ! Main transformation procedure for coverage data
-    subroutine transform_coverage_data(coverage_data, transformed_data, success, error_msg)
+    subroutine transform_coverage_data(coverage_data, transformed_data, &
+                                       success, error_msg)
         type(coverage_data_t), intent(in) :: coverage_data
         type(transformed_data_t), intent(out) :: transformed_data
         logical, intent(out) :: success
@@ -646,9 +663,11 @@ contains
         
         ! Sum up line counts and coverage
         do i = 1, size(coverage_data%files)
-            transformed_data%summary%total_lines = transformed_data%summary%total_lines + &
-                                                  size(coverage_data%files(i)%lines)
-            transformed_data%summary%covered_lines = transformed_data%summary%covered_lines + &
+            transformed_data%summary%total_lines = &
+                transformed_data%summary%total_lines + &
+                size(coverage_data%files(i)%lines)
+            transformed_data%summary%covered_lines = &
+                transformed_data%summary%covered_lines + &
                 count(coverage_data%files(i)%lines%execution_count > 0 .and. &
                       coverage_data%files(i)%lines%is_executable)
         end do

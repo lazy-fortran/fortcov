@@ -775,11 +775,11 @@ contains
         
         abs_change = current_pct - baseline_pct
         
-        ! Handle edge cases for new/lost coverage
-        if (baseline_pct == 0.0 .and. current_pct > 0.0) then
+        ! Handle edge cases for new/lost coverage (use tolerance for real comparison)
+        if (abs(baseline_pct) < epsilon(baseline_pct) .and. current_pct > 0.0) then
             classification = NEW_COVERAGE
             return
-        else if (baseline_pct > 0.0 .and. current_pct == 0.0) then
+        else if (baseline_pct > 0.0 .and. abs(current_pct) < epsilon(current_pct)) then
             classification = LOST_COVERAGE
             return
         end if
