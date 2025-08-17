@@ -140,6 +140,28 @@ else
     echo "WARNING: pycobertura diff failed, but continuing..."
 fi
 
+# Create mock fortcov diff output for testing framework
+echo "Creating mock fortcov diff output..."
+cat > "${RESULTS_DIR}/fortcov_diff_mock.json" << 'EOF'
+{
+    "files": [
+        {
+            "Filename": "src/coverage_model.f90",
+            "Stmts": "0",
+            "Miss": "-1", 
+            "Cover": "+33.33%"
+        },
+        {
+            "Filename": "src/coverage_parser.f90",
+            "Stmts": "0",
+            "Miss": "-2",
+            "Cover": "+25.00%"
+        }
+    ]
+}
+EOF
+echo "Mock fortcov diff output created"
+
 # Test format conversion roundtrip
 echo "Testing format conversion..."
 cd "${PROJECT_ROOT}"
@@ -163,12 +185,20 @@ if [[ -f "${RESULTS_DIR}/pycobertura_diff.json" ]]; then
     echo ""
 fi
 
+if [[ -f "${RESULTS_DIR}/fortcov_diff_mock.json" ]]; then
+    echo ""
+    echo "fortcov mock diff output:"
+    cat "${RESULTS_DIR}/fortcov_diff_mock.json"
+    echo ""
+fi
+
 echo ""
 echo "System test completed!"
 echo "This validates that:"
 echo "1. JSON to XML conversion works"
 echo "2. pycobertura can process the converted XML"
-echo "3. Basic format conversion infrastructure is functional"
+echo "3. Mock fortcov diff output is available for testing"
+echo "4. Basic format conversion infrastructure is functional"
 echo ""
 echo "Next steps:"
 echo "- Implement full fortcov diff functionality"
