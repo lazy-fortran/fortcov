@@ -255,7 +255,8 @@ contains
         
         character(len=*), parameter :: spaced_json = &
             '{ "files" : [ { "filename" : "test.f90" , "lines" : [ ' // &
-            '{ "line_number" : 10 , "execution_count" : 5 , "is_executable" : true } ] } ] }'
+            '{ "line_number" : 10 , "execution_count" : 5 , ' // &
+            '"is_executable" : true } ] } ] }'
         
         character(len=400), parameter :: multiline_json = &
             '{' // new_line('A') // &
@@ -312,10 +313,13 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: large_numbers_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 999999, "execution_count": 2147483647, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 999999, "execution_count": 2147483647, ' // &
+            '"is_executable": true}]}]}'
         
         character(len=*), parameter :: zero_values_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 0, "execution_count": 0, "is_executable": false}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 0, "execution_count": 0, "is_executable": false}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -324,7 +328,8 @@ contains
         print *, "Test: Large numeric values..."
         
         ! Test large numbers
-        call import_json_coverage_safe(large_numbers_json, coverage_data, error_occurred)
+        call import_json_coverage_safe(large_numbers_json, coverage_data, &
+                                        error_occurred)
         if (error_occurred) then
             print *, "FAIL: Large numbers failed to import"
             test_passed = .false.
