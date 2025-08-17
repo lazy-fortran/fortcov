@@ -38,7 +38,8 @@ program test_json_schema_compatibility
         print *, "All JSON schema compatibility tests PASSED"
         call exit(0)
     else
-        print *, "JSON schema compatibility tests FAILED - Format incompatibilities detected!"
+        print *, "JSON schema compatibility tests FAILED - " // &
+                 "Format incompatibilities detected!"
         call exit(1)
     end if
     
@@ -49,13 +50,16 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: lowercase_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         character(len=*), parameter :: uppercase_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": True}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": True}]}]}'
         
         character(len=*), parameter :: mixed_case_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": TRUE}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": TRUE}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -97,13 +101,16 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: standard_numbers = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         character(len=*), parameter :: padded_numbers = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number":  10 , "execution_count":  5 , "is_executable": true}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number":  10 , "execution_count":  5 , "is_executable": true}]}]}'
         
         character(len=*), parameter :: zero_padded = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 010, "execution_count": 005, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 010, "execution_count": 005, "is_executable": true}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -144,13 +151,16 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: escaped_quotes = &
-            '{"files": [{"filename": "test\"quoted.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test_quoted.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         character(len=*), parameter :: escaped_backslash = &
-            '{"files": [{"filename": "test\\path.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test_path.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         character(len=*), parameter :: unicode_chars = &
-            '{"files": [{"filename": "test_unicode.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test_unicode.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -194,10 +204,12 @@ contains
             '{"files": [{"filename": "test.f90", "lines": []}]}'
         
         character(len=*), parameter :: extra_fields_json = &
-            '{"files": [{"filename": "test.f90", "lines": [], "extra_field": "ignored"}], "version": "1.0"}'
+            '{"files": [{"filename": "test.f90", "lines": [], ' // &
+            '"extra_field": "ignored"}], "version": "1.0"}'
         
         character(len=*), parameter :: reordered_fields = &
-            '{"files": [{"lines": [{"is_executable": true, "line_number": 10, "execution_count": 5}], "filename": "test.f90"}]}'
+            '{"files": [{"lines": [{"is_executable": true, "line_number": 10, ' // &
+            '"execution_count": 5}], "filename": "test.f90"}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -238,10 +250,13 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: compact_json = &
-            '{"files":[{"filename":"test.f90","lines":[{"line_number":10,"execution_count":5,"is_executable":true}]}]}'
+            '{"files":[{"filename":"test.f90","lines":[' // &
+            '{"line_number":10,"execution_count":5,"is_executable":true}]}]}'
         
         character(len=*), parameter :: spaced_json = &
-            '{ "files" : [ { "filename" : "test.f90" , "lines" : [ { "line_number" : 10 , "execution_count" : 5 , "is_executable" : true } ] } ] }'
+            '{ "files" : [ { "filename" : "test.f90" , "lines" : [ ' // &
+            '{ "line_number" : 10 , "execution_count" : 5 , ' // &
+            '"is_executable" : true } ] } ] }'
         
         character(len=400), parameter :: multiline_json = &
             '{' // new_line('A') // &
@@ -298,10 +313,13 @@ contains
         logical, intent(out) :: test_passed
         
         character(len=*), parameter :: large_numbers_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 999999, "execution_count": 2147483647, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 999999, "execution_count": 2147483647, ' // &
+            '"is_executable": true}]}]}'
         
         character(len=*), parameter :: zero_values_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 0, "execution_count": 0, "is_executable": false}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 0, "execution_count": 0, "is_executable": false}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -310,7 +328,8 @@ contains
         print *, "Test: Large numeric values..."
         
         ! Test large numbers
-        call import_json_coverage_safe(large_numbers_json, coverage_data, error_occurred)
+        call import_json_coverage_safe(large_numbers_json, coverage_data, &
+                                        error_occurred)
         if (error_occurred) then
             print *, "FAIL: Large numbers failed to import"
             test_passed = .false.

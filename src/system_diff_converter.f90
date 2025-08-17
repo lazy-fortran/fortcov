@@ -19,7 +19,8 @@ module system_diff_converter
     character(len=*), parameter :: XML_HEADER = &
         '<?xml version="1.0" encoding="UTF-8"?>'
     character(len=*), parameter :: XML_DTD = &
-        '<!DOCTYPE coverage SYSTEM "http://cobertura.sourceforge.net/xml/coverage-04.dtd">'
+        '<!DOCTYPE coverage SYSTEM ' // &
+        '"http://cobertura.sourceforge.net/xml/coverage-04.dtd">'
     
 contains
 
@@ -51,8 +52,10 @@ contains
                   get_current_timestamp() // '"' // &
                   ' line-rate="' // real_to_string(line_rate) // '"' // &
                   ' branch-rate="' // real_to_string(branch_rate) // '"' // &
-                  ' lines-covered="' // int_to_string(count_covered_lines(coverage_data)) // '"' // &
-                  ' lines-valid="' // int_to_string(count_executable_lines(coverage_data)) // '"' // &
+                  ' lines-covered="' // &
+                  int_to_string(count_covered_lines(coverage_data)) // '"' // &
+                  ' lines-valid="' // &
+                  int_to_string(count_executable_lines(coverage_data)) // '"' // &
                   ' complexity="0.0">' // new_line('')
         
         ! Add sources section
@@ -328,9 +331,13 @@ contains
                 if (coverage_data%files(i)%lines(j)%is_executable) then
                     packages_xml = packages_xml // &
                                   '          <line number="' // &
-                                  int_to_string(coverage_data%files(i)%lines(j)%line_number) // &
+                                  int_to_string( &
+                                    coverage_data%files(i)%lines(j)%line_number) &
+                                  // &
                                   '" hits="' // &
-                                  int_to_string(coverage_data%files(i)%lines(j)%execution_count) // &
+                                  int_to_string( &
+                                    coverage_data%files(i)%lines(j)%execution_count) &
+                                  // &
                                   '" branch="false"/>' // new_line('')
                 end if
             end do
@@ -424,7 +431,8 @@ contains
             
             ! Check that this is not a closing tag (avoid counting </class as <class)
             if (start_search + pos - 2 > 0) then
-                if (xml_content(start_search + pos - 2:start_search + pos - 2) == '/') then
+                if (xml_content(start_search + pos - 2:start_search + pos - 2) &
+                    == '/') then
                     start_search = start_search + pos + len(element_name) - 1
                     if (start_search > len(xml_content)) exit
                     cycle
@@ -462,7 +470,8 @@ contains
             class_start = class_start + pos - 1
             
             ! Extract filename - with bounds checking
-            call extract_filename_from_class(xml_content(class_start:), filename, success)
+            call extract_filename_from_class(xml_content(class_start:), filename, &
+                                              success)
             if (.not. success) return
             
             ! Find end of this class - with bounds checking
@@ -480,7 +489,8 @@ contains
             end if
             
             ! Parse lines within this class
-            call parse_lines_from_class(xml_content(class_start:class_end), lines, success)
+            call parse_lines_from_class(xml_content(class_start:class_end), lines, &
+                                         success)
             if (.not. success) return
             
             ! Create file object
@@ -557,7 +567,8 @@ contains
             if (line_start > len(class_xml)) return
             
             ! Extract line number and hits
-            call extract_line_attributes(class_xml(line_start:), line_number, hits, success)
+            call extract_line_attributes(class_xml(line_start:), line_number, hits, &
+                                          success)
             if (.not. success) return
             
             ! Create line object - use dummy filename since we'll get it from parent

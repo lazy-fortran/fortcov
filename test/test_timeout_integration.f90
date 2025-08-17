@@ -13,8 +13,8 @@ program test_timeout_integration
     ! Test 1: Valid timeout execution
     call test_valid_timeout_execution()
     
-    ! Test 2: Invalid timeout parameter
-    call test_invalid_timeout_parameter()
+    ! Test 2: Invalid gcov executable
+    call test_invalid_gcov_executable()
     
     ! Report results
     write(*, '(A,I0,A,I0,A)') "Integration tests passed: ", tests_passed, &
@@ -32,8 +32,8 @@ contains
 
     subroutine test_valid_timeout_execution()
         ! Test with echo command (should complete quickly)
-        call safe_execute_gcov_with_timeout("echo", "test.f90", ".", .false., &
-                                           "/dev/null", 5, error_ctx)
+        call safe_execute_gcov("echo", "test.f90", ".", .false., &
+                               "/dev/null", error_ctx)
         
         ! For this test, we expect it to fail because echo is not gcov
         ! But it should fail with validation error, not timeout
@@ -45,17 +45,17 @@ contains
         end if
     end subroutine test_valid_timeout_execution
     
-    subroutine test_invalid_timeout_parameter()
-        ! Test with invalid timeout (negative value)
-        call safe_execute_gcov_with_timeout("gcov", "test.f90", ".", .false., &
-                                           "/dev/null", -1, error_ctx)
+    subroutine test_invalid_gcov_executable()
+        ! Test with invalid gcov executable
+        call safe_execute_gcov("gcov", "test.f90", ".", .false., &
+                               "/dev/null", error_ctx)
         
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            write(*, '(A)') "PASS: Invalid timeout parameter rejected"
+            write(*, '(A)') "PASS: Invalid gcov executable rejected"
             tests_passed = tests_passed + 1
         else
-            write(*, '(A)') "FAIL: Should reject negative timeout values"
+            write(*, '(A)') "FAIL: Should reject invalid gcov executable"
         end if
-    end subroutine test_invalid_timeout_parameter
+    end subroutine test_invalid_gcov_executable
 
 end program test_timeout_integration

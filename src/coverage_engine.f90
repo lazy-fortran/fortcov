@@ -276,7 +276,8 @@ contains
         end if
         
         ! Memory safety: Use dynamic allocation with proper sizing
-        allocate(character(len=max(max_filename_len, 256)) :: temp_filtered(size(files)))
+        allocate(character(len=max(max_filename_len, 256)) :: &
+                 & temp_filtered(size(files)))
         count = 0
         
         do i = 1, size(files)
@@ -859,7 +860,8 @@ contains
             return
         end if
         
-        ! Note: This would require extending the reporter interface to support diff output
+        ! Note: This would require extending the reporter interface to support &
+        ! diff output
         ! For now, just output a summary
         call output_diff_summary(diff_result, config)
         
@@ -881,19 +883,23 @@ contains
             print *, "Total lines removed:", diff_result%total_removed_lines
             print *, "Total lines changed:", diff_result%total_changed_lines
             print *, "Total newly covered lines:", diff_result%total_newly_covered_lines
-            print *, "Total newly uncovered lines:", diff_result%total_newly_uncovered_lines
+            print *, "Total newly uncovered lines:", &
+                     & diff_result%total_newly_uncovered_lines
             
             if (size(diff_result%file_diffs) > 0) then
                 print *, ""
                 print *, "File details:"
                 do i = 1, size(diff_result%file_diffs)
                     print *, "File:", trim(diff_result%file_diffs(i)%filename)
-                    print *, "  Coverage change:", diff_result%file_diffs(i)%coverage_percentage_delta, "%"
+                    print *, "  Coverage change:", &
+                             & diff_result%file_diffs(i)%coverage_percentage_delta, "%"
                     print *, "  Added lines:", diff_result%file_diffs(i)%added_lines
                     print *, "  Removed lines:", diff_result%file_diffs(i)%removed_lines
                     print *, "  Changed lines:", diff_result%file_diffs(i)%changed_lines
-                    print *, "  Newly covered:", diff_result%file_diffs(i)%newly_covered_lines
-                    print *, "  Newly uncovered:", diff_result%file_diffs(i)%newly_uncovered_lines
+                    print *, "  Newly covered:", &
+                             & diff_result%file_diffs(i)%newly_covered_lines
+                    print *, "  Newly uncovered:", &
+                             & diff_result%file_diffs(i)%newly_uncovered_lines
                     print *, ""
                 end do
             end if

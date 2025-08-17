@@ -108,7 +108,8 @@ module coverage_model
     integer, parameter :: LOST_COVERAGE = -10
 
     public :: CRITICAL_DEGRADATION, MAJOR_DEGRADATION, MINOR_DEGRADATION
-    public :: UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, CRITICAL_IMPROVEMENT
+    public :: UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, &
+              & CRITICAL_IMPROVEMENT
     public :: NEW_COVERAGE, LOST_COVERAGE
 
     ! Line difference type with enhanced threshold-based classification
@@ -152,7 +153,8 @@ module coverage_model
         procedure :: init => file_diff_init
         procedure :: calculate_summary => file_diff_calculate_summary
         procedure :: apply_threshold_analysis => file_diff_apply_threshold_analysis
-        procedure :: get_significance_description => file_diff_get_significance_description
+        procedure :: get_significance_description => &
+                     & file_diff_get_significance_description
     end type file_diff_t
 
     ! Coverage difference type for complete diff analysis
@@ -484,7 +486,8 @@ contains
         ! Format: filename:line:count| 
         ! Add extra space for formatting and safety margin
         ! Estimate digits needed for integers (max 10 digits each + separators)
-        required_length = max_filename_len + 50  ! Safe margin for numbers and separators
+        required_length = max_filename_len + 50  ! Safe margin for numbers and &
+        ! separators
         
         ! Security: Enforce maximum filename length to prevent abuse
         if (max_filename_len > 4096) then
@@ -578,7 +581,8 @@ contains
             this%is_newly_covered = .false.
             this%is_newly_uncovered = .false.
         case (DIFF_REMOVED)
-            ! Removed lines don't count as newly covered/uncovered - they're just removed  
+            ! Removed lines don't count as newly covered/uncovered - they're &
+            ! just removed
             this%is_newly_covered = .false.
             this%is_newly_uncovered = .false.
         case default
@@ -761,7 +765,8 @@ contains
     end subroutine diff_thresholds_init
 
     ! Classify coverage change using threshold-based analysis
-    function classify_coverage_change(this, baseline_pct, current_pct) result(classification)
+    function classify_coverage_change(this, baseline_pct, current_pct) &
+             & result(classification)
         class(diff_thresholds_t), intent(in) :: this
         real, intent(in) :: baseline_pct, current_pct
         integer :: classification
@@ -770,11 +775,11 @@ contains
         
         abs_change = current_pct - baseline_pct
         
-        ! Handle edge cases for new/lost coverage
-        if (baseline_pct == 0.0 .and. current_pct > 0.0) then
+        ! Handle edge cases for new/lost coverage (use tolerance for real comparison)
+        if (abs(baseline_pct) < epsilon(baseline_pct) .and. current_pct > 0.0) then
             classification = NEW_COVERAGE
             return
-        else if (baseline_pct > 0.0 .and. current_pct == 0.0) then
+        else if (baseline_pct > 0.0 .and. abs(current_pct) < epsilon(current_pct)) then
             classification = LOST_COVERAGE
             return
         end if
@@ -783,7 +788,8 @@ contains
         if (abs(abs_change) < this%significance_threshold) then
             classification = UNCHANGED_COVERAGE
         else if (abs(abs_change) >= this%critical_threshold) then
-            classification = merge(CRITICAL_IMPROVEMENT, CRITICAL_DEGRADATION, abs_change > 0)
+            classification = merge(CRITICAL_IMPROVEMENT, CRITICAL_DEGRADATION, &
+                                   & abs_change > 0)
         else if (abs(abs_change) >= this%major_threshold) then
             classification = merge(MAJOR_IMPROVEMENT, MAJOR_DEGRADATION, abs_change > 0)
         else if (abs(abs_change) >= this%minor_threshold) then
@@ -805,14 +811,16 @@ contains
         current_pct = merge(100.0, 0.0, this%current_line%execution_count > 0)
         
         ! Apply threshold-based classification
-        this%significance_classification = thresholds%classify_change(baseline_pct, current_pct)
+        this%significance_classification = &
+                thresholds%classify_change(baseline_pct, current_pct)
         
         ! Set confidence based on change magnitude and line context
         if (this%significance_classification == UNCHANGED_COVERAGE) then
             this%statistical_confidence = 1.0
         else
             ! Higher confidence for more significant changes
-            this%statistical_confidence = min(1.0, abs(current_pct - baseline_pct) / 10.0)
+            this%statistical_confidence = min(1.0, abs(current_pct - &
+                                               & baseline_pct) / 10.0)
         end if
     end subroutine line_diff_apply_classification
 

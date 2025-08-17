@@ -165,7 +165,8 @@ contains
             else if (index(line, "Graph:") > 0 .or. index(line, "Data:") > 0) then
                 ! Skip graph and data header lines
                 cycle
-            else if (index(line, "function ") > 0 .and. index(line, " called ") > 0) then
+            else if (index(line, "function ") > 0 .and. &
+                     & index(line, " called ") > 0) then
                 ! Parse function summary lines instead of skipping them
                 call parse_function_summary_line(line, source_filename, files_array, &
                                                 files_count)

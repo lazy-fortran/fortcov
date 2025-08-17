@@ -194,7 +194,8 @@ contains
         do i = 1, len_trim(filename)
             ! Keep alphanumeric, period, underscore, hyphen, forward slash
             if (verify(filename(i:i), &
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') == 0) then
+                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') &
+                == 0) then
                 temp_filename(j:j) = filename(i:i)
                 j = j + 1
             end if

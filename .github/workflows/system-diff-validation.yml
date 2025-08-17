@@ -32,7 +32,7 @@ jobs:
     
     - name: Install Fortran Package Manager
       run: |
-        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux-x86_64 -o fpm
+        curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
         chmod +x fpm
         sudo mv fpm /usr/local/bin/
     
