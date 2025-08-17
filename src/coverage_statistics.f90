@@ -222,7 +222,7 @@ contains
                              %parent_module) == trim(module_name)) then
                         stats%total_functions = stats%total_functions + 1
                         if (coverage_data%files(file_idx)%functions(func_idx) &
-                        %execution_count > 0) then
+                            %execution_count > 0) then
                             stats%covered_functions = stats%covered_functions + 1
                         end if
                         
@@ -233,7 +233,7 @@ contains
                                               %functions(func_idx)%branches)
                                 stats%total_branches = stats%total_branches + 1
                                 if (coverage_data%files(file_idx)%functions(func_idx) &
-                                %branches(branch_idx)%taken_count > 0) then
+                                    %branches(branch_idx)%taken_count > 0) then
                                     stats%covered_branches = stats%covered_branches + 1
                                 end if
                             end do
