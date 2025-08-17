@@ -85,7 +85,8 @@ contains
             do line_idx = 1, size(coverage_data%files(file_idx)%lines)
                 if (coverage_data%files(file_idx)%lines(line_idx)%is_executable) then
                     total_lines = total_lines + 1
-                    if (coverage_data%files(file_idx)%lines(line_idx)%execution_count > 0) then
+                    if (coverage_data%files(file_idx)%lines(line_idx)%execution_count &
+                        > 0) then
                         covered_lines = covered_lines + 1
                     else
                         ! Collect missing line in same pass
@@ -131,11 +132,14 @@ contains
         do file_idx = 1, size(coverage_data%files)
             if (allocated(coverage_data%files(file_idx)%functions)) then
                 do func_idx = 1, size(coverage_data%files(file_idx)%functions)
-                    if (allocated(coverage_data%files(file_idx)%functions(func_idx)%branches)) then
-                        do branch_idx = 1, size(coverage_data%files(file_idx)%functions(func_idx)%branches)
+                    if (allocated(coverage_data%files(file_idx)%functions(func_idx) &
+                                  %branches)) then
+                        do branch_idx = 1, size(coverage_data%files(file_idx) &
+                                              %functions(func_idx)%branches)
                             total_branches = total_branches + 1
-                            ! Branch is covered if taken path has been executed (lcov standard)
-                            if (coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%taken_count > 0) then
+                            ! Branch is covered if taken path has been executed
+                            if (coverage_data%files(file_idx)%functions(func_idx) &
+                                %branches(branch_idx)%taken_count > 0) then
                                 covered_branches = covered_branches + 1
                             end if
                         end do
@@ -173,7 +177,8 @@ contains
             if (allocated(coverage_data%files(file_idx)%functions)) then
                 do func_idx = 1, size(coverage_data%files(file_idx)%functions)
                     total_functions = total_functions + 1
-                    if (coverage_data%files(file_idx)%functions(func_idx)%execution_count > 0) then
+                    if (coverage_data%files(file_idx)%functions(func_idx) &
+                        %execution_count > 0) then
                         covered_functions = covered_functions + 1
                     end if
                 end do
@@ -213,17 +218,22 @@ contains
             ! Count functions in this module
             if (allocated(coverage_data%files(file_idx)%functions)) then
                 do func_idx = 1, size(coverage_data%files(file_idx)%functions)
-                    if (trim(coverage_data%files(file_idx)%functions(func_idx)%parent_module) == trim(module_name)) then
+                    if (trim(coverage_data%files(file_idx)%functions(func_idx) &
+                             %parent_module) == trim(module_name)) then
                         stats%total_functions = stats%total_functions + 1
-                        if (coverage_data%files(file_idx)%functions(func_idx)%execution_count > 0) then
+                        if (coverage_data%files(file_idx)%functions(func_idx) &
+                        %execution_count > 0) then
                             stats%covered_functions = stats%covered_functions + 1
                         end if
                         
                         ! Count branches in this function
-                        if (allocated(coverage_data%files(file_idx)%functions(func_idx)%branches)) then
-                            do branch_idx = 1, size(coverage_data%files(file_idx)%functions(func_idx)%branches)
+                        if (allocated(coverage_data%files(file_idx) &
+                                      %functions(func_idx)%branches)) then
+                            do branch_idx = 1, size(coverage_data%files(file_idx) &
+                                              %functions(func_idx)%branches)
                                 stats%total_branches = stats%total_branches + 1
-                                if (coverage_data%files(file_idx)%functions(func_idx)%branches(branch_idx)%taken_count > 0) then
+                                if (coverage_data%files(file_idx)%functions(func_idx) &
+                                %branches(branch_idx)%taken_count > 0) then
                                     stats%covered_branches = stats%covered_branches + 1
                                 end if
                             end do
@@ -235,14 +245,16 @@ contains
         
         ! Calculate percentages with validation
         if (stats%total_functions > 0) then
-            stats%function_percentage = real(stats%covered_functions) / real(stats%total_functions) * 100.0
+            stats%function_percentage = real(stats%covered_functions) / &
+                                         real(stats%total_functions) * 100.0
             stats%function_percentage = clamp_percentage(stats%function_percentage)
         else
             stats%function_percentage = 0.0
         end if
         
         if (stats%total_branches > 0) then
-            stats%branch_percentage = real(stats%covered_branches) / real(stats%total_branches) * 100.0
+            stats%branch_percentage = real(stats%covered_branches) / &
+                                       real(stats%total_branches) * 100.0
             stats%branch_percentage = clamp_percentage(stats%branch_percentage)
         else
             stats%branch_percentage = 0.0
