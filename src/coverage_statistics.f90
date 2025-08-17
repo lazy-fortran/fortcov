@@ -85,7 +85,8 @@ contains
             do line_idx = 1, size(coverage_data%files(file_idx)%lines)
                 if (coverage_data%files(file_idx)%lines(line_idx)%is_executable) then
                     total_lines = total_lines + 1
-                    if (coverage_data%files(file_idx)%lines(line_idx)%execution_count > 0) then
+                    if (coverage_data%files(file_idx)%lines(line_idx)%execution_count &
+                        & > 0) then
                         covered_lines = covered_lines + 1
                     else
                         ! Collect missing line in same pass
