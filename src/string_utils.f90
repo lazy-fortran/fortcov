@@ -210,15 +210,6 @@ contains
                  char == achar(10) .or. char == achar(13))  ! newline, carriage return
     end function is_whitespace_char
 
-    ! Helper function to convert integer to string
-    function int_to_string(int_val) result(str)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str
-        character(len=20) :: buffer
-        
-        write(buffer, '(I0)') int_val
-        str = trim(buffer)
-    end function int_to_string
 
     ! Security: Validate string input for safety constraints
     function validate_string_input(input_str, max_length) result(is_valid)
