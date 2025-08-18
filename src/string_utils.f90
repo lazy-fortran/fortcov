@@ -336,31 +336,31 @@ contains
         character(len=*), intent(in) :: pattern
         logical :: matches
         
-        character(len=:), allocatable :: pattern_lower, filepath_lower
+        character(len=:), allocatable :: pattern_trimmed, filepath_trimmed
         integer :: star_pos
         
-        ! Convert to lowercase for case-insensitive matching
-        pattern_lower = to_lower(trim(pattern))
-        filepath_lower = to_lower(trim(filepath))
+        ! Use case-sensitive matching to maintain backward compatibility
+        pattern_trimmed = trim(pattern)
+        filepath_trimmed = trim(filepath)
         
-        star_pos = index(pattern_lower, "*")
+        star_pos = index(pattern_trimmed, "*")
         
         if (star_pos == 0) then
             ! No wildcard, exact match
-            matches = (filepath_lower == pattern_lower)
-        else if (star_pos == len(pattern_lower)) then
+            matches = (filepath_trimmed == pattern_trimmed)
+        else if (star_pos == len(pattern_trimmed)) then
             ! Pattern ends with *, check prefix
-            matches = (filepath_lower(1:star_pos-1) == &
-                      pattern_lower(1:star_pos-1))
+            matches = (filepath_trimmed(1:star_pos-1) == &
+                      pattern_trimmed(1:star_pos-1))
         else if (star_pos == 1) then
             ! Pattern starts with *, check suffix
-            matches = (len(filepath_lower) >= len(pattern_lower) - 1) .and. &
-                     (filepath_lower(len(filepath_lower) - len(pattern_lower) + 2:) == &
-                      pattern_lower(2:))
+            matches = (len(filepath_trimmed) >= len(pattern_trimmed) - 1) .and. &
+                     (filepath_trimmed(len(filepath_trimmed) - len(pattern_trimmed) + 2:) == &
+                      pattern_trimmed(2:))
         else
             ! Wildcard in middle - check both prefix and suffix match
-            matches = (index(filepath_lower, pattern_lower(1:star_pos-1)) == 1) .and. &
-                     (index(filepath_lower, pattern_lower(star_pos+1:)) > 0)
+            matches = (index(filepath_trimmed, pattern_trimmed(1:star_pos-1)) == 1) .and. &
+                     (index(filepath_trimmed, pattern_trimmed(star_pos+1:)) > 0)
         end if
     end function matches_pattern
 
