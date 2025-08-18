@@ -350,7 +350,8 @@ contains
         
         ! Test comprehensive CI/CD pattern
         call test_complex_flag_combination( &
-            "--source=. --exclude='build/*' --exclude='test/*' --output=coverage.md --fail-under=80 --quiet --output-format=markdown", &
+            "--source=. --exclude='build/*' --exclude='test/*' --output=coverage.md " // &
+            "--fail-under=80 --quiet --output-format=markdown", &
             "comprehensive CI/CD", test_passed)
         
         ! Test development workflow pattern
