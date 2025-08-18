@@ -199,8 +199,10 @@ contains
                                      MAX_ARRAY_SIZE, "source paths")
                     
                 case ("--exclude")
-                    call add_to_array(trim(value), temp_excludes, num_excludes, &
-                                     MAX_ARRAY_SIZE, "exclude patterns")
+                    ! Support both single patterns and comma-separated patterns
+                    call add_exclude_patterns(trim(value), temp_excludes, num_excludes, &
+                                           MAX_ARRAY_SIZE, success, error_message)
+                    if (.not. success) return
                     
                 case ("--fail-under", "-t")
                     call parse_threshold(trim(value), config%minimum_coverage, &
@@ -710,12 +712,13 @@ contains
         print *, "  fortcov [OPTIONS] --source=PATH"
         print *, ""
         print *, "QUICK START:"
-        print *, "  fortcov -s src -o coverage.md              # Generate basic report"
-        print *, "  fortcov -s src -t 80 -q                    # CI/CD with threshold"
-        print *, "  fortcov -s src --tui                       # Interactive browser"
+        print *, "  fortcov --source=src --output=coverage.md                    # Generate basic report"
+        print *, "  fortcov --source=. --exclude='build/*,test/*' --output=coverage.md  # Quick start pattern"
+        print *, "  fortcov --source=src --fail-under=80 --quiet                 # CI/CD with threshold"
+        print *, "  fortcov --source=src --tui                                   # Interactive browser"
         print *, ""
         print *, "ESSENTIAL OPTIONS:"
-        print *, "  -s, --source=PATH         📁 Source directory to analyze (required)"
+        print *, "  -s, --source=PATH         📁 Directory containing .gcov files (required)"
         print *, "  -o, --output=FILE         📄 Output file [default: stdout]"
         print *, "  -t, --fail-under=N        🎯 Minimum coverage threshold (0-100)"
         print *, "  -v, --verbose             💬 Show detailed processing information"
@@ -730,7 +733,7 @@ contains
         print *, ""
         print *, "FILTERING & EXCLUSIONS:"
         print *, "  --exclude=PATTERN         🚫 Skip files matching pattern (use multiple times)"
-        print *, "                               Example: --exclude='test/*' --exclude='*.mod'"
+        print *, "                               Examples: --exclude='test/*,*.mod' or --exclude='test/*' --exclude='*.mod'"
         print *, ""
         print *, "ADVANCED FEATURES:"
         print *, "  --config=FILE             ⚙️  Use configuration file (see fortcov.nml.example)"
@@ -775,8 +778,11 @@ contains
         print *, "  1️⃣  Build with coverage:  fpm build --flag ""-fprofile-arcs -ftest-coverage"""
         print *, "  2️⃣  Run your tests:       fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         print *, "  3️⃣  Generate .gcov data:  gcov src/*.f90"
-        print *, "  4️⃣  Create report:        fortcov -s src -o coverage.md"
-        print *, "  5️⃣  View your results:    cat coverage.md"
+        print *, "  4️⃣  Locate .gcov files:   find . -name ""*.gcov"" -type f"
+        print *, "  5️⃣  Create report:        fortcov --source=<dir-with-gcov> -o coverage.md"
+        print *, "  6️⃣  View your results:    cat coverage.md"
+        print *, ""
+        print *, "📍 CRITICAL: Set --source to directory containing .gcov files, not source code"
         print *, ""
         print *, "📚 Documentation: https://github.com/lazy-fortran/fortcov"
         print *, "🐛 Issues & Support: https://github.com/lazy-fortran/fortcov/issues"
@@ -979,7 +985,7 @@ contains
         end if
     end subroutine validate_config
 
-    ! Validate that input sources are provided (Issue #102)
+    ! Validate that input sources are provided (Issue #102 + Issue #162)
     subroutine validate_input_sources(args, config, success, error_message)
         character(len=*), intent(in) :: args(:)
         type(config_t), intent(inout) :: config
@@ -1001,6 +1007,20 @@ contains
             config%show_help = .true.
             success = .false.
             error_message = "No arguments provided. Try 'fortcov --help' for usage examples."
+            return
+        end if
+        
+        ! Validate that --source is provided (Issue #162)
+        ! Source path is required for coverage analysis unless using --import
+        if (.not. allocated(config%source_paths) .or. size(config%source_paths) == 0) then
+            ! Only require --source if not importing existing coverage data
+            if (len_trim(config%import_file) == 0) then
+                success = .false.
+                error_message = "Required argument missing: --source=PATH (directory containing .gcov files)" // char(10) // &
+                    "Basic usage: fortcov --source=src --output=coverage.md" // char(10) // &
+                    "First run: gcov src/*.f90 && find . -name '*.gcov' to locate coverage files" // char(10) // &
+                    "For help: fortcov --help"
+            end if
         end if
     end subroutine validate_input_sources
 
@@ -1016,5 +1036,40 @@ contains
             config%output_path = "coverage_report.html"
         end if
     end subroutine apply_html_default_filename
+
+    ! Add exclude patterns with support for comma-separated values (Issue #162)
+    subroutine add_exclude_patterns(value, temp_excludes, num_excludes, max_size, &
+                                   success, error_message)
+        character(len=*), intent(in) :: value
+        character(len=256), intent(inout) :: temp_excludes(:)
+        integer, intent(inout) :: num_excludes
+        integer, intent(in) :: max_size
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: split_patterns(:)
+        integer :: i
+        
+        success = .true.
+        error_message = ""
+        
+        ! Check if value contains commas (comma-separated patterns)
+        if (index(value, ',') > 0) then
+            ! Split comma-separated patterns
+            split_patterns = split(trim(value), ',')
+            
+            if (allocated(split_patterns)) then
+                do i = 1, size(split_patterns)
+                    call add_to_array(trim(adjustl(split_patterns(i))), &
+                                    temp_excludes, num_excludes, max_size, "exclude patterns")
+                end do
+                deallocate(split_patterns)
+            end if
+        else
+            ! Single pattern
+            call add_to_array(trim(value), temp_excludes, num_excludes, &
+                            max_size, "exclude patterns")
+        end if
+    end subroutine add_exclude_patterns
 
 end module fortcov_config
