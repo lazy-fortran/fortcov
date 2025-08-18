@@ -524,6 +524,70 @@ rm test.f90 test test.gc*
 - **Workflow validation**: Use the test commands above to verify your environment
 - **GitHub Issues**: Report bugs at [github.com/lazy-fortran/fortcov/issues](https://github.com/lazy-fortran/fortcov/issues)
 
+## Build System Integration
+
+FortCov integrates seamlessly with all major Fortran build systems. For complete working examples, see [examples/build_systems/](examples/build_systems/).
+
+### FPM Integration
+
+```bash
+# Add coverage flags to your workflow
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+gcov src/*.f90
+fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
+```
+
+### CMake Integration
+
+```cmake
+# In CMakeLists.txt
+option(ENABLE_COVERAGE "Enable coverage analysis" OFF)
+if(ENABLE_COVERAGE)
+    set(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} -fprofile-arcs -ftest-coverage")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov")
+endif()
+
+# Custom target for coverage
+add_custom_target(fortcov_report
+    COMMAND gcov ${CMAKE_SOURCE_DIR}/src/*.f90
+    COMMAND fortcov --source=. --output=coverage.html --output-format=html
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+```
+
+### Makefile Integration
+
+```makefile
+# Coverage flags
+COVERAGE_FLAGS = -fprofile-arcs -ftest-coverage
+COVERAGE_LIBS = -lgcov
+
+coverage: test
+	gcov src/*.f90
+	fortcov --source=. --exclude='build/*' --output=coverage.md
+
+clean-coverage:
+	rm -f *.gcov *.gcda *.gcno
+```
+
+### Meson Integration
+
+```meson
+# In meson.build
+coverage_option = get_option('coverage')
+if coverage_option
+  add_project_arguments('-fprofile-arcs', '-ftest-coverage', language: 'fortran')
+  add_project_link_arguments('-lgcov', language: 'fortran')
+endif
+
+# Custom target
+run_target('coverage',
+  command: ['bash', '-c', 'gcov src/*.f90 && fortcov --source=. --output=coverage.html']
+)
+```
+
+**Complete Examples**: See [examples/build_systems/](examples/build_systems/) for full working examples with all build systems.
+
 ## CI/CD Integration
 
 ### GitHub Actions
@@ -577,6 +641,8 @@ coverage:
     paths:
       - coverage.md
 ```
+
+**Complete CI/CD Examples**: See [examples/build_systems/ci_cd/](examples/build_systems/ci_cd/) for GitHub Actions, GitLab CI, and Jenkins configurations.
 
 ## Contributing
 
