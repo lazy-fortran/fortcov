@@ -498,7 +498,17 @@ int is_secure_temp_directory_unix(const char *dirname) {
 /* Performance helper functions */
 void create_baseline_temp_file_unix(void) {
     /* Create simple temp file for performance comparison */
-    char filename[] = "/tmp/baseline_XXXXXX";
+    char temp_dir[MAX_PATH_LENGTH];
+    char filename[MAX_PATH_LENGTH];
+    
+    /* Get secure temp directory instead of hardcoding /tmp */
+    if (get_secure_temp_dir(temp_dir, sizeof(temp_dir)) != 0) {
+        return; /* No suitable temp directory found */
+    }
+    
+    /* Build filename with secure temp directory */
+    snprintf(filename, sizeof(filename), "%s/baseline_XXXXXX", temp_dir);
+    
     int fd = mkstemp(filename);
     if (fd != -1) {
         close(fd);
