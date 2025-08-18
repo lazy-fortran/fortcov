@@ -329,6 +329,7 @@ contains
         
         character(len=:), allocatable :: pattern_trimmed, filepath_trimmed
         integer :: star_pos, prefix_len, suffix_len
+        integer :: second_star_pos
         
         ! Use case-sensitive matching to maintain backward compatibility
         pattern_trimmed = trim(pattern)
@@ -364,16 +365,25 @@ contains
                 matches = .false.
             end if
         else if (star_pos == 1) then
-            ! Pattern starts with *, check suffix
-            suffix_len = len(pattern_trimmed) - 1
-            if (suffix_len == 0) then
-                ! Just "*", matches everything
-                matches = .true.
-            else if (len(filepath_trimmed) >= suffix_len) then
-                matches = (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
-                          pattern_trimmed(2:))
+            ! Pattern starts with *, check for second wildcard
+            second_star_pos = index(pattern_trimmed(2:), "*")
+            if (second_star_pos == 0) then
+                ! Pattern is "*suffix", check suffix
+                suffix_len = len(pattern_trimmed) - 1
+                if (suffix_len == 0) then
+                    ! Just "*", matches everything
+                    matches = .true.
+                else if (len(filepath_trimmed) >= suffix_len) then
+                    matches = (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
+                              pattern_trimmed(2:))
+                else
+                    matches = .false.
+                end if
             else
-                matches = .false.
+                ! Pattern is "*middle*", check if middle is contained in filepath
+                ! Extract the middle part (between the two asterisks)
+                ! second_star_pos is relative to pattern_trimmed(2:), so adjust
+                matches = (index(filepath_trimmed, pattern_trimmed(2:1+second_star_pos-1)) > 0)
             end if
         else
             ! Wildcard in middle - check both prefix and suffix match

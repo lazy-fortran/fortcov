@@ -1,0 +1,10 @@
+[
+    {
+        "filename": "src/test_module.f90",
+        "lines": [
+            {"line_number": 1, "execution_count": 1, "is_executable": true},
+            {"line_number": 2, "execution_count": 0, "is_executable": true},
+            {"line_number": 3, "execution_count": 3, "is_executable": true}
+        ]
+    }
+]

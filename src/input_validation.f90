@@ -19,8 +19,8 @@ module input_validation
     
     ! System limits - optimized for performance and security
     integer(int64), parameter, public :: MAX_FILE_SIZE = 1073741824_int64  ! 1GB
-    integer, parameter, public :: MAX_LINE_NUMBER = 1000000
-    integer, parameter, public :: MAX_EXECUTION_COUNT = 2000000000  ! Safe below INT32_MAX
+    integer, parameter, public :: MAX_LINE_NUMBER = 100000      ! Reasonable maximum for source file line numbers
+    integer, parameter, public :: MAX_EXECUTION_COUNT = 1000000      ! Reasonable maximum for coverage data
     integer, parameter, public :: MAX_PATH_LENGTH = 4096
     integer, parameter, public :: MAX_FILENAME_LENGTH = 255
     integer, parameter, public :: MAX_LINES_PER_FILE = 1000000

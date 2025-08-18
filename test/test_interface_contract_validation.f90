@@ -392,6 +392,8 @@ contains
         end if
         
         ! Contract: files array can be allocated independently
+        if (allocated(coverage1%files)) deallocate(coverage1%files)
+        if (allocated(coverage2%files)) deallocate(coverage2%files)
         allocate(coverage1%files(2))
         allocate(coverage2%files(3))
         
