@@ -77,7 +77,8 @@ contains
         logical, intent(inout) :: passed
         
         character(len=*), parameter :: uppercase_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": True}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": True}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -98,7 +99,8 @@ contains
         logical, intent(inout) :: passed
         
         character(len=*), parameter :: escaped_json = &
-            '{"files": [{"filename": "test\"quoted.f90", "lines": [{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
+            '{"files": [{"filename": "test""quoted.f90", "lines": [' // &
+            '{"line_number": 10, "execution_count": 5, "is_executable": true}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred
@@ -119,7 +121,8 @@ contains
         logical, intent(inout) :: passed
         
         character(len=*), parameter :: zero_json = &
-            '{"files": [{"filename": "test.f90", "lines": [{"line_number": 0, "execution_count": 0, "is_executable": false}]}]}'
+            '{"files": [{"filename": "test.f90", "lines": [' // &
+            '{"line_number": 0, "execution_count": 0, "is_executable": false}]}]}'
         
         type(coverage_data_t) :: coverage_data
         logical :: error_occurred

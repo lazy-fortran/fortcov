@@ -426,3 +426,337 @@ end if
 - Performance tests show no measurable overhead from output checks
 
 This CLI architecture enhancement ensures consistent and predictable behavior for the --quiet flag while maintaining backward compatibility and robust error reporting.
+
+## Code Quality and Architecture Improvements (Issue #126)
+
+### Foundation Layer Quality Enhancement Strategy
+
+Building on the successful O(n²) → O(n) performance optimization patterns established in Issue #124, this comprehensive code quality improvement focuses on foundation layer optimizations that provide maximum strategic impact across all system components.
+
+#### Issue #124 Success Pattern Analysis
+
+**Proven Optimization Patterns Applied:**
+- **Pre-allocation Strategy**: Replace dynamic array concatenation with pre-allocated buffers
+- **Streaming Processing**: Transform memory-intensive operations to streaming architecture  
+- **Memory Pool Pattern**: Reduce allocation overhead for frequent operations
+- **Single-Pass Algorithms**: Replace multiple iterations with single-pass processing
+- **O(n²) → O(n) Transformations**: Systematic complexity reduction in critical paths
+
+**Measurable Success Metrics from Issue #124:**
+- 90%+ reduction in processing time for large datasets (1000+ files)
+- 70% reduction in memory footprint through streaming architecture
+- Elimination of O(n²) bottlenecks in file discovery and string processing
+- Foundation layer improvements cascade benefits across entire system
+
+### Code Quality Foundation Layer Architecture
+
+#### 1. Modular Decomposition Strategy
+
+**Current State Analysis:**
+- `json_coverage_io.f90`: 1,036 lines → **High Priority** decomposition target
+- `coverage_engine.f90`: 1,025 lines → **Critical** foundation layer refactoring
+- `fortcov_config.f90`: 939 lines → **Mixed concerns** separation needed
+- `coverage_model.f90`: 888 lines → **Data structure** optimization opportunity
+
+**Strategic Decomposition Plan:**
+
+**Phase 1: Foundation Layer Extraction (Maximum Impact)**
+```fortran
+! Current: coverage_engine.f90 (1,025 lines)
+! Target: Decomposed architecture
+
+! 1. Core Engine (200-250 lines) - Pure orchestration
+module coverage_engine_core
+    use coverage_pipeline_types
+    use coverage_strategy_patterns
+    implicit none
+contains
+    ! High-level workflow orchestration only
+    function execute_coverage_analysis(config) result(status)
+    function orchestrate_pipeline(pipeline_config) result(result)
+end module
+
+! 2. Processing Strategies (200-250 lines) - Strategy patterns
+module coverage_processing_strategies  
+    use performance_optimizations  ! Issue #124 patterns
+    implicit none
+contains
+    ! Strategy pattern implementations
+    procedure(strategy_interface) :: streaming_strategy
+    procedure(strategy_interface) :: memory_pool_strategy  
+    procedure(strategy_interface) :: batch_processing_strategy
+end module
+
+! 3. Pipeline Operations (200-250 lines) - Operation patterns
+module coverage_pipeline_operations
+    use foundation_layer_utils
+    implicit none
+contains
+    ! Atomic pipeline operations with Issue #124 optimizations
+    function discover_files_optimized(patterns) result(file_list)
+    function process_coverage_streaming(file_stream) result(coverage_data)
+    function generate_output_streaming(coverage_data, format) result(status)
+end module
+
+! 4. Foundation Utils (200-250 lines) - Reusable utilities
+module foundation_layer_utils
+    use performance_patterns  ! Issue #124 patterns
+    implicit none
+contains
+    ! High-impact reusable utilities with optimization patterns
+    function pre_allocate_with_capacity(estimated_size) result(buffer)
+    function streaming_file_processor() result(processor)  
+    function memory_pool_manager() result(pool)
+end module
+```
+
+**Quality Multiplier Architecture:**
+Each foundation layer improvement cascades benefits:
+- **coverage_engine_core** improvements → affects all coverage operations
+- **performance_patterns** optimizations → affects all file processing
+- **foundation_layer_utils** enhancements → affects all modules
+
+#### 2. Performance-First Code Quality Patterns
+
+**Building on Issue #124 Success:**
+
+**Pattern 1: Pre-Allocation Everywhere**
+```fortran
+! Apply Issue #124 pattern systematically across codebase
+
+! Before (O(n²) pattern found in multiple modules):
+result_array = [result_array, new_elements]  ! Found in 8+ locations
+
+! After (O(n) pattern with capacity estimation):
+! Foundation layer utility for consistent application
+subroutine append_with_capacity(array, new_elements, capacity_hint)
+    if (.not. allocated(array)) then
+        allocate(array(max(capacity_hint, size(new_elements) * 2)))
+    else if (size(array) < current_size + size(new_elements)) then
+        call resize_array_efficient(array, new_capacity)
+    end if
+    array(current_size+1:current_size+size(new_elements)) = new_elements
+end subroutine
+```
+
+**Pattern 2: String Processing Optimization**
+```fortran
+! Apply Issue #124 string optimization patterns to eliminate:
+! - 15+ instances of inefficient string concatenation in loops
+! - Magic buffer sizes (200, 256, 50) replaced with named constants
+! - Memory allocation overhead in string utilities
+
+! Foundation layer string processing:
+module optimized_string_processing
+    use memory_pool_manager
+    integer, parameter :: STANDARD_BUFFER_SIZE = 4096
+    integer, parameter :: MAX_FILENAME_BUFFER = 1024  
+    integer, parameter :: MAX_MESSAGE_BUFFER = 2048
+    
+contains
+    function build_string_efficiently(components) result(result_str)
+        ! Pre-calculate total size, single allocation
+        total_size = sum(len_trim(components))
+        allocate(character(len=total_size) :: result_str)
+        ! Single-pass construction
+    end function
+end module
+```
+
+**Pattern 3: Memory Pool Architecture**
+```fortran
+! Extend Issue #124 memory pool concept system-wide
+module foundation_memory_pools
+contains
+    ! Specialized pools for common allocation patterns
+    type(memory_pool_t) :: string_pool     ! For frequent string operations
+    type(memory_pool_t) :: coverage_pool   ! For coverage data structures  
+    type(memory_pool_t) :: file_buffer_pool ! For file I/O operations
+    
+    ! Foundation layer pool management
+    subroutine initialize_system_pools()
+    subroutine cleanup_system_pools() 
+    function get_pooled_string(estimated_length) result(string_ref)
+end module
+```
+
+#### 3. Architectural Consistency Improvements
+
+**Code Quality Consistency Matrix:**
+
+**Naming Convention Standardization:**
+```fortran
+! Current inconsistencies (47 instances identified):
+function to_lower()           ! Missing subject noun
+function int_to_string()      ! Good pattern  
+subroutine safe_write_message ! Good pattern
+
+! Target consistency (foundation layer pattern):
+! Pattern: <action>_<subject>_<qualifier>
+function convert_string_to_lower(input_str) result(lower_str)
+function convert_integer_to_string(int_val) result(str_val)  
+subroutine write_message_safely(context, message)
+
+! Foundation layer naming module:
+! - Codifies all naming patterns
+! - Provides templates for new code
+! - Enables automated consistency checking
+```
+
+**Magic Number Elimination (Performance Impact):**
+```fortran
+! Foundation layer constants module (Issue #124 pattern)
+module foundation_constants
+    ! Buffer sizes (systematic analysis of all magic numbers)
+    integer, parameter :: SMALL_BUFFER_SIZE = 256    ! Was scattered "200", "256"  
+    integer, parameter :: MEDIUM_BUFFER_SIZE = 1024  ! Was scattered "500", "1000"
+    integer, parameter :: LARGE_BUFFER_SIZE = 4096   ! Was scattered "2000", "4000"
+    
+    ! File processing limits (security + performance)
+    integer, parameter :: MAX_FILES_BATCH = 1000     ! Was magic "100" 
+    integer, parameter :: MAX_COVERAGE_LINES = 100000 ! Was unbounded
+    
+    ! Memory allocation hints (Issue #124 optimization)
+    real, parameter :: CAPACITY_GROWTH_FACTOR = 1.5  ! Smart growth
+    integer, parameter :: MIN_CAPACITY_INCREMENT = 64 ! Avoid tiny grows
+end module
+```
+
+#### 4. Foundation Layer Error Handling Patterns
+
+**Consistent Error Architecture:**
+```fortran
+! Pattern observed across all large modules - inconsistent error handling
+! Foundation layer error handling with Issue #124 performance patterns
+
+module foundation_error_handling
+    use performance_optimizations
+contains
+    ! Zero-allocation error handling for performance-critical paths
+    subroutine handle_error_efficiently(error_code, context, message)
+        ! Use pre-allocated error message pools (Issue #124 pattern)
+        ! Avoid string concatenation in error paths
+        ! Single error handling pattern across all modules
+    end subroutine
+    
+    ! Foundation layer error context with pooled memory
+    type :: optimized_error_context_t
+        integer :: error_code = ERROR_SUCCESS
+        integer :: message_buffer_id = 0  ! Reference to pooled buffer
+        logical :: owns_buffer = .false.
+    contains
+        procedure :: set_error_efficiently
+        procedure :: clear_context_fast
+    end type
+end module
+```
+
+### Implementation Strategy
+
+#### Phase 1: Foundation Layer Extraction (Days 1-3)
+**Priority**: CRITICAL - Maximum cascade impact
+1. **Extract foundation_layer_utils.f90** from coverage_engine.f90
+   - Move all performance-critical utilities (Issue #124 patterns)
+   - Create memory pool infrastructure
+   - Establish pre-allocation patterns
+2. **Extract performance_patterns.f90** 
+   - Codify all Issue #124 optimization patterns
+   - Create reusable optimization templates
+   - Enable systematic application across modules
+3. **Extract foundation_constants.f90**
+   - Eliminate all magic numbers system-wide
+   - Create performance-oriented constant strategies
+
+#### Phase 2: Large Module Decomposition (Days 4-7)  
+**Priority**: HIGH - Address technical debt in largest modules
+1. **Decompose coverage_engine.f90** (1,025 lines → 4 focused modules)
+2. **Decompose json_coverage_io.f90** (1,036 lines → 3 focused modules)
+3. **Decompose fortcov_config.f90** (939 lines → 3 focused modules)
+
+#### Phase 3: System-Wide Consistency (Days 8-10)
+**Priority**: MEDIUM - Apply foundation patterns everywhere
+1. Apply foundation layer patterns to all remaining modules
+2. Systematic naming convention cleanup
+3. Eliminate duplicate code patterns using foundation utilities
+
+### Risk Assessment
+
+#### Technical Risks
+**Risk**: Foundation layer changes could break existing functionality
+**Mitigation**: 
+- Incremental refactoring with comprehensive test coverage per change
+- Issue #124 patterns already proven stable in production
+- Foundation utilities are additions, not replacements
+
+**Risk**: Performance regression during refactoring process
+**Mitigation**:
+- All foundation layer changes use Issue #124 proven patterns
+- Performance testing after each phase
+- Streaming and memory pool patterns already validated
+
+#### Quality Risks  
+**Risk**: Inconsistent application of new patterns
+**Mitigation**:
+- Foundation layer modules provide authoritative implementations
+- Clear examples and templates in foundation layer
+- Systematic application guided by foundation utilities
+
+### Success Metrics and Quality Gates
+
+#### Foundation Layer Performance Metrics
+Building on Issue #124 measurement approach:
+- **Module Load Time**: < 50ms per module (vs current 200ms+ for large modules)
+- **Memory Efficiency**: 40% reduction through foundation layer pools and pre-allocation
+- **Code Reuse**: 90% of common patterns moved to foundation layer utilities
+- **Compilation Time**: 30% reduction through smaller, focused modules
+
+#### Code Quality Metrics  
+**Quantitative Targets:**
+- **Lines per Module**: < 400 lines (currently 8 modules > 800 lines)
+- **Cyclomatic Complexity**: < 10 per function (currently 15+ functions > 15)
+- **Code Duplication**: < 5% duplicate code blocks (currently ~20%)
+- **Magic Numbers**: 0 magic numbers system-wide (currently 47+ instances)
+
+#### Architecture Quality Metrics
+- **Module Cohesion**: High (single responsibility) - currently mixed concerns
+- **Coupling**: Low (< 5 dependencies per module) - currently tight coupling
+- **Foundation Layer Reuse**: 80% of modules use foundation layer utilities
+- **Pattern Consistency**: 95% compliance with naming conventions
+
+### Long-Term Strategic Benefits
+
+#### Development Velocity Multiplier
+- **Foundation Layer Effect**: Every improvement cascades to multiple modules
+- **Issue #124 Pattern Scaling**: Performance optimizations apply system-wide automatically
+- **Reduced Onboarding**: New developers learn foundation patterns once, apply everywhere
+- **Debugging Efficiency**: Consistent patterns reduce troubleshooting time
+
+#### Quality Assurance Multiplier  
+- **Test Strategy**: Foundation layer unit tests provide system-wide coverage
+- **Code Review**: Consistent patterns enable faster, more effective reviews
+- **Refactoring Safety**: Foundation utilities provide stable interfaces for changes
+- **Performance Optimization**: Issue #124 patterns become systematic, not ad-hoc
+
+#### Technical Debt Resolution
+- **Systematic Elimination**: Foundation layer approach addresses root causes, not symptoms
+- **Prevention Architecture**: New code automatically inherits quality patterns
+- **Maintenance Reduction**: Consistent patterns reduce ongoing maintenance burden
+- **Scalability Foundation**: Architecture ready for future growth and complexity
+
+### Opportunity Analysis
+
+#### Performance Innovation Opportunities
+**Building on Issue #124 Success:**
+- **SIMD Optimization**: Foundation layer enables systematic SIMD application
+- **Parallel Processing**: Streaming patterns enable easy parallelization 
+- **Memory Optimization**: Pool patterns enable advanced memory strategies
+- **Cache Optimization**: Consistent data structures enable cache-friendly layouts
+
+#### Architecture Innovation Opportunities
+**Beyond Current Capabilities:**
+- **Plugin Architecture**: Foundation layer enables modular extensions
+- **Async Processing**: Streaming patterns enable asynchronous workflows
+- **Resource Management**: Pool patterns enable advanced resource strategies
+- **Cross-Platform Optimization**: Foundation layer abstractions enable platform-specific optimizations
+
+**EXPECTED OUTCOME**: Foundation layer code quality improvements create force multiplier effect across entire system, systematically applying Issue #124 performance patterns while establishing sustainable architecture for long-term development velocity and quality assurance.

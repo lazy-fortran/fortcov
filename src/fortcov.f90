@@ -3,12 +3,28 @@ module fortcov
   use coverage_engine, only: analyze_coverage, EXIT_SUCCESS, EXIT_FAILURE, &
                              EXIT_THRESHOLD_NOT_MET, EXIT_NO_COVERAGE_DATA
   use gcov_command_executor, only: gcov_executor_t
+  use atomic_temp_file_manager, only: secure_temp_file_t
+  use system_diff_converter
+  use unicode_secure_validator
+  use command_timeout_manager
+  use error_handling
+  use file_utils
+  use input_validation
+  use data_transformer
+  use theme_manager
+  use tui_main_loop
+  use syntax_highlighter
+  use coverage_discovery
+  use coverage_diff
+  use report_engine
+  use secure_command_executor
   implicit none
   private
 
   public :: run_coverage_analysis
   public :: config_t, parse_config, show_help, show_version
   public :: gcov_executor_t
+  public :: secure_temp_file_t
   public :: EXIT_SUCCESS, EXIT_FAILURE, EXIT_THRESHOLD_NOT_MET, &
            EXIT_NO_COVERAGE_DATA
 contains

@@ -11,6 +11,9 @@ module string_utils
     public :: validate_string_input
     public :: sanitize_filename
     public :: is_safe_path
+    public :: to_lower
+    public :: matches_pattern
+    public :: check_exclude_patterns_list
     
 contains
 
@@ -207,15 +210,6 @@ contains
                  char == achar(10) .or. char == achar(13))  ! newline, carriage return
     end function is_whitespace_char
 
-    ! Helper function to convert integer to string
-    function int_to_string(int_val) result(str)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str
-        character(len=20) :: buffer
-        
-        write(buffer, '(I0)') int_val
-        str = trim(buffer)
-    end function int_to_string
 
     ! Security: Validate string input for safety constraints
     function validate_string_input(input_str, max_length) result(is_valid)
@@ -311,5 +305,121 @@ contains
             return
         end if
     end function is_safe_path
+
+    ! Convert string to lowercase (helper function)
+    function to_lower(str) result(lower_str)
+        character(len=*), intent(in) :: str
+        character(len=len(str)) :: lower_str
+        integer :: i, ascii_val
+        
+        lower_str = str
+        do i = 1, len(str)
+            ascii_val = ichar(str(i:i))
+            if (ascii_val >= 65 .and. ascii_val <= 90) then  ! A-Z
+                lower_str(i:i) = char(ascii_val + 32)
+            end if
+        end do
+    end function to_lower
+
+    ! Simple pattern matching (supports * wildcard)
+    function matches_pattern(filepath, pattern) result(matches)
+        character(len=*), intent(in) :: filepath
+        character(len=*), intent(in) :: pattern
+        logical :: matches
+        
+        character(len=:), allocatable :: pattern_trimmed, filepath_trimmed
+        integer :: star_pos, prefix_len, suffix_len
+        integer :: second_star_pos
+        
+        ! Use case-sensitive matching to maintain backward compatibility
+        pattern_trimmed = trim(pattern)
+        filepath_trimmed = trim(filepath)
+        
+        ! Handle edge cases first
+        if (len(pattern_trimmed) == 0) then
+            ! Empty pattern only matches empty filepath
+            matches = (len(filepath_trimmed) == 0)
+            return
+        end if
+        
+        if (len(filepath_trimmed) == 0) then
+            ! Empty filepath only matches empty pattern or single "*"
+            matches = (pattern_trimmed == "*")
+            return
+        end if
+        
+        star_pos = index(pattern_trimmed, "*")
+        
+        if (star_pos == 0) then
+            ! No wildcard, exact match
+            matches = (filepath_trimmed == pattern_trimmed)
+        else if (star_pos == len(pattern_trimmed)) then
+            ! Pattern ends with *, check prefix
+            prefix_len = star_pos - 1
+            if (prefix_len == 0) then
+                ! Just "*", matches everything non-empty
+                matches = .true.
+            else if (len(filepath_trimmed) >= prefix_len) then
+                matches = (filepath_trimmed(1:prefix_len) == pattern_trimmed(1:prefix_len))
+            else
+                matches = .false.
+            end if
+        else if (star_pos == 1) then
+            ! Pattern starts with *, check for second wildcard
+            second_star_pos = index(pattern_trimmed(2:), "*")
+            if (second_star_pos == 0) then
+                ! Pattern is "*suffix", check suffix
+                suffix_len = len(pattern_trimmed) - 1
+                if (suffix_len == 0) then
+                    ! Just "*", matches everything
+                    matches = .true.
+                else if (len(filepath_trimmed) >= suffix_len) then
+                    matches = (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
+                              pattern_trimmed(2:))
+                else
+                    matches = .false.
+                end if
+            else
+                ! Pattern is "*middle*", check if middle is contained in filepath
+                ! Extract the middle part (between the two asterisks)
+                ! second_star_pos is relative to pattern_trimmed(2:), so adjust
+                matches = (index(filepath_trimmed, pattern_trimmed(2:1+second_star_pos-1)) > 0)
+            end if
+        else
+            ! Wildcard in middle - check both prefix and suffix match
+            prefix_len = star_pos - 1
+            suffix_len = len(pattern_trimmed) - star_pos
+            if (len(filepath_trimmed) >= prefix_len + suffix_len) then
+                matches = (filepath_trimmed(1:prefix_len) == pattern_trimmed(1:prefix_len)) .and. &
+                         (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
+                          pattern_trimmed(star_pos + 1:))
+            else
+                matches = .false.
+            end if
+        end if
+    end function matches_pattern
+
+    ! Check if filepath matches any exclude pattern in a list
+    function check_exclude_patterns_list(filepath, exclude_patterns) result(should_exclude)
+        character(len=*), intent(in) :: filepath
+        character(len=*), intent(in) :: exclude_patterns(:)
+        logical :: should_exclude
+        
+        integer :: i
+        
+        should_exclude = .false.
+        
+        ! Check if exclude patterns are empty
+        if (size(exclude_patterns) == 0) then
+            return
+        end if
+        
+        do i = 1, size(exclude_patterns)
+            if (matches_pattern(filepath, exclude_patterns(i))) then
+                should_exclude = .true.
+                return
+            end if
+        end do
+    end function check_exclude_patterns_list
 
 end module string_utils
