@@ -89,3 +89,6 @@ echo
 echo "=== FPM Integration Complete ==="
 echo "This example demonstrates DESIGN.md Pattern 2 for FPM integration."
 echo "The workflow: fpm test (with coverage flags) → gcov → fortcov"
+echo
+echo "For simpler usage, use the bridge script:"
+echo "../../../../scripts/fpm_coverage_bridge.sh root coverage.md"

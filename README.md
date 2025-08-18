@@ -37,6 +37,8 @@ fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
 ./scripts/fpm_coverage_bridge.sh src coverage.md
 ```
 
+The bridge script handles all FPM build directory complexity automatically while maintaining the simple README patterns.
+
 That's it! Open `coverage.md` to see your coverage report.
 
 ## Installation
@@ -559,6 +561,8 @@ cd "$BUILD_DIR" && gcov *.gcno
 fortcov --source="$BUILD_DIR" --output=coverage.md
 ```
 
+**Recommended**: Use Pattern 2 (bridge script) for consistent results and automatic error handling.
+
 **Complete working examples**: See [examples/build_systems/fpm/](examples/build_systems/fpm/) for all FPM integration patterns.
 
 ### CMake Integration
@@ -634,23 +638,27 @@ jobs:
         fpm test --flag "-fprofile-arcs -ftest-coverage"
     - name: Generate coverage report
       run: |
-        # Extract coverage from FPM build directories
-        BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
-        if [ -n "$BUILD_DIR" ]; then
-          cd "$BUILD_DIR" && gcov *.gcno && cd -
-          find build -name "*.gcov" -exec cp {} . \;
-        else
-          echo "No coverage data found - using fallback"
-          gcov src/*.f90 2>/dev/null || true
-        fi
-        # Verify .gcov files exist
-        find . -name "*.gcov" -type f | head -5
-        # Run coverage analysis
-        if find build -name "fortcov" -type f -executable | head -1 | xargs test -x; then
-          $(find build -name "fortcov" -type f -executable | head -1) --source=. --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
-        else
-          fpm run fortcov -- --source=. --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
-        fi
+        # Option 1: Use bridge script (recommended for consistency)
+        chmod +x scripts/fpm_coverage_bridge.sh
+        ./scripts/fpm_coverage_bridge.sh root coverage.md
+        
+        # Option 2: Manual FPM build directory extraction
+        # BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
+        # if [ -n "$BUILD_DIR" ]; then
+        #   cd "$BUILD_DIR" && gcov *.gcno && cd -
+        #   find build -name "*.gcov" -exec cp {} . \;
+        # else
+        #   echo "No coverage data found - using fallback"
+        #   gcov src/*.f90 2>/dev/null || true
+        # fi
+        # # Verify .gcov files exist
+        # find . -name "*.gcov" -type f | head -5
+        # # Run coverage analysis
+        # if find build -name "fortcov" -type f -executable | head -1 | xargs test -x; then
+        #   $(find build -name "fortcov" -type f -executable | head -1) --source=. --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
+        # else
+        #   fpm run fortcov -- --source=. --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
+        # fi
     - name: Upload coverage
       uses: actions/upload-artifact@v3
       with:
@@ -665,10 +673,14 @@ coverage:
   script:
     - fpm build --flag "-fprofile-arcs -ftest-coverage"
     - fpm test --flag "-fprofile-arcs -ftest-coverage"  
-    - BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
-    - if [ -n "$BUILD_DIR" ]; then cd "$BUILD_DIR" && gcov *.gcno && cd -; find build -name "*.gcov" -exec cp {} . \;; fi
-    - find . -name "*.gcov" -type f | wc -l
-    - fpm run fortcov -- --source=. --exclude='build/*,test/*' --output=coverage.md --quiet
+    # Option 1: Use bridge script (recommended)
+    - chmod +x scripts/fpm_coverage_bridge.sh
+    - ./scripts/fpm_coverage_bridge.sh root coverage.md
+    # Option 2: Manual extraction (fallback)
+    # - BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
+    # - if [ -n "$BUILD_DIR" ]; then cd "$BUILD_DIR" && gcov *.gcno && cd -; find build -name "*.gcov" -exec cp {} . \;; fi
+    # - find . -name "*.gcov" -type f | wc -l
+    # - fpm run fortcov -- --source=. --exclude='build/*,test/*' --output=coverage.md --quiet
   artifacts:
     paths:
       - coverage.md

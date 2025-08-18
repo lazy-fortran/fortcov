@@ -24,5 +24,8 @@ Functions:
 - **Covered**: 8
 - **Coverage**: 80.0%
 
-**Note**: This is a demonstration output. In real usage, run:
+**Note**: This is a demonstration output. In real usage, use the bridge script:
+`../../../../scripts/fpm_coverage_bridge.sh root coverage.md`
+
+Or manual FPM pattern:
 `fortcov --source=. --exclude=build/*,test/* --output=coverage.md`
