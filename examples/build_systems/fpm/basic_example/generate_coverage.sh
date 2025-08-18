@@ -19,9 +19,30 @@ echo "Command: fpm test --flag \"-fprofile-arcs -ftest-coverage\""
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 echo
-echo "Step 2: Extracting coverage data from build directories..."
-echo "Command: gcov src/*.f90"
-gcov src/*.f90
+echo "Step 2: Extracting coverage data from FPM build directories..."
+echo "Finding coverage files in build directory..."
+
+# Find the FPM build directory with coverage files
+BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
+if [ -z "$BUILD_DIR" ]; then
+    echo "Error: No coverage data files (.gcda) found in build directory"
+    echo "Make sure FPM compiled with coverage flags: --flag \"-fprofile-arcs -ftest-coverage\""
+    exit 1
+fi
+
+echo "Found coverage data in: $BUILD_DIR"
+
+# Change to build directory and generate gcov files
+cd "$BUILD_DIR"
+echo "Command: gcov *.gcno"
+gcov *.gcno
+
+# Move generated .gcov files back to project root for analysis  
+echo "Moving .gcov files to project root..."
+mv *.gcov ../../../
+
+# Return to project root
+cd ../../../
 
 echo
 echo "Step 3: Analyzing with fortcov..."
