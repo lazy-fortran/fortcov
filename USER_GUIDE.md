@@ -264,8 +264,8 @@ build:
   image: gcc:11
   before_script:
     - apt-get update && apt-get install -y wget
-    - wget https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz
-    - tar -xzf fpm-linux.tar.gz && chmod +x fpm && mv fpm /usr/local/bin/
+    - wget https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12
+    - chmod +x fpm-0.12.0-linux-x86_64-gcc-12 && mv fpm-0.12.0-linux-x86_64-gcc-12 /usr/local/bin/fpm
   script:
     - fpm build --flag "-fprofile-arcs -ftest-coverage"
   artifacts:

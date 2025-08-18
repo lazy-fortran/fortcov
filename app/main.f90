@@ -58,7 +58,7 @@ program main
     end if
     print *, "📚 For configuration help:"
     print *, "   • See example: cat fortcov.nml.example"
-    print *, "   • Documentation: https://github.com/krystophny/fortcov"
+    print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
     call exit(EXIT_FAILURE)
   end if
   

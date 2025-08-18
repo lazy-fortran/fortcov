@@ -12,7 +12,8 @@ sudo apt install gfortran  # Ubuntu/Debian
 # or: brew install gcc      # macOS
 
 # 2. Install FPM
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
+chmod +x /tmp/fpm
 sudo mv /tmp/fpm /usr/local/bin/
 
 # 3. Install FortCov
@@ -43,7 +44,8 @@ sudo apt install -y build-essential gfortran git curl
 
 ```bash
 # Method 1: Download binary (recommended)
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
+chmod +x /tmp/fpm
 sudo mv /tmp/fpm /usr/local/bin/
 chmod +x /usr/local/bin/fpm
 
@@ -107,7 +109,8 @@ sudo dnf install gcc-gfortran git curl
 
 ```bash
 # Download and install FPM
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
+chmod +x /tmp/fpm
 sudo mv /tmp/fpm /usr/local/bin/
 chmod +x /usr/local/bin/fpm
 ```
@@ -401,8 +404,8 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install FPM
-RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | \
-    tar -xz -C /usr/local/bin
+RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /usr/local/bin/fpm && \
+    chmod +x /usr/local/bin/fpm
 
 # Install FortCov
 RUN git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov && \
@@ -635,7 +638,8 @@ chmod +x test-installation.sh
 ls -la /usr/local/bin/fpm
 
 # If missing, reinstall:
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
+chmod +x /tmp/fpm
 sudo mv /tmp/fpm /usr/local/bin/
 chmod +x /usr/local/bin/fpm
 ```

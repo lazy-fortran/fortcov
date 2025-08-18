@@ -778,8 +778,8 @@ contains
         print *, "  4️⃣  Create report:        fortcov -s src -o coverage.md"
         print *, "  5️⃣  View your results:    cat coverage.md"
         print *, ""
-        print *, "📚 Documentation: https://github.com/krystophny/fortcov"
-        print *, "🐛 Issues & Support: https://github.com/krystophny/fortcov/issues"
+        print *, "📚 Documentation: https://github.com/lazy-fortran/fortcov"
+        print *, "🐛 Issues & Support: https://github.com/lazy-fortran/fortcov/issues"
     end subroutine show_help
 
     subroutine show_version()
@@ -795,7 +795,7 @@ contains
         print *, ""
         print *, "🏗️  Built for modern Fortran with security & performance in mind"
         print *, "📝 Copyright (c) 2025 FortCov Contributors"
-        print *, "📖 Documentation: https://github.com/krystophny/fortcov"
+        print *, "📖 Documentation: https://github.com/lazy-fortran/fortcov"
     end subroutine show_version
 
     subroutine initialize_config(config)

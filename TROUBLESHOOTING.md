@@ -585,7 +585,7 @@ docker run --rm -it ubuntu:22.04 bash
 
 - name: Build FortCov
   run: |
-    git clone https://github.com/krystophny/fortcov.git /tmp/fortcov
+    git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov
     cd /tmp/fortcov
     fpm build --profile release
     sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
@@ -614,7 +614,7 @@ RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-
 COPY . /app
 WORKDIR /app
 
-RUN git clone https://github.com/krystophny/fortcov.git /tmp/fortcov && \
+RUN git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov && \
     cd /tmp/fortcov && \
     fpm build --profile release && \
     cp build/gfortran_*/app/fortcov /usr/local/bin/
@@ -660,7 +660,7 @@ echo "Debug report saved to: fortcov-debug.txt"
 
 ### Support Resources
 
-1. **Check existing issues**: [GitHub Issues](https://github.com/krystophny/fortcov/issues)
+1. **Check existing issues**: [GitHub Issues](https://github.com/lazy-fortran/fortcov/issues)
 2. **Read documentation**: README.md, USER_GUIDE.md, CONFIGURATION.md  
 3. **Try minimal example**: Use test project to isolate issue
 4. **Submit bug report**: Include debug information and minimal reproduction

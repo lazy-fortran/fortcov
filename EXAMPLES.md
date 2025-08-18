@@ -224,12 +224,13 @@ jobs:
       
     - name: Install FPM
       run: |
-        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
+        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
+        chmod +x /tmp/fpm
         sudo mv /tmp/fpm /usr/local/bin/
         
     - name: Install FortCov
       run: |
-        git clone https://github.com/krystophny/fortcov.git /tmp/fortcov
+        git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov
         cd /tmp/fortcov && fpm build --profile release
         sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
         
@@ -684,9 +685,10 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update && sudo apt install -y gfortran jq
-        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
+        curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
+        chmod +x /tmp/fpm
         sudo mv /tmp/fpm /usr/local/bin/
-        git clone https://github.com/krystophny/fortcov.git /tmp/fortcov
+        git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov
         cd /tmp/fortcov && fpm build --profile release
         sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
         
