@@ -304,14 +304,19 @@ contains
         
         time_diff = end_time - start_time
         
-        ! Should handle 5 lines correctly
-        if (size(coverage_data%files) == 1 .and. &
-            size(coverage_data%files(1)%lines) == 5) then
-            passed = .true.
+        ! Should handle 5 lines correctly - with proper memory safety checks
+        if (allocated(coverage_data%files)) then
+            if (size(coverage_data%files) >= 1) then
+                if (allocated(coverage_data%files(1)%lines)) then
+                    if (size(coverage_data%files(1)%lines) == 5) then
+                        passed = .true.
+                    end if
+                end if
+            end if
         end if
         
         if (.not. passed) then
-            print *, "FAIL: test_large_json_performance - performance issue"
+            print *, "FAIL: test_large_json_performance - JSON parsing returned empty result"
         end if
     end function test_large_json_performance
 

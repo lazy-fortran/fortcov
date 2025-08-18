@@ -161,14 +161,18 @@ contains
         
         result = '{"files": ['
         
-        do i = 1, size(coverage_data%files)
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
             if (i > 1) result = result // ', '
             
             result = result // '{"filename": "' // &
                     trim(coverage_data%files(i)%filename) // '", "lines": ['
             
-            ! Add lines
-            do j = 1, size(coverage_data%files(i)%lines)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(i)%lines)) then
+                    ! Add lines
+                    do j = 1, size(coverage_data%files(i)%lines)
                 if (j > 1) result = result // ', '
                 
                 block
@@ -186,17 +190,18 @@ contains
                         ', "is_executable": ', bool_str, '}'
                 end block
                 
-                result = result // trim(line_buffer)
-            end do
+                        result = result // trim(line_buffer)
+                    end do
+                end if
+                
+                result = result // ']'
             
-            result = result // ']'
-            
-            ! Add functions if they exist
-            if (allocated(coverage_data%files(i)%functions)) then
-                if (size(coverage_data%files(i)%functions) > 0) then
-                    result = result // ', "functions": ['
-                    
-                    do j = 1, size(coverage_data%files(i)%functions)
+                ! Add functions if they exist
+                if (allocated(coverage_data%files(i)%functions)) then
+                    if (size(coverage_data%files(i)%functions) > 0) then
+                        result = result // ', "functions": ['
+                        
+                        do j = 1, size(coverage_data%files(i)%functions)
                         if (j > 1) result = result // ', '
                         
                         block
@@ -222,15 +227,17 @@ contains
                                 trim(coverage_data%files(i)%functions(j)%filename), '"}'
                         end block
                         
-                        result = result // trim(func_buffer)
-                    end do
-                    
-                    result = result // ']'
+                            result = result // trim(func_buffer)
+                        end do
+                        
+                        result = result // ']'
+                    end if
                 end if
-            end if
-            
-            result = result // '}'
-        end do
+                
+                result = result // '}'
+            end do
+        end if
+        
         
         result = result // ']}'
         json_output = result
@@ -447,7 +454,13 @@ contains
         if (error_caught) return
         
         ! Initialize coverage data with parsed files
-        call data%init(files)
+        if (files_count > 0) then
+            call data%init(files(1:files_count))
+        else
+            call data%init()
+        end if
+        
+        if (allocated(files)) deallocate(files)
     end subroutine parse_coverage_array
 
     ! Skip to specified key in JSON object
@@ -536,8 +549,11 @@ contains
         end do
         
         ! Allocate and copy files
-        allocate(files(files_count))
-        files(1:files_count) = temp_files(1:files_count)
+        if (files_count > 0) then
+            allocate(files, source=temp_files(1:files_count))
+        else
+            allocate(files(0))
+        end if
     end subroutine parse_files_array
 
     ! Parse individual file object from JSON
@@ -553,8 +569,12 @@ contains
         type(coverage_line_t), allocatable :: lines(:)
         type(coverage_function_t), allocatable :: functions(:)
         integer :: lines_count, functions_count
+        integer :: object_start_pos
+        logical :: filename_found, lines_found
         
         error_caught = .false.
+        filename_found = .false.
+        lines_found = .false.
         
         ! Expect opening brace
         if (current_pos > token_count .or. tokens(current_pos)%value /= '{') then
@@ -562,28 +582,26 @@ contains
             return
         end if
         current_pos = current_pos + 1
+        object_start_pos = current_pos
         
-        ! Parse filename
-        call skip_to_key(tokens, current_pos, token_count, 'filename', error_caught)
-        if (error_caught) return
-        
-        if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_STRING) then
+        ! Parse filename - try from current position
+        call try_parse_key_value(tokens, object_start_pos, token_count, 'filename', &
+                                filename, filename_found)
+        if (.not. filename_found) then
             error_caught = .true.
             return
         end if
-        filename = tokens(current_pos)%value
-        current_pos = current_pos + 1
         
-        ! Parse lines
-        call skip_to_key(tokens, current_pos, token_count, 'lines', error_caught)
-        if (error_caught) return
+        ! Parse lines - try from object start
+        call try_parse_lines_field(tokens, object_start_pos, token_count, filename, &
+                                  lines, lines_count, current_pos, lines_found)
+        if (.not. lines_found) then
+            error_caught = .true.
+            return
+        end if
         
-        call parse_lines_array(tokens, current_pos, token_count, filename, lines, &
-                             lines_count, error_caught)
-        if (error_caught) return
-        
-        ! Try to parse functions (optional)
-        call try_parse_functions_array(tokens, current_pos, token_count, filename, &
+        ! Try to parse functions (optional) - try from object start
+        call try_parse_functions_array(tokens, object_start_pos, token_count, filename, &
                                      functions, functions_count)
         
         ! Skip to closing brace
@@ -668,11 +686,14 @@ contains
         end do
         
         ! Allocate and copy lines
-        allocate(lines(lines_count))
-        lines(1:lines_count) = temp_lines(1:lines_count)
+        if (lines_count > 0) then
+            allocate(lines, source=temp_lines(1:lines_count))
+        else
+            allocate(lines(0))
+        end if
     end subroutine parse_lines_array
 
-    ! Parse individual line object from JSON
+    ! Parse individual line object from JSON with field order independence
     subroutine parse_line_object(tokens, current_pos, token_count, filename, line_obj, &
                                & error_caught)
         type(json_token_t), intent(in) :: tokens(:)
@@ -684,8 +705,14 @@ contains
         
         integer :: line_number, execution_count
         logical :: is_executable
+        integer :: object_start_pos
+        logical :: line_number_found, execution_count_found, is_executable_found
+        character(len=:), allocatable :: temp_value
         
         error_caught = .false.
+        line_number_found = .false.
+        execution_count_found = .false.
+        is_executable_found = .false.
         
         ! Expect opening brace
         if (current_pos > token_count .or. tokens(current_pos)%value /= '{') then
@@ -693,56 +720,31 @@ contains
             return
         end if
         current_pos = current_pos + 1
+        object_start_pos = current_pos
         
-        ! Parse line_number
-        call skip_to_key(tokens, current_pos, token_count, 'line_number', error_caught)
-        if (error_caught) return
-        
-        if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_NUMBER) then
+        ! Parse line_number from any position in object
+        call try_parse_integer_key(tokens, object_start_pos, token_count, 'line_number', &
+                                  line_number, line_number_found)
+        if (.not. line_number_found) then
             error_caught = .true.
             return
         end if
-        block
-            integer :: iostat_val
-            read(tokens(current_pos)%value, *, iostat=iostat_val) line_number
-            if (iostat_val /= 0) then
-                error_caught = .true.
-                return
-            end if
-        end block
-        current_pos = current_pos + 1
         
-        ! Parse execution_count
-        call skip_to_key(tokens, current_pos, token_count, &
-                         'execution_count', error_caught)
-        if (error_caught) return
-        
-        if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_NUMBER) then
+        ! Parse execution_count from any position in object
+        call try_parse_integer_key(tokens, object_start_pos, token_count, 'execution_count', &
+                                  execution_count, execution_count_found)
+        if (.not. execution_count_found) then
             error_caught = .true.
             return
         end if
-        block
-            integer :: iostat_val
-            read(tokens(current_pos)%value, *, iostat=iostat_val) execution_count
-            if (iostat_val /= 0) then
-                error_caught = .true.
-                return
-            end if
-        end block
-        current_pos = current_pos + 1
         
-        ! Parse is_executable
-        call skip_to_key(tokens, current_pos, token_count, &
-                         'is_executable', error_caught)
-        if (error_caught) return
-        
-        if (current_pos > token_count .or. &
-            tokens(current_pos)%type /= JSON_BOOLEAN) then
+        ! Parse is_executable from any position in object
+        call try_parse_boolean_key(tokens, object_start_pos, token_count, 'is_executable', &
+                                  is_executable, is_executable_found)
+        if (.not. is_executable_found) then
             error_caught = .true.
             return
         end if
-        is_executable = (tokens(current_pos)%value == 'true')
-        current_pos = current_pos + 1
         
         ! Skip to closing brace
         do while (current_pos <= token_count .and. tokens(current_pos)%value /= '}')
@@ -929,5 +931,141 @@ contains
                           line_number, filename)
         error_caught = .false.
     end subroutine parse_function_object
+
+    ! Helper subroutine to parse any key-value pair of string type
+    subroutine try_parse_key_value(tokens, start_pos, token_count, key_name, value, found)
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(in) :: start_pos, token_count
+        character(len=*), intent(in) :: key_name
+        character(len=:), allocatable, intent(out) :: value
+        logical, intent(out) :: found
+        
+        integer :: pos
+        
+        found = .false.
+        pos = start_pos
+        
+        do while (pos <= token_count)
+            if (tokens(pos)%type == JSON_STRING .and. &
+                tokens(pos)%value == key_name) then
+                pos = pos + 1  ! Skip key
+                if (pos <= token_count .and. tokens(pos)%value == ':') then
+                    pos = pos + 1  ! Skip colon
+                    if (pos <= token_count .and. tokens(pos)%type == JSON_STRING) then
+                        value = tokens(pos)%value
+                        found = .true.
+                        return
+                    end if
+                end if
+            end if
+            pos = pos + 1
+        end do
+    end subroutine try_parse_key_value
+    
+    ! Helper subroutine to parse integer key-value pairs
+    subroutine try_parse_integer_key(tokens, start_pos, token_count, key_name, value, found)
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(in) :: start_pos, token_count
+        character(len=*), intent(in) :: key_name
+        integer, intent(out) :: value
+        logical, intent(out) :: found
+        
+        integer :: pos
+        
+        found = .false.
+        pos = start_pos
+        
+        do while (pos <= token_count)
+            if (tokens(pos)%type == JSON_STRING .and. &
+                tokens(pos)%value == key_name) then
+                pos = pos + 1  ! Skip key
+                if (pos <= token_count .and. tokens(pos)%value == ':') then
+                    pos = pos + 1  ! Skip colon
+                    if (pos <= token_count .and. tokens(pos)%type == JSON_NUMBER) then
+                        block
+                            integer :: iostat_val
+                            read(tokens(pos)%value, *, iostat=iostat_val) value
+                            if (iostat_val == 0) then
+                                found = .true.
+                                return
+                            end if
+                        end block
+                    end if
+                end if
+            end if
+            pos = pos + 1
+        end do
+    end subroutine try_parse_integer_key
+    
+    ! Helper subroutine to parse boolean key-value pairs
+    subroutine try_parse_boolean_key(tokens, start_pos, token_count, key_name, value, found)
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(in) :: start_pos, token_count
+        character(len=*), intent(in) :: key_name
+        logical, intent(out) :: value
+        logical, intent(out) :: found
+        
+        integer :: pos
+        
+        found = .false.
+        pos = start_pos
+        
+        do while (pos <= token_count)
+            if (tokens(pos)%type == JSON_STRING .and. &
+                tokens(pos)%value == key_name) then
+                pos = pos + 1  ! Skip key
+                if (pos <= token_count .and. tokens(pos)%value == ':') then
+                    pos = pos + 1  ! Skip colon
+                    if (pos <= token_count .and. tokens(pos)%type == JSON_BOOLEAN) then
+                        value = (tokens(pos)%value == 'true')
+                        found = .true.
+                        return
+                    end if
+                end if
+            end if
+            pos = pos + 1
+        end do
+    end subroutine try_parse_boolean_key
+    
+    ! Helper subroutine to parse lines field from any position in object
+    subroutine try_parse_lines_field(tokens, start_pos, token_count, filename, lines, &
+                                    lines_count, final_pos, found)
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(in) :: start_pos, token_count
+        character(len=*), intent(in) :: filename
+        type(coverage_line_t), allocatable, intent(out) :: lines(:)
+        integer, intent(out) :: lines_count, final_pos
+        logical, intent(out) :: found
+        
+        integer :: pos
+        logical :: error_caught
+        
+        found = .false.
+        pos = start_pos
+        
+        do while (pos <= token_count)
+            if (tokens(pos)%type == JSON_STRING .and. &
+                tokens(pos)%value == 'lines') then
+                pos = pos + 1  ! Skip key
+                if (pos <= token_count .and. tokens(pos)%value == ':') then
+                    pos = pos + 1  ! Skip colon
+                    if (pos <= token_count .and. tokens(pos)%value == '[') then
+                        call parse_lines_array(tokens, pos, token_count, filename, &
+                                              lines, lines_count, error_caught)
+                        if (.not. error_caught) then
+                            found = .true.
+                            final_pos = pos
+                            return
+                        end if
+                    end if
+                end if
+            end if
+            pos = pos + 1
+        end do
+        
+        lines_count = 0
+        final_pos = start_pos
+        allocate(lines(0))
+    end subroutine try_parse_lines_field
 
 end module json_coverage_io
