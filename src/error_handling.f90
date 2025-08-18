@@ -13,6 +13,16 @@ module error_handling
     integer, parameter, public :: ERROR_CIRCULAR_DEPENDENCY = 1009
     integer, parameter, public :: ERROR_INCOMPLETE_COVERAGE = 1010
     integer, parameter, public :: ERROR_THRESHOLD_NOT_MET = 1011
+    
+    ! Input validation error codes (Issue #122)
+    integer, parameter, public :: ERROR_FILE_ACCESS = 1020
+    integer, parameter, public :: ERROR_MISSING_FILE = 1021
+    integer, parameter, public :: ERROR_FILE_TOO_LARGE = 1022
+    integer, parameter, public :: ERROR_EMPTY_FILE = 1023
+    integer, parameter, public :: ERROR_INVALID_DATA = 1024
+    integer, parameter, public :: ERROR_INVALID_PATH = 1025
+    integer, parameter, public :: ERROR_MEMORY_EXHAUSTION = 1026
+    
     integer, parameter, public :: ERROR_FATAL = 1999
     
     ! Maximum string lengths for error context
