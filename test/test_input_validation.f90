@@ -38,9 +38,7 @@ program test_input_validation
     call test_truncated_coverage_data()
     call test_corrupted_percentage_values()
     
-    ! Data normalization tests
-    call test_execution_count_normalization()
-    call test_percentage_value_clamping()
+    ! Data normalization tests moved to test_issue_122_input_validation.f90
     
     ! Report results
     write(*,*) ""
@@ -517,24 +515,8 @@ contains
         call test_pass(test_name)
     end subroutine
 
-    ! Test 12: Execution count normalization
-    ! Given: Valid but extreme execution count values
-    ! When: Processing coverage data
-    ! Then: Should normalize to reasonable ranges (NOW IMPLEMENTED)
-    subroutine test_execution_count_normalization()
-        character(len=*), parameter :: test_name = "Execution count normalization"
-        ! This would now be tested through mock gcov data - for now pass
-        call test_pass(test_name)
-    end subroutine
-
-    ! Test 13: Percentage value clamping
-    ! Given: Calculated percentages outside valid range
-    ! When: Computing coverage statistics
-    ! Then: Should clamp to [0.0, 100.0] range (NOW IMPLEMENTED)
-    subroutine test_percentage_value_clamping()
-        character(len=*), parameter :: test_name = "Percentage value clamping"
-        ! This would be tested through mock coverage data - for now pass
-        call test_pass(test_name)
-    end subroutine
+    ! NOTE: Execution count normalization and percentage value clamping
+    ! are now comprehensively tested in test_issue_122_input_validation.f90
+    ! These obsolete stub tests have been removed to eliminate redundancy
 
 end program test_input_validation
