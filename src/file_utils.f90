@@ -318,6 +318,7 @@ contains
         
         integer :: i, num_files
         logical :: file_error
+        character(len=:), allocatable :: temp_content
         
         num_files = size(filenames)
         
@@ -332,8 +333,14 @@ contains
         
         ! Process files in batch with optimized I/O patterns
         do i = 1, num_files
-            call read_file_content(filenames(i), contents(i), file_error)
+            call read_file_content(filenames(i), temp_content, file_error)
             success_flags(i) = .not. file_error
+            
+            if (.not. file_error) then
+                contents(i) = temp_content
+            else
+                contents(i) = ""
+            end if
             
             ! Early exit optimization: if this is a critical batch operation
             ! and any file fails, we could exit early (implementation dependent)
