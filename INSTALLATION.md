@@ -16,7 +16,7 @@ curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linu
 sudo mv /tmp/fpm /usr/local/bin/
 
 # 3. Install FortCov
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov
 fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
@@ -57,7 +57,7 @@ cd /tmp/fpm
 
 ```bash
 # Clone and build
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov
 fpm build --profile release
 
@@ -107,7 +107,7 @@ sudo dnf install gcc-gfortran git curl
 
 ```bash
 # Download and install FPM
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fmp-linux.tar.gz | tar -xz -C /tmp
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux.tar.gz | tar -xz -C /tmp
 sudo mv /tmp/fpm /usr/local/bin/
 chmod +x /usr/local/bin/fpm
 ```
@@ -115,7 +115,7 @@ chmod +x /usr/local/bin/fpm
 #### Install FortCov
 
 ```bash
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov  
 fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
@@ -153,7 +153,7 @@ fpm --version
 #### Install FortCov
 
 ```bash
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov
 fpm build --profile release
 
@@ -192,7 +192,7 @@ mv fpm.exe /usr/local/bin/
 #### Install FortCov
 
 ```bash
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov
 fpm build --profile release
 
@@ -405,7 +405,7 @@ RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-
     tar -xz -C /usr/local/bin
 
 # Install FortCov
-RUN git clone https://github.com/krystophny/fortcov.git /tmp/fortcov && \
+RUN git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov && \
     cd /tmp/fortcov && \
     fpm build --profile release && \
     cp build/gfortran_*/app/fortcov /usr/local/bin/ && \

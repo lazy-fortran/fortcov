@@ -33,7 +33,7 @@ That's it! Open `coverage.md` to see your coverage report.
 ### From Source (Recommended)
 
 ```bash
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov
 fpm build --profile release
 
@@ -181,8 +181,8 @@ fpm run -- --source=src --output=coverage.md
 # Option 2: Run directly  
 ./build/gfortran_*/app/fortcov --source=src
 
-# Option 3: Add to PATH
-export PATH="$PATH:$(pwd)/build/gfortran_*/app"
+# Option 3: Add to PATH (expand glob pattern first)
+export PATH="$PATH:$(echo $(pwd)/build/gfortran_*/app)"
 ```
 
 #### ❌ "Permission denied"
@@ -225,7 +225,7 @@ gcov src/*.f90
 - **Built-in help**: `fortcov --help`
 - **Validate config**: `fortcov --config=fortcov.nml --verbose`  
 - **Debug mode**: `fortcov --source=src --verbose` for detailed output
-- **GitHub Issues**: Report bugs at [github.com/krystophny/fortcov/issues](https://github.com/krystophny/fortcov/issues)
+- **GitHub Issues**: Report bugs at [github.com/krystophny/fortcov/issues](https://github.com/lazy-fortran/fortcov/issues)
 
 ## CI/CD Integration
 
@@ -279,7 +279,7 @@ We welcome contributions! For detailed development information see [DESIGN.md](D
 ### Quick Development Setup
 
 ```bash
-git clone https://github.com/krystophny/fortcov.git
+git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov
 
 # Build and test
@@ -303,5 +303,5 @@ fpm run -- --source=src --output=coverage.md
 ## Links
 
 - **Documentation**: [DESIGN.md](DESIGN.md) - Detailed architecture and design
-- **Issues**: [GitHub Issues](https://github.com/krystophny/fortcov/issues) - Bug reports and feature requests
+- **Issues**: [GitHub Issues](https://github.com/lazy-fortran/fortcov/issues) - Bug reports and feature requests
 - **FPM**: [Fortran Package Manager](https://github.com/fortran-lang/fpm) - Build system

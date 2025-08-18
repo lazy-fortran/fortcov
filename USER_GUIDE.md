@@ -207,7 +207,7 @@ jobs:
       
     - name: Install FortCov
       run: |
-        git clone https://github.com/krystophny/fortcov.git /tmp/fortcov
+        git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov
         cd /tmp/fortcov
         fpm build --profile release
         sudo ln -s $(pwd)/build/gfortran_*/app/fortcov /usr/local/bin/fortcov
@@ -292,7 +292,7 @@ coverage:
   dependencies:
     - test
   before_script:
-    - git clone https://github.com/krystophny/fortcov.git /tmp/fortcov
+    - git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov
     - cd /tmp/fortcov && fpm build --profile release
     - cp build/gfortran_*/app/fortcov /usr/local/bin/
   script:
@@ -327,7 +327,7 @@ pipeline {
             steps {
                 sh '''
                     if [ ! -f ${FORTCOV_PATH} ]; then
-                        git clone https://github.com/krystophny/fortcov.git /tmp/fortcov
+                        git clone https://github.com/lazy-fortran/fortcov.git /tmp/fortcov
                         cd /tmp/fortcov
                         fpm build --profile release
                         sudo cp build/gfortran_*/app/fortcov ${FORTCOV_PATH}
