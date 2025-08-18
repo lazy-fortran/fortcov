@@ -70,6 +70,7 @@ module coverage_reporter
     ! Mock reporter for testing
     type, extends(coverage_reporter_t) :: mock_reporter_t
         logical :: was_called = .false.
+        logical :: captured_quiet_mode = .false.
         type(coverage_data_t) :: captured_data
         character(len=:), allocatable :: captured_output_path
     contains
@@ -81,12 +82,13 @@ module coverage_reporter
     ! Abstract interfaces
     abstract interface
         subroutine generate_report_interface(this, coverage_data, output_path, &
-                                            error_flag)
+                                            error_flag, quiet_mode)
             import :: coverage_reporter_t, coverage_data_t
             class(coverage_reporter_t), intent(inout) :: this
             type(coverage_data_t), intent(in) :: coverage_data
             character(len=*), intent(in) :: output_path
             logical, intent(out) :: error_flag
+            logical, intent(in), optional :: quiet_mode
         end subroutine generate_report_interface
         
         function get_format_name_interface(this) result(format_name)
@@ -131,18 +133,27 @@ contains
 
     ! Markdown reporter implementations
     subroutine markdown_generate_report(this, coverage_data, output_path, &
-                                       error_flag)
+                                       error_flag, quiet_mode)
         class(markdown_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         character(len=:), allocatable :: report_content
         type(markdown_report_options_t) :: options
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Configure report options
         call options%init()
@@ -196,18 +207,27 @@ contains
 
     ! JSON reporter implementations
     subroutine json_generate_report(this, coverage_data, output_path, &
-                                   error_flag)
+                                   error_flag, quiet_mode)
         use coverage_statistics
         class(json_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         type(coverage_stats_t) :: line_stats, branch_stats, func_stats
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(coverage_data)
@@ -348,18 +368,28 @@ contains
     end function json_supports_diff
 
     ! XML reporter implementations
-    subroutine xml_generate_report(this, coverage_data, output_path, error_flag)
+    subroutine xml_generate_report(this, coverage_data, output_path, error_flag, &
+                                  quiet_mode)
         use coverage_statistics
         class(xml_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat, i, j
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         type(coverage_stats_t) :: line_stats, branch_stats, func_stats
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(coverage_data)
@@ -457,19 +487,29 @@ contains
     end function xml_supports_diff
 
     ! HTML reporter implementations
-    subroutine html_generate_report(this, coverage_data, output_path, error_flag)
+    subroutine html_generate_report(this, coverage_data, output_path, error_flag, &
+                                   quiet_mode)
         use coverage_statistics
         class(html_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat, i, j
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         type(coverage_stats_t) :: line_stats
         character(len=:), allocatable :: html_content, file_details, css_styles
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(coverage_data)
@@ -586,16 +626,25 @@ contains
     end function html_supports_diff
 
     ! Mock reporter implementations
-    subroutine mock_generate_report(this, coverage_data, output_path, error_flag)
+    subroutine mock_generate_report(this, coverage_data, output_path, error_flag, &
+                                   quiet_mode)
         class(mock_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         
         error_flag = .false.
         this%was_called = .true.
         this%captured_data = coverage_data
         this%captured_output_path = output_path
+        
+        ! Capture quiet mode for testing
+        if (present(quiet_mode)) then
+            this%captured_quiet_mode = quiet_mode
+        else
+            this%captured_quiet_mode = .false.
+        end if
     end subroutine mock_generate_report
 
     function mock_get_format_name(this) result(format_name)
