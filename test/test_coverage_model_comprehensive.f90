@@ -82,8 +82,10 @@ contains
         type(file_diff_t) :: file_diff
         type(line_diff_t), allocatable :: line_diffs(:)
         type(coverage_line_t) :: baseline_line, current_line
+        type(diff_thresholds_t) :: thresholds
         real :: confidence
         logical :: test1, test2
+        integer :: i
         
         print *, "  Test: Statistical confidence calculation"
         print *, "    Given: Files with different numbers of lines and coverage changes"
@@ -109,7 +111,6 @@ contains
         file_diff%coverage_percentage_delta = 50.0
         
         ! Apply threshold analysis
-        type(diff_thresholds_t) :: thresholds
         call thresholds%init()
         call file_diff%apply_threshold_analysis(thresholds)
         

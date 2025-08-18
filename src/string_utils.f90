@@ -73,9 +73,13 @@ contains
         integer, intent(in) :: precision
         character(len=:), allocatable :: formatted
         character(len=50) :: buffer, fmt
+        integer :: safe_precision
+        
+        ! Validate precision parameter (must be non-negative and reasonable)
+        safe_precision = max(0, min(precision, 10))  ! Clamp between 0 and 10
         
         ! Create format string with minimum width to ensure leading zero
-        write(fmt, '(A,I0,A,I0,A)') "(F", 4 + precision, ".", precision, ",A)"
+        write(fmt, '(A,I0,A,I0,A)') "(F", 4 + safe_precision, ".", safe_precision, ",A)"
         
         ! Format the value
         write(buffer, fmt) value, "%"
@@ -106,6 +110,13 @@ contains
         work_string = input_string
         count = 0
         start = 1
+        
+        ! Handle empty delimiter case - return original string
+        if (len(delimiter) == 0) then
+            allocate(character(len=len(input_string)) :: parts(1))
+            parts(1) = trim(input_string)
+            return
+        end if
         
         ! Count and extract parts
         do
