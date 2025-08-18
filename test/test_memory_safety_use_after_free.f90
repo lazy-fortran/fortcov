@@ -127,6 +127,10 @@ contains
         
         ! Setup basic config
         call initialize_config(config)
+        
+        ! Reallocate exclude_patterns with proper size before accessing
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
+        allocate(character(len=256) :: config%exclude_patterns(1))
         config%exclude_patterns(1) = "test_*.f90"
         
         passed = .true.
@@ -164,7 +168,15 @@ contains
         print *, "  Test 4: Repeated operations memory safety"
         
         call initialize_config(config)
+        
+        ! Reallocate source_paths with proper size before accessing
+        if (allocated(config%source_paths)) deallocate(config%source_paths)
+        allocate(character(len=256) :: config%source_paths(1))
         config%source_paths(1) = "."
+        
+        ! Reallocate exclude_patterns with proper size before accessing
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
+        allocate(character(len=256) :: config%exclude_patterns(2))
         config%exclude_patterns(1) = "*.mod"
         config%exclude_patterns(2) = "build/*"
         
