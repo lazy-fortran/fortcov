@@ -410,11 +410,11 @@ contains
         works = .true.  ! Placeholder
         
         ! Real implementation would:
-        ! 1. Execute the fmp run command exactly as documented
+        ! 1. Execute the fpm run command exactly as documented
         ! 2. Verify it produces the expected coverage output
         ! 3. Validate this is a working alternative to direct fortcov execution
         
-    end subroutine test_fmp_run_workaround
+    end subroutine test_fpm_run_workaround
     
     subroutine test_direct_executable_workaround(works)
         logical, intent(out) :: works

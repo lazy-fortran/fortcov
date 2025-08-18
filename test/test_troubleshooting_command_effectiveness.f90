@@ -30,7 +30,7 @@ program test_troubleshooting_command_effectiveness
     
     ! === COVERAGE FILES TROUBLESHOOTING COMMANDS ===
     call test_fpm_build_coverage_command()
-    call test_fmp_test_coverage_command()
+    call test_fpm_test_coverage_command()
     call test_gcov_command_variations()
     call test_find_gcov_files_command()
     
@@ -142,7 +142,7 @@ contains
         ! Test: gcov src/*.f90 (from project root)
         call test_gcov_from_root(root_gcov_works)
         
-        # Test: cd src && gcov *.f90 (change directory approach)
+        ! Test: cd src && gcov *.f90 (change directory approach)
         call test_gcov_from_src_dir(cd_gcov_works)
         
         all_variations_work = root_gcov_works .or. cd_gcov_works
@@ -325,7 +325,7 @@ contains
         
         call test_start(test_name)
         
-        # Test: chmod -R 644 src/
+        ! Test: chmod -R 644 src/
         call test_source_permission_fix(source_chmod_works)
         
         ! Test: chmod 755 $(dirname coverage.md)
@@ -422,15 +422,15 @@ contains
         ! Then: Should provide helpful information consistently
         
         character(len=*), parameter :: test_name = "Help Command Variations"
-        logical :: direct_help_works, fmp_help_works, help_consistent
+        logical :: direct_help_works, fpm_help_works, help_consistent
         
         call test_start(test_name)
         
         call test_direct_help_command(direct_help_works)
-        call test_fmp_run_help_command(fmp_help_works)
+        call test_fpm_run_help_command(fpm_help_works)
         call verify_help_output_consistent(help_consistent)
         
-        if ((direct_help_works .or. fmp_help_works) .and. help_consistent) then
+        if ((direct_help_works .or. fpm_help_works) .and. help_consistent) then
             call test_pass(test_name, "Help commands work and provide consistent information")
         else
             call test_fail(test_name, "Help command variations ineffective or inconsistent")
@@ -520,7 +520,7 @@ contains
         ! Real implementation would:
         ! 1. Execute the command exactly as documented
         ! 2. Capture exit code, stdout, and stderr
-        # 3. Set works based on successful execution
+        ! 3. Set works based on successful execution
         
     end subroutine execute_troubleshooting_command
     
@@ -531,7 +531,7 @@ contains
     
     subroutine verify_gcda_files_generated(generated)
         logical, intent(out) :: generated
-        generated = .true.  # Placeholder
+        generated = .true.  ! Placeholder
     end subroutine
     
     ! Additional verification helpers (all placeholder implementations)

@@ -117,7 +117,7 @@ contains
     end subroutine test_ci_cd_setup_user_journey
     
     subroutine test_large_project_user_journey()
-        # Given: User with large project encountering performance issues
+        ! Given: User with large project encountering performance issues
         ! When: Following large files troubleshooting and batch processing guidance
         ! Then: Should achieve coverage analysis despite file size challenges
         
@@ -166,7 +166,7 @@ contains
     
     subroutine test_error_message_to_solution_journey()
         ! Given: User receives specific error message
-        # When: Looking for solution in README troubleshooting section
+        ! When: Looking for solution in README troubleshooting section
         ! Then: Should find relevant guidance quickly and apply it successfully
         
         character(len=*), parameter :: test_name = "Error Message to Solution Journey"

@@ -165,7 +165,7 @@ contains
     subroutine test_unbuilt_project_scenario()
         ! Given: User tries to run coverage on unbuilt project
         ! When: No build artifacts or executables exist
-        # Then: Troubleshooting should guide through proper build process
+        ! Then: Troubleshooting should guide through proper build process
         
         character(len=*), parameter :: test_name = "Unbuilt Project Scenario"
         logical :: scenario_recreated, resolution_successful
@@ -191,7 +191,7 @@ contains
     
     subroutine test_gcov_files_wrong_location_scenario()
         ! Given: .gcov files exist but in unexpected location
-        # When: fortcov searches in documented location but files are elsewhere
+        ! When: fortcov searches in documented location but files are elsewhere
         ! Then: find command should help user locate files
         
         character(len=*), parameter :: test_name = "GCOV Files Wrong Location Scenario"
@@ -225,7 +225,7 @@ contains
     subroutine test_fortcov_not_built_scenario()
         ! Given: User runs fortcov before building the project
         ! When: fortcov executable doesn't exist
-        # Then: Command not found troubleshooting should guide to building first
+        ! Then: Command not found troubleshooting should guide to building first
         
         character(len=*), parameter :: test_name = "FortCov Not Built Scenario"
         logical :: scenario_recreated, build_guidance_works
@@ -384,7 +384,7 @@ contains
     end subroutine test_non_existent_source_path_scenario
     
     ! =================================================================
-    # LARGE FILE AND PERFORMANCE FAILURE SCENARIOS
+    ! LARGE FILE AND PERFORMANCE FAILURE SCENARIOS
     ! =================================================================
     
     subroutine test_extremely_large_gcov_files_scenario()
