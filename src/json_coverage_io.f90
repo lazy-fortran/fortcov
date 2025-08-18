@@ -161,14 +161,18 @@ contains
         
         result = '{"files": ['
         
-        do i = 1, size(coverage_data%files)
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
             if (i > 1) result = result // ', '
             
             result = result // '{"filename": "' // &
                     trim(coverage_data%files(i)%filename) // '", "lines": ['
             
-            ! Add lines
-            do j = 1, size(coverage_data%files(i)%lines)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(i)%lines)) then
+                    ! Add lines
+                    do j = 1, size(coverage_data%files(i)%lines)
                 if (j > 1) result = result // ', '
                 
                 block
@@ -186,17 +190,18 @@ contains
                         ', "is_executable": ', bool_str, '}'
                 end block
                 
-                result = result // trim(line_buffer)
-            end do
+                        result = result // trim(line_buffer)
+                    end do
+                end if
+                
+                result = result // ']'
             
-            result = result // ']'
-            
-            ! Add functions if they exist
-            if (allocated(coverage_data%files(i)%functions)) then
-                if (size(coverage_data%files(i)%functions) > 0) then
-                    result = result // ', "functions": ['
-                    
-                    do j = 1, size(coverage_data%files(i)%functions)
+                ! Add functions if they exist
+                if (allocated(coverage_data%files(i)%functions)) then
+                    if (size(coverage_data%files(i)%functions) > 0) then
+                        result = result // ', "functions": ['
+                        
+                        do j = 1, size(coverage_data%files(i)%functions)
                         if (j > 1) result = result // ', '
                         
                         block
@@ -222,15 +227,17 @@ contains
                                 trim(coverage_data%files(i)%functions(j)%filename), '"}'
                         end block
                         
-                        result = result // trim(func_buffer)
-                    end do
-                    
-                    result = result // ']'
+                            result = result // trim(func_buffer)
+                        end do
+                        
+                        result = result // ']'
+                    end if
                 end if
-            end if
-            
-            result = result // '}'
-        end do
+                
+                result = result // '}'
+            end do
+        end if
+        
         
         result = result // ']}'
         json_output = result

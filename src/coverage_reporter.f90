@@ -280,8 +280,16 @@ contains
         
         ! Process files with direct writing
         first_file = .true.
-        do i = 1, size(coverage_data%files)
-            line_count = size(coverage_data%files(i)%lines)
+        
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (.not. allocated(coverage_data%files(i)%lines)) then
+                    line_count = 0
+                else
+                    line_count = size(coverage_data%files(i)%lines)
+                end if
             
             ! Add file separator
             if (.not. first_file) then
@@ -320,9 +328,10 @@ contains
                 end if
             end do
             
-            ! Close file
-            write(unit, '(A)', advance='no') ']}'
-        end do
+                ! Close file
+                write(unit, '(A)', advance='no') ']}'
+            end do
+        end if
         
         ! FIXED: Issue #136 - Use simple closing bracket for diff compatibility
         write(unit, '(A)') ']}'
@@ -434,28 +443,34 @@ contains
         write(unit, '(A)') '      <classes>'
         
         ! File-level details
-        do i = 1, size(coverage_data%files)
-            write(unit, '(A,A,A)') '        <class name="', &
-                trim(coverage_data%files(i)%filename), '" filename="', &
-                trim(coverage_data%files(i)%filename), '"'
-            write(unit, '(A)') '               complexity="0.0">'
-            write(unit, '(A)') '          <methods/>'
-            write(unit, '(A)') '          <lines>'
-            
-            ! Line details
-            do j = 1, size(coverage_data%files(i)%lines)
-                if (coverage_data%files(i)%lines(j)%is_executable) then
-                    write(unit, '(A,I0,A,I0,A)') '            <line number="', &
-                        coverage_data%files(i)%lines(j)%line_number, &
-                        '" hits="', &
-                        coverage_data%files(i)%lines(j)%execution_count, &
-                        '" branch="false"/>'
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                write(unit, '(A,A,A)') '        <class name="', &
+                    trim(coverage_data%files(i)%filename), '" filename="', &
+                    trim(coverage_data%files(i)%filename), '"'
+                write(unit, '(A)') '               complexity="0.0">'
+                write(unit, '(A)') '          <methods/>'
+                write(unit, '(A)') '          <lines>'
+                
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(i)%lines)) then
+                    ! Line details
+                    do j = 1, size(coverage_data%files(i)%lines)
+                        if (coverage_data%files(i)%lines(j)%is_executable) then
+                            write(unit, '(A,I0,A,I0,A)') '            <line number="', &
+                                coverage_data%files(i)%lines(j)%line_number, &
+                                '" hits="', &
+                                coverage_data%files(i)%lines(j)%execution_count, &
+                                '" branch="false"/>'
+                        end if
+                    end do
                 end if
+                
+                write(unit, '(A)') '          </lines>'
+                write(unit, '(A)') '        </class>'
             end do
-            
-            write(unit, '(A)') '          </lines>'
-            write(unit, '(A)') '        </class>'
-        end do
+        end if
         
         write(unit, '(A)') '      </classes>'
         write(unit, '(A)') '    </package>'

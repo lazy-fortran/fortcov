@@ -669,18 +669,26 @@ contains
         end if
         
         ! Calculate overall summary
-        transformed_data%summary%total_files = size(coverage_data%files)
-        
-        ! Sum up line counts and coverage
-        do i = 1, size(coverage_data%files)
-            transformed_data%summary%total_lines = &
-                transformed_data%summary%total_lines + &
-                size(coverage_data%files(i)%lines)
-            transformed_data%summary%covered_lines = &
-                transformed_data%summary%covered_lines + &
-                count(coverage_data%files(i)%lines%execution_count > 0 .and. &
-                      coverage_data%files(i)%lines%is_executable)
-        end do
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            transformed_data%summary%total_files = size(coverage_data%files)
+            
+            ! Sum up line counts and coverage
+            do i = 1, size(coverage_data%files)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(i)%lines)) then
+                    transformed_data%summary%total_lines = &
+                        transformed_data%summary%total_lines + &
+                        size(coverage_data%files(i)%lines)
+                    transformed_data%summary%covered_lines = &
+                        transformed_data%summary%covered_lines + &
+                        count(coverage_data%files(i)%lines%execution_count > 0 .and. &
+                              coverage_data%files(i)%lines%is_executable)
+                end if
+            end do
+        else
+            transformed_data%summary%total_files = 0
+        end if
         
         ! Calculate percentage
         if (transformed_data%summary%total_lines > 0) then

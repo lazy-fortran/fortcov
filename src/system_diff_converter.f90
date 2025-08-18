@@ -158,12 +158,19 @@ contains
         
         data_matches = .false.
         
+        ! Memory safety: Check if both files arrays are allocated
+        if (.not. allocated(data1%files) .or. .not. allocated(data2%files)) return
+        
         ! Check file count
         if (size(data1%files) /= size(data2%files)) return
         
         ! Check each file
         do i = 1, size(data1%files)
             if (data1%files(i)%filename /= data2%files(i)%filename) return
+            
+            ! Memory safety: Check if both lines arrays are allocated
+            if (.not. allocated(data1%files(i)%lines) .or. &
+                .not. allocated(data2%files(i)%lines)) return
             
             ! Check line count
             if (size(data1%files(i)%lines) /= size(data2%files(i)%lines)) return
@@ -192,11 +199,18 @@ contains
         
         structures_match = .false.
         
+        ! Memory safety: Check if both files arrays are allocated
+        if (.not. allocated(data1%files) .or. .not. allocated(data2%files)) return
+        
         ! Check file count and names
         if (size(data1%files) /= size(data2%files)) return
         
         do i = 1, size(data1%files)
             if (data1%files(i)%filename /= data2%files(i)%filename) return
+            
+            ! Memory safety: Check if both lines arrays are allocated
+            if (.not. allocated(data1%files(i)%lines) .or. &
+                .not. allocated(data2%files(i)%lines)) return
             
             ! Check line count and numbers (ignore execution counts)
             if (size(data1%files(i)%lines) /= size(data2%files(i)%lines)) return
@@ -253,7 +267,14 @@ contains
         integer :: i, j
         
         total_lines = 0
+        
+        ! Memory safety: Check if files array is allocated
+        if (.not. allocated(coverage_data%files)) return
+        
         do i = 1, size(coverage_data%files)
+            ! Memory safety: Check if lines array is allocated for this file
+            if (.not. allocated(coverage_data%files(i)%lines)) cycle
+            
             do j = 1, size(coverage_data%files(i)%lines)
                 if (coverage_data%files(i)%lines(j)%is_executable) then
                     total_lines = total_lines + 1
@@ -270,7 +291,14 @@ contains
         integer :: i, j
         
         covered_lines = 0
+        
+        ! Memory safety: Check if files array is allocated
+        if (.not. allocated(coverage_data%files)) return
+        
         do i = 1, size(coverage_data%files)
+            ! Memory safety: Check if lines array is allocated for this file
+            if (.not. allocated(coverage_data%files(i)%lines)) cycle
+            
             do j = 1, size(coverage_data%files(i)%lines)
                 if (coverage_data%files(i)%lines(j)%is_executable .and. &
                     coverage_data%files(i)%lines(j)%execution_count > 0) then
@@ -290,12 +318,15 @@ contains
         
         sources_xml = '<sources>' // new_line('')
         
-        do i = 1, size(coverage_data%files)
-            ! Extract directory from filename for source path
-            source_path = get_directory_path(coverage_data%files(i)%filename)
-            sources_xml = sources_xml // '  <source>' // &
-                         trim(source_path) // '</source>' // new_line('')
-        end do
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                ! Extract directory from filename for source path
+                source_path = get_directory_path(coverage_data%files(i)%filename)
+                sources_xml = sources_xml // '  <source>' // &
+                             trim(source_path) // '</source>' // new_line('')
+            end do
+        end if
         
         sources_xml = sources_xml // '</sources>'
         
@@ -312,40 +343,46 @@ contains
                       '  <package name="fortcov-coverage">' // new_line('') // &
                       '    <classes>' // new_line('')
         
-        do i = 1, size(coverage_data%files)
-            ! Calculate line rate for this file
-            call calculate_file_line_rate(coverage_data%files(i), file_line_rate)
-            
-            packages_xml = packages_xml // &
-                          '      <class filename="' // &
-                          trim(coverage_data%files(i)%filename) // &
-                          '" name="' // &
-                          get_base_name(coverage_data%files(i)%filename) // &
-                          '" line-rate="' // real_to_string(file_line_rate) // &
-                          '" branch-rate="' // real_to_string(file_line_rate) // &
-                          '" complexity="0.0">' // new_line('') // &
-                          '        <lines>' // new_line('')
-            
-            ! Add lines for this file
-            do j = 1, size(coverage_data%files(i)%lines)
-                if (coverage_data%files(i)%lines(j)%is_executable) then
-                    packages_xml = packages_xml // &
-                                  '          <line number="' // &
-                                  int_to_string( &
-                                    coverage_data%files(i)%lines(j)%line_number) &
-                                  // &
-                                  '" hits="' // &
-                                  int_to_string( &
-                                    coverage_data%files(i)%lines(j)%execution_count) &
-                                  // &
-                                  '" branch="false"/>' // new_line('')
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                ! Calculate line rate for this file
+                call calculate_file_line_rate(coverage_data%files(i), file_line_rate)
+                
+                packages_xml = packages_xml // &
+                              '      <class filename="' // &
+                              trim(coverage_data%files(i)%filename) // &
+                              '" name="' // &
+                              get_base_name(coverage_data%files(i)%filename) // &
+                              '" line-rate="' // real_to_string(file_line_rate) // &
+                              '" branch-rate="' // real_to_string(file_line_rate) // &
+                              '" complexity="0.0">' // new_line('') // &
+                              '        <lines>' // new_line('')
+                
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(i)%lines)) then
+                    ! Add lines for this file
+                    do j = 1, size(coverage_data%files(i)%lines)
+                        if (coverage_data%files(i)%lines(j)%is_executable) then
+                            packages_xml = packages_xml // &
+                                          '          <line number="' // &
+                                          int_to_string( &
+                                            coverage_data%files(i)%lines(j)%line_number) &
+                                          // &
+                                          '" hits="' // &
+                                          int_to_string( &
+                                            coverage_data%files(i)%lines(j)%execution_count) &
+                                          // &
+                                          '" branch="false"/>' // new_line('')
+                        end if
+                    end do
                 end if
+                
+                packages_xml = packages_xml // &
+                              '        </lines>' // new_line('') // &
+                              '      </class>' // new_line('')
             end do
-            
-            packages_xml = packages_xml // &
-                          '        </lines>' // new_line('') // &
-                          '      </class>' // new_line('')
-        end do
+        end if
         
         packages_xml = packages_xml // &
                       '    </classes>' // new_line('') // &

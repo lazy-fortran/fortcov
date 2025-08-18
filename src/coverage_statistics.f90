@@ -70,10 +70,17 @@ contains
         
         ! Pre-calculate maximum possible missing lines for allocation
         max_possible_missing = 0
-        do file_idx = 1, size(coverage_data%files)
-            max_possible_missing = max_possible_missing + &
-                                  size(coverage_data%files(file_idx)%lines)
-        end do
+        
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do file_idx = 1, size(coverage_data%files)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(file_idx)%lines)) then
+                    max_possible_missing = max_possible_missing + &
+                                          size(coverage_data%files(file_idx)%lines)
+                end if
+            end do
+        end if
         
         ! Allocate once for efficiency
         if (max_possible_missing > 0) then
@@ -83,8 +90,13 @@ contains
         end if
         
         ! OPTIMIZED SINGLE PASS: Count and collect in one iteration
-        do file_idx = 1, size(coverage_data%files)
-            do line_idx = 1, size(coverage_data%files(file_idx)%lines)
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do file_idx = 1, size(coverage_data%files)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (.not. allocated(coverage_data%files(file_idx)%lines)) cycle
+                
+                do line_idx = 1, size(coverage_data%files(file_idx)%lines)
                 if (coverage_data%files(file_idx)%lines(line_idx) &
                         %is_executable) then
                     total_lines = total_lines + 1
@@ -98,9 +110,10 @@ contains
                             coverage_data%files(file_idx)%lines(line_idx) &
                             %line_number
                     end if
-                end if
+                    end if
+                end do
             end do
-        end do
+        end if
         
         ! Calculate percentage with enhanced division by zero protection
         percentage = safe_percentage_calculation(covered_lines, total_lines)
@@ -127,25 +140,28 @@ contains
         covered_branches = 0
         
         ! Count branches across all files and functions
-        do file_idx = 1, size(coverage_data%files)
-            if (allocated(coverage_data%files(file_idx)%functions)) then
-                do func_idx = 1, size(coverage_data%files(file_idx)%functions)
-                    if (allocated(coverage_data%files(file_idx) &
-                                      %functions(func_idx)%branches)) then
-                        do branch_idx = 1, size(coverage_data%files(file_idx) &
-                                              %functions(func_idx) &
-                                              %branches)
-                            total_branches = total_branches + 1
-                            ! Branch is covered if taken path has been executed
-                            if (coverage_data%files(file_idx)%functions(func_idx) &
-                                %branches(branch_idx)%taken_count > 0) then
-                                covered_branches = covered_branches + 1
-                            end if
-                        end do
-                    end if
-                end do
-            end if
-        end do
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do file_idx = 1, size(coverage_data%files)
+                if (allocated(coverage_data%files(file_idx)%functions)) then
+                    do func_idx = 1, size(coverage_data%files(file_idx)%functions)
+                        if (allocated(coverage_data%files(file_idx) &
+                                          %functions(func_idx)%branches)) then
+                            do branch_idx = 1, size(coverage_data%files(file_idx) &
+                                                  %functions(func_idx) &
+                                                  %branches)
+                                total_branches = total_branches + 1
+                                ! Branch is covered if taken path has been executed
+                                if (coverage_data%files(file_idx)%functions(func_idx) &
+                                    %branches(branch_idx)%taken_count > 0) then
+                                    covered_branches = covered_branches + 1
+                                end if
+                            end do
+                        end if
+                    end do
+                end if
+            end do
+        end if
         
         ! Calculate percentage with enhanced division by zero protection
         percentage = safe_percentage_calculation(covered_branches, total_branches)
@@ -165,17 +181,20 @@ contains
         covered_functions = 0
         
         ! Count functions across all files
-        do file_idx = 1, size(coverage_data%files)
-            if (allocated(coverage_data%files(file_idx)%functions)) then
-                do func_idx = 1, size(coverage_data%files(file_idx)%functions)
-                    total_functions = total_functions + 1
-                    if (coverage_data%files(file_idx)%functions(func_idx) &
-                        %execution_count > 0) then
-                        covered_functions = covered_functions + 1
-                    end if
-                end do
-            end if
-        end do
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do file_idx = 1, size(coverage_data%files)
+                if (allocated(coverage_data%files(file_idx)%functions)) then
+                    do func_idx = 1, size(coverage_data%files(file_idx)%functions)
+                        total_functions = total_functions + 1
+                        if (coverage_data%files(file_idx)%functions(func_idx) &
+                            %execution_count > 0) then
+                            covered_functions = covered_functions + 1
+                        end if
+                    end do
+                end if
+            end do
+        end if
         
         ! Calculate percentage with enhanced division by zero protection
         percentage = safe_percentage_calculation(covered_functions, total_functions)
@@ -199,7 +218,9 @@ contains
         stats%covered_branches = 0
         
         ! Count statistics for the specific module
-        do file_idx = 1, size(coverage_data%files)
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do file_idx = 1, size(coverage_data%files)
             ! Count functions in this module
             if (allocated(coverage_data%files(file_idx)%functions)) then
                 do func_idx = 1, size(coverage_data%files(file_idx)%functions)
@@ -226,8 +247,9 @@ contains
                         end if
                     end if
                 end do
-            end if
-        end do
+                end if
+            end do
+        end if
         
         ! Calculate percentages with enhanced division by zero protection
         stats%function_percentage = safe_percentage_calculation(stats%covered_functions, stats%total_functions)
