@@ -25,6 +25,7 @@ module coverage_engine
     public :: find_coverage_files
     public :: check_exclude_patterns
     public :: analyze_coverage_safe
+    public :: validate_system_integration
     
 contains
 
@@ -959,5 +960,91 @@ contains
             print *, "TUI session completed"
         end if
     end function launch_tui_mode
+
+    ! System integration validation for comprehensive system validation
+    ! Validates that all module interfaces are working correctly after refactoring
+    function validate_system_integration() result(validation_passed)
+        logical :: validation_passed
+        type(config_t) :: test_config
+        type(coverage_data_t) :: test_data
+        type(coverage_file_t), allocatable :: test_files(:)
+        type(coverage_line_t), allocatable :: test_lines(:)
+        character(len=:), allocatable :: test_output
+        logical :: component_working
+        
+        validation_passed = .true.
+        
+        ! Test 1: Configuration system integration
+        call initialize_config(test_config)
+        test_config%output_format = "markdown"
+        test_config%verbose = .false.
+        test_config%quiet = .true.
+        if (.not. allocated(test_config%output_format)) then
+            validation_passed = .false.
+            return
+        end if
+        
+        ! Test 2: Coverage model integration
+        allocate(test_files(1))
+        allocate(test_lines(2))
+        
+        call test_lines(1)%init(5, 1, 'test_integration.f90', .true.)
+        call test_lines(2)%init(0, 2, 'test_integration.f90', .true.)
+        call test_files(1)%init('test_integration.f90', test_lines)
+        call test_data%init(test_files)
+        
+        ! Validate coverage data structure
+        if (.not. allocated(test_data%files)) then
+            validation_passed = .false.
+            return
+        end if
+        
+        if (size(test_data%files) /= 1) then
+            validation_passed = .false.
+            return
+        end if
+        
+        ! Test 3: String utilities integration
+        test_output = to_lower("TEST_INTEGRATION")
+        if (test_output /= "test_integration") then
+            validation_passed = .false.
+            return
+        end if
+        
+        test_output = format_integer(42)
+        if (test_output /= "42") then
+            validation_passed = .false.
+            return  
+        end if
+        
+        ! Test 4: Pattern matching integration
+        component_working = matches_pattern("test_file.gcov", "*.gcov")
+        if (.not. component_working) then
+            validation_passed = .false.
+            return
+        end if
+        
+        component_working = matches_pattern("regular_file.txt", "*.gcov")
+        if (component_working) then ! Should NOT match
+            validation_passed = .false.
+            return
+        end if
+        
+        ! Test 5: Coverage statistics integration
+        block
+            type(coverage_stats_t) :: stats
+            stats = calculate_line_coverage(test_data)
+            
+            ! Should have 1 covered line out of 2 executable = 50%
+            if (abs(stats%percentage - 50.0) > 0.1) then
+                validation_passed = .false.
+                return
+            end if
+        end block
+        
+        ! All integration tests passed
+        validation_passed = .true.
+        
+    end function validate_system_integration
 
 end module coverage_engine

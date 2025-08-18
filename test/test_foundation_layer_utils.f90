@@ -10,7 +10,6 @@ program test_foundation_layer_utils
     
     ! Simplified config type for testing
     type :: config_ref_t
-        logical :: has_exclude_patterns = .false.
         character(len=:), allocatable :: exclude_patterns(:)
     end type config_ref_t
     
@@ -530,8 +529,7 @@ contains
         should_exclude = .false.
         
         ! Check if exclude patterns are allocated and not empty
-        if (.not. config%has_exclude_patterns .or. &
-            .not. allocated(config%exclude_patterns) .or. &
+        if (.not. allocated(config%exclude_patterns) .or. &
             size(config%exclude_patterns) == 0) then
             return
         end if
