@@ -205,11 +205,70 @@ contains
         end if
     end subroutine safe_mkdir
 
+    ! URL decode a path to detect encoded traversal attempts
+    !! This subroutine decodes common URL-encoded sequences that could hide
+    !! directory traversal attacks (e.g., %2e%2e%2f -> ../)
+    subroutine url_decode_path(encoded_path, decoded_path)
+        character(len=*), intent(in) :: encoded_path
+        character(len=:), allocatable, intent(out) :: decoded_path
+        
+        integer :: i, j, encoded_len
+        character(len=len(encoded_path)) :: temp_path
+        character(len=2) :: hex_chars
+        
+        encoded_len = len_trim(encoded_path)
+        j = 1
+        i = 1
+        
+        do while (i <= encoded_len)
+            if (encoded_path(i:i) == '%' .and. i + 2 <= encoded_len) then
+                ! Try to decode %xx sequence
+                hex_chars = encoded_path(i+1:i+2)
+                
+                ! Decode common sequences that could be dangerous
+                select case (hex_chars)
+                case ('2e', '2E')  ! '.'
+                    temp_path(j:j) = '.'
+                case ('2f', '2F')  ! '/'
+                    temp_path(j:j) = '/'
+                case ('5c', '5C')  ! '\'
+                    temp_path(j:j) = '\'
+                case ('20')        ! ' '
+                    temp_path(j:j) = ' '
+                case ('3b', '3B')  ! ';'
+                    temp_path(j:j) = ';'
+                case ('26')        ! '&'
+                    temp_path(j:j) = '&'
+                case ('7c', '7C')  ! '|'
+                    temp_path(j:j) = '|'
+                case ('24')        ! '$'
+                    temp_path(j:j) = '$'
+                case ('60')        ! '`'
+                    temp_path(j:j) = '`'
+                case ('00')        ! null byte
+                    temp_path(j:j) = char(0)
+                case default
+                    ! Keep the original % sequence if we can't decode it
+                    temp_path(j:j+2) = encoded_path(i:i+2)
+                    j = j + 2
+                end select
+                i = i + 3
+            else
+                temp_path(j:j) = encoded_path(i:i)
+                i = i + 1
+            end if
+            j = j + 1
+        end do
+        
+        decoded_path = temp_path(1:j-1)
+    end subroutine url_decode_path
+
     ! Validate path for comprehensive security protection
     !! 
     !! Performs multi-layer security validation to prevent:
     !! - Shell injection attacks (semicolons, pipes, redirects, command substitution)
     !! - Directory traversal attacks (../, /..)
+    !! - URL-encoded traversal attacks (%2e%2e%2f, etc.)
     !! - System file access (/proc/, /sys/, /dev/, /etc/)
     !! - Windows device name exploitation (CON, PRN, NUL, etc.)
     !! - UNC path attacks (\\server\share)
@@ -226,7 +285,7 @@ contains
         
         integer :: i, path_len
         logical :: has_dangerous_chars
-        character(len=:), allocatable :: working_path
+        character(len=:), allocatable :: working_path, decoded_path
         
         call clear_error_context(error_ctx)
         path_len = len_trim(path)
@@ -238,6 +297,10 @@ contains
         else
             working_path = trim(path)
         end if
+        
+        ! URL decode the path to detect encoded traversal attempts
+        call url_decode_path(working_path, decoded_path)
+        working_path = decoded_path
         
         path_len = len_trim(working_path)
         
