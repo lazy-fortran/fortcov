@@ -1,0 +1,7 @@
+# Meson build options for fortcov demo
+
+option('coverage',
+  type : 'boolean',
+  value : false,
+  description : 'Enable coverage analysis with gcov and fortcov'
+)
