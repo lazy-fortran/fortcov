@@ -760,3 +760,250 @@ Building on Issue #124 measurement approach:
 - **Cross-Platform Optimization**: Foundation layer abstractions enable platform-specific optimizations
 
 **EXPECTED OUTCOME**: Foundation layer code quality improvements create force multiplier effect across entire system, systematically applying Issue #124 performance patterns while establishing sustainable architecture for long-term development velocity and quality assurance.
+
+## Documentation-Implementation Alignment Architecture (Issue #162)
+
+### Root Cause Analysis: Documentation-Reality Disconnect
+
+**Issue Classification**: [DOCS] + [TECHNICAL-DEBT] - Systematic documentation-implementation disconnect affecting all new users
+
+**Strategic Architecture Assessment:**
+The disconnect represents a quality process gap where documentation and implementation evolved independently without cross-validation testing. This creates a fundamental user experience failure despite sound underlying architecture.
+
+#### Architecture Quality Analysis
+
+**✅ Implementation Architecture (Robust and Functional):**
+- **File Discovery Engine**: Sophisticated pattern-based search with recursive directory traversal
+- **Source Path Processing**: Configurable multi-path support with security validation
+- **Error Handling Framework**: Comprehensive error detection and user guidance
+- **Performance Optimization**: O(n) file discovery with pre-allocation patterns (Issue #124)
+
+**❌ Documentation Architecture (Misaligned with Implementation):**
+- **README Workflow Assumptions**: Documents `gcov src/*.f90` as sufficient coverage generation
+- **Implementation Reality**: Expects `.gcov` files in specified source directories or project root
+- **Build System Integration**: Tool works with nested build structures (`build/gfortran_*/fortcov/`) but README doesn't reflect this
+
+#### Source Path Handling Implementation Analysis
+
+**Current Implementation Behavior (coverage_engine.f90:258-299):**
+```fortran
+! Priority 1: If no source paths specified, search current directory
+if (size(config%source_paths) == 0) then
+    temp_files = find_files("*.gcov")  ! Searches current working directory
+    
+! Priority 2: Search specified source paths for .gcov files  
+else
+    do i = 1, size(config%source_paths)
+        search_pattern = trim(config%source_paths(i)) // "/*.gcov"
+        temp_files = find_files(search_pattern)  ! Searches path/sub-directories
+    end do
+end if
+```
+
+**README Documentation Workflow:**
+```bash
+# Step 2: Run tests to generate coverage data
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+
+# Step 3: Create coverage report with source discovery  
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+```
+
+**Gap Analysis:**
+1. **README assumes**: `fpm test` generates `.gcov` files in accessible locations
+2. **Implementation expects**: `.gcov` files exist in `--source` directories or current directory
+3. **Build Reality**: Coverage files generated in nested build structure, not in `src/` or root
+4. **User Experience**: 100% failure rate for new users following documentation exactly
+
+### Architecture Solution Strategy
+
+#### Phase 1: Documentation Architecture Alignment
+
+**Implementation-First Documentation Strategy:**
+Document actual working patterns rather than idealized workflows
+
+**1. README Workflow Correction**
+```bash
+# Current (fails for new users):
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+
+# Corrected (matches implementation reality):
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+gcov src/*.f90                                    # Generate .gcov in current directory
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+```
+
+**2. Build System Integration Patterns**
+```bash
+# Alternative workflow for build-integrated coverage:
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+find build -name "*.gcov" -exec cp {} . \;        # Copy .gcov files to root
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+```
+
+**3. CI/CD Pipeline Corrections**
+```yaml
+# GitHub Actions correction:
+- name: Generate coverage report
+  run: |
+    fpm test --flag "-fprofile-arcs -ftest-coverage" 
+    gcov src/*.f90                                   # Missing step in current docs
+    fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
+```
+
+#### Phase 2: Error Message Enhancement Architecture
+
+**Context-Aware User Guidance:**
+Enhance error messages to bridge documentation-implementation gap
+
+**Enhanced Error Context (error_handling.f90:356):**
+```fortran
+subroutine handle_no_coverage_files(source_path, error_ctx)
+    ! Current error: "No coverage files found in: <path>"
+    ! Enhanced error with README workflow context:
+    
+    print *, "No coverage files found in: ", trim(source_path)
+    print *, ""
+    print *, "If you followed the README Quick Start:"
+    print *, "1. Ensure you ran: gcov src/*.f90"
+    print *, "2. Verify .gcov files exist: find . -name '*.gcov'"
+    print *, "3. Alternative: find build -name '*.gcov' -exec cp {} . \;"
+    print *, ""
+    print *, "Build system locations to check:"
+    print *, "• ./build/gfortran_*/fortcov/*.gcov"
+    print *, "• Current directory: ./*.gcov"
+end subroutine
+```
+
+#### Phase 3: Automated Documentation Validation Architecture
+
+**Documentation Testing Framework:**
+Prevent future documentation-implementation divergence
+
+**1. README Workflow Testing**
+```fortran
+! New test module: test_readme_workflows.f90
+! Tests all documented command sequences in clean environments
+
+subroutine test_quick_start_workflow()
+    ! Execute exact README commands in isolated environment
+    ! Verify each step succeeds as documented
+    ! Report specific failure points for documentation correction
+end subroutine
+
+subroutine test_ci_cd_workflows()  
+    ! Test GitHub Actions and GitLab CI examples
+    ! Verify commands work in containerized environments
+    ! Validate exit codes and output formats match documentation
+end subroutine
+```
+
+**2. Documentation-Implementation Consistency Validation**
+```fortran
+! Architecture pattern: Documentation as executable specification
+! Generate documentation examples from working implementation patterns
+! Ensure documented workflows are tested against real implementation
+```
+
+### Risk Assessment and Mitigation Strategies
+
+#### Technical Risks
+
+**Risk**: Documentation changes break existing user workflows
+**Mitigation**: 
+- Focus on correcting documented workflows, not changing implementation behavior
+- Add missing steps to existing workflows rather than replacing them
+- Preserve all current functionality, only enhance documentation accuracy
+
+**Risk**: Build system variations across platforms create inconsistent documentation
+**Mitigation**:
+- Document platform-specific patterns where necessary
+- Provide troubleshooting section for common build system variations  
+- Test documentation across multiple platform configurations
+
+#### Quality Risks
+
+**Risk**: New documentation still doesn't match all implementation edge cases
+**Mitigation**:
+- Implement automated testing of all documented workflows
+- Create documentation validation as part of CI/CD process
+- Establish feedback loop from user experience to documentation updates
+
+**Risk**: Implementation changes could invalidate documentation again
+**Mitigation**:
+- Establish documentation testing requirement for all implementation changes
+- Create architectural pattern where major workflow changes require documentation updates
+- Implement user journey validation for all new features
+
+### Strategic Opportunities
+
+#### Performance Innovation Opportunities
+
+**Documentation Performance Testing:**
+- Automated validation of documented performance claims
+- Benchmark testing for documented use cases
+- Performance regression detection in documentation workflows
+
+#### Architecture Innovation Opportunities
+
+**Self-Validating Documentation:**
+- Documentation that automatically tests itself against implementation
+- Error messages that provide implementation-aware troubleshooting
+- Build system integration that automatically discovers optimal coverage workflows
+
+### Success Metrics and Quality Gates
+
+#### User Experience Metrics
+- **New User Success Rate**: Target 95% success rate for Quick Start workflow
+- **Documentation Accuracy**: 100% of documented commands work as written
+- **Error Recovery**: Clear path from error message to working solution
+
+#### Architecture Quality Metrics  
+- **Documentation-Implementation Consistency**: Zero gaps between documented and actual behavior
+- **Workflow Validation Coverage**: 100% of documented workflows automatically tested
+- **User Journey Completeness**: All common user scenarios documented and validated
+
+#### Process Improvement Metrics
+- **Documentation Testing**: Automated validation prevents future disconnect  
+- **Feedback Loop**: User experience issues automatically feed into documentation improvements
+- **Cross-Validation**: Implementation changes require documentation validation
+
+### Implementation Timeline and Resource Planning
+
+#### Phase 1: Documentation Alignment (Days 1-2)
+**Priority**: CRITICAL - Immediate user experience improvement
+1. **README Workflow Correction**: Add missing `gcov src/*.f90` step to all workflows
+2. **CI/CD Pipeline Updates**: Correct GitHub Actions and GitLab CI examples
+3. **Troubleshooting Enhancement**: Add build system location guidance
+
+#### Phase 2: Error Message Enhancement (Days 3-4)  
+**Priority**: HIGH - Bridge documentation-implementation gap
+1. **Context-Aware Error Messages**: Enhance file discovery error guidance
+2. **Build System Integration Hints**: Provide specific guidance for common build structures  
+3. **Documentation Recovery Paths**: Clear steps from error to working workflow
+
+#### Phase 3: Validation Framework (Days 5-7)
+**Priority**: MEDIUM - Prevent future documentation drift
+1. **README Workflow Testing**: Automated validation of documented command sequences
+2. **CI/CD Example Testing**: Verify all provided CI/CD examples work correctly
+3. **Documentation Consistency Checking**: Automated implementation-documentation alignment validation
+
+### Long-Term Strategic Benefits
+
+#### Development Velocity Multiplier
+- **Reduced Support Burden**: Accurate documentation reduces user support requests
+- **Faster Onboarding**: New users succeed immediately with correct workflows  
+- **Implementation Confidence**: Documentation testing validates implementation behavior
+
+#### Quality Assurance Multiplier
+- **Documentation Quality Gate**: Implementation changes require documentation validation
+- **User Experience Testing**: Documented workflows become automated test cases
+- **Cross-Validation Architecture**: Implementation and documentation evolve together consistently
+
+#### Technical Debt Resolution
+- **Process Gap Elimination**: Systematic prevention of documentation-implementation divergence
+- **User Experience Foundation**: Reliable documentation foundation enables advanced user workflows
+- **Quality Process Integration**: Documentation validation becomes integral part of development process
+
+**EXPECTED OUTCOME**: Documentation-implementation alignment creates foundation for reliable user experience, establishes automated validation preventing future documentation drift, and transforms documentation from liability into strategic asset for user adoption and technical communication.
