@@ -515,8 +515,5 @@ contains
         call test_pass(test_name)
     end subroutine
 
-    ! NOTE: Execution count normalization and percentage value clamping
-    ! are now comprehensively tested in test_issue_122_input_validation.f90
-    ! These obsolete stub tests have been removed to eliminate redundancy
 
 end program test_input_validation
