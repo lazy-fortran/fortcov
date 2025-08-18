@@ -81,19 +81,11 @@ test_readme_quick_start_workflow() {
         fi
     fi
     
-    # Step 3: cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+    # Step 3: fortcov --source=. --exclude=build/*,test/* --output=coverage.md
     if [[ "$workflow_success" == "true" ]]; then
-        if ! (cd build && find . -name "src_*.gcno" | xargs gcov && cd ..) >/dev/null 2>&1; then
+        if ! fpm run fortcov -- --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md >/dev/null 2>&1; then
             workflow_success=false
-            error_message="Step 3 failed: gcov generation"
-        fi
-    fi
-    
-    # Step 4: fpm run fortcov -- build/*.gcov --output=coverage.md
-    if [[ "$workflow_success" == "true" ]]; then
-        if ! fpm run fortcov -- build/*.gcov --output=coverage.md >/dev/null 2>&1; then
-            workflow_success=false
-            error_message="Step 4 failed: fortcov execution"
+            error_message="Step 3 failed: fortcov source discovery"
         fi
     fi
     
@@ -106,7 +98,7 @@ test_readme_quick_start_workflow() {
     fi
     
     if [[ "$workflow_success" == "true" ]]; then
-        test_pass "README Quick Start Workflow" "All 4 steps executed successfully"
+        test_pass "README Quick Start Workflow" "All 3 steps executed successfully"
     else
         test_fail "README Quick Start Workflow" "$error_message"
     fi
@@ -298,16 +290,9 @@ test_github_actions_workflow() {
         fi
     fi
     
-    # Generate coverage
+    # Run fortcov with CI flags (source discovery replaces manual gcov step)
     if [[ "$workflow_success" == "true" ]]; then
-        if ! gcov src/*.f90 >/dev/null 2>&1; then
-            workflow_success=false
-        fi
-    fi
-    
-    # Run fortcov with CI flags
-    if [[ "$workflow_success" == "true" ]]; then
-        fpm run -- --source=src --output=coverage.md --fail-under=80 --quiet >/dev/null 2>&1
+        fpm run fortcov -- --source=src --output=coverage.md --fail-under=80 --quiet >/dev/null 2>&1
         # Note: Exit code may be 2 for coverage below threshold, which is acceptable
     fi
     
@@ -336,14 +321,9 @@ test_gitlab_ci_workflow() {
         fi
     fi
     
+    # Run fortcov with source discovery (replaces manual gcov step)
     if [[ "$workflow_success" == "true" ]]; then
-        if ! gcov src/*.f90 >/dev/null 2>&1; then
-            workflow_success=false
-        fi
-    fi
-    
-    if [[ "$workflow_success" == "true" ]]; then
-        if ! fpm run -- --source=src --output=coverage.md --quiet >/dev/null 2>&1; then
+        if ! fpm run fortcov -- --source=src --output=coverage.md --quiet >/dev/null 2>&1; then
             workflow_success=false
         fi
     fi
