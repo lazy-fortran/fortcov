@@ -447,8 +447,8 @@ contains
         ! Test 1: Delta calculation should be precise
         test1 = (diff%execution_count_delta == -7)
         
-        ! Test 2: Should correctly identify as newly uncovered
-        test2 = (.not. diff%is_newly_covered .and. diff%is_newly_uncovered)
+        ! Test 2: Should NOT be newly uncovered (still >0 execution count)
+        test2 = (.not. diff%is_newly_covered .and. .not. diff%is_newly_uncovered)
         
         passed = test1 .and. test2
         

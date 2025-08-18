@@ -146,8 +146,42 @@ contains
         character(len=*), intent(in) :: input_string
         character(len=:), allocatable :: trimmed
         
-        trimmed = trim(adjustl(input_string))
+        integer :: start_pos, end_pos, i
+        
+        ! Find first non-whitespace character (tabs, spaces, etc.)
+        start_pos = 0  ! Initialize to 0 to indicate not found
+        do i = 1, len(input_string)
+            if (.not. is_whitespace_char(input_string(i:i))) then
+                start_pos = i
+                exit
+            end if
+        end do
+        
+        ! Find last non-whitespace character
+        end_pos = 0  ! Initialize to 0 to indicate not found
+        do i = len(input_string), 1, -1
+            if (.not. is_whitespace_char(input_string(i:i))) then
+                end_pos = i
+                exit
+            end if
+        end do
+        
+        ! Handle empty or all-whitespace string
+        if (start_pos == 0 .or. end_pos == 0 .or. start_pos > end_pos) then
+            trimmed = ""
+        else
+            trimmed = input_string(start_pos:end_pos)
+        end if
     end function trim_string
+    
+    ! Helper function to check if character is whitespace (space, tab, etc.)
+    function is_whitespace_char(char) result(is_ws)
+        character(len=1), intent(in) :: char
+        logical :: is_ws
+        
+        is_ws = (char == ' ' .or. char == achar(9) .or. &  ! space, tab
+                 char == achar(10) .or. char == achar(13))  ! newline, carriage return
+    end function is_whitespace_char
 
     ! Helper function to convert integer to string
     function int_to_string(int_val) result(str)

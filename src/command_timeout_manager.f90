@@ -368,7 +368,7 @@ contains
         ! Check for shell injection patterns (with test allowances)
         if (index(command, ';') > 0 .or. index(command, '&&') > 0 .or. &
             index(command, '||') > 0 .or. index(command, '`') > 0 .or. &
-            index(command, '$()') > 0 .or. index(command, '${') > 0) then
+            index(command, '$(') > 0 .or. index(command, '${') > 0) then
             ! Allow specific test patterns for DoS protection testing
             if (index(command, 'yes | head') == 0 .and. index(command, 'bash -c') == 0) then
                 dangerous = .true.
@@ -385,6 +385,7 @@ contains
         
         ! Check for suspicious redirection attempts (allow safe redirection for testing)
         if (index(command, '> /') > 0 .or. index(command, '>> /') > 0 .or. &
+            index(command, '>> ~/') > 0 .or. index(command, '> ~/') > 0 .or. &
             index(command, '| rm') > 0 .or. index(command, '| sudo') > 0) then
             ! Allow specific test patterns for DoS protection testing
             if (index(command, '> /dev/null') == 0) then
