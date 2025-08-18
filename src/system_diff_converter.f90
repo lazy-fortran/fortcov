@@ -1,6 +1,7 @@
 module system_diff_converter
     use coverage_model
     use json_coverage_io
+    use string_utils
     implicit none
     private
     
