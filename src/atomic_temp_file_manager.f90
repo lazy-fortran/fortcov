@@ -46,6 +46,8 @@ module atomic_temp_file_manager
         procedure :: acquire_reference
         procedure :: release_reference
         procedure :: set_auto_cleanup
+        ! Explicit cleanup method for backward compatibility
+        final :: explicit_finalizer
     end type secure_temp_file_t
     
     ! C interop interfaces for Unix/Linux
@@ -717,6 +719,16 @@ contains
         
         this%auto_cleanup = auto_cleanup
     end subroutine set_auto_cleanup
+    
+    ! Explicit finalizer for backward compatibility with tests
+    subroutine explicit_finalizer(this)
+        type(secure_temp_file_t), intent(inout) :: this
+        
+        ! Only cleanup if no references and auto cleanup enabled
+        if (this%ref_count <= 1 .and. this%auto_cleanup .and. this%is_created) then
+            call this%cleanup()
+        end if
+    end subroutine explicit_finalizer
 
     ! Helper functions
 
