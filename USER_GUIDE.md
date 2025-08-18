@@ -18,7 +18,7 @@ This guide helps different types of users get the most out of FortCov, with spec
 # 1. Add to your existing project
 cd your-fortran-project
 
-# 2. Build with coverage
+# 2. Build with coverage (FPM example)
 fpm build --flag "-fprofile-arcs -ftest-coverage"
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
@@ -28,6 +28,8 @@ gcov src/*.f90
 # 4. Create coverage report
 fortcov --source=src --output=coverage.md
 ```
+
+**Build System Support**: FortCov works with FPM, CMake, Meson, and traditional Makefiles. For complete integration examples with all build systems, see [examples/build_systems/](examples/build_systems/).
 
 ### Daily Development Workflow
 
@@ -175,6 +177,8 @@ nnoremap <leader>cov :!fortcov --source=src --output=coverage.md && echo "Covera
 ## DevOps Engineer
 
 ### CI/CD Integration
+
+**Note**: This guide shows FPM-specific CI/CD examples. For complete integration examples with CMake, Meson, Makefiles, and advanced CI/CD patterns, see [examples/build_systems/](examples/build_systems/).
 
 #### GitHub Actions (Complete)
 
