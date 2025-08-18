@@ -274,7 +274,11 @@ static int setup_secure_dacl(SECURITY_ATTRIBUTES *security_attrs) {
 cleanup:
     if (token) CloseHandle(token);
     if (token_user) LocalFree(token_user);
-    /* Note: dacl and security_descriptor are kept for use */
+    /* Free security_descriptor on error, but keep on success */
+    if (result != 0 && security_descriptor) {
+        LocalFree(security_descriptor);
+    }
+    /* Note: dacl and security_descriptor are kept for use on success */
     
     return result;
 }

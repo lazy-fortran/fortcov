@@ -22,6 +22,9 @@ module atomic_temp_file_manager
         ! Platform-specific opaque state (C structure)
         integer(c_size_t) :: c_state_size = 0
         type(c_ptr) :: c_state_ptr = c_null_ptr
+        ! RAII reference counting for reliable resource management
+        integer :: ref_count = 0
+        logical :: auto_cleanup = .true.
     contains
         procedure :: create_secure
         procedure :: create_secure_with_error_context
@@ -39,7 +42,10 @@ module atomic_temp_file_manager
         procedure :: uses_unix_security_features
         procedure :: uses_windows_security_features
         procedure :: simulate_error_condition
-        final :: cleanup_finalizer
+        ! RAII resource management
+        procedure :: acquire_reference
+        procedure :: release_reference
+        procedure :: set_auto_cleanup
     end type secure_temp_file_t
     
     ! C interop interfaces for Unix/Linux
@@ -349,6 +355,9 @@ contains
         
         this%is_created = .true.
         this%is_cleaned = .false.
+        ! Initialize RAII reference counting
+        this%ref_count = 1
+        this%auto_cleanup = .true.
         
         ! Set success status in error context
         error_ctx%error_code = ERROR_SUCCESS
@@ -541,6 +550,8 @@ contains
             call deallocate_c_state(this)
             this%is_cleaned = .true.
             this%is_created = .false.
+            ! Reset RAII state
+            this%ref_count = 0
         end if
     end subroutine cleanup
 
@@ -680,12 +691,32 @@ contains
         call this%cleanup()
     end subroutine simulate_error_condition
 
-    ! Automatic cleanup on finalization
-    subroutine cleanup_finalizer(this)
-        type(secure_temp_file_t), intent(inout) :: this
+    ! RAII resource management - acquire reference
+    subroutine acquire_reference(this)
+        class(secure_temp_file_t), intent(inout) :: this
         
-        call this%cleanup()
-    end subroutine cleanup_finalizer
+        this%ref_count = this%ref_count + 1
+    end subroutine acquire_reference
+    
+    ! RAII resource management - release reference
+    subroutine release_reference(this)
+        class(secure_temp_file_t), intent(inout) :: this
+        
+        if (this%ref_count > 0) then
+            this%ref_count = this%ref_count - 1
+            if (this%ref_count == 0 .and. this%auto_cleanup) then
+                call this%cleanup()
+            end if
+        end if
+    end subroutine release_reference
+    
+    ! Set automatic cleanup behavior
+    subroutine set_auto_cleanup(this, auto_cleanup)
+        class(secure_temp_file_t), intent(inout) :: this
+        logical, intent(in) :: auto_cleanup
+        
+        this%auto_cleanup = auto_cleanup
+    end subroutine set_auto_cleanup
 
     ! Helper functions
 
