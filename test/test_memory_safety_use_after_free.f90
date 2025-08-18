@@ -46,6 +46,7 @@ contains
         
         ! Setup config for file finding
         call initialize_config(config)
+        deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(1))
         config%source_paths(1) = "."
         
@@ -85,6 +86,7 @@ contains
         
         ! Setup config with long exclude patterns
         call initialize_config(config)
+        deallocate(config%exclude_patterns)
         allocate(character(len=256) :: config%exclude_patterns(3))
         config%exclude_patterns(1) = repeat("a", 200) // "*.f90"
         config%exclude_patterns(2) = repeat("b", 200) // "*.mod"
@@ -121,6 +123,7 @@ contains
         
         ! Setup basic config
         call initialize_config(config)
+        deallocate(config%exclude_patterns)
         allocate(character(len=256) :: config%exclude_patterns(1))
         config%exclude_patterns(1) = "test_*.f90"
         
@@ -159,8 +162,10 @@ contains
         print *, "  Test 4: Repeated operations memory safety"
         
         call initialize_config(config)
+        deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(1))
         config%source_paths(1) = "."
+        deallocate(config%exclude_patterns)
         allocate(character(len=256) :: config%exclude_patterns(2))
         config%exclude_patterns(1) = "*.mod"
         config%exclude_patterns(2) = "build/*"
