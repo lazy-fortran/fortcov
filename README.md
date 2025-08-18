@@ -225,7 +225,7 @@ gcov src/*.f90
 - **Built-in help**: `fortcov --help`
 - **Validate config**: `fortcov --config=fortcov.nml --verbose`  
 - **Debug mode**: `fortcov --source=src --verbose` for detailed output
-- **GitHub Issues**: Report bugs at [github.com/krystophny/fortcov/issues](https://github.com/lazy-fortran/fortcov/issues)
+- **GitHub Issues**: Report bugs at [github.com/lazy-fortran/fortcov/issues](https://github.com/lazy-fortran/fortcov/issues)
 
 ## CI/CD Integration
 
