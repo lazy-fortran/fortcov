@@ -53,7 +53,7 @@ contains
         pattern1_valid = validate_fpm_standard_workflow()
         
         ! Test Pattern 2: Build-integrated coverage discovery
-        pattern2_valid = validate_fmp_build_integrated_discovery()
+        pattern2_valid = validate_fpm_build_integrated_discovery()
         
         ! Test Pattern 3: In-place build directory analysis
         pattern3_valid = validate_fpm_build_directory_analysis()
@@ -70,7 +70,7 @@ contains
         end if
     end subroutine
 
-    function validate_fmp_standard_workflow() result(is_valid)
+    function validate_fpm_standard_workflow() result(is_valid)
         ! Test Pattern 1: Standard FPM + gcov workflow from DESIGN.md
         logical :: is_valid
         character(len=1024) :: expected_commands(3)
@@ -87,7 +87,7 @@ contains
         is_valid = command_pattern_valid
     end function
 
-    function validate_fmp_build_integrated_discovery() result(is_valid)
+    function validate_fpm_build_integrated_discovery() result(is_valid)
         ! Test Pattern 2: Build-integrated coverage discovery from DESIGN.md
         logical :: is_valid
         character(len=1024) :: build_commands(4)
@@ -409,16 +409,16 @@ contains
         test_count = test_count + 1
         
         ! Test expected directory structures
-        fmp_structure_valid = validate_fpm_directory_structure()
+        fpm_structure_valid = validate_fpm_directory_structure()
         cmake_structure_valid = validate_cmake_directory_structure()
         
-        if (fmp_structure_valid .and. cmake_structure_valid) then
+        if (fpm_structure_valid .and. cmake_structure_valid) then
             write(*,*) "PASSED"
             passed_count = passed_count + 1
         else
             write(*,*) "FAILED"
             failed_count = failed_count + 1
-            if (.not. fmp_structure_valid) write(*,*) "  - FPM directory structure validation failed"
+            if (.not. fpm_structure_valid) write(*,*) "  - FPM directory structure validation failed"
             if (.not. cmake_structure_valid) write(*,*) "  - CMake directory structure validation failed"
         end if
     end subroutine
@@ -549,7 +549,7 @@ contains
         logical :: workflow_valid
         
         ! Complete FPM workflow steps
-        workflow_steps(1) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        workflow_steps(1) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         workflow_steps(2) = "gcov src/*.f90"
         workflow_steps(3) = "fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
         workflow_steps(4) = "# Coverage report generated"
@@ -600,7 +600,7 @@ contains
         ! Key GitHub Actions components
         actions_components(1) = "uses: fortran-lang/setup-fortran@v1"
         actions_components(2) = "uses: fortran-lang/setup-fpm@v5"
-        actions_components(3) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        actions_components(3) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         actions_components(4) = "fpm run fortcov -- --source=. --exclude='build/*' --output=coverage.md"
         
         ! Validate GitHub Actions pattern
@@ -617,7 +617,7 @@ contains
         
         ! Key GitLab CI components
         gitlab_components(1) = "image: fortran/gfortran:latest"
-        gitlab_components(2) = "fpm test --flag \"$COVERAGE_FLAGS\""
+        gitlab_components(2) = "fpm test --flag ""$COVERAGE_FLAGS"""
         gitlab_components(3) = "gcov src/*.f90"
         gitlab_components(4) = "coverage: '/Total coverage: (\\d+\\.\\d+)%/'"
         
@@ -634,7 +634,7 @@ contains
         logical :: pattern_valid
         
         ! Key Jenkins pipeline components
-        jenkins_components(1) = "sh 'fpm test --flag \"-fprofile-arcs -ftest-coverage\"'"
+        jenkins_components(1) = "sh 'fpm test --flag ""-fprofile-arcs -ftest-coverage""'"
         jenkins_components(2) = "sh 'gcov src/*.f90'"
         jenkins_components(3) = "publishHTML"
         

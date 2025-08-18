@@ -348,9 +348,9 @@ contains
         logical :: batch_structure_valid
         
         ! Batch processing patterns from documentation
-        batch_patterns(1) = "find src -name \"*.f90\" | split -l 50 - batch_"
-        batch_patterns(2) = "fortcov --source=. --output=\"coverage_$(basename $batch_file).json\""
-        batch_patterns(3) = "fortcov --import=\"coverage_batch_*.json\" --output=final_coverage.html"
+        batch_patterns(1) = "find src -name ""*.f90"" | split -l 50 - batch_"
+        batch_patterns(2) = "fortcov --source=. --output=""coverage_$(basename $batch_file).json"""
+        batch_patterns(3) = "fortcov --import=""coverage_batch_*.json"" --output=final_coverage.html"
         batch_patterns(4) = "rm -f batch_* coverage_batch_*.json"
         batch_patterns(5) = "# Memory-efficient for large projects"
         
@@ -477,8 +477,8 @@ contains
         ! Change detection patterns from documentation
         change_patterns(1) = "GIT_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep '\\.f90$')"
         change_patterns(2) = "Only analyze changed files"
-        change_patterns(3) = "if [ -n \"$GIT_CHANGED\" ]; then"
-        change_patterns(4) = "fortcov --include=\"$(echo $GIT_CHANGED | tr ' ' ',')\""
+        change_patterns(3) = "if [ -n ""$GIT_CHANGED"" ]; then"
+        change_patterns(4) = "fortcov --include=""$(echo $GIT_CHANGED | tr ' ' ',')"""
         
         ! Validate change structure
         change_structure_valid = validate_incremental_pattern_structure(change_patterns, 4)
@@ -493,9 +493,9 @@ contains
         logical :: targeted_structure_valid
         
         ! Targeted analysis patterns from documentation
-        targeted_patterns(1) = "for file in $GIT_CHANGED; do gcov \"$file\"; done"
+        targeted_patterns(1) = "for file in $GIT_CHANGED; do gcov ""$file""; done"
         targeted_patterns(2) = "Generate coverage for changed files only"
-        targeted_patterns(3) = "fortcov --source=. --include=\"$(echo $GIT_CHANGED | tr ' ' ',')\""
+        targeted_patterns(3) = "fortcov --source=. --include=""$(echo $GIT_CHANGED | tr ' ' ',')"""
         targeted_patterns(4) = "incremental_coverage.html output"
         
         ! Validate targeted structure
@@ -555,11 +555,11 @@ contains
         logical :: streaming_structure_valid
         
         ! File streaming patterns from documentation
-        streaming_patterns(1) = "find src -name \"*.f90\" | split -l 50 - batch_"
+        streaming_patterns(1) = "find src -name ""*.f90"" | split -l 50 - batch_"
         streaming_patterns(2) = "Process coverage in batches to avoid memory issues"
-        streaming_patterns(3) = "while IFS= read -r fortran_file; do gcov \"$fortran_file\"; done"
-        streaming_patterns(4) = "fortcov --source=. --output=\"coverage_$(basename $batch_file).json\""
-        streaming_patterns(5) = "rm -f *.gcov"  # Clean up intermediate files
+        streaming_patterns(3) = "while IFS= read -r fortran_file; do gcov ""$fortran_file""; done"
+        streaming_patterns(4) = "fortcov --source=. --output=""coverage_$(basename $batch_file).json"""
+        streaming_patterns(5) = "rm -f *.gcov"  ! Clean up intermediate files
         
         ! Validate streaming structure
         streaming_structure_valid = validate_streaming_processing_structure(streaming_patterns, 5)

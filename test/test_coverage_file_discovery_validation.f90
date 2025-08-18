@@ -122,7 +122,7 @@ contains
         ! When: Testing build-specific output pattern recognition
         ! Then: Validate build system output patterns work correctly
         
-        logical :: fmp_output_valid, cmake_output_valid, make_output_valid, meson_output_valid
+        logical :: fpm_output_valid, cmake_output_valid, make_output_valid, meson_output_valid
         
         write(*,'(A)', advance='no') "Testing build system output patterns... "
         test_count = test_count + 1
@@ -146,7 +146,7 @@ contains
         end if
     end subroutine
 
-    function validate_fmp_output_patterns() result(is_valid)
+    function validate_fpm_output_patterns() result(is_valid)
         ! Test FPM output patterns from DESIGN.md
         logical :: is_valid
         character(len=512) :: fpm_patterns(4)
@@ -155,7 +155,7 @@ contains
         ! FPM output patterns from documentation
         fpm_patterns(1) = "build/gfortran_*/fortcov/*.gcno"
         fpm_patterns(2) = "build/gfortran_*/fortcov/*.gcda"
-        fmp_patterns(3) = "*.gcov"  ! Generated in project root
+        fpm_patterns(3) = "*.gcov"  ! Generated in project root
         fpm_patterns(4) = "build/dependencies/*"
         
         ! Validate FPM output structure
@@ -305,7 +305,7 @@ contains
         test_count = test_count + 1
         
         ! Test build directory search patterns
-        fpm_search_valid = validate_fmp_build_directory_search()
+        fpm_search_valid = validate_fpm_build_directory_search()
         cmake_search_valid = validate_cmake_build_directory_search()
         nested_search_valid = validate_nested_directory_search_patterns()
         
@@ -328,8 +328,8 @@ contains
         logical :: search_structure_valid
         
         ! FPM build directory search commands
-        search_commands(1) = "find build -name \"*.gcda\" -path \"*/fortcov/*\" -execdir gcov {} \\;"
-        search_commands(2) = "find build -name \"*.gcov\" -exec cp {} . \\;"
+        search_commands(1) = "find build -name ""*.gcda"" -path ""*/fortcov/*"" -execdir gcov {} \;"
+        search_commands(2) = "find build -name ""*.gcov"" -exec cp {} . \;"
         search_commands(3) = "# Search build/gfortran_*/fortcov directories"
         
         ! Validate search structure
@@ -408,7 +408,7 @@ contains
         ! Source flag patterns from documentation
         source_flag_patterns(1) = "fortcov --source=."
         source_flag_patterns(2) = "fortcov --source=src"
-        source_flag_patterns(3) = "fortcov --source=\"build/gfortran_*/fortcov\""
+        source_flag_patterns(3) = "fortcov --source=""build/gfortran_*/fortcov"""
         source_flag_patterns(4) = "fortcov --source=multiple,paths,supported"
         
         ! Validate flag structure
@@ -536,13 +536,13 @@ contains
         ! When: Testing nested structure discovery validation
         ! Then: Validate nested structure discovery works correctly
         
-        logical :: fmp_nested_valid, cmake_nested_valid, deep_nesting_valid
+        logical :: fpm_nested_valid, cmake_nested_valid, deep_nesting_valid
         
         write(*,'(A)', advance='no') "Testing nested build structure discovery... "
         test_count = test_count + 1
         
         ! Test nested structure discovery
-        fmp_nested_valid = validate_fpm_nested_structure_discovery()
+        fpm_nested_valid = validate_fpm_nested_structure_discovery()
         cmake_nested_valid = validate_cmake_nested_structure_discovery()
         deep_nesting_valid = validate_deep_nesting_discovery()
         

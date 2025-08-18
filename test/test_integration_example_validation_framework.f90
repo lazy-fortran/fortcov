@@ -73,12 +73,12 @@ contains
         logical :: completeness_valid
         
         ! FPM example components from documentation
-        fpm_example_components(1) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        fpm_example_components(1) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         fpm_example_components(2) = "gcov src/*.f90"
         fpm_example_components(3) = "fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
-        fpm_example_components(4) = "find build -name \"*.gcda\" -path \"*/fortcov/*\" -execdir gcov {} \\;"
-        fpm_example_components(5) = "find build -name \"*.gcov\" -exec cp {} . \\;"
-        fpm_example_components(6) = "fortcov --source=\"build/gfortran_*/fortcov\" --output=coverage.md"
+        fpm_example_components(4) = "find build -name ""*.gcda"" -path ""*/fortcov/*"" -execdir gcov {} \;"
+        fpm_example_components(5) = "find build -name ""*.gcov"" -exec cp {} . \;"
+        fpm_example_components(6) = "fortcov --source=""build/gfortran_*/fortcov"" --output=coverage.md"
         
         ! Validate completeness structure
         completeness_valid = validate_example_completeness_structure(fpm_example_components, 6)
@@ -95,7 +95,7 @@ contains
         ! CMake example components from documentation
         cmake_example_components(1) = "find_package(codecov)"
         cmake_example_components(2) = "add_coverage(fortran_target)"
-        cmake_example_components(3) = "set(CMAKE_Fortran_FLAGS_TESTING \"-g -O0 -fprofile-arcs -ftest-coverage\")"
+        cmake_example_components(3) = "set(CMAKE_Fortran_FLAGS_TESTING ""-g -O0 -fprofile-arcs -ftest-coverage"")"
         cmake_example_components(4) = "cmake -DCMAKE_BUILD_TYPE=Testing -DENABLE_COVERAGE=On .."
         cmake_example_components(5) = "make && make test"
         cmake_example_components(6) = "make fortcov_report"
@@ -116,7 +116,7 @@ contains
         ci_example_components(1) = "uses: actions/checkout@v4"
         ci_example_components(2) = "uses: fortran-lang/setup-fortran@v1"
         ci_example_components(3) = "uses: fortran-lang/setup-fpm@v5"
-        ci_example_components(4) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        ci_example_components(4) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         ci_example_components(5) = "gcov src/*.f90 || true"
         ci_example_components(6) = "fpm run fortcov -- --source=. --exclude='build/*' --output=coverage.md"
         ci_example_components(7) = "uses: actions/upload-artifact@v4"
@@ -162,12 +162,12 @@ contains
         logical :: bash_syntax_valid
         
         ! Bash examples from documentation
-        bash_examples(1) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        bash_examples(1) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         bash_examples(2) = "gcov src/*.f90"
-        bash_examples(3) = "find build -name \"*.gcda\" -path \"*/fortcov/*\" -execdir gcov {} \\;"
+        bash_examples(3) = "find build -name ""*.gcda"" -path ""*/fortcov/*"" -execdir gcov {} \;"
         bash_examples(4) = "for rank in {0..3}; do gcov -o rank_${rank} src/*.f90; done"
-        bash_examples(5) = "GIT_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep '\\.f90$')"
-        bash_examples(6) = "if [ -n \"$GIT_CHANGED\" ]; then echo \"Files changed\"; fi"
+        bash_examples(5) = "GIT_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep '\.f90$')"
+        bash_examples(6) = "if [ -n ""$GIT_CHANGED"" ]; then echo ""Files changed""; fi"
         
         ! Validate bash syntax structure
         bash_syntax_valid = validate_bash_syntax_structure(bash_examples, 6)
@@ -206,7 +206,7 @@ contains
         ! CMake examples from documentation
         cmake_examples(1) = "find_package(codecov)"
         cmake_examples(2) = "add_coverage(fortran_target)"
-        cmake_examples(3) = "set(CMAKE_Fortran_FLAGS_TESTING \"-g -O0 -fprofile-arcs -ftest-coverage\")"
+        cmake_examples(3) = "set(CMAKE_Fortran_FLAGS_TESTING ""-g -O0 -fprofile-arcs -ftest-coverage"")"
         cmake_examples(4) = "add_custom_target(fortcov_report"
         cmake_examples(5) = "    COMMAND gcov ${CMAKE_BINARY_DIR}/CMakeFiles/fortran_target.dir/*.gcno"
         cmake_examples(6) = "    DEPENDS fortran_target)"
@@ -222,7 +222,7 @@ contains
         ! When: Testing workflow example validation
         ! Then: Validate workflows are logically complete and correct
         
-        logical :: fmp_workflow_valid, ci_workflow_valid, docker_workflow_valid
+        logical :: fpm_workflow_valid, ci_workflow_valid, docker_workflow_valid
         
         write(*,'(A)', advance='no') "Testing example workflow validation... "
         test_count = test_count + 1
@@ -251,7 +251,7 @@ contains
         logical :: workflow_structure_valid
         
         ! FPM workflow steps from documentation
-        fpm_workflow_steps(1) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        fpm_workflow_steps(1) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         fpm_workflow_steps(2) = "gcov src/*.f90"
         fpm_workflow_steps(3) = "fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
         fpm_workflow_steps(4) = "# Coverage report generated"
@@ -461,9 +461,9 @@ contains
         ! Version specifications from examples
         version_specs(1) = "compiler: gfortran"
         version_specs(2) = "version: 13"
-        version_specs(3) = "@v4"  # GitHub Actions versions
-        version_specs(4) = "@v1"  # Setup action versions
-        version_specs(5) = "@v5"  # FPM setup version
+        version_specs(3) = "@v4"  ! GitHub Actions versions
+        version_specs(4) = "@v1"  ! Setup action versions
+        version_specs(5) = "@v5"  ! FPM setup version
         
         ! Validate reproducibility structure
         reproducibility_valid = validate_reproducibility_structure(version_specs, 5)
@@ -508,7 +508,7 @@ contains
         linux_examples(1) = "runs-on: ubuntu-latest"
         linux_examples(2) = "apt-get install gfortran"
         linux_examples(3) = "export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH"
-        linux_examples(4) = "find build -name \"*.gcda\" -execdir gcov {} \\;"
+        linux_examples(4) = "find build -name ""*.gcda"" -execdir gcov {} \;"
         
         ! Validate compatibility structure
         compatibility_valid = validate_platform_compatibility_structure(linux_examples, 4)
@@ -542,7 +542,7 @@ contains
         
         ! Cross-platform examples from documentation
         cross_platform_examples(1) = "export FC=${{ matrix.compiler }}"
-        cross_platform_examples(2) = "fpm test --flag \"$COVERAGE_FLAGS\""
+        cross_platform_examples(2) = "fpm test --flag ""$COVERAGE_FLAGS"""
         cross_platform_examples(3) = "fortcov --source=. --output=coverage.html"
         cross_platform_examples(4) = "coverage-${{ matrix.compiler }}-${{ matrix.os }}.html"
         
@@ -587,8 +587,8 @@ contains
         
         ! Error recovery examples from documentation
         error_recovery_examples(1) = "gcov src/*.f90 || true"
-        error_recovery_examples(2) = "find build -name \"*.gcda\" -execdir gcov {} \\; || true"
-        error_recovery_examples(3) = "if [ -n \"$GIT_CHANGED\" ]; then echo \"Processing changes\"; else echo \"No changes\"; fi"
+        error_recovery_examples(2) = "find build -name ""*.gcda"" -execdir gcov {} \; || true"
+        error_recovery_examples(3) = "if [ -n ""$GIT_CHANGED"" ]; then echo ""Processing changes""; else echo ""No changes""; fi"
         error_recovery_examples(4) = "# Continue on coverage generation errors"
         
         ! Validate error handling structure

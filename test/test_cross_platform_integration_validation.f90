@@ -76,7 +76,7 @@ contains
         
         ! gfortran integration patterns from documentation
         gfortran_patterns(1) = "export FC=gfortran"
-        gfortran_patterns(2) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        gfortran_patterns(2) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         gfortran_patterns(3) = "gcov src/*.f90"
         gfortran_patterns(4) = "coverage-gfortran-ubuntu-latest.html"
         
@@ -178,7 +178,7 @@ contains
         ! Ubuntu integration patterns
         ubuntu_patterns(1) = "runs-on: ubuntu-latest"
         ubuntu_patterns(2) = "apt-get install gfortran"
-        ubuntu_patterns(3) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        ubuntu_patterns(3) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         ubuntu_patterns(4) = "coverage-gfortran-ubuntu-latest.html"
         
         ! Validate Ubuntu integration structure
@@ -293,7 +293,7 @@ contains
         
         ! Matrix execution patterns
         execution_patterns(1) = "export FC=${{ matrix.compiler }}"
-        execution_patterns(2) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        execution_patterns(2) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         execution_patterns(3) = "fortcov --source=. --output=coverage-${{ matrix.compiler }}-${{ matrix.os }}.html"
         
         ! Validate execution structure
@@ -389,10 +389,10 @@ contains
         logical :: adaptation_structure_valid
         
         ! Compiler-specific adaptations
-        compiler_adaptations(1) = "if [ \"$FC\" = \"gfortran\" ]; then COVERAGE_FLAGS=\"-fprofile-arcs -ftest-coverage\"; fi"
-        compiler_adaptations(2) = "if [ \"$FC\" = \"ifort\" ]; then COVERAGE_FLAGS=\"-prof-gen=srcpos\"; fi"
-        compiler_adaptations(3) = "if [ \"$FC\" = \"flang\" ]; then COVERAGE_FLAGS=\"-fprofile-instr-generate\"; fi"
-        compiler_adaptations(4) = "fpm test --flag \"$COVERAGE_FLAGS\""
+        compiler_adaptations(1) = "if [ ""$FC"" = ""gfortran"" ]; then COVERAGE_FLAGS=""-fprofile-arcs -ftest-coverage""; fi"
+        compiler_adaptations(2) = "if [ ""$FC"" = ""ifort"" ]; then COVERAGE_FLAGS=""-prof-gen=srcpos""; fi"
+        compiler_adaptations(3) = "if [ ""$FC"" = ""flang"" ]; then COVERAGE_FLAGS=""-fprofile-instr-generate""; fi"
+        compiler_adaptations(4) = "fpm test --flag ""$COVERAGE_FLAGS"""
         
         ! Validate adaptation structure
         adaptation_structure_valid = validate_compiler_adaptation_structure(compiler_adaptations, 4)
@@ -533,13 +533,13 @@ contains
         logical :: fpm_structure_valid
         
         ! FPM cross-platform patterns
-        fpm_patterns(1) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""  ! Linux/macOS
-        fmp_patterns(2) = "fpm.exe test --flag \"-fprofile-arcs -ftest-coverage\""  ! Windows
+        fpm_patterns(1) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""  ! Linux/macOS
+        fpm_patterns(2) = "fpm.exe test --flag ""-fprofile-arcs -ftest-coverage"""  ! Windows
         fpm_patterns(3) = "export FC=${{ matrix.compiler }}"
         fpm_patterns(4) = "fpm run fortcov -- --source=. --output=coverage.html"
         
         ! Validate FPM structure
-        fmp_structure_valid = validate_cross_platform_build_structure(fpm_patterns, 4)
+        fpm_structure_valid = validate_cross_platform_build_structure(fpm_patterns, 4)
         
         is_valid = fpm_structure_valid
     end function
@@ -552,7 +552,7 @@ contains
         
         ! CMake cross-platform patterns
         cmake_patterns(1) = "cmake -DCMAKE_BUILD_TYPE=Testing .."  ! Unix
-        cmake_patterns(2) = "cmake -G \"Visual Studio 16 2019\" .."  ! Windows
+        cmake_patterns(2) = "cmake -G ""Visual Studio 16 2019"" .."  ! Windows
         cmake_patterns(3) = "make && make test"  ! Unix
         cmake_patterns(4) = "cmake --build . --config Testing"  ! Cross-platform
         
@@ -616,7 +616,7 @@ contains
         compiler_env_patterns(1) = "export FC=gfortran"
         compiler_env_patterns(2) = "export FC=ifort"
         compiler_env_patterns(3) = "export FC=${{ matrix.compiler }}"
-        compiler_env_patterns(4) = "echo \"Using compiler: $FC\""
+        compiler_env_patterns(4) = "echo ""Using compiler: $FC"""
         
         ! Validate environment structure
         env_structure_valid = validate_environment_variable_structure(compiler_env_patterns, 4)
@@ -648,9 +648,9 @@ contains
         logical :: env_structure_valid
         
         ! Flags environment patterns from documentation
-        flags_env_patterns(1) = "export FCFLAGS=\"-fprofile-arcs -ftest-coverage\""
-        flags_env_patterns(2) = "export LDFLAGS=\"-lgcov\""
-        flags_env_patterns(3) = "COVERAGE_FLAGS=\"-fprofile-arcs -ftest-coverage\""
+        flags_env_patterns(1) = "export FCFLAGS=""-fprofile-arcs -ftest-coverage"""
+        flags_env_patterns(2) = "export LDFLAGS=""-lgcov"""
+        flags_env_patterns(3) = "COVERAGE_FLAGS=""-fprofile-arcs -ftest-coverage"""
         
         ! Validate environment structure
         env_structure_valid = validate_environment_variable_structure(flags_env_patterns, 3)
@@ -716,7 +716,7 @@ contains
         windows_paths(4) = ".\\coverage.html"
         
         ! Validate path structure
-        path_structure_valid = validate_path_separator_structure(windows_paths, 4, "\\")
+        path_structure_valid = validate_path_separator_structure(windows_paths, 4, "\"")
         
         is_valid = path_structure_valid
     end function
@@ -807,9 +807,9 @@ contains
         logical :: scalability_structure_valid
         
         ! Scalability patterns from documentation
-        scalability_patterns(1) = "find src -name \"*.f90\" | split -l 50 - batch_"
-        scalability_patterns(2) = "fortcov --source=. --output=\"coverage_$(basename $batch_file).json\""
-        scalability_patterns(3) = "fortcov --import=\"coverage_batch_*.json\" --output=final_coverage.html"
+        scalability_patterns(1) = "find src -name ""*.f90"" | split -l 50 - batch_"
+        scalability_patterns(2) = "fortcov --source=. --output=""coverage_$(basename $batch_file).json"""
+        scalability_patterns(3) = "fortcov --import=""coverage_batch_*.json"" --output=final_coverage.html"
         scalability_patterns(4) = "# Memory-efficient for large projects"
         
         ! Validate scalability structure

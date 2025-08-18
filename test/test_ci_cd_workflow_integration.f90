@@ -92,7 +92,7 @@ contains
         logical :: build_structure_valid
         
         ! Expected build command
-        build_commands(1) = "fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        build_commands(1) = "fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         
         ! Validate build structure
         build_structure_valid = validate_github_actions_run_command(build_commands, 1)
@@ -107,7 +107,7 @@ contains
         logical :: coverage_structure_valid
         
         ! Expected coverage commands
-        coverage_commands(1) = "find build -name \"*.gcda\" -path \"*/fortcov/*\" -execdir gcov {} \\; || true"
+        coverage_commands(1) = "find build -name ""*.gcda"" -path ""*/fortcov/*"" -execdir gcov {} \\; || true"
         coverage_commands(2) = "gcov src/*.f90 || true"
         coverage_commands(3) = "fpm run fortcov -- --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md"
         coverage_commands(4) = "# Coverage generation complete"
@@ -173,7 +173,7 @@ contains
         ! Expected GitLab CI configuration
         config_components(1) = "stages: - build - test - coverage"
         config_components(2) = "image: fortran/gfortran:latest"
-        config_components(3) = "variables: COVERAGE_FLAGS: \"-fprofile-arcs -ftest-coverage\""
+        config_components(3) = "variables: COVERAGE_FLAGS: ""-fprofile-arcs -ftest-coverage"""
         config_components(4) = "stage: coverage"
         
         ! Validate configuration structure
@@ -189,7 +189,7 @@ contains
         logical :: script_structure_valid
         
         ! Expected script commands
-        script_commands(1) = "fpm test --flag \"$COVERAGE_FLAGS\""
+        script_commands(1) = "fpm test --flag ""$COVERAGE_FLAGS"""
         script_commands(2) = "gcov src/*.f90"
         script_commands(3) = "fpm run fortcov -- --source=. --exclude='build/*' --output=coverage.html"
         
@@ -286,7 +286,7 @@ contains
         
         ! Expected build stage
         build_stage(1) = "stage('Build with Coverage') {"
-        build_stage(2) = "sh 'fpm test --flag \"-fprofile-arcs -ftest-coverage\"'"
+        build_stage(2) = "sh 'fpm test --flag ""-fprofile-arcs -ftest-coverage""'"
         
         ! Validate build stage structure
         stage_structure_valid = validate_jenkins_stage_structure(build_stage, 2)
@@ -303,7 +303,7 @@ contains
         ! Expected coverage stage
         coverage_stage(1) = "stage('Generate Coverage') {"
         coverage_stage(2) = "sh 'gcov src/*.f90'"
-        coverage_stage(3) = "sh 'fpm run fortcov -- --source=. --exclude=\"build/*\" --output=coverage.html'"
+        coverage_stage(3) = "sh 'fpm run fortcov -- --source=. --exclude=""build/*"" --output=coverage.html'"
         
         ! Validate coverage stage structure
         stage_structure_valid = validate_jenkins_stage_structure(coverage_stage, 3)
@@ -365,7 +365,7 @@ contains
         ! Expected Docker multi-stage pattern
         docker_stages(1) = "FROM fortran/gfortran:latest as builder"
         docker_stages(2) = "RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux-x86_64"
-        docker_stages(3) = "RUN fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        docker_stages(3) = "RUN fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         docker_stages(4) = "RUN gcov src/*.f90"
         docker_stages(5) = "RUN fpm run fortcov -- --source=. --output=coverage.html"
         docker_stages(6) = "FROM alpine:latest"
@@ -385,7 +385,7 @@ contains
         ! Expected HPC module pattern
         hpc_components(1) = "module load gcc/13.2.0"
         hpc_components(2) = "module load cmake/3.25.0"
-        hpc_components(3) = "export FCFLAGS=\"-fprofile-arcs -ftest-coverage\""
+        hpc_components(3) = "export FCFLAGS=""-fprofile-arcs -ftest-coverage"""
         hpc_components(4) = "make clean && make test"
         hpc_components(5) = "fortcov --source=src --exclude='*test*' --output=coverage-$(date +%Y%m%d).html"
         
@@ -431,7 +431,7 @@ contains
         slurm_directives(2) = "#SBATCH --ntasks=1"
         slurm_directives(3) = "#SBATCH --time=00:30:00"
         slurm_directives(4) = "module load fortran-coverage-tools"
-        slurm_directives(5) = "srun fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+        slurm_directives(5) = "srun fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         slurm_directives(6) = "srun gcov src/*.f90"
         slurm_directives(7) = "cp coverage-${SLURM_JOB_ID}.html /shared/coverage-reports/"
         
@@ -449,7 +449,7 @@ contains
         
         ! Expected module commands
         module_commands(1) = "module load gcc/13.2.0"
-        module_commands(2) = "export FCFLAGS=\"-fprofile-arcs -ftest-coverage\""
+        module_commands(2) = "export FCFLAGS=""-fprofile-arcs -ftest-coverage"""
         module_commands(3) = "make clean && make test"
         module_commands(4) = "fortcov --source=src --output=coverage.html"
         
@@ -511,7 +511,7 @@ contains
         ! Expected exclusion rules
         exclusion_rules(1) = "exclude:"
         exclusion_rules(2) = "- os: macos-latest"
-        exclusion_rules(3) = "compiler: ifort  # Intel Fortran not available on macOS"
+        exclusion_rules(3) = "compiler: ifort  ! Intel Fortran not available on macOS"
         
         ! Validate exclusion structure
         exclusion_structure_valid = validate_exclusion_rules_structure(exclusion_rules, 3)
@@ -688,7 +688,7 @@ contains
         
         ! Error handling patterns
         error_patterns(1) = "gcov src/*.f90 || true"
-        error_patterns(2) = "find build -name \"*.gcda\" -execdir gcov {} \\; || true"
+        error_patterns(2) = "find build -name ""*.gcda"" -execdir gcov {} \\; || true"
         error_patterns(3) = "# Continue on coverage generation errors"
         
         ! Validate error handling
@@ -704,7 +704,7 @@ contains
         logical :: recovery_valid
         
         ! Recovery patterns
-        recovery_patterns(1) = "|| true  # Allow failure and continue"
+        recovery_patterns(1) = "|| true  ! Allow failure and continue"
         recovery_patterns(2) = "# Fallback to alternative coverage method"
         
         ! Validate recovery patterns
