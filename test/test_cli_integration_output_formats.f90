@@ -68,7 +68,7 @@ contains
             return
         end if
         
-        call reporter%generate_report(coverage_data, "-", error_flag)
+        call reporter%generate_report(coverage_data, "-", error_flag, .false.)
         
         ! Then: Should not have error
         call assert(.not. error_flag, "markdown report generation", &
@@ -99,7 +99,7 @@ contains
             return
         end if
         
-        call reporter%generate_report(coverage_data, "-", error_flag)
+        call reporter%generate_report(coverage_data, "-", error_flag, .false.)
         
         ! Then: Should not have error
         call assert(.not. error_flag, "json report generation", &
@@ -135,7 +135,7 @@ contains
             return
         end if
         
-        call reporter%generate_report(coverage_data, "-", error_flag)
+        call reporter%generate_report(coverage_data, "-", error_flag, .false.)
         
         ! Then: Should not have error
         call assert(.not. error_flag, "xml report generation", &

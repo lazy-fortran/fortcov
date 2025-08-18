@@ -172,7 +172,7 @@ contains
         test_data = coverage_data_t(files=files)
         
         ! When: Calling generate_report()
-        call reporter%generate_report(test_data, "mock_output.txt", error_flag)
+        call reporter%generate_report(test_data, "mock_output.txt", error_flag, .false.)
         
         ! Then: Should record the coverage_data passed
         passed = (.not. error_flag) .and. reporter%was_called
@@ -218,7 +218,7 @@ contains
         
         ! Given: Output path "test_output.md"
         ! When: Calling generate_report()
-        call reporter%generate_report(test_data, test_file, error_flag)
+        call reporter%generate_report(test_data, test_file, error_flag, .false.)
         
         ! Then: Should create file at specified path
         inquire(file=test_file, exist=file_exists)
@@ -261,7 +261,7 @@ contains
         
         ! Given: Output path "-" (stdout indicator)
         ! When: Calling generate_report()
-        call reporter%generate_report(test_data, "-", error_flag)
+        call reporter%generate_report(test_data, "-", error_flag, .false.)
         
         ! Then: Should write to standard output (and not error)
         passed = .not. error_flag
@@ -314,7 +314,7 @@ contains
         expected_coverage = files(1)%get_line_coverage_percentage()
         
         ! Generate report
-        call reporter%generate_report(test_data, test_file, error_flag)
+        call reporter%generate_report(test_data, test_file, error_flag, .false.)
         
         ! Read and validate content
         inquire(file=test_file, exist=file_exists)

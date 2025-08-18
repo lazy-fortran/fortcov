@@ -232,7 +232,7 @@ coverage_data_t → statistics → coverage_stats_t → markdown_reporter
 **Purpose**: Abstract interface for all report generators.
 
 **Abstract Type**: `coverage_reporter_t`
-- `generate_report(coverage_data, output_path)`
+- `generate_report(coverage_data, output_path, error_flag, quiet_mode)` (Issue #130: Added optional quiet_mode parameter)
 - `get_format_name() -> string`
 - `supports_diff() -> logical`
 
@@ -535,6 +535,22 @@ While the current implementation is production-ready, potential enhancements cou
 - Linear algorithms scale with codebase size
 - Minimal memory overhead beyond input data
 - No I/O or blocking operations during calculation
+
+### Quiet Mode Implementation (Issue #130)
+
+**Purpose**: Suppress coverage report output to stdout when `--quiet` flag is enabled, while preserving error and warning messages on stderr.
+
+**Implementation**:
+- Added optional `quiet_mode` parameter to `generate_report_interface` in `coverage_reporter_t`
+- All concrete reporter implementations (Markdown, JSON, XML, HTML, Mock) check for stdout output + quiet mode
+- When `output_path = "-"` (stdout) AND `quiet_mode = .true.`, reporters return immediately without writing
+- File output is never suppressed, only stdout output
+- Error messages continue to be displayed via stderr regardless of quiet mode
+
+**Integration**:
+- `coverage_engine.f90` passes `config%quiet` to all reporter calls
+- CLI flag parsing already handled `--quiet` and `-q` flags in `fortcov_config.f90`
+- Backward compatibility maintained with optional parameter (defaults to `.false.`)
 
 ### Conclusion: Architecture Complete
 

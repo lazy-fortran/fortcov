@@ -312,3 +312,117 @@ end function
 - Smart caching for repeated validations
 
 This validation architecture provides comprehensive protection against the identified security vulnerabilities while maintaining high performance and system reliability. The design emphasizes early failure detection, clear error reporting, and graceful degradation to ensure robust operation in production environments.
+
+## CLI Interface Architecture (Issue #130)
+
+### CLI Flag System Design
+
+The CLI interface follows a structured approach for handling command-line arguments with consistent behavior across all flags. The system separates flag parsing from business logic to ensure maintainable and testable code.
+
+#### Architecture Components
+
+**1. Flag Processing Pipeline**
+```fortran
+User Input → Argument Classification → Flag Processing → Configuration Update → Business Logic
+```
+
+**2. Output Control Mechanism**
+- **Verbose Mode**: `config%verbose = .true.` - enables detailed progress information
+- **Quiet Mode**: `config%quiet = .true.` - suppresses all non-error output  
+- **Default Mode**: Neither verbose nor quiet - normal informational output
+- **Conflict Resolution**: Quiet takes precedence over verbose when both are specified
+
+#### Issue #130: --quiet Flag Implementation
+
+**Current Architecture Analysis:**
+The quiet flag is correctly parsed and stored in `config%quiet` but has inconsistent application across output generation points.
+
+**Root Cause:**
+Output statements throughout the codebase use different patterns for quiet mode checking:
+- ✅ Correct: `if (.not. config%quiet) print *, "message"`
+- ✅ Correct: `if (config%verbose .and. .not. config%quiet) print *, "verbose message"`
+- ❌ Missing: Some output statements lack quiet mode checks entirely
+
+**Architecture Requirements:**
+
+**1. Output Categorization**
+- **Error Output**: Always displayed (stderr) - never suppressed by --quiet
+- **Warning Output**: Always displayed - never suppressed by --quiet  
+- **Informational Output**: Suppressed by --quiet flag
+- **Verbose Output**: Only shown when verbose=true AND quiet=false
+- **Coverage Results**: Suppressed by --quiet when output is stdout ("-")
+
+**2. Output Control Rules**
+```fortran
+! Error messages - always display
+if (error_condition) then
+    print *, "Error: ", error_message
+end if
+
+! Warning messages - always display  
+if (warning_condition) then
+    print *, "Warning: ", warning_message
+end if
+
+! Informational output - respect quiet flag
+if (.not. config%quiet) then
+    print *, "Processing file: ", filename
+end if
+
+! Verbose output - require verbose AND not quiet
+if (config%verbose .and. .not. config%quiet) then
+    print *, "Detailed information: ", details
+end if
+
+! Coverage results to stdout - respect quiet flag
+if (.not. config%quiet .and. config%output_path == "-") then
+    ! Display coverage results
+end if
+```
+
+**3. Implementation Strategy**
+
+**Phase 1: Output Audit**
+- Identify all print/write statements in coverage_engine.f90
+- Categorize each output by type (error/warning/info/verbose/results)
+- Document current quiet flag compliance status
+
+**Phase 2: Systematic Fix**
+- Add missing quiet flag checks to informational output
+- Ensure error/warning output remains unaffected  
+- Verify verbose output respects both verbose AND quiet flags
+- Handle special case of coverage results to stdout
+
+**Phase 3: Testing Strategy**
+- Unit tests for flag parsing (already exist)
+- Integration tests for output suppression behavior
+- Regression tests to ensure error/warning output is preserved
+
+#### Risk Assessment
+
+**Technical Risks:**
+- **Risk**: Over-suppression of important error messages
+- **Mitigation**: Maintain strict categorization - errors/warnings never suppressed
+- **Risk**: Missing output control points causing inconsistent behavior  
+- **Mitigation**: Systematic audit and centralized output control patterns
+
+**Quality Risks:**
+- **Risk**: Breaking existing user workflows that depend on current output behavior
+- **Mitigation**: Focus only on fixing documented --quiet behavior, preserve all other output
+- **Risk**: Test coverage gaps for CLI flag interactions
+- **Mitigation**: Comprehensive test matrix covering flag combinations
+
+#### Success Metrics
+
+**Functional Success:**
+- `fortcov --quiet` produces no stdout output when results go to stdout
+- Error and warning messages remain visible regardless of --quiet flag
+- Verbose + quiet combination correctly suppresses verbose output
+- All existing functionality preserved for non-quiet usage
+
+**Testing Success:**
+- Integration test demonstrating proper --quiet behavior
+- Unit tests covering flag combination edge cases
+- Performance tests show no measurable overhead from output checks
+
+This CLI architecture enhancement ensures consistent and predictable behavior for the --quiet flag while maintaining backward compatibility and robust error reporting.

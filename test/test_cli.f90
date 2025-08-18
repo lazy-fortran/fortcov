@@ -38,6 +38,9 @@ program test_cli
     ! Test 10: Verbose output
     all_tests_passed = all_tests_passed .and. test_verbose_output()
     
+    ! Test 11: Quiet output (Issue #130)
+    all_tests_passed = all_tests_passed .and. test_quiet_output()
+    
     if (all_tests_passed) then
         print *, "All tests PASSED"
         call exit(0)
@@ -355,5 +358,37 @@ contains
             print *, "    PASSED"
         end if
     end function test_verbose_output
+
+    ! Test 11: Quiet output (Issue #130)
+    ! Given: Command fortcov --quiet
+    ! When: Executing
+    ! Then: Should suppress informational output (configuration test)
+    function test_quiet_output() result(passed)
+        logical :: passed
+        type(config_t) :: config
+        character(len=256) :: error_message
+        logical :: success
+        character(len=:), allocatable :: args(:)
+        
+        print *, "  Test 11: Quiet output (Issue #130)"
+        
+        ! Setup: Args with quiet flag and source
+        allocate(character(len=15) :: args(2))
+        args(1) = "--quiet"
+        args(2) = "--source=."
+        
+        ! Execute
+        call parse_config(args, config, success, error_message)
+        
+        ! Verify: Should set quiet flag
+        passed = success .and. config%quiet .and. .not. config%verbose
+        
+        if (.not. passed) then
+            print *, "    FAILED: Expected quiet=T, verbose=F, success=T"
+            print *, "      Got quiet=", config%quiet, ", verbose=", config%verbose
+        else
+            print *, "    PASSED - Quiet flag configuration"
+        end if
+    end function test_quiet_output
 
 end program test_cli

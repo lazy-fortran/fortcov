@@ -81,6 +81,15 @@ fortcov --source=src --tui
 
 # Import from JSON and convert to markdown
 fortcov --import=coverage.json --output-format=markdown --output=report.md
+
+# Quiet mode for automation/scripting (suppresses coverage report output)
+fortcov --source=src --output=coverage.md --quiet
+
+# Quiet mode with file output (only suppresses stdout, files are still written)
+fortcov --source=src --output=report.md --quiet
+
+# CI/CD pipeline usage (errors and warnings still visible)
+fortcov --source=src --fail-under=80 --quiet && echo "Coverage passed"
 ```
 
 This generates a markdown report showing:
@@ -184,6 +193,28 @@ grep -n ":" src/*.gcov | grep -E "(^[^:]*:[^:]*:-|:[0-9]{10,}:)"
 # Contact support if legitimate data triggers false positives
 ```
 
+### "--quiet flag not working" or "Unexpected verbose output"
+
+**Problem**: Coverage reports still appear despite using `--quiet` flag.
+
+**Solution**:
+```bash
+# Verify quiet flag is recognized (should show help with quiet option)
+fortcov --help | grep -A1 -B1 quiet
+
+# For automation: ensure output goes to file, not stdout
+fortcov --source=src --output=coverage.md --quiet  # Correct
+fortcov --source=src --quiet > coverage.md         # May show output
+
+# Check if mixing verbose and quiet flags (quiet takes precedence)
+fortcov --source=src --quiet --verbose  # Should be quiet
+
+# Verify errors and warnings still appear (this is correct behavior)
+fortcov --source=nonexistent --quiet    # Errors should still show
+```
+
+**Note**: The `--quiet` flag only suppresses informational output and coverage reports to stdout. Error messages, warnings, and file output remain unaffected.
+
 ## Security
 
 FortCov implements comprehensive security protections against common attack vectors:
@@ -273,7 +304,7 @@ Note: Input validation limits are currently hardcoded for security. Configuratio
     fpm build --flag "-fprofile-arcs -ftest-coverage"
     fpm test --flag "-fprofile-arcs -ftest-coverage"
     gcov src/*.f90
-    fortcov --source=src --output=coverage.md --fail-under=80
+    fortcov --source=src --output=coverage.md --fail-under=80 --quiet
 ```
 
 #### GitLab CI
@@ -284,7 +315,7 @@ coverage:
     - fpm build --flag "-fprofile-arcs -ftest-coverage"
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - gcov src/*.f90
-    - fortcov --source=src --output=coverage.md
+    - fortcov --source=src --output=coverage.md --quiet
   artifacts:
     reports:
       coverage_report:

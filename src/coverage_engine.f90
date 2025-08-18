@@ -148,7 +148,7 @@ contains
         end if
         
         call reporter%generate_report(merged_coverage, config%output_path, &
-                                     reporter_error)
+                                     reporter_error, config%quiet)
         if (reporter_error) then
             if (.not. config%quiet) then
                 print *, "Error: Failed to generate report at: ", &
@@ -556,7 +556,7 @@ contains
         end if
         
         call reporter%generate_report(merged_coverage, config%output_path, &
-                                     reporter_error)
+                                     reporter_error, config%quiet)
         if (reporter_error) then
             call handle_permission_denied(config%output_path, error_ctx)
             exit_code = EXIT_FAILURE
@@ -746,7 +746,7 @@ contains
         end if
         
         call reporter%generate_report(coverage_data, config%output_path, &
-                                     reporter_error)
+                                     reporter_error, config%quiet)
         if (reporter_error) then
             if (.not. config%quiet) then
                 print *, "Error: Failed to generate report at: ", &
