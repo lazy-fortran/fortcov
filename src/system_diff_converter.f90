@@ -401,14 +401,17 @@ contains
         total_lines = 0
         covered_lines = 0
         
-        do i = 1, size(file_data%lines)
-            if (file_data%lines(i)%is_executable) then
-                total_lines = total_lines + 1
-                if (file_data%lines(i)%execution_count > 0) then
-                    covered_lines = covered_lines + 1
+        ! Memory safety: Check if lines array is allocated
+        if (allocated(file_data%lines)) then
+            do i = 1, size(file_data%lines)
+                if (file_data%lines(i)%is_executable) then
+                    total_lines = total_lines + 1
+                    if (file_data%lines(i)%execution_count > 0) then
+                        covered_lines = covered_lines + 1
+                    end if
                 end if
-            end if
-        end do
+            end do
+        end if
         
         if (total_lines > 0) then
             line_rate = real(covered_lines) / real(total_lines)
