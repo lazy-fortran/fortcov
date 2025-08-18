@@ -54,8 +54,42 @@ The most common workflow:
 
 ```bash
 # Generate coverage report for your src/ directory
+# (Assumes .gcov files are in src/ directory)
 fortcov --source=src --output=coverage.md
 ```
+
+**Important**: The `--source` path must contain `.gcov` files. FortCov searches for `*.gcov` files in the specified directory but does not search subdirectories recursively.
+
+### Understanding Source Paths
+
+**How FortCov finds coverage files**:
+- Searches for `*.gcov` files in the exact directory specified by `--source`
+- Does NOT search recursively in subdirectories 
+- Multiple `--source` paths can be specified to search multiple directories
+
+**Common source path patterns**:
+
+```bash
+# When .gcov files are generated in your source directory
+gcov src/*.f90  # Creates .gcov files in src/
+fortcov --source=src --output=coverage.md
+
+# When .gcov files are generated in project root  
+gcov src/*.f90  # Creates .gcov files in current directory
+fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
+
+# Multiple source directories
+fortcov --source=src/core --source=src/utils --output=coverage.md
+
+# Finding where your .gcov files are located
+find . -name "*.gcov" -type f
+```
+
+**Source path troubleshooting**:
+- Use `find . -name "*.gcov"` to locate your coverage files
+- Set `--source` to the directory containing `.gcov` files, not source code
+- If no `.gcov` files exist, run `gcov` first to generate them
+- Use absolute paths if relative paths cause issues: `--source=$(pwd)/src`
 
 ### Common Use Cases
 
@@ -129,7 +163,7 @@ fortcov --diff=baseline.json,current.json --threshold=5.0 --output=diff.md
 
 | Option | Short | Description | Example |
 |--------|-------|-------------|---------|
-| `--source=PATH` | `-s` | Source directory | `--source=src` |
+| `--source=PATH` | `-s` | Source directory to search for .gcov files (required) | `--source=src` |
 | `--output=FILE` | `-o` | Output file | `--output=coverage.md` |
 | `--fail-under=N` | `-t` | Coverage threshold | `--fail-under=80` |
 | `--quiet` | `-q` | Suppress output | `--quiet` |
@@ -148,7 +182,12 @@ fortcov --help  # See complete list of options
 
 #### ❌ "No coverage files found"
 
-**Cause**: Missing `.gcov` files or wrong source path
+**Cause**: Missing `.gcov` files or incorrect source path
+
+**How FortCov finds coverage files**:
+- Searches for `*.gcov` files in specified source directories
+- Does NOT search recursively in subdirectories (searches only the specified path)
+- Requires exact path to directory containing .gcov files
 
 **Solution**:
 ```bash
@@ -158,10 +197,15 @@ fpm build --flag "-fprofile-arcs -ftest-coverage"
 # 2. Run your tests to generate .gcda files  
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# 3. Generate .gcov files  
+# 3. Generate .gcov files in your source directory
+cd src && gcov *.f90
+# OR from project root:
 gcov src/*.f90
 
-# 4. Run fortcov
+# 4. Point --source to directory containing .gcov files
+# If .gcov files are in src/:
+fortcov --source=src --output=coverage.md
+# If .gcov files are in project root:
 fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
 ```
 

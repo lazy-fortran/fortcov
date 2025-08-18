@@ -76,11 +76,19 @@ contains
         
         if (size(coverage_files) == 0) then
             if (.not. config%quiet) then
-                print *, "⚠️  No coverage files found in source directories"
+                print *, "⚠️  No .gcov files found in source directories"
                 print *, "💡 Make sure you:"
                 print *, "   1. Built with coverage: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
                 print *, "   2. Ran your tests: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
                 print *, "   3. Generated .gcov files: gcov src/*.f90"
+                print *, "   4. Located .gcov files: find . -name '*.gcov' -type f"
+                print *, "   5. Set --source to directory containing .gcov files"
+                if (allocated(config%source_paths) .and. size(config%source_paths) > 0) then
+                    print *, "📁 Searched in:", (trim(config%source_paths(i))//" ", i=1,min(3,size(config%source_paths)))
+                    if (size(config%source_paths) > 3) then
+                        print *, "     ... and", size(config%source_paths)-3, "more directories"
+                    end if
+                end if
             end if
             ! Issue #109: Differentiate between strict and default modes
             if (config%strict_mode) then

@@ -718,7 +718,7 @@ contains
         print *, "  fortcov --source=src --tui                                   # Interactive browser"
         print *, ""
         print *, "ESSENTIAL OPTIONS:"
-        print *, "  -s, --source=PATH         📁 Source directory to analyze (required)"
+        print *, "  -s, --source=PATH         📁 Directory containing .gcov files (required)"
         print *, "  -o, --output=FILE         📄 Output file [default: stdout]"
         print *, "  -t, --fail-under=N        🎯 Minimum coverage threshold (0-100)"
         print *, "  -v, --verbose             💬 Show detailed processing information"
@@ -778,8 +778,11 @@ contains
         print *, "  1️⃣  Build with coverage:  fpm build --flag ""-fprofile-arcs -ftest-coverage"""
         print *, "  2️⃣  Run your tests:       fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         print *, "  3️⃣  Generate .gcov data:  gcov src/*.f90"
-        print *, "  4️⃣  Create report:        fortcov -s src -o coverage.md"
-        print *, "  5️⃣  View your results:    cat coverage.md"
+        print *, "  4️⃣  Locate .gcov files:   find . -name ""*.gcov"" -type f"
+        print *, "  5️⃣  Create report:        fortcov --source=<dir-with-gcov> -o coverage.md"
+        print *, "  6️⃣  View your results:    cat coverage.md"
+        print *, ""
+        print *, "📍 CRITICAL: Set --source to directory containing .gcov files, not source code"
         print *, ""
         print *, "📚 Documentation: https://github.com/lazy-fortran/fortcov"
         print *, "🐛 Issues & Support: https://github.com/lazy-fortran/fortcov/issues"
@@ -1013,8 +1016,9 @@ contains
             ! Only require --source if not importing existing coverage data
             if (len_trim(config%import_file) == 0) then
                 success = .false.
-                error_message = "Required argument missing: --source=PATH (source directory)" // char(10) // &
+                error_message = "Required argument missing: --source=PATH (directory containing .gcov files)" // char(10) // &
                     "Basic usage: fortcov --source=src --output=coverage.md" // char(10) // &
+                    "First run: gcov src/*.f90 && find . -name '*.gcov' to locate coverage files" // char(10) // &
                     "For help: fortcov --help"
             end if
         end if
