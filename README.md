@@ -135,6 +135,63 @@ fpm run -- --source=src --output=coverage.md
 2. Ensure output directory is writable
 3. Run with appropriate permissions
 
+### "File too large" or "Memory exhaustion" errors
+
+**Problem**: Coverage files exceed system limits or available memory.
+
+**Solution**:
+```bash
+# Check coverage file sizes
+find src/ -name "*.gcov" -exec ls -lh {} \; | sort -k5 -hr | head -5
+
+# Option 1: Process in smaller batches
+fortcov --source=src/core --output=core_coverage.md
+fortcov --source=src/utils --output=utils_coverage.md
+
+# Option 2: Increase limits in config
+echo "&input_validation max_file_size_mb = 500 /" > custom.nml
+fortcov --config=custom.nml --source=src
+
+# Option 3: Clean up large gcov files
+find . -name "*.gcov" -size +50M -delete
+gcov src/*.f90  # Regenerate smaller files
+```
+
+### "Invalid line number" or "Data validation failed" errors
+
+**Problem**: Corrupted or malformed coverage data.
+
+**Solution**:
+```bash
+# Check for corrupted gcov files
+find src/ -name "*.gcov" -exec head -5 {} \; | grep -E "^[^0-9#]"
+
+# Regenerate clean coverage data
+rm -f *.gcov *.gcda
+gfortran -fprofile-arcs -ftest-coverage your_code.f90 -o your_program
+./your_program
+gcov your_code.f90
+
+# Verify data integrity
+fortcov --source=src --verbose --output=coverage.md
+```
+
+### "Integer overflow" or "Division by zero" errors
+
+**Problem**: Extreme values in coverage data trigger protection mechanisms.
+
+**Solution**:
+```bash
+# Enable strict validation mode
+echo "&input_validation enable_strict_validation = .true. /" > fortcov.nml
+fortcov --config=fortcov.nml --source=src
+
+# Check for problematic data patterns
+grep -n ":" src/*.gcov | grep -E "(^[^:]*:[^:]*:-|:[0-9]{10,}:)"
+
+# Contact support if legitimate data triggers false positives
+```
+
 ## Security
 
 FortCov implements comprehensive security protections against common attack vectors:
@@ -175,6 +232,65 @@ Configure timeout protection in `fortcov.nml`:
 ```
 
 **Note**: FortCov automatically rejects dangerous file patterns and validates all inputs. No additional security configuration is required for normal usage.
+
+## Input Validation & Limits
+
+FortCov implements comprehensive input validation to protect against malformed coverage data and prevent resource exhaustion.
+
+### Built-in Input Limits
+
+```bash
+# Default limits (configurable via fortcov.nml)
+Maximum file size: 100MB
+Maximum line number: 1,000,000
+Maximum lines per file: 1,000,000
+Maximum path length: 4,096 characters
+Maximum filename length: 255 characters
+```
+
+### Large File Handling
+
+For projects with large coverage files:
+
+```bash
+# Check file sizes before processing
+find src/ -name "*.gcov" -exec ls -lh {} \; | head -5
+
+# Process large projects in batches
+fortcov --source=src/core --output=core_coverage.md
+fortcov --source=src/utils --output=utils_coverage.md
+
+# Configure higher limits via config file
+fortcov --config=fortcov.nml --source=src --output=coverage.md
+```
+
+### Memory Management
+
+FortCov automatically manages memory allocation for coverage data:
+
+```bash
+# System requirements for different project sizes
+Small projects (<1MB coverage data): 100MB RAM
+Medium projects (<10MB coverage data): 500MB RAM  
+Large projects (<100MB coverage data): 2GB RAM
+
+# Monitor memory usage during processing
+fortcov --source=src --verbose --output=coverage.md
+```
+
+### Validation Configuration
+
+Configure input validation limits in `fortcov.nml`:
+
+```fortran
+&input_validation
+    max_file_size_mb = 100
+    max_line_number = 1000000
+    max_lines_per_file = 1000000
+    enable_strict_validation = .true.
+    memory_limit_mb = 2048
+/
+```
 
 ### Integration with CI/CD
 
