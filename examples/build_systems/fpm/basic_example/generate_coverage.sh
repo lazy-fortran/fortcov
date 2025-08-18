@@ -1,11 +1,11 @@
 #!/bin/bash
 # FPM Coverage Generation Script
-# Demonstrates Pattern 1: Standard FPM + gcov Workflow from DESIGN.md
+# Demonstrates Pattern 2: Build-Integrated Coverage Discovery from DESIGN.md
 
 set -e  # Exit on error
 
 echo "=== FPM Build System Integration Example ==="
-echo "Pattern 1: Standard FPM + gcov Workflow"
+echo "Pattern 2: Build-Integrated Coverage Discovery"
 echo
 
 # Clean previous coverage data
@@ -31,7 +31,7 @@ echo "Command: fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
 cat > coverage.md << 'EOF'
 # FPM Integration Coverage Report
 
-Generated using Pattern 1: Standard FPM + gcov Workflow
+Generated using Pattern 2: Build-Integrated Coverage Discovery
 
 ## Summary
 - **Total Lines**: 45
@@ -66,5 +66,5 @@ ls -la *.gcov 2>/dev/null || echo "No .gcov files found - check compilation flag
 
 echo
 echo "=== FPM Integration Complete ==="
-echo "This example demonstrates DESIGN.md Pattern 1 for FPM integration."
+echo "This example demonstrates DESIGN.md Pattern 2 for FPM integration."
 echo "The workflow: fpm test (with coverage flags) → gcov → fortcov"
