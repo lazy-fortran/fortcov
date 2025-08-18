@@ -127,22 +127,37 @@ contains
         
         call test_start(test_name)
         
-        ! Test markdown format selection
-        call simulate_cli_args(["--format", "markdown"], config)
+        ! Test markdown format selection (using individual calls to avoid string length issues)
+        block
+            character(len=20) :: args(2)
+            args(1) = "--format"
+            args(2) = "markdown"
+            call simulate_cli_args(args, config)
+        end block
         if (config%output_format /= "markdown") then
             call test_fail(test_name, "Markdown format selection failed")
             return
         end if
         
         ! Test JSON format selection
-        call simulate_cli_args(["--format", "json"], config)
+        block
+            character(len=20) :: args(2)
+            args(1) = "--format"
+            args(2) = "json"
+            call simulate_cli_args(args, config)
+        end block
         if (config%output_format /= "json") then
             call test_fail(test_name, "JSON format selection failed")
             return
         end if
         
         ! Test HTML format selection (if supported)
-        call simulate_cli_args(["--format", "html"], config)
+        block
+            character(len=20) :: args(2)
+            args(1) = "--format"
+            args(2) = "html"
+            call simulate_cli_args(args, config)
+        end block
         format_selection_works = (config%output_format == "html") .or. &
                                 (config%output_format == "markdown")  ! fallback acceptable
         
@@ -169,7 +184,12 @@ contains
         call simulate_cli_execution_output(["test.gcov"], normal_output)
         
         ! Run with quiet flag
-        call simulate_cli_execution_output(["--quiet", "test.gcov"], quiet_output)
+        block
+            character(len=20) :: args(2)
+            args(1) = "--quiet"
+            args(2) = "test.gcov"
+            call simulate_cli_execution_output(args, quiet_output)
+        end block
         
         ! Quiet output should be significantly less verbose
         output_suppressed = (len(quiet_output) < len(normal_output) / 2)
@@ -197,7 +217,12 @@ contains
         call create_test_config_file()
         
         ! Test config file loading
-        call simulate_cli_args(["--config", "fortcov.nml.example"], config)
+        block
+            character(len=30) :: args(2)
+            args(1) = "--config"
+            args(2) = "fortcov.nml.example"
+            call simulate_cli_args(args, config)
+        end block
         call validate_config_loaded(config, config_loaded)
         
         if (config_loaded) then
@@ -221,7 +246,12 @@ contains
         call test_start(test_name)
         
         ! Test invalid format
-        call simulate_cli_invalid_args(["--format", "invalid"], exit_code, error_output)
+        block
+            character(len=20) :: args(2)
+            args(1) = "--format"
+            args(2) = "invalid"
+            call simulate_cli_invalid_args(args, exit_code, error_output)
+        end block
         
         ! Should exit with error and provide helpful message
         error_handled_gracefully = (exit_code /= 0) .and. &
@@ -442,8 +472,13 @@ contains
         call test_start(test_name)
         
         ! Capture stderr in normal and quiet modes
-        call simulate_cli_stderr_capture(["test.gcov"], normal_stderr)
-        call simulate_cli_stderr_capture(["--quiet", "test.gcov"], quiet_stderr)
+        call simulate_cli_stderr_capture(["test.gcov "], normal_stderr)
+        block
+            character(len=20) :: args(2)
+            args(1) = "--quiet"
+            args(2) = "test.gcov"
+            call simulate_cli_stderr_capture(args, quiet_stderr)
+        end block
         
         ! Quiet mode should suppress diagnostic output
         output_suppressed = (len(quiet_stderr) < len(normal_stderr) / 3)
@@ -742,13 +777,17 @@ contains
     
     subroutine setup_test_exclude_patterns(config)
         type(config_t), intent(inout) :: config
-        config%has_exclude_patterns = .true.
+        ! Set up actual exclude patterns instead of non-existent flag
+        if (.not. allocated(config%exclude_patterns)) then
+            allocate(character(len=20) :: config%exclude_patterns(1))
+            config%exclude_patterns(1) = "test_*.f90"
+        end if
     end subroutine
     
     subroutine simulate_file_discovery_with_config(config, files_found)
         type(config_t), intent(in) :: config
         integer, intent(out) :: files_found
-        if (config%has_exclude_patterns) then
+        if (allocated(config%exclude_patterns)) then
             files_found = 1  ! Some files excluded
         else
             files_found = 3  ! No files excluded
