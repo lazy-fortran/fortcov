@@ -52,13 +52,84 @@ int create_process_with_timeout(const char* command,
     /* Record start time */
     handle->start_time = GetTickCount();
     
-    /* Windows implementation stub */
-    /* TODO: Implement full Windows process creation with job objects */
+    /* Create job object for process management */
+    handle->job_handle = CreateJobObject(NULL, NULL);
+    if (handle->job_handle == NULL) {
+        return PROCESS_ERROR_CREATION_FAILED;
+    }
     
-    return PROCESS_ERROR_NOT_IMPLEMENTED;
+    /* Set job object limits to terminate all processes when job closes */
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION limit_info;
+    memset(&limit_info, 0, sizeof(limit_info));
+    limit_info.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+    
+    if (!SetInformationJobObject(handle->job_handle, JobObjectExtendedLimitInformation,
+                                &limit_info, sizeof(limit_info))) {
+        CloseHandle(handle->job_handle);
+        handle->job_handle = NULL;
+        return PROCESS_ERROR_CREATION_FAILED;
+    }
+    
+    /* Prepare process creation structures */
+    STARTUPINFO startup_info;
+    PROCESS_INFORMATION process_info;
+    
+    memset(&startup_info, 0, sizeof(startup_info));
+    startup_info.cb = sizeof(startup_info);
+    memset(&process_info, 0, sizeof(process_info));
+    
+    /* Create command line copy (CreateProcess may modify it) */
+    char* command_copy = _strdup(command);
+    if (!command_copy) {
+        CloseHandle(handle->job_handle);
+        handle->job_handle = NULL;
+        return PROCESS_ERROR_CREATION_FAILED;
+    }
+    
+    /* Create process */
+    BOOL success = CreateProcess(
+        NULL,           /* Application name */
+        command_copy,   /* Command line */
+        NULL,           /* Process security attributes */
+        NULL,           /* Thread security attributes */
+        FALSE,          /* Inherit handles */
+        CREATE_SUSPENDED | CREATE_NEW_PROCESS_GROUP, /* Creation flags */
+        NULL,           /* Environment */
+        working_dir,    /* Working directory */
+        &startup_info,  /* Startup info */
+        &process_info   /* Process info */
+    );
+    
+    free(command_copy);
+    
+    if (!success) {
+        CloseHandle(handle->job_handle);
+        handle->job_handle = NULL;
+        return PROCESS_ERROR_CREATION_FAILED;
+    }
+    
+    /* Assign process to job object */
+    if (!AssignProcessToJobObject(handle->job_handle, process_info.hProcess)) {
+        TerminateProcess(process_info.hProcess, 1);
+        CloseHandle(process_info.hProcess);
+        CloseHandle(process_info.hThread);
+        CloseHandle(handle->job_handle);
+        handle->job_handle = NULL;
+        return PROCESS_ERROR_CREATION_FAILED;
+    }
+    
+    /* Resume the process */
+    ResumeThread(process_info.hThread);
+    CloseHandle(process_info.hThread);
+    
+    /* Store process information */
+    handle->process_handle = process_info.hProcess;
+    handle->process_id = process_info.dwProcessId;
+    
+    return PROCESS_SUCCESS;
 }
 
-/* Monitor process for timeout (Windows stub) */
+/* Monitor process for timeout */
 int monitor_process_timeout(process_handle_t* handle, int* timed_out) {
     if (!handle || !timed_out) {
         return PROCESS_ERROR_INVALID_PARAMS;
@@ -66,21 +137,39 @@ int monitor_process_timeout(process_handle_t* handle, int* timed_out) {
     
     *timed_out = 0;
     
+    /* Check if already terminated */
+    if (handle->terminated) {
+        return PROCESS_SUCCESS;
+    }
+    
     /* Check timeout */
     DWORD current_time = GetTickCount();
-    if ((current_time - handle->start_time) / 1000 >= 
-        (DWORD)handle->timeout_seconds) {
+    DWORD elapsed_ms = current_time - handle->start_time;
+    DWORD elapsed_seconds = elapsed_ms / 1000;
+    
+    if (elapsed_seconds >= (DWORD)handle->timeout_seconds) {
         *timed_out = 1;
         return PROCESS_SUCCESS;
     }
     
-    /* Windows implementation stub */
-    /* TODO: Implement process monitoring using Windows APIs */
+    /* Check process status */
+    if (handle->process_handle) {
+        DWORD exit_code;
+        if (GetExitCodeProcess(handle->process_handle, &exit_code)) {
+            if (exit_code != STILL_ACTIVE) {
+                /* Process has terminated */
+                handle->terminated = 1;
+            }
+        } else {
+            /* Error getting process status */
+            return PROCESS_ERROR_MONITORING_FAILED;
+        }
+    }
     
-    return PROCESS_ERROR_NOT_IMPLEMENTED;
+    return PROCESS_SUCCESS;
 }
 
-/* Terminate process tree with graceful sequence (Windows stub) */
+/* Terminate process tree with graceful sequence */
 int terminate_process_tree(process_handle_t* handle, int graceful) {
     if (!handle) {
         return PROCESS_ERROR_INVALID_PARAMS;
@@ -90,11 +179,42 @@ int terminate_process_tree(process_handle_t* handle, int graceful) {
         return PROCESS_SUCCESS;
     }
     
-    /* Windows implementation stub */
-    /* TODO: Implement process tree termination using job objects */
+    /* Terminate using job object if available (terminates entire process tree) */
+    if (handle->job_handle) {
+        if (TerminateJobObject(handle->job_handle, 1)) {
+            handle->terminated = 1;
+            return PROCESS_SUCCESS;
+        }
+    }
+    
+    /* Fallback: terminate individual process */
+    if (handle->process_handle) {
+        if (graceful) {
+            /* Windows doesn't have a direct equivalent to SIGTERM */
+            /* Try GenerateConsoleCtrlEvent for console applications */
+            if (GenerateConsoleCtrlEvent(CTRL_C_EVENT, handle->process_id) ||
+                GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, handle->process_id)) {
+                
+                /* Wait briefly for graceful termination */
+                DWORD wait_result = WaitForSingleObject(handle->process_handle, 2000);
+                if (wait_result == WAIT_OBJECT_0) {
+                    handle->terminated = 1;
+                    return PROCESS_SUCCESS;
+                }
+            }
+        }
+        
+        /* Force termination */
+        if (TerminateProcess(handle->process_handle, 1)) {
+            handle->terminated = 1;
+            return PROCESS_SUCCESS;
+        } else {
+            return PROCESS_ERROR_TERMINATION_FAILED;
+        }
+    }
     
     handle->terminated = 1;
-    return PROCESS_ERROR_NOT_IMPLEMENTED;
+    return PROCESS_SUCCESS;
 }
 
 /* Clean up process resources (Windows stub) */
@@ -135,35 +255,62 @@ const char* get_process_status_string(int status_code) {
             return "Resource cleanup failed";
         case PROCESS_ERROR_INVALID_PARAMS:
             return "Invalid parameters";
-        case PROCESS_ERROR_NOT_IMPLEMENTED:
-            return "Feature not implemented on Windows";
         default:
             return "Unknown error";
     }
 }
 
-/* Utility function to check if process exists (Windows stub) */
+/* Utility function to check if process exists */
 int process_exists(DWORD pid) {
     if (pid == 0) {
         return 0;
     }
     
-    /* Windows implementation stub */
-    /* TODO: Implement using OpenProcess or process enumeration */
+    /* Try to open the process with minimal access */
+    HANDLE process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+    if (process_handle != NULL) {
+        /* Check if process is still running */
+        DWORD exit_code;
+        BOOL result = GetExitCodeProcess(process_handle, &exit_code);
+        CloseHandle(process_handle);
+        
+        if (result && exit_code == STILL_ACTIVE) {
+            return 1; /* Process exists and is running */
+        }
+    }
     
-    return 0;
+    return 0; /* Process doesn't exist or has terminated */
 }
 
-/* Count child processes for resource monitoring (Windows stub) */
+/* Count child processes for resource monitoring */
 int count_child_processes(DWORD parent_pid) {
     if (parent_pid == 0) {
         return 0;
     }
     
-    /* Windows implementation stub */
-    /* TODO: Implement using CreateToolhelp32Snapshot */
+    /* Use CreateToolhelp32Snapshot to enumerate processes */
+    HANDLE snapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    if (snapshot == INVALID_HANDLE_VALUE) {
+        return 0;
+    }
     
-    return 0;
+    PROCESSENTRY32 process_entry;
+    process_entry.dwSize = sizeof(PROCESSENTRY32);
+    
+    int child_count = 0;
+    
+    /* Get first process */
+    if (Process32First(snapshot, &process_entry)) {
+        do {
+            /* Check if this process has the specified parent */
+            if (process_entry.th32ParentProcessID == parent_pid) {
+                child_count++;
+            }
+        } while (Process32Next(snapshot, &process_entry));
+    }
+    
+    CloseHandle(snapshot);
+    return child_count;
 }
 
 #endif /* _WIN32 */
