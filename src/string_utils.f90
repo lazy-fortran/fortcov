@@ -73,9 +73,13 @@ contains
         integer, intent(in) :: precision
         character(len=:), allocatable :: formatted
         character(len=50) :: buffer, fmt
+        integer :: safe_precision
+        
+        ! Validate precision parameter (must be non-negative and reasonable)
+        safe_precision = max(0, min(precision, 10))  ! Clamp between 0 and 10
         
         ! Create format string with minimum width to ensure leading zero
-        write(fmt, '(A,I0,A,I0,A)') "(F", 4 + precision, ".", precision, ",A)"
+        write(fmt, '(A,I0,A,I0,A)') "(F", 4 + safe_precision, ".", safe_precision, ",A)"
         
         ! Format the value
         write(buffer, fmt) value, "%"
@@ -107,6 +111,13 @@ contains
         count = 0
         start = 1
         
+        ! Handle empty delimiter case - return original string
+        if (len(delimiter) == 0) then
+            allocate(character(len=len(input_string)) :: parts(1))
+            parts(1) = trim(input_string)
+            return
+        end if
+        
         ! Count and extract parts
         do
             pos = index(work_string(start:), delimiter)
@@ -135,8 +146,42 @@ contains
         character(len=*), intent(in) :: input_string
         character(len=:), allocatable :: trimmed
         
-        trimmed = trim(adjustl(input_string))
+        integer :: start_pos, end_pos, i
+        
+        ! Find first non-whitespace character (tabs, spaces, etc.)
+        start_pos = 0  ! Initialize to 0 to indicate not found
+        do i = 1, len(input_string)
+            if (.not. is_whitespace_char(input_string(i:i))) then
+                start_pos = i
+                exit
+            end if
+        end do
+        
+        ! Find last non-whitespace character
+        end_pos = 0  ! Initialize to 0 to indicate not found
+        do i = len(input_string), 1, -1
+            if (.not. is_whitespace_char(input_string(i:i))) then
+                end_pos = i
+                exit
+            end if
+        end do
+        
+        ! Handle empty or all-whitespace string
+        if (start_pos == 0 .or. end_pos == 0 .or. start_pos > end_pos) then
+            trimmed = ""
+        else
+            trimmed = input_string(start_pos:end_pos)
+        end if
     end function trim_string
+    
+    ! Helper function to check if character is whitespace (space, tab, etc.)
+    function is_whitespace_char(char) result(is_ws)
+        character(len=1), intent(in) :: char
+        logical :: is_ws
+        
+        is_ws = (char == ' ' .or. char == achar(9) .or. &  ! space, tab
+                 char == achar(10) .or. char == achar(13))  ! newline, carriage return
+    end function is_whitespace_char
 
     ! Helper function to convert integer to string
     function int_to_string(int_val) result(str)
@@ -194,7 +239,8 @@ contains
         do i = 1, len_trim(filename)
             ! Keep alphanumeric, period, underscore, hyphen, forward slash
             if (verify(filename(i:i), &
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') == 0) then
+                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') &
+                == 0) then
                 temp_filename(j:j) = filename(i:i)
                 j = j + 1
             end if

@@ -49,7 +49,7 @@ contains
         end do
         
         ! This should work without buffer overflow or crashes
-        call reporter%generate_report(dataset, "test_security_large.json", error_flag)
+        call reporter%generate_report(dataset, "test_security_large.json", error_flag, .false.)
         
         if (error_flag) then
             print *, "FAIL: Large dataset security test failed"
@@ -95,7 +95,7 @@ contains
         
         allocate(dataset%files(1)%functions(0))
         
-        call reporter%generate_report(dataset, "test_security_filename.json", error_flag)
+        call reporter%generate_report(dataset, "test_security_filename.json", error_flag, .false.)
         
         if (error_flag) then
             print *, "FAIL: Long filename security test failed"
@@ -125,7 +125,7 @@ contains
         ! Create simple test dataset
         call create_simple_test_dataset(dataset)
         
-        call reporter%generate_report(dataset, "test_json_structure.json", error_flag)
+        call reporter%generate_report(dataset, "test_json_structure.json", error_flag, .false.)
         
         if (error_flag) then
             print *, "FAIL: JSON structure generation failed"

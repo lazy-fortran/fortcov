@@ -1,7 +1,8 @@
 module file_utils
-    use iso_fortran_env, only: error_unit
+    use iso_fortran_env, only: error_unit, int64
     use error_handling
     use secure_command_executor
+    use input_validation
     implicit none
     private
     
@@ -240,16 +241,25 @@ contains
         inquire(file=filename, exist=exists)
     end function file_exists
 
-    ! Read text file content
+    ! Read text file content with comprehensive validation
     subroutine read_file_content(filename, content, error_flag)
         character(len=*), intent(in) :: filename
         character(len=:), allocatable, intent(out) :: content
         logical, intent(out) :: error_flag
         
-        integer :: unit, iostat, file_size
+        integer :: unit, iostat
+        integer(int64) :: file_size
         character(len=1), allocatable :: buffer(:)
+        type(validation_result_t) :: validation_result
         
         error_flag = .false.
+        
+        ! Comprehensive file validation before opening
+        call validate_file_constraints(filename, validation_result)
+        if (.not. validation_result%is_valid) then
+            error_flag = .true.
+            return
+        end if
         
         ! Open file and get size
         open(newunit=unit, file=filename, status='old', action='read', &
@@ -259,7 +269,7 @@ contains
             return
         end if
         
-        ! Get file size
+        ! Get file size with validation
         inquire(unit=unit, size=file_size)
         if (file_size <= 0) then
             allocate(character(len=0) :: content)
@@ -267,8 +277,23 @@ contains
             return
         end if
         
-        ! Read entire file
-        allocate(buffer(file_size))
+        ! Validate memory allocation request
+        call validate_memory_allocation_request(file_size, validation_result)
+        if (.not. validation_result%is_valid) then
+            error_flag = .true.
+            close(unit)
+            return
+        end if
+        
+        ! Safe memory allocation with bounds checking
+        if (file_size > huge(1)) then  ! Check if file_size fits in default integer
+            error_flag = .true.
+            close(unit)
+            return
+        end if
+        
+        ! Read entire file with validated size
+        allocate(buffer(int(file_size)))
         read(unit, iostat=iostat) buffer
         close(unit)
         
@@ -279,7 +304,7 @@ contains
         end if
         
         ! Convert buffer to string
-        content = transfer(buffer, repeat(' ', file_size))
+        content = transfer(buffer, repeat(' ', int(file_size)))
         deallocate(buffer)
     end subroutine read_file_content
 

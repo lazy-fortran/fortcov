@@ -1,6 +1,7 @@
 module coverage_parser
     use coverage_model
     use string_utils
+    use input_validation
     implicit none
     private
     
@@ -74,11 +75,15 @@ contains
         
         error_flag = .false.
         
-        ! Input validation: Check path validity
-        if (.not. is_valid_path(path)) then
-            error_flag = .true.
-            return
-        end if
+        ! Input validation: Check path validity using validation framework
+        block
+            type(validation_result_t) :: validation_result
+            call validate_path_safety(path, validation_result)
+            if (.not. validation_result%is_valid) then
+                error_flag = .true.
+                return
+            end if
+        end block
         
         ! Extract file extension
         dot_pos = index(path, ".", back=.true.)
@@ -165,7 +170,8 @@ contains
             else if (index(line, "Graph:") > 0 .or. index(line, "Data:") > 0) then
                 ! Skip graph and data header lines
                 cycle
-            else if (index(line, "function ") > 0 .and. index(line, " called ") > 0) then
+            else if (index(line, "function ") > 0 .and. &
+                     & index(line, " called ") > 0) then
                 ! Parse function summary lines instead of skipping them
                 call parse_function_summary_line(line, source_filename, files_array, &
                                                 files_count)
@@ -187,7 +193,7 @@ contains
                 read(parts(1), *, iostat=iostat_val) exec_count
                 if (iostat_val /= 0) cycle ! Invalid number, skip
                 
-                ! Input validation: Normalize execution counts
+                ! Input validation: Normalize execution counts using validation framework
                 exec_count = normalize_execution_count(exec_count)
                 is_executable = .true.
             end if
@@ -196,10 +202,22 @@ contains
             read(parts(2), *, iostat=iostat_val) line_num
             if (iostat_val /= 0) cycle ! Invalid line number, skip
             
-            ! Input validation: Check line number bounds
-            if (.not. is_valid_line_number(line_num)) then
-                cycle ! Skip invalid line numbers
-            end if
+            ! Input validation: Check line number bounds using validation framework
+            block
+                type(validation_result_t) :: line_validation
+                call validate_coverage_data_bounds(line_num, exec_count, line_validation)
+                if (.not. line_validation%is_valid) then
+                    ! Attempt to clamp invalid line numbers for recovery
+                    line_num = clamp_line_number(line_num)
+                    exec_count = normalize_execution_count(exec_count)
+                    
+                    ! Re-validate after clamping
+                    call validate_coverage_data_bounds(line_num, exec_count, line_validation)
+                    if (.not. line_validation%is_valid) then
+                        cycle ! Skip if still invalid after recovery
+                    end if
+                end if
+            end block
             
             ! Skip line 0 (header lines)
             if (line_num == 0) cycle
@@ -534,74 +552,6 @@ contains
         this%injected_data = data
     end subroutine mock_inject_data
 
-    ! Input validation and normalization functions
-    
-    ! Normalize execution counts to prevent overflow and handle edge cases
-    function normalize_execution_count(exec_count) result(normalized)
-        integer, intent(in) :: exec_count
-        integer :: normalized
-        
-        ! Handle negative counts (should not occur in valid data)
-        if (exec_count < 0) then
-            normalized = 0  ! Treat as unexecuted
-        ! Cap extremely large values to prevent overflow in statistics
-        else if (exec_count > 1000000) then
-            normalized = 1000000  ! Cap at reasonable maximum
-        else
-            normalized = exec_count
-        end if
-    end function normalize_execution_count
-    
-    ! Validate line numbers are within reasonable bounds
-    function is_valid_line_number(line_num) result(valid)
-        integer, intent(in) :: line_num
-        logical :: valid
-        
-        ! Line numbers should be positive and within reasonable file size limits
-        ! Allow up to 100,000 lines per file (generous for most source files)
-        valid = (line_num > 0 .and. line_num <= 100000)
-    end function is_valid_line_number
-
-    ! Path validation function
-    function is_valid_path(path) result(valid)
-        character(len=*), intent(in) :: path
-        logical :: valid
-        integer :: i, path_len
-        character :: ch
-        
-        valid = .true.
-        path_len = len_trim(path)
-        
-        ! Check for empty or whitespace-only paths
-        if (path_len == 0) then
-            valid = .false.
-            return
-        end if
-        
-        ! Check for excessively long paths (limit: 1000 characters)
-        if (path_len > 1000) then
-            valid = .false.
-            return
-        end if
-        
-        ! Check for dangerous characters that could enable command injection
-        do i = 1, path_len
-            ch = path(i:i)
-            select case (ch)
-            case (';', '|', '&', '$', '`', '(', ')', '{', '}', '[', ']', '<', '>')
-                valid = .false.
-                return
-            case (char(0), char(10), char(13)) ! null, newline, carriage return
-                valid = .false.
-                return
-            end select
-        end do
-        
-        ! Additional check for whitespace-only path
-        if (len_trim(adjustl(path)) == 0) then
-            valid = .false.
-            return
-        end if
-    end function is_valid_path
+    ! Input validation functions now provided by input_validation module
 
 end module coverage_parser

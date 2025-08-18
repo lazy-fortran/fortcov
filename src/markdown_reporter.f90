@@ -72,8 +72,9 @@ contains
     function generate_table_header() result(header)
         character(len=:), allocatable :: header
         
-        header = "| Filename | Stmts | Covered | Cover | Missing |" // new_line('A') // &
-                "|----------|-------|---------|-------|---------|"
+        header = "| Filename | Stmts | Covered | Cover | Missing |" // &
+                 new_line('A') // &
+                 "|----------|-------|---------|-------|---------|"
     end function generate_table_header
 
     ! Generate a single table row for a file

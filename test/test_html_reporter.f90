@@ -88,7 +88,7 @@ contains
         end if
         
         ! Generate HTML report
-        call reporter%generate_report(test_data, temp_file, error_flag)
+        call reporter%generate_report(test_data, temp_file, error_flag, .false.)
         if (error_flag) then
             print *, "Expected HTML report generation to succeed"
             return
@@ -117,7 +117,7 @@ contains
         call create_reporter("html", reporter, error_flag)
         if (error_flag) return
         
-        call reporter%generate_report(test_data, temp_file, error_flag)
+        call reporter%generate_report(test_data, temp_file, error_flag, .false.)
         if (error_flag) return
         
         ! Verify HTML file was created with reasonable size

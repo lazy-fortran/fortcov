@@ -148,7 +148,7 @@ contains
         end if
         
         call reporter%generate_report(merged_coverage, config%output_path, &
-                                     reporter_error)
+                                     reporter_error, config%quiet)
         if (reporter_error) then
             if (.not. config%quiet) then
                 print *, "Error: Failed to generate report at: ", &
@@ -276,7 +276,8 @@ contains
         end if
         
         ! Memory safety: Use dynamic allocation with proper sizing
-        allocate(character(len=max(max_filename_len, 256)) :: temp_filtered(size(files)))
+        allocate(character(len=max(max_filename_len, 256)) :: &
+                 & temp_filtered(size(files)))
         count = 0
         
         do i = 1, size(files)
@@ -309,6 +310,12 @@ contains
         
         should_exclude = .false.
         
+        ! Check if exclude patterns are allocated and not empty
+        if (.not. allocated(config%exclude_patterns) .or. &
+            size(config%exclude_patterns) == 0) then
+            return
+        end if
+        
         do i = 1, size(config%exclude_patterns)
             if (matches_pattern(filepath, config%exclude_patterns(i))) then
                 should_exclude = .true.
@@ -326,9 +333,9 @@ contains
         character(len=:), allocatable :: pattern_lower, filepath_lower
         integer :: star_pos
         
-        ! Convert to lowercase for case-insensitive matching
-        pattern_lower = to_lower(trim(pattern))
-        filepath_lower = to_lower(trim(filepath))
+        ! For now, do case-sensitive matching (to_lower not available)
+        pattern_lower = trim(pattern)
+        filepath_lower = trim(filepath)
         
         star_pos = index(pattern_lower, "*")
         
@@ -549,7 +556,7 @@ contains
         end if
         
         call reporter%generate_report(merged_coverage, config%output_path, &
-                                     reporter_error)
+                                     reporter_error, config%quiet)
         if (reporter_error) then
             call handle_permission_denied(config%output_path, error_ctx)
             exit_code = EXIT_FAILURE
@@ -739,7 +746,7 @@ contains
         end if
         
         call reporter%generate_report(coverage_data, config%output_path, &
-                                     reporter_error)
+                                     reporter_error, config%quiet)
         if (reporter_error) then
             if (.not. config%quiet) then
                 print *, "Error: Failed to generate report at: ", &
@@ -853,7 +860,8 @@ contains
             return
         end if
         
-        ! Note: This would require extending the reporter interface to support diff output
+        ! Note: This would require extending the reporter interface to support &
+        ! diff output
         ! For now, just output a summary
         call output_diff_summary(diff_result, config)
         
@@ -875,19 +883,23 @@ contains
             print *, "Total lines removed:", diff_result%total_removed_lines
             print *, "Total lines changed:", diff_result%total_changed_lines
             print *, "Total newly covered lines:", diff_result%total_newly_covered_lines
-            print *, "Total newly uncovered lines:", diff_result%total_newly_uncovered_lines
+            print *, "Total newly uncovered lines:", &
+                     & diff_result%total_newly_uncovered_lines
             
             if (size(diff_result%file_diffs) > 0) then
                 print *, ""
                 print *, "File details:"
                 do i = 1, size(diff_result%file_diffs)
                     print *, "File:", trim(diff_result%file_diffs(i)%filename)
-                    print *, "  Coverage change:", diff_result%file_diffs(i)%coverage_percentage_delta, "%"
+                    print *, "  Coverage change:", &
+                             & diff_result%file_diffs(i)%coverage_percentage_delta, "%"
                     print *, "  Added lines:", diff_result%file_diffs(i)%added_lines
                     print *, "  Removed lines:", diff_result%file_diffs(i)%removed_lines
                     print *, "  Changed lines:", diff_result%file_diffs(i)%changed_lines
-                    print *, "  Newly covered:", diff_result%file_diffs(i)%newly_covered_lines
-                    print *, "  Newly uncovered:", diff_result%file_diffs(i)%newly_uncovered_lines
+                    print *, "  Newly covered:", &
+                             & diff_result%file_diffs(i)%newly_covered_lines
+                    print *, "  Newly uncovered:", &
+                             & diff_result%file_diffs(i)%newly_uncovered_lines
                     print *, ""
                 end do
             end if

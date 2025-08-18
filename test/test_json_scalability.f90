@@ -27,7 +27,7 @@ contains
         ! Measure performance
         call system_clock(start_time, count_rate)
         call reporter%generate_report(large_dataset, "test_large.json", &
-                                     error_flag)
+                                     error_flag, .false.)
         call system_clock(end_time)
         
         ! Calculate elapsed time
@@ -60,7 +60,7 @@ contains
         do i = 1, 100
             call create_large_dataset(dataset, 10, 100)
             call reporter%generate_report(dataset, "test_memory.json", &
-                                         error_flag)
+                                         error_flag, .false.)
             if (error_flag) then
                 write(*,*) "FAIL: Memory efficiency test failed at iteration", i
                 stop 1
@@ -82,7 +82,7 @@ contains
         ! Test with 100 files, 100 lines each
         call create_large_dataset(dataset, 100, 100)
         call system_clock(start_time, count_rate)
-        call reporter%generate_report(dataset, "test_100.json", error_flag)
+        call reporter%generate_report(dataset, "test_100.json", error_flag, .false.)
         call system_clock(end_time)
         time_100 = real(end_time - start_time) / real(count_rate)
         
@@ -94,7 +94,7 @@ contains
         ! Test with 1000 files, 100 lines each (10x more data)
         call create_large_dataset(dataset, 1000, 100)
         call system_clock(start_time, count_rate)
-        call reporter%generate_report(dataset, "test_1000.json", error_flag)
+        call reporter%generate_report(dataset, "test_1000.json", error_flag, .false.)
         call system_clock(end_time)
         time_1000 = real(end_time - start_time) / real(count_rate)
         

@@ -20,7 +20,7 @@ A coverage analysis tool specifically designed for Fortran projects, processing 
 ### Building from Source
 
 ```bash
-git clone https://github.com/yourusername/fortcov.git
+git clone https://github.com/krystophny/fortcov.git
 cd fortcov
 fpm build --profile release
 ```
@@ -40,8 +40,56 @@ This creates `.gcno` (compile-time) and `.gcda` (runtime) files.
 
 ### Running FortCov
 
+#### Method 1: Auto-discovery (Recommended)
+
 ```bash
-fortcov your_code.gcno  # Analyze coverage data
+fortcov --source=src --output=coverage.md
+```
+
+This automatically finds all `.gcov` files in the source directory and generates a markdown report.
+
+#### Method 2: Complete workflow
+
+```bash
+# 1. Compile with coverage flags
+gfortran -fprofile-arcs -ftest-coverage your_code.f90 -o your_program
+
+# 2. Run your program to generate runtime data
+./your_program
+
+# 3. Generate .gcov files using gcov
+gcov your_code.f90
+
+# 4. Run fortcov to analyze the .gcov files
+fortcov --source=. --output=coverage.md
+```
+
+#### Additional Examples
+
+```bash
+# Set minimum coverage threshold
+fortcov --source=src --fail-under=80 --output=coverage.md
+
+# Exclude specific patterns
+fortcov --source=src --exclude='*.mod' --exclude='test/*' --output=coverage.md
+
+# Use custom gcov executable
+fortcov --source=src --gcov=/usr/bin/gcov-10 --output=coverage.md
+
+# Interactive terminal browser
+fortcov --source=src --tui
+
+# Import from JSON and convert to markdown
+fortcov --import=coverage.json --output-format=markdown --output=report.md
+
+# Quiet mode for automation/scripting (suppresses coverage report output)
+fortcov --source=src --output=coverage.md --quiet
+
+# Quiet mode with file output (only suppresses stdout, files are still written)
+fortcov --source=src --output=report.md --quiet
+
+# CI/CD pipeline usage (errors and warnings still visible)
+fortcov --source=src --fail-under=80 --quiet && echo "Coverage passed"
 ```
 
 This generates a markdown report showing:
@@ -57,6 +105,222 @@ This generates a markdown report showing:
 | src/module_a.f90                  |     100 |     10 | 90.00%  | 45-48, 72-77       |
 | src/module_b.f90                  |      50 |      0 | 100.00% |                    |
 | TOTAL                             |     150 |     10 | 93.33%  |                    |
+```
+
+## Troubleshooting
+
+### "No coverage files found"
+
+**Problem**: fortcov can't find any `.gcov` files to process.
+
+**Solution**:
+1. Make sure you compiled with coverage flags: `-fprofile-arcs -ftest-coverage`
+2. Run your program to generate `.gcda` files
+3. Generate `.gcov` files using: `gcov your_source_files.f90`
+4. Check that `.gcov` files exist in your source directory
+
+### "Command not found: fortcov"
+
+**Problem**: fortcov executable is not in your PATH.
+
+**Solution**:
+```bash
+# Option 1: Run directly
+./build/gfortran_*/app/fortcov --source=src
+
+# Option 2: Install to PATH
+fpm install --prefix=/usr/local
+
+# Option 3: Use fpm run
+fpm run -- --source=src --output=coverage.md
+```
+
+### "Permission denied" errors
+
+**Problem**: fortcov can't read files or write output.
+
+**Solution**:
+1. Check file permissions on source directory
+2. Ensure output directory is writable
+3. Run with appropriate permissions
+
+### "File too large" or "Memory exhaustion" errors
+
+**Problem**: Coverage files exceed system limits or available memory.
+
+**Solution**:
+```bash
+# Check coverage file sizes
+find src/ -name "*.gcov" -exec ls -lh {} \; | sort -k5 -hr | head -5
+
+# Option 1: Process in smaller batches
+fortcov --source=src/core --output=core_coverage.md
+fortcov --source=src/utils --output=utils_coverage.md
+
+# Option 2: Clean up large gcov files and regenerate  
+find . -name "*.gcov" -size +50M -delete
+gcov src/*.f90  # Regenerate smaller files
+```
+
+### "Invalid line number" or "Data validation failed" errors
+
+**Problem**: Corrupted or malformed coverage data.
+
+**Solution**:
+```bash
+# Check for corrupted gcov files
+find src/ -name "*.gcov" -exec head -5 {} \; | grep -E "^[^0-9#]"
+
+# Regenerate clean coverage data
+rm -f *.gcov *.gcda
+gfortran -fprofile-arcs -ftest-coverage your_code.f90 -o your_program
+./your_program
+gcov your_code.f90
+
+# Verify data integrity
+fortcov --source=src --verbose --output=coverage.md
+```
+
+### "Integer overflow" or "Division by zero" errors
+
+**Problem**: Extreme values in coverage data trigger protection mechanisms.
+
+**Solution**:
+```bash
+# Check for problematic data patterns  
+grep -n ":" src/*.gcov | grep -E "(^[^:]*:[^:]*:-|:[0-9]{10,}:)"
+
+# Contact support if legitimate data triggers false positives
+```
+
+### "--quiet flag not working" or "Unexpected verbose output"
+
+**Problem**: Coverage reports still appear despite using `--quiet` flag.
+
+**Solution**:
+```bash
+# Verify quiet flag is recognized (should show help with quiet option)
+fortcov --help | grep -A1 -B1 quiet
+
+# For automation: ensure output goes to file, not stdout
+fortcov --source=src --output=coverage.md --quiet  # Correct
+fortcov --source=src --quiet > coverage.md         # May show output
+
+# Check if mixing verbose and quiet flags (quiet takes precedence)
+fortcov --source=src --quiet --verbose  # Should be quiet
+
+# Verify errors and warnings still appear (this is correct behavior)
+fortcov --source=nonexistent --quiet    # Errors should still show
+```
+
+**Note**: The `--quiet` flag only suppresses informational output and coverage reports to stdout. Error messages, warnings, and file output remain unaffected.
+
+## Security
+
+FortCov implements comprehensive security protections against common attack vectors:
+
+### Built-in Security Features
+
+- **Command Injection Protection**: All external commands are validated and escaped to prevent shell injection attacks
+- **Path Validation**: File paths are sanitized to block directory traversal and injection attempts  
+- **Unicode Security**: Handles Unicode normalization attacks and malformed UTF-8 sequences
+- **Secure Temporary Files**: Atomic temporary file creation prevents race conditions and symlink attacks
+- **Timeout Protection**: Commands are automatically terminated to prevent DoS attacks
+
+### Security Best Practices
+
+When using fortcov in production environments:
+
+```bash
+# Use absolute paths to prevent path injection
+fortcov --source=/full/path/to/src --output=/full/path/to/report.md
+
+# Validate input files before processing
+find src/ -name "*.gcov" -type f | head -10  # Check for suspicious files
+
+# Run with minimal privileges
+fortcov --source=src --output=coverage.md  # No sudo required
+```
+
+### Security Configuration
+
+Note: Timeout protection is automatically configured for security. Custom timeout configuration will be added in a future release.
+
+**Note**: FortCov automatically rejects dangerous file patterns and validates all inputs. No additional security configuration is required for normal usage.
+
+## Input Validation & Limits
+
+FortCov implements comprehensive input validation to protect against malformed coverage data and prevent resource exhaustion.
+
+### Built-in Input Limits
+
+```bash
+# Default limits (configurable via fortcov.nml)
+Maximum file size: 100MB
+Maximum line number: 1,000,000
+Maximum lines per file: 1,000,000
+Maximum path length: 4,096 characters
+Maximum filename length: 255 characters
+```
+
+### Large File Handling
+
+For projects with large coverage files:
+
+```bash
+# Check file sizes before processing
+find src/ -name "*.gcov" -exec ls -lh {} \; | head -5
+
+# Process large projects in batches
+fortcov --source=src/core --output=core_coverage.md
+fortcov --source=src/utils --output=utils_coverage.md
+```
+
+### Memory Management
+
+FortCov automatically manages memory allocation for coverage data:
+
+```bash
+# System requirements for different project sizes
+Small projects (<1MB coverage data): 100MB RAM
+Medium projects (<10MB coverage data): 500MB RAM  
+Large projects (<100MB coverage data): 2GB RAM
+
+# Monitor memory usage during processing
+fortcov --source=src --verbose --output=coverage.md
+```
+
+### Validation Configuration
+
+Note: Input validation limits are currently hardcoded for security. Configuration of these limits will be added in a future release.
+
+### Integration with CI/CD
+
+#### GitHub Actions
+
+```yaml
+- name: Generate Coverage
+  run: |
+    fpm build --flag "-fprofile-arcs -ftest-coverage"
+    fpm test --flag "-fprofile-arcs -ftest-coverage"
+    gcov src/*.f90
+    fortcov --source=src --output=coverage.md --fail-under=80 --quiet
+```
+
+#### GitLab CI
+
+```yaml
+coverage:
+  script:
+    - fpm build --flag "-fprofile-arcs -ftest-coverage"
+    - fpm test --flag "-fprofile-arcs -ftest-coverage"
+    - gcov src/*.f90
+    - fortcov --source=src --output=coverage.md --quiet
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 ```
 
 ## Development

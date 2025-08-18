@@ -138,7 +138,7 @@ contains
             
             call system_clock(start_time, count_rate)
             call reporter%generate_report(dataset, &
-                "test_" // trim(formats(i)) // ".out", error_flag)
+                "test_" // trim(formats(i)) // ".out", error_flag, .false.)
             call system_clock(end_time)
             
             if (error_flag) then

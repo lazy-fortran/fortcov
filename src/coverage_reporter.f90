@@ -70,6 +70,7 @@ module coverage_reporter
     ! Mock reporter for testing
     type, extends(coverage_reporter_t) :: mock_reporter_t
         logical :: was_called = .false.
+        logical :: captured_quiet_mode = .false.
         type(coverage_data_t) :: captured_data
         character(len=:), allocatable :: captured_output_path
     contains
@@ -81,12 +82,13 @@ module coverage_reporter
     ! Abstract interfaces
     abstract interface
         subroutine generate_report_interface(this, coverage_data, output_path, &
-                                            error_flag)
+                                            error_flag, quiet_mode)
             import :: coverage_reporter_t, coverage_data_t
             class(coverage_reporter_t), intent(inout) :: this
             type(coverage_data_t), intent(in) :: coverage_data
             character(len=*), intent(in) :: output_path
             logical, intent(out) :: error_flag
+            logical, intent(in), optional :: quiet_mode
         end subroutine generate_report_interface
         
         function get_format_name_interface(this) result(format_name)
@@ -131,18 +133,27 @@ contains
 
     ! Markdown reporter implementations
     subroutine markdown_generate_report(this, coverage_data, output_path, &
-                                       error_flag)
+                                       error_flag, quiet_mode)
         class(markdown_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         character(len=:), allocatable :: report_content
         type(markdown_report_options_t) :: options
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Configure report options
         call options%init()
@@ -196,18 +207,27 @@ contains
 
     ! JSON reporter implementations
     subroutine json_generate_report(this, coverage_data, output_path, &
-                                   error_flag)
+                                   error_flag, quiet_mode)
         use coverage_statistics
         class(json_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         type(coverage_stats_t) :: line_stats, branch_stats, func_stats
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(coverage_data)
@@ -240,6 +260,7 @@ contains
     end subroutine json_generate_report
 
     ! Secure JSON generation with chunked writing to avoid memory issues
+    ! FIXED: Issue #136 - Use diff-compatible format for CLI JSON output
     subroutine write_json_optimized(unit, coverage_data, line_stats, &
                                     branch_stats, func_stats)
         use coverage_statistics
@@ -253,31 +274,22 @@ contains
         ! Secure approach: Write JSON directly without large string building
         ! This eliminates buffer overflow risks and memory scalability issues
         
-        ! Write JSON header directly
-        write(unit, '(A)', advance='no') '{"coverage_report":{"line_coverage":'
-        write(unit, '(A)', advance='no') real_to_string(line_stats%percentage)
-        write(unit, '(A)', advance='no') ',"lines_covered":'
-        write(unit, '(A)', advance='no') int_to_string(line_stats%covered_count)
-        write(unit, '(A)', advance='no') ',"lines_total":'
-        write(unit, '(A)', advance='no') int_to_string(line_stats%total_count)
-        write(unit, '(A)', advance='no') ',"branch_coverage":'
-        write(unit, '(A)', advance='no') real_to_string(branch_stats%percentage)
-        write(unit, '(A)', advance='no') ',"branches_covered":'
-        write(unit, '(A)', advance='no') int_to_string(branch_stats%covered_count)
-        write(unit, '(A)', advance='no') ',"branches_total":'
-        write(unit, '(A)', advance='no') int_to_string(branch_stats%total_count)
-        write(unit, '(A)', advance='no') ',"function_coverage":'
-        write(unit, '(A)', advance='no') real_to_string(func_stats%percentage)
-        write(unit, '(A)', advance='no') ',"functions_covered":'
-        write(unit, '(A)', advance='no') int_to_string(func_stats%covered_count)
-        write(unit, '(A)', advance='no') ',"functions_total":'
-        write(unit, '(A)', advance='no') int_to_string(func_stats%total_count)
-        write(unit, '(A)', advance='no') ',"files":['
+        ! FIXED: Issue #136 - Use simple diff-compatible format {"files": [...]}
+        ! This format is compatible with both diff parser and export functions
+        write(unit, '(A)', advance='no') '{"files":['
         
         ! Process files with direct writing
         first_file = .true.
-        do i = 1, size(coverage_data%files)
-            line_count = size(coverage_data%files(i)%lines)
+        
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                ! Memory safety: Check if lines array is allocated for this file
+                if (.not. allocated(coverage_data%files(i)%lines)) then
+                    line_count = 0
+                else
+                    line_count = size(coverage_data%files(i)%lines)
+                end if
             
             ! Add file separator
             if (.not. first_file) then
@@ -302,9 +314,11 @@ contains
                 
                 ! Write line entry directly
                 write(unit, '(A)', advance='no') '{"line_number":'
-                write(unit, '(A)', advance='no') int_to_string(coverage_data%files(i)%lines(j)%line_number)
+                write(unit, '(A)', advance='no') &
+                     & int_to_string(coverage_data%files(i)%lines(j)%line_number)
                 write(unit, '(A)', advance='no') ',"execution_count":'
-                write(unit, '(A)', advance='no') int_to_string(coverage_data%files(i)%lines(j)%execution_count)
+                write(unit, '(A)', advance='no') &
+                     & int_to_string(coverage_data%files(i)%lines(j)%execution_count)
                 write(unit, '(A)', advance='no') ',"is_executable":'
                 
                 if (coverage_data%files(i)%lines(j)%is_executable) then
@@ -314,12 +328,13 @@ contains
                 end if
             end do
             
-            ! Close file
-            write(unit, '(A)', advance='no') ']}'
-        end do
+                ! Close file
+                write(unit, '(A)', advance='no') ']}'
+            end do
+        end if
         
-        ! Write JSON footer
-        write(unit, '(A)') ']}}'
+        ! FIXED: Issue #136 - Use simple closing bracket for diff compatibility
+        write(unit, '(A)') ']}'
     end subroutine write_json_optimized
     
     ! Helper function to convert real to string
@@ -362,18 +377,28 @@ contains
     end function json_supports_diff
 
     ! XML reporter implementations
-    subroutine xml_generate_report(this, coverage_data, output_path, error_flag)
+    subroutine xml_generate_report(this, coverage_data, output_path, error_flag, &
+                                  quiet_mode)
         use coverage_statistics
         class(xml_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat, i, j
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         type(coverage_stats_t) :: line_stats, branch_stats, func_stats
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(coverage_data)
@@ -418,28 +443,34 @@ contains
         write(unit, '(A)') '      <classes>'
         
         ! File-level details
-        do i = 1, size(coverage_data%files)
-            write(unit, '(A,A,A)') '        <class name="', &
-                trim(coverage_data%files(i)%filename), '" filename="', &
-                trim(coverage_data%files(i)%filename), '"'
-            write(unit, '(A)') '               complexity="0.0">'
-            write(unit, '(A)') '          <methods/>'
-            write(unit, '(A)') '          <lines>'
-            
-            ! Line details
-            do j = 1, size(coverage_data%files(i)%lines)
-                if (coverage_data%files(i)%lines(j)%is_executable) then
-                    write(unit, '(A,I0,A,I0,A)') '            <line number="', &
-                        coverage_data%files(i)%lines(j)%line_number, &
-                        '" hits="', &
-                        coverage_data%files(i)%lines(j)%execution_count, &
-                        '" branch="false"/>'
+        ! Memory safety: Check if files array is allocated
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                write(unit, '(A,A,A)') '        <class name="', &
+                    trim(coverage_data%files(i)%filename), '" filename="', &
+                    trim(coverage_data%files(i)%filename), '"'
+                write(unit, '(A)') '               complexity="0.0">'
+                write(unit, '(A)') '          <methods/>'
+                write(unit, '(A)') '          <lines>'
+                
+                ! Memory safety: Check if lines array is allocated for this file
+                if (allocated(coverage_data%files(i)%lines)) then
+                    ! Line details
+                    do j = 1, size(coverage_data%files(i)%lines)
+                        if (coverage_data%files(i)%lines(j)%is_executable) then
+                            write(unit, '(A,I0,A,I0,A)') '            <line number="', &
+                                coverage_data%files(i)%lines(j)%line_number, &
+                                '" hits="', &
+                                coverage_data%files(i)%lines(j)%execution_count, &
+                                '" branch="false"/>'
+                        end if
+                    end do
                 end if
+                
+                write(unit, '(A)') '          </lines>'
+                write(unit, '(A)') '        </class>'
             end do
-            
-            write(unit, '(A)') '          </lines>'
-            write(unit, '(A)') '        </class>'
-        end do
+        end if
         
         write(unit, '(A)') '      </classes>'
         write(unit, '(A)') '    </package>'
@@ -471,19 +502,29 @@ contains
     end function xml_supports_diff
 
     ! HTML reporter implementations
-    subroutine html_generate_report(this, coverage_data, output_path, error_flag)
+    subroutine html_generate_report(this, coverage_data, output_path, error_flag, &
+                                   quiet_mode)
         use coverage_statistics
         class(html_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         integer :: unit, stat, i, j
-        logical :: use_stdout
+        logical :: use_stdout, quiet
         type(coverage_stats_t) :: line_stats
         character(len=:), allocatable :: html_content, file_details, css_styles
         
         error_flag = .false.
         use_stdout = (trim(output_path) == "-")
+        quiet = .false.
+        if (present(quiet_mode)) quiet = quiet_mode
+        
+        ! Check if output should be suppressed (Issue #130: --quiet flag)
+        if (use_stdout .and. quiet) then
+            ! Suppress stdout output when quiet mode is enabled
+            return
+        end if
         
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(coverage_data)
@@ -499,43 +540,63 @@ contains
                       '<html lang="en">' // new_line('a') // &
                       '<head>' // new_line('a') // &
                       '    <meta charset="UTF-8">' // new_line('a') // &
-                      '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' // new_line('a') // &
+                      '    <meta name="viewport" content="width=device-width, ' // &
+                      & 'initial-scale=1.0">' // new_line('a') // &
                       '    <title>Fortcov Coverage Report</title>' // new_line('a') // &
-                      '    <meta name="description" content="Code coverage report generated by Fortcov">' // new_line('a') // &
+                      '    <meta name="description" content="Code coverage ' // &
+                      & 'report generated by Fortcov">' // new_line('a') // &
                       css_styles // new_line('a') // &
                       '</head>' // new_line('a') // &
                       '<body>' // new_line('a') // &
                       '    <header class="report-header">' // new_line('a') // &
                       '        <h1>Coverage Report</h1>' // new_line('a') // &
-                      '        <div class="theme-info">Theme: Cyberpunk</div>' // new_line('a') // &
+                      '        <div class="theme-info">Theme: Cyberpunk</div>' // &
+                      & new_line('a') // &
                       '    </header>' // new_line('a') // &
                       '    <main class="report-main">' // new_line('a') // &
-                      '        <section class="summary-section cyberpunk">' // new_line('a') // &
+                      '        <section class="summary-section cyberpunk">' // &
+                      & new_line('a') // &
                       '            <h2>Coverage Summary</h2>' // new_line('a') // &
                       '            <div class="summary-grid">' // new_line('a') // &
                       '                <div class="summary-item">' // new_line('a') // &
-                      '                    <span class="summary-label">Total Files:</span>' // new_line('a') // &
-                      '                    <span class="summary-value">' // int_to_string(size(coverage_data%files)) // '</span>' // new_line('a') // &
+                      '                    <span class="summary-label">' // &
+                      & 'Total Files:</span>' // new_line('a') // &
+                      '                    <span class="summary-value">' // &
+                      & int_to_string(size(coverage_data%files)) // '</span>' // &
+                      & new_line('a') // &
                       '                </div>' // new_line('a') // &
                       '                <div class="summary-item">' // new_line('a') // &
-                      '                    <span class="summary-label">Total Lines:</span>' // new_line('a') // &
-                      '                    <span class="summary-value">' // int_to_string(line_stats%total_count) // '</span>' // new_line('a') // &
+                      '                    <span class="summary-label">' // &
+                      & 'Total Lines:</span>' // new_line('a') // &
+                      '                    <span class="summary-value">' // &
+                      & int_to_string(line_stats%total_count) // '</span>' // &
+                      & new_line('a') // &
                       '                </div>' // new_line('a') // &
                       '                <div class="summary-item">' // new_line('a') // &
-                      '                    <span class="summary-label">Covered Lines:</span>' // new_line('a') // &
-                      '                    <span class="summary-value">' // int_to_string(line_stats%covered_count) // '</span>' // new_line('a') // &
+                      '                    <span class="summary-label">' // &
+                      & 'Covered Lines:</span>' // new_line('a') // &
+                      '                    <span class="summary-value">' // &
+                      & int_to_string(line_stats%covered_count) // '</span>' // &
+                      & new_line('a') // &
                       '                </div>' // new_line('a') // &
-                      '                <div class="summary-item highlight">' // new_line('a') // &
-                      '                    <span class="summary-label">Coverage:</span>' // new_line('a') // &
-                      '                    <span class="summary-value coverage-percent">' // real_to_string(line_stats%percentage) // '%</span>' // new_line('a') // &
+                      '                <div class="summary-item highlight">' // &
+                      & new_line('a') // &
+                      '                    <span class="summary-label">' // &
+                      & 'Coverage:</span>' // new_line('a') // &
+                      '                    <span class="summary-value ' // &
+                      & 'coverage-percent">' // &
+                      & real_to_string(line_stats%percentage) // '%</span>' // &
+                      & new_line('a') // &
                       '                </div>' // new_line('a') // &
                       '            </div>' // new_line('a') // &
                       '        </section>' // new_line('a') // &
                       file_details // new_line('a') // &
                       '    </main>' // new_line('a') // &
                       '    <footer class="report-footer">' // new_line('a') // &
-                      '        <p>Generated by <strong>Fortcov</strong> - Fortran Coverage Analysis Tool</p>' // new_line('a') // &
-                      '        <p class="timestamp">Report generated at: ' // get_html_timestamp() // '</p>' // new_line('a') // &
+                      '        <p>Generated by <strong>Fortcov</strong> - ' // &
+                      & 'Fortran Coverage Analysis Tool</p>' // new_line('a') // &
+                      '        <p class="timestamp">Report generated at: ' // &
+                      & get_html_timestamp() // '</p>' // new_line('a') // &
                       '    </footer>' // new_line('a') // &
                       '</body>' // new_line('a') // &
                       '</html>'
@@ -580,16 +641,25 @@ contains
     end function html_supports_diff
 
     ! Mock reporter implementations
-    subroutine mock_generate_report(this, coverage_data, output_path, error_flag)
+    subroutine mock_generate_report(this, coverage_data, output_path, error_flag, &
+                                   quiet_mode)
         class(mock_reporter_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: error_flag
+        logical, intent(in), optional :: quiet_mode
         
         error_flag = .false.
         this%was_called = .true.
         this%captured_data = coverage_data
         this%captured_output_path = output_path
+        
+        ! Capture quiet mode for testing
+        if (present(quiet_mode)) then
+            this%captured_quiet_mode = quiet_mode
+        else
+            this%captured_quiet_mode = .false.
+        end if
     end subroutine mock_generate_report
 
     function mock_get_format_name(this) result(format_name)
@@ -626,52 +696,76 @@ contains
         
         css = '    <style>' // new_line('a') // &
               '        /* Modern HTML5 reset and base styles */' // new_line('a') // &
-              '        * { margin: 0; padding: 0; box-sizing: border-box; }' // new_line('a') // &
+              '        * { margin: 0; padding: 0; box-sizing: border-box; }' // &
+              & new_line('a') // &
               '        body {' // new_line('a') // &
-              '            font-family: "SF Mono", Monaco, Inconsolata, "Roboto Mono", monospace;' // new_line('a') // &
-              '            background: #1a1a1a; color: #ffffff; line-height: 1.6; margin: 0; padding: 20px;' // new_line('a') // &
+              '            font-family: "SF Mono", Monaco, Inconsolata, ' // &
+              & '"Roboto Mono", monospace;' // new_line('a') // &
+              '            background: #1a1a1a; color: #ffffff; ' // &
+              & 'line-height: 1.6; margin: 0; padding: 20px;' // new_line('a') // &
               '        }' // new_line('a') // &
               '        .report-header {' // new_line('a') // &
-              '            background: linear-gradient(135deg, #ff00ff, #00ffff);' // new_line('a') // &
-              '            padding: 2rem; margin-bottom: 2rem; border-radius: 8px;' // new_line('a') // &
-              '            box-shadow: 0 4px 12px rgba(0,0,0,0.3);' // new_line('a') // &
+              '            background: linear-gradient(135deg, #ff00ff, #00ffff);' // &
+              & new_line('a') // &
+              '            padding: 2rem; margin-bottom: 2rem; border-radius: 8px;' // &
+              & new_line('a') // &
+              '            box-shadow: 0 4px 12px rgba(0,0,0,0.3);' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
-              '        .report-header h1 { font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }' // new_line('a') // &
-              '        .theme-info { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; }' // new_line('a') // &
+              '        .report-header h1 { font-size: 2.5rem; ' // &
+              & 'text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }' // new_line('a') // &
+              '        .theme-info { font-size: 1.1rem; opacity: 0.9; ' // &
+              & 'margin-top: 0.5rem; }' // new_line('a') // &
               '        .cyberpunk {' // new_line('a') // &
-              '            border: 2px solid #ff00ff; border-radius: 8px; padding: 1.5rem; margin: 1rem 0;' // new_line('a') // &
-              '            background: rgba(255, 0, 255, 0.1); backdrop-filter: blur(5px);' // new_line('a') // &
+              '            border: 2px solid #ff00ff; border-radius: 8px; ' // &
+              & 'padding: 1.5rem; margin: 1rem 0;' // new_line('a') // &
+              '            background: rgba(255, 0, 255, 0.1); ' // &
+              & 'backdrop-filter: blur(5px);' // new_line('a') // &
               '        }' // new_line('a') // &
               '        .summary-grid {' // new_line('a') // &
-              '            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));' // new_line('a') // &
+              '            display: grid; grid-template-columns: ' // &
+              & 'repeat(auto-fit, minmax(200px, 1fr));' // new_line('a') // &
               '            gap: 1rem; margin-top: 1rem;' // new_line('a') // &
               '        }' // new_line('a') // &
               '        .summary-item {' // new_line('a') // &
-              '            background: rgba(0, 255, 255, 0.1); padding: 1rem; border-radius: 6px;' // new_line('a') // &
+              '            background: rgba(0, 255, 255, 0.1); ' // &
+              & 'padding: 1rem; border-radius: 6px;' // new_line('a') // &
               '            border-left: 4px solid #ff00ff;' // new_line('a') // &
               '        }' // new_line('a') // &
               '        .summary-item.highlight {' // new_line('a') // &
-              '            background: rgba(255, 0, 255, 0.2); border-left: 4px solid #00ffff;' // new_line('a') // &
+              '            background: rgba(255, 0, 255, 0.2); ' // &
+              & 'border-left: 4px solid #00ffff;' // new_line('a') // &
               '        }' // new_line('a') // &
-              '        .summary-label { display: block; font-weight: bold; margin-bottom: 0.5rem; }' // new_line('a') // &
-              '        .summary-value { font-size: 1.5rem; color: #ff00ff; }' // new_line('a') // &
-              '        .coverage-percent { font-weight: bold; text-shadow: 0 0 10px currentColor; }' // new_line('a') // &
+              '        .summary-label { display: block; font-weight: bold; ' // &
+              & 'margin-bottom: 0.5rem; }' // new_line('a') // &
+              '        .summary-value { font-size: 1.5rem; color: #ff00ff; }' // &
+              & new_line('a') // &
+              '        .coverage-percent { font-weight: bold; ' // &
+              & 'text-shadow: 0 0 10px currentColor; }' // new_line('a') // &
               '        .file-list { margin-top: 2rem; }' // new_line('a') // &
               '        .file-item {' // new_line('a') // &
-              '            background: rgba(255, 255, 255, 0.05); margin: 0.5rem 0; padding: 1rem;' // new_line('a') // &
-              '            border-radius: 6px; border-left: 3px solid #00ffff;' // new_line('a') // &
+              '            background: rgba(255, 255, 255, 0.05); ' // &
+              & 'margin: 0.5rem 0; padding: 1rem;' // new_line('a') // &
+              '            border-radius: 6px; border-left: 3px solid #00ffff;' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
-              '        .file-name { font-weight: bold; color: #ff00ff; }' // new_line('a') // &
-              '        .file-coverage { float: right; color: #00ffff; }' // new_line('a') // &
+              '        .file-name { font-weight: bold; color: #ff00ff; }' // &
+              & new_line('a') // &
+              '        .file-coverage { float: right; color: #00ffff; }' // &
+              & new_line('a') // &
               '        .report-footer {' // new_line('a') // &
-              '            margin-top: 3rem; padding: 1.5rem; text-align: center;' // new_line('a') // &
-              '            border-top: 1px solid #ff00ff; opacity: 0.8;' // new_line('a') // &
+              '            margin-top: 3rem; padding: 1.5rem; ' // &
+              & 'text-align: center;' // new_line('a') // &
+              '            border-top: 1px solid #ff00ff; opacity: 0.8;' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
-              '        .timestamp { font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7; }' // new_line('a') // &
+              '        .timestamp { font-size: 0.9rem; margin-top: 0.5rem; ' // &
+              & 'opacity: 0.7; }' // new_line('a') // &
               '        @media (max-width: 768px) {' // new_line('a') // &
               '            body { padding: 10px; }' // new_line('a') // &
               '            .report-header h1 { font-size: 2rem; }' // new_line('a') // &
-              '            .summary-grid { grid-template-columns: 1fr; }' // new_line('a') // &
+              '            .summary-grid { grid-template-columns: 1fr; }' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
               '    </style>'
     end function generate_comprehensive_html_css
@@ -694,7 +788,8 @@ contains
                     do j = 1, size(coverage_data%files(i)%lines)
                         if (coverage_data%files(i)%lines(j)%is_executable) then
                             total_lines = total_lines + 1
-                            if (coverage_data%files(i)%lines(j)%execution_count > 0) then
+                            if (coverage_data%files(i)%lines(j)%execution_count &
+                                & > 0) then
                                 covered_lines = covered_lines + 1
                             end if
                         end if
@@ -709,18 +804,27 @@ contains
                 
                 file_list = file_list // &
                     '            <div class="file-item">' // new_line('a') // &
-                    '                <span class="file-name">' // trim(coverage_data%files(i)%filename) // '</span>' // new_line('a') // &
-                    '                <span class="file-coverage">' // real_to_string(file_percentage) // '%</span>' // new_line('a') // &
-                    '                <div style="clear: both;"></div>' // new_line('a') // &
-                    '                <div style="font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.8;">' // new_line('a') // &
-                    '                    Lines: ' // int_to_string(covered_lines) // '/' // int_to_string(total_lines) // &
+                    '                <span class="file-name">' // &
+                    & trim(coverage_data%files(i)%filename) // '</span>' // &
+                    & new_line('a') // &
+                    '                <span class="file-coverage">' // &
+                    & real_to_string(file_percentage) // '%</span>' // &
+                    & new_line('a') // &
+                    '                <div style="clear: both;"></div>' // &
+                    & new_line('a') // &
+                    '                <div style="font-size: 0.9rem; ' // &
+                    & 'margin-top: 0.5rem; opacity: 0.8;">' // new_line('a') // &
+                    '                    Lines: ' // int_to_string(covered_lines) // &
+                    & '/' // int_to_string(total_lines) // &
                     '                </div>' // new_line('a') // &
                     '            </div>' // new_line('a')
             end do
         else
             file_list = '            <div class="file-item">' // new_line('a') // &
-                       '                <span class="file-name">No files found</span>' // new_line('a') // &
-                       '                <span class="file-coverage">0.0%</span>' // new_line('a') // &
+                       '                <span class="file-name">' // &
+                       & 'No files found</span>' // new_line('a') // &
+                       '                <span class="file-coverage">' // &
+                       & '0.0%</span>' // new_line('a') // &
                        '            </div>' // new_line('a')
         end if
         

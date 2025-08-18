@@ -180,7 +180,8 @@ contains
     end subroutine report_engine_init
     
     ! Generate HTML report
-    subroutine report_engine_generate_html_report(this, output_path, success, error_msg)
+    subroutine report_engine_generate_html_report(this, output_path, &
+                                                   success, error_msg)
         class(report_engine_t), intent(inout) :: this
         character(len=*), intent(in) :: output_path
         logical, intent(out) :: success
@@ -212,7 +213,8 @@ contains
         call this%theme_manager%generate_css_variables(theme, css_variables)
         
         ! Build HTML content
-        html_content = generate_html_structure(transformed_data, css_variables, theme)
+        html_content = generate_html_structure(transformed_data, &
+                                               css_variables, theme)
         
         ! Write to file
         open(newunit=unit, file=output_path, status='replace', action='write', &
@@ -278,7 +280,8 @@ contains
     end subroutine report_engine_launch_terminal_browser
     
     ! Generate diff report
-    subroutine report_engine_generate_diff_report(this, baseline_data, current_data, &
+    subroutine report_engine_generate_diff_report(this, baseline_data, &
+                                                   current_data, &
                                                  diff_output, success, error_msg)
         class(report_engine_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: baseline_data, current_data
@@ -377,7 +380,8 @@ contains
     end subroutine report_engine_calculate_metrics
     
     ! Generate styled report
-    subroutine report_engine_generate_styled_report(this, format, output, success, error_msg)
+    subroutine report_engine_generate_styled_report(this, format, output, &
+                                                      & success, error_msg)
         class(report_engine_t), intent(inout) :: this
         character(len=*), intent(in) :: format
         character(len=:), allocatable, intent(out) :: output
@@ -386,7 +390,8 @@ contains
         
         type(transformed_data_t) :: transformed_data
         type(color_scheme_t) :: theme
-        character(len=:), allocatable :: source_content, highlighted_content, css_variables
+        character(len=:), allocatable :: source_content, highlighted_content, &
+                                         & css_variables
         
         success = .false.
         error_msg = ""
@@ -406,7 +411,8 @@ contains
         if (.not. success) return
         
         ! Create sample source content from transformed data
-        if (allocated(transformed_data%files) .and. size(transformed_data%files) > 0) then
+        if (allocated(transformed_data%files) .and. &
+            & size(transformed_data%files) > 0) then
             source_content = "program example" // new_line('a') // &
                            "    ! Test comment" // new_line('a') // &
                            "    integer :: x = 1" // new_line('a') // &
@@ -418,7 +424,8 @@ contains
         ! Apply syntax highlighting based on format
         select case (trim(format))
         case ("html")
-            call this%highlighter%highlight_for_html(source_content, highlighted_content, success)
+            call this%highlighter%highlight_for_html(source_content, &
+                                                    & highlighted_content, success)
             if (.not. success) then
                 error_msg = "Failed to generate HTML highlighting"
                 return
@@ -426,10 +433,13 @@ contains
             
             ! Add theme CSS variables
             call this%theme_manager%generate_css_variables(theme, css_variables)
-            output = '<style>' // new_line('a') // css_variables // new_line('a') // '</style>' // new_line('a') // highlighted_content
+            output = '<style>' // new_line('a') // css_variables // &
+                     new_line('a') // &
+                     & '</style>' // new_line('a') // highlighted_content
             
         case ("terminal")
-            call this%highlighter%highlight_for_terminal(source_content, highlighted_content, success)
+            call this%highlighter%highlight_for_terminal(source_content, &
+                                                        & highlighted_content, success)
             if (.not. success) then
                 error_msg = "Failed to generate terminal highlighting"
                 return
@@ -463,43 +473,60 @@ contains
                '<html lang="en">' // new_line('a') // &
                '<head>' // new_line('a') // &
                '    <meta charset="UTF-8">' // new_line('a') // &
-               '    <meta name="viewport" content="width=device-width, initial-scale=1.0">' // new_line('a') // &
+               '    <meta name="viewport" content="width=device-width, ' // &
+               & 'initial-scale=1.0">' // new_line('a') // &
                '    <title>Fortcov Coverage Report</title>' // new_line('a') // &
-               '    <meta name="description" content="Code coverage report generated by Fortcov">' // new_line('a') // &
+               '    <meta name="description" content="Code coverage report ' // &
+               & 'generated by Fortcov">' // new_line('a') // &
                css_styles // new_line('a') // &
                '</head>' // new_line('a') // &
                '<body>' // new_line('a') // &
                '    <header class="report-header">' // new_line('a') // &
                '        <h1>Coverage Report</h1>' // new_line('a') // &
-               '        <div class="theme-info">Theme: ' // theme%name // '</div>' // new_line('a') // &
+               '        <div class="theme-info">Theme: ' // theme%name // &
+               & '</div>' // new_line('a') // &
                '    </header>' // new_line('a') // &
                '    <main class="report-main">' // new_line('a') // &
-               '        <section class="summary-section cyberpunk">' // new_line('a') // &
+               '        <section class="summary-section cyberpunk">' // &
+               & new_line('a') // &
                '            <h2>Coverage Summary</h2>' // new_line('a') // &
                '            <div class="summary-grid">' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
-               '                    <span class="summary-label">Total Files:</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // int_to_str(data%summary%total_files) // '</span>' // new_line('a') // &
+               '                    <span class="summary-label">Total Files:' // &
+               & '</span>' // new_line('a') // &
+               '                    <span class="summary-value">' // &
+               & int_to_str(data%summary%total_files) // '</span>' // new_line('a') // &
                '                </div>' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
-               '                    <span class="summary-label">Total Lines:</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // int_to_str(data%summary%total_lines) // '</span>' // new_line('a') // &
+               '                    <span class="summary-label">Total Lines:' // &
+               & '</span>' // new_line('a') // &
+               '                    <span class="summary-value">' // &
+               & int_to_str(data%summary%total_lines) // '</span>' // new_line('a') // &
                '                </div>' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
-               '                    <span class="summary-label">Covered Lines:</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // int_to_str(data%summary%covered_lines) // '</span>' // new_line('a') // &
+               '                    <span class="summary-label">Covered Lines:' // &
+               & '</span>' // new_line('a') // &
+               '                    <span class="summary-value">' // &
+               & int_to_str(data%summary%covered_lines) // '</span>' // &
+               & new_line('a') // &
                '                </div>' // new_line('a') // &
-               '                <div class="summary-item highlight">' // new_line('a') // &
-               '                    <span class="summary-label">Coverage:</span>' // new_line('a') // &
-               '                    <span class="summary-value coverage-percent">' // real_to_str(data%summary%coverage_percentage) // '%</span>' // new_line('a') // &
+               '                <div class="summary-item highlight">' // &
+               & new_line('a') // &
+               '                    <span class="summary-label">Coverage:' // &
+               & '</span>' // new_line('a') // &
+               '                    <span class="summary-value coverage-percent">' // &
+               & real_to_str(data%summary%coverage_percentage) // '%</span>' // &
+               & new_line('a') // &
                '                </div>' // new_line('a') // &
                '            </div>' // new_line('a') // &
                '        </section>' // new_line('a') // &
                file_details // new_line('a') // &
                '    </main>' // new_line('a') // &
                '    <footer class="report-footer">' // new_line('a') // &
-               '        <p>Generated by <strong>Fortcov</strong> - Fortran Coverage Analysis Tool</p>' // new_line('a') // &
-               '        <p class="timestamp">Report generated at: ' // get_current_timestamp() // '</p>' // new_line('a') // &
+               '        <p>Generated by <strong>Fortcov</strong> - ' // &
+               & 'Fortran Coverage Analysis Tool</p>' // new_line('a') // &
+               '        <p class="timestamp">Report generated at: ' // &
+               & get_current_timestamp() // '</p>' // new_line('a') // &
                '    </footer>' // new_line('a') // &
                '</body>' // new_line('a') // &
                '</html>'
@@ -512,58 +539,88 @@ contains
         css = '    <style>' // new_line('a') // &
               css_vars // new_line('a') // &
               '        /* Modern HTML5 reset and base styles */' // new_line('a') // &
-              '        * { margin: 0; padding: 0; box-sizing: border-box; }' // new_line('a') // &
+              '        * { margin: 0; padding: 0; box-sizing: border-box; }' // &
+              & new_line('a') // &
               '        body {' // new_line('a') // &
-              '            font-family: "SF Mono", Monaco, Inconsolata, "Roboto Mono", monospace;' // new_line('a') // &
-              '            background: var(--background-color, #1a1a1a);' // new_line('a') // &
+              '            font-family: "SF Mono", Monaco, Inconsolata, ' // &
+              & '"Roboto Mono", monospace;' // new_line('a') // &
+              '            background: var(--background-color, #1a1a1a);' // &
+              & new_line('a') // &
               '            color: var(--text-color, #ffffff);' // new_line('a') // &
-              '            line-height: 1.6; margin: 0; padding: 20px;' // new_line('a') // &
+              '            line-height: 1.6; margin: 0; padding: 20px;' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
               '        .report-header {' // new_line('a') // &
-              '            background: linear-gradient(135deg, var(--accent-color, #ff00ff), var(--secondary-color, #00ffff));' // new_line('a') // &
-              '            padding: 2rem; margin-bottom: 2rem; border-radius: 8px;' // new_line('a') // &
-              '            box-shadow: 0 4px 12px rgba(0,0,0,0.3);' // new_line('a') // &
+              '            background: linear-gradient(135deg, ' // &
+              & 'var(--accent-color, #ff00ff), var(--secondary-color, #00ffff));' // &
+              & new_line('a') // &
+              '            padding: 2rem; margin-bottom: 2rem; border-radius: 8px;' // &
+              & new_line('a') // &
+              '            box-shadow: 0 4px 12px rgba(0,0,0,0.3);' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
-              '        .report-header h1 { font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }' // new_line('a') // &
-              '        .theme-info { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; }' // new_line('a') // &
+              '        .report-header h1 { font-size: 2.5rem; ' // &
+              & 'text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }' // new_line('a') // &
+              '        .theme-info { font-size: 1.1rem; opacity: 0.9; ' // &
+              & 'margin-top: 0.5rem; }' // new_line('a') // &
               '        .cyberpunk {' // new_line('a') // &
-              '            border: 2px solid var(--accent-color, #ff00ff);' // new_line('a') // &
-              '            border-radius: 8px; padding: 1.5rem; margin: 1rem 0;' // new_line('a') // &
-              '            background: rgba(255, 0, 255, 0.1); backdrop-filter: blur(5px);' // new_line('a') // &
+              '            border: 2px solid var(--accent-color, #ff00ff);' // &
+              & new_line('a') // &
+              '            border-radius: 8px; padding: 1.5rem; ' // &
+              & 'margin: 1rem 0;' // new_line('a') // &
+              '            background: rgba(255, 0, 255, 0.1); ' // &
+              & 'backdrop-filter: blur(5px);' // new_line('a') // &
               '        }' // new_line('a') // &
               '        .summary-grid {' // new_line('a') // &
-              '            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));' // new_line('a') // &
+              '            display: grid; grid-template-columns: ' // &
+              & 'repeat(auto-fit, minmax(200px, 1fr));' // new_line('a') // &
               '            gap: 1rem; margin-top: 1rem;' // new_line('a') // &
               '        }' // new_line('a') // &
               '        .summary-item {' // new_line('a') // &
-              '            background: rgba(0, 255, 255, 0.1); padding: 1rem; border-radius: 6px;' // new_line('a') // &
-              '            border-left: 4px solid var(--accent-color, #ff00ff);' // new_line('a') // &
+              '            background: rgba(0, 255, 255, 0.1); ' // &
+              & 'padding: 1rem; border-radius: 6px;' // new_line('a') // &
+              '            border-left: 4px solid var(--accent-color, #ff00ff);' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
               '        .summary-item.highlight {' // new_line('a') // &
               '            background: rgba(255, 0, 255, 0.2);' // new_line('a') // &
-              '            border-left: 4px solid var(--secondary-color, #00ffff);' // new_line('a') // &
+              '            border-left: 4px solid var(--secondary-color, ' // &
+              & '#00ffff);' // new_line('a') // &
               '        }' // new_line('a') // &
-              '        .summary-label { display: block; font-weight: bold; margin-bottom: 0.5rem; }' // new_line('a') // &
-              '        .summary-value { font-size: 1.5rem; color: var(--accent-color, #ff00ff); }' // new_line('a') // &
-              '        .coverage-percent { font-weight: bold; text-shadow: 0 0 10px currentColor; }' // new_line('a') // &
+              '        .summary-label { display: block; font-weight: bold; ' // &
+              & 'margin-bottom: 0.5rem; }' // new_line('a') // &
+              '        .summary-value { font-size: 1.5rem; ' // &
+              & 'color: var(--accent-color, #ff00ff); }' // new_line('a') // &
+              '        .coverage-percent { font-weight: bold; ' // &
+              & 'text-shadow: 0 0 10px currentColor; }' // new_line('a') // &
               '        .file-list { margin-top: 2rem; }' // new_line('a') // &
               '        .file-item {' // new_line('a') // &
-              '            background: rgba(255, 255, 255, 0.05); margin: 0.5rem 0; padding: 1rem;' // new_line('a') // &
-              '            border-radius: 6px; border-left: 3px solid var(--secondary-color, #00ffff);' // new_line('a') // &
+              '            background: rgba(255, 255, 255, 0.05); ' // &
+              & 'margin: 0.5rem 0; padding: 1rem;' // new_line('a') // &
+              '            border-radius: 6px; border-left: 3px solid ' // &
+              & 'var(--secondary-color, #00ffff);' // new_line('a') // &
               '        }' // new_line('a') // &
-              '        .file-name { font-weight: bold; color: var(--accent-color, #ff00ff); }' // new_line('a') // &
-              '        .file-coverage { float: right; color: var(--secondary-color, #00ffff); }' // new_line('a') // &
+              '        .file-name { font-weight: bold; ' // &
+              & 'color: var(--accent-color, #ff00ff); }' // new_line('a') // &
+              '        .file-coverage { float: right; ' // &
+              & 'color: var(--secondary-color, #00ffff); }' // new_line('a') // &
               '        .report-footer {' // new_line('a') // &
-              '            margin-top: 3rem; padding: 1.5rem; text-align: center;' // new_line('a') // &
-              '            border-top: 1px solid var(--accent-color, #ff00ff); opacity: 0.8;' // new_line('a') // &
+              '            margin-top: 3rem; padding: 1.5rem; ' // &
+              & 'text-align: center;' // new_line('a') // &
+              '            border-top: 1px solid var(--accent-color, #ff00ff); ' // &
+              & 'opacity: 0.8;' // new_line('a') // &
               '        }' // new_line('a') // &
-              '        .timestamp { font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7; }' // new_line('a') // &
-              '        .keyword { color: var(--accent-color, #ff00ff); font-weight: bold; }' // new_line('a') // &
-              '        .comment { color: #888; font-style: italic; }' // new_line('a') // &
+              '        .timestamp { font-size: 0.9rem; margin-top: 0.5rem; ' // &
+              & 'opacity: 0.7; }' // new_line('a') // &
+              '        .keyword { color: var(--accent-color, #ff00ff); ' // &
+              & 'font-weight: bold; }' // new_line('a') // &
+              '        .comment { color: #888; font-style: italic; }' // &
+              & new_line('a') // &
               '        @media (max-width: 768px) {' // new_line('a') // &
               '            body { padding: 10px; }' // new_line('a') // &
               '            .report-header h1 { font-size: 2rem; }' // new_line('a') // &
-              '            .summary-grid { grid-template-columns: 1fr; }' // new_line('a') // &
+              '            .summary-grid { grid-template-columns: 1fr; }' // &
+              & new_line('a') // &
               '        }' // new_line('a') // &
               '    </style>'
     end function generate_comprehensive_css
@@ -580,15 +637,21 @@ contains
             do i = 1, size(data%files)
                 file_list = file_list // &
                     '            <div class="file-item">' // new_line('a') // &
-                    '                <span class="file-name">' // trim(data%files(i)%filename) // '</span>' // new_line('a') // &
-                    '                <span class="file-coverage">' // real_to_str(data%files(i)%coverage_percentage) // '%</span>' // new_line('a') // &
-                    '                <div style="clear: both;"></div>' // new_line('a') // &
+                    '                <span class="file-name">' // &
+                    & trim(data%files(i)%filename) // '</span>' // new_line('a') // &
+                    '                <span class="file-coverage">' // &
+                    & real_to_str(data%files(i)%coverage_percentage) // &
+                    & '%</span>' // new_line('a') // &
+                    '                <div style="clear: both;"></div>' // &
+                    & new_line('a') // &
                     '            </div>' // new_line('a')
             end do
         else
             file_list = '            <div class="file-item">' // new_line('a') // &
-                       '                <span class="file-name">No files found</span>' // new_line('a') // &
-                       '                <span class="file-coverage">0.0%</span>' // new_line('a') // &
+                       '                <span class="file-name">' // &
+                       & 'No files found</span>' // new_line('a') // &
+                       '                <span class="file-coverage">' // &
+                       & '0.0%</span>' // new_line('a') // &
                        '            </div>' // new_line('a')
         end if
         
@@ -615,11 +678,13 @@ contains
         type(color_scheme_t), intent(in) :: theme
         character(len=:), allocatable, intent(out) :: output
         
-        output = char(27)//'[1;32m' // 'Coverage Report' // char(27)//'[0m' // new_line('a') // &
+        output = char(27)//'[1;32m' // 'Coverage Report' // char(27)//'[0m' // &
+                & new_line('a') // &
                 '================================' // new_line('a') // &
                 'Theme: ' // theme%name // new_line('a') // &
                 'Files: ' // int_to_str(data%summary%total_files) // new_line('a') // &
-                'Coverage: ' // real_to_str(data%summary%coverage_percentage) // '%' // new_line('a')
+                'Coverage: ' // real_to_str(data%summary%coverage_percentage) // &
+                & '%' // new_line('a')
     end subroutine generate_terminal_display
     
     subroutine calculate_metrics_for_data(data, metrics)
@@ -665,7 +730,8 @@ contains
         real :: coverage_delta
         character(len=:), allocatable :: status
         
-        coverage_delta = current%line_coverage_percentage - baseline%line_coverage_percentage
+        coverage_delta = current%line_coverage_percentage - &
+                        & baseline%line_coverage_percentage
         
         if (coverage_delta > 0.1) then
             status = "improved"
@@ -677,8 +743,10 @@ contains
         
         output = 'Coverage Diff Report' // new_line('a') // &
                 '===================' // new_line('a') // &
-                'Baseline: ' // real_to_str(baseline%line_coverage_percentage) // '%' // new_line('a') // &
-                'Current:  ' // real_to_str(current%line_coverage_percentage) // '%' // new_line('a') // &
+                'Baseline: ' // real_to_str(baseline%line_coverage_percentage) // &
+                & '%' // new_line('a') // &
+                'Current:  ' // real_to_str(current%line_coverage_percentage) // &
+                & '%' // new_line('a') // &
                 'Delta:    ' // real_to_str(coverage_delta) // '%' // new_line('a') // &
                 'Status:   ' // status // new_line('a')
     end subroutine generate_diff_output
