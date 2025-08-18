@@ -454,7 +454,13 @@ contains
         if (error_caught) return
         
         ! Initialize coverage data with parsed files
-        call data%init(files)
+        if (files_count > 0) then
+            call data%init(files(1:files_count))
+        else
+            call data%init()
+        end if
+        
+        if (allocated(files)) deallocate(files)
     end subroutine parse_coverage_array
 
     ! Skip to specified key in JSON object
@@ -543,8 +549,11 @@ contains
         end do
         
         ! Allocate and copy files
-        allocate(files(files_count))
-        files(1:files_count) = temp_files(1:files_count)
+        if (files_count > 0) then
+            allocate(files, source=temp_files(1:files_count))
+        else
+            allocate(files(0))
+        end if
     end subroutine parse_files_array
 
     ! Parse individual file object from JSON
@@ -585,7 +594,7 @@ contains
         
         ! Parse lines - try from object start
         call try_parse_lines_field(tokens, object_start_pos, token_count, filename, &
-                                  lines, lines_count, lines_found)
+                                  lines, lines_count, current_pos, lines_found)
         if (.not. lines_found) then
             error_caught = .true.
             return
@@ -677,8 +686,11 @@ contains
         end do
         
         ! Allocate and copy lines
-        allocate(lines(lines_count))
-        lines(1:lines_count) = temp_lines(1:lines_count)
+        if (lines_count > 0) then
+            allocate(lines, source=temp_lines(1:lines_count))
+        else
+            allocate(lines(0))
+        end if
     end subroutine parse_lines_array
 
     ! Parse individual line object from JSON with field order independence
@@ -1017,12 +1029,12 @@ contains
     
     ! Helper subroutine to parse lines field from any position in object
     subroutine try_parse_lines_field(tokens, start_pos, token_count, filename, lines, &
-                                    lines_count, found)
+                                    lines_count, final_pos, found)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(in) :: start_pos, token_count
         character(len=*), intent(in) :: filename
         type(coverage_line_t), allocatable, intent(out) :: lines(:)
-        integer, intent(out) :: lines_count
+        integer, intent(out) :: lines_count, final_pos
         logical, intent(out) :: found
         
         integer :: pos
@@ -1042,6 +1054,7 @@ contains
                                               lines, lines_count, error_caught)
                         if (.not. error_caught) then
                             found = .true.
+                            final_pos = pos
                             return
                         end if
                     end if
@@ -1051,6 +1064,7 @@ contains
         end do
         
         lines_count = 0
+        final_pos = start_pos
         allocate(lines(0))
     end subroutine try_parse_lines_field
 
