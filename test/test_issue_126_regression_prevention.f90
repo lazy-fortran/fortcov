@@ -454,19 +454,27 @@ contains
         end if
         
         ! Test coverage_model integration
-        coverage%filename = "test.f90"
-        if (.not. allocated(coverage%lines)) then
-            allocate(coverage%lines(1))
-            coverage%lines(1)%line_number = 1
-            coverage%lines(1)%execution_count = 0
-            coverage%lines(1)%is_executable = .true.
+        if (.not. allocated(coverage%files)) then
+            allocate(coverage%files(1))
+            coverage%files(1)%filename = "test.f90"
+            if (.not. allocated(coverage%files(1)%lines)) then
+                allocate(coverage%files(1)%lines(1))
+                coverage%files(1)%lines(1)%line_number = 1
+                coverage%files(1)%lines(1)%execution_count = 0
+                coverage%files(1)%lines(1)%is_executable = .true.
+            end if
         end if
         
-        passed = (coverage%filename == "test.f90" .and. &
-                 allocated(coverage%lines) .and. &
-                 size(coverage%lines) == 1)
+        passed = (allocated(coverage%files) .and. &
+                 size(coverage%files) == 1 .and. &
+                 coverage%files(1)%filename == "test.f90" .and. &
+                 allocated(coverage%files(1)%lines) .and. &
+                 size(coverage%files(1)%lines) == 1)
         
-        if (allocated(coverage%lines)) deallocate(coverage%lines)
+        if (allocated(coverage%files)) then
+            if (allocated(coverage%files(1)%lines)) deallocate(coverage%files(1)%lines)
+            deallocate(coverage%files)
+        end if
         
         if (passed) then
             print *, "    PASSED"

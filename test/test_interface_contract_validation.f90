@@ -454,12 +454,12 @@ contains
             return
         end if
         
-        # Contract: Invalid paths should be handled gracefully
+        ! Contract: Invalid paths should be handled gracefully
         config%output_format = "markdown"
         config%output_path = "/invalid/nonexistent/path/output.md"
         exit_code = analyze_coverage(config)
         
-        # Should handle gracefully
+        ! Should handle gracefully
         passed = (exit_code >= 0 .and. exit_code <= 10)
         
         if (passed) then
@@ -483,7 +483,7 @@ contains
         call initialize_config(config)
         config%quiet = .true.
         
-        # Contract: Repeated allocation/deallocation should work safely
+        ! Contract: Repeated allocation/deallocation should work safely
         do i = 1, 5
             files = find_coverage_files(config)
             passed = allocated(files)
@@ -496,7 +496,7 @@ contains
             if (allocated(files)) deallocate(files)
         end do
         
-        # Contract: Configuration arrays should be manageable
+        ! Contract: Configuration arrays should be manageable
         if (allocated(config%source_paths)) deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(2))
         config%source_paths(1) = "test1"
@@ -518,17 +518,17 @@ contains
         !! When: Testing parser operations
         !! Then: Parser contracts should be maintained
         logical :: passed
+        type(config_t) :: config
+        integer :: exit_code
         
         print *, "  Test 9: Parser interface contracts"
         
-        # Note: Parser interfaces might not be directly testable if they're
-        # internal to coverage_engine. This test verifies that parser
-        # functionality through public interfaces remains consistent.
+        ! Note: Parser interfaces might not be directly testable if they're
+        ! internal to coverage_engine. This test verifies that parser
+        ! functionality through public interfaces remains consistent.
         
-        # Contract: Parser behavior should be stable through public interface
-        # We test this indirectly through analyze_coverage
-        type(config_t) :: config
-        integer :: exit_code
+        ! Contract: Parser behavior should be stable through public interface
+        ! We test this indirectly through analyze_coverage
         
         call initialize_config(config)
         config%quiet = .true.
@@ -537,7 +537,7 @@ contains
         
         exit_code = analyze_coverage(config)
         
-        # Should complete without crashing (even if no data found)
+        ! Should complete without crashing (even if no data found)
         passed = (exit_code >= 0 .and. exit_code <= 3)
         
         if (passed) then
@@ -557,22 +557,22 @@ contains
         
         print *, "  Test 10: Reporter interface contracts"
         
-        # Contract: Different output formats should be supported
+        ! Contract: Different output formats should be supported
         call initialize_config(config)
         config%quiet = .true.
         config%input_format = "gcov"
         
-        # Test markdown format
+        ! Test markdown format
         config%output_format = "markdown"
         config%output_path = "/tmp/test_contract.md"
         exit_code1 = analyze_coverage(config)
         
-        # Test JSON format
+        ! Test JSON format
         config%output_format = "json"
         config%output_path = "/tmp/test_contract.json"
         exit_code2 = analyze_coverage(config)
         
-        # Both should complete without crashing
+        ! Both should complete without crashing
         passed = (exit_code1 >= 0 .and. exit_code1 <= 3 .and. &
                  exit_code2 >= 0 .and. exit_code2 <= 3)
         
