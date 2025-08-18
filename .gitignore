@@ -71,6 +71,8 @@ __pycache__/
 test_*.md
 test_*.xml
 test_*.info
+test_*.json
+io_test_*.json
 debug_*
 *.log
 

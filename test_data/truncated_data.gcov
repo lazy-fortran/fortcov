@@ -1,7 +1,0 @@
-        -:    0:Source:test_module.f90
-        -:    0:Graph:test_module.gcno
-        -:    0:Data:test_module.gcda
-        -:    1:module test_module
-        1:    2:    integer :: test_var = 42
-        -:    3:contains
-        2:    4:    subroutine test_

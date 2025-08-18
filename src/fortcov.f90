@@ -31,7 +31,7 @@ contains
   
   ! Main coverage analysis routine for CLI
   function run_coverage_analysis(config) result(exit_code)
-    type(config_t), intent(in) :: config
+    type(config_t), intent(inout) :: config
     integer :: exit_code
     
     exit_code = analyze_coverage(config)
