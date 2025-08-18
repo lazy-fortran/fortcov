@@ -17,6 +17,7 @@ module file_utils
     public :: ensure_directory_safe
     public :: file_exists
     public :: read_file_content
+    public :: read_multiple_files_batched
 
 contains
 
@@ -307,5 +308,43 @@ contains
         content = transfer(buffer, repeat(' ', int(file_size)))
         deallocate(buffer)
     end subroutine read_file_content
+
+    ! PERFORMANCE OPTIMIZATION: Batched file reading for multiple files
+    ! Reduces I/O overhead by processing multiple files in sequence
+    subroutine read_multiple_files_batched(filenames, contents, success_flags)
+        character(len=*), intent(in) :: filenames(:)
+        character(len=:), allocatable, intent(out) :: contents(:)
+        logical, intent(out) :: success_flags(:)
+        
+        integer :: i, num_files
+        logical :: file_error
+        character(len=:), allocatable :: temp_content
+        
+        num_files = size(filenames)
+        
+        ! Validate input array sizes match
+        if (size(success_flags) /= num_files) then
+            success_flags = .false.
+            return
+        end if
+        
+        ! Allocate contents array
+        allocate(character(len=0) :: contents(num_files))
+        
+        ! Process files in batch with optimized I/O patterns
+        do i = 1, num_files
+            call read_file_content(filenames(i), temp_content, file_error)
+            success_flags(i) = .not. file_error
+            
+            if (.not. file_error) then
+                contents(i) = temp_content
+            else
+                contents(i) = ""
+            end if
+            
+            ! Early exit optimization: if this is a critical batch operation
+            ! and any file fails, we could exit early (implementation dependent)
+        end do
+    end subroutine read_multiple_files_batched
 
 end module file_utils

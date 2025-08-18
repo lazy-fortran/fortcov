@@ -15,21 +15,29 @@ module string_utils
 contains
 
     ! Compress consecutive line numbers into ranges (1,2,3,5,6 -> "1-3,5-6")
+    ! OPTIMIZED: Uses pre-allocated buffer to avoid O(n²) string concatenation
     function compress_ranges(numbers) result(compressed)
         integer, intent(in) :: numbers(:)
         character(len=:), allocatable :: compressed
-        character(len=:), allocatable :: result_str
-        integer :: i, start_range, end_range
+        
+        ! Use buffered approach for O(n) performance
+        integer, parameter :: BUFFER_SIZE = 4096
+        character(len=BUFFER_SIZE) :: buffer
+        integer :: buffer_pos, i, start_range, end_range, range_count
         logical :: in_range, first_item
+        character(len=20) :: temp_str
         
         if (size(numbers) == 0) then
             compressed = ""
             return
         end if
         
-        result_str = ""
+        ! Initialize buffer
+        buffer = ""
+        buffer_pos = 1
         i = 1
         first_item = .true.
+        range_count = 0
         
         do while (i <= size(numbers))
             start_range = numbers(i)
@@ -49,22 +57,38 @@ contains
             
             ! Add separator if not first item
             if (.not. first_item) then
-                result_str = result_str // ", "
+                if (buffer_pos + 2 <= BUFFER_SIZE) then
+                    buffer(buffer_pos:buffer_pos+1) = ", "
+                    buffer_pos = buffer_pos + 2
+                end if
             end if
             first_item = .false.
             
-            ! Add range or single number
+            ! Add range or single number to buffer
             if (in_range) then
-                result_str = result_str // int_to_string(start_range) // &
-                            "-" // int_to_string(end_range)
+                write(temp_str, '(I0,"-",I0)') start_range, end_range
             else
-                result_str = result_str // int_to_string(start_range)
+                write(temp_str, '(I0)') start_range
+            end if
+            
+            ! Copy temp_str to buffer if space available
+            temp_str = adjustl(temp_str)
+            if (buffer_pos + len_trim(temp_str) <= BUFFER_SIZE) then
+                buffer(buffer_pos:buffer_pos+len_trim(temp_str)-1) = &
+                    temp_str(1:len_trim(temp_str))
+                buffer_pos = buffer_pos + len_trim(temp_str)
             end if
             
             i = i + 1
+            range_count = range_count + 1
         end do
         
-        compressed = result_str
+        ! Allocate result with exact size needed
+        if (buffer_pos > 1) then
+            compressed = buffer(1:buffer_pos-1)
+        else
+            compressed = ""
+        end if
     end function compress_ranges
 
     ! Format percentage with specified precision
