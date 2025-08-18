@@ -195,7 +195,7 @@ contains
         ! Test 3b: Empty exclude patterns array
         call initialize_config(config2)
         if (allocated(config2%exclude_patterns)) deallocate(config2%exclude_patterns)
-        allocate(config2%exclude_patterns(0))
+        allocate(character(len=256) :: config2%exclude_patterns(0))
         result2 = check_exclude_patterns("test.f90", config2)
         passed = (.not. result2)  ! Should not exclude with empty array
         
@@ -208,7 +208,7 @@ contains
         ! Test 3c: Matching pattern
         call initialize_config(config3)
         if (allocated(config3%exclude_patterns)) deallocate(config3%exclude_patterns)
-        allocate(config3%exclude_patterns(1))
+        allocate(character(len=256) :: config3%exclude_patterns(1))
         config3%exclude_patterns(1) = "test.f90"
         result3 = check_exclude_patterns("test.f90", config3)
         passed = result3  ! Should exclude exact match

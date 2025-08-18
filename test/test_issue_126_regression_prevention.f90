@@ -121,7 +121,7 @@ contains
         
         ! Set up test exclude patterns
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        allocate(config%exclude_patterns(4))
+        allocate(character(len=256) :: config%exclude_patterns(4))
         config%exclude_patterns(1) = "test_*.f90"
         config%exclude_patterns(2) = "*.bak"
         config%exclude_patterns(3) = "*_debug*"
@@ -258,7 +258,7 @@ contains
         
         ! Test with exclude patterns
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        allocate(config%exclude_patterns(1))
+        allocate(character(len=256) :: config%exclude_patterns(1))
         config%exclude_patterns(1) = "*.tmp"
         
         ! Re-run file discovery with patterns
@@ -405,7 +405,7 @@ contains
         
         ! Set up exclude patterns for performance test
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        allocate(config%exclude_patterns(10))
+        allocate(character(len=256) :: config%exclude_patterns(10))
         do i = 1, 10
             write(config%exclude_patterns(i), '("pattern_", I0, "_*.f90")') i
         end do
@@ -491,7 +491,7 @@ contains
         
         ! Test empty exclude patterns
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        allocate(config%exclude_patterns(0))
+        allocate(character(len=256) :: config%exclude_patterns(0))
         result1 = check_exclude_patterns("any_file.f90", config)
         passed = (.not. result1)  ! Should not exclude with empty patterns
         
@@ -503,7 +503,7 @@ contains
         
         ! Test pattern with just wildcard
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        allocate(config%exclude_patterns(1))
+        allocate(character(len=256) :: config%exclude_patterns(1))
         config%exclude_patterns(1) = "*"
         result2 = check_exclude_patterns("any_file.f90", config)
         passed = result2  ! Should exclude everything

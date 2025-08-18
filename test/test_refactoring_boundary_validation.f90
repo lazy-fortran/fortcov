@@ -147,7 +147,8 @@ contains
         print *, "  Test 3: Coverage model interface stability"
         
         ! Test 3a: coverage_data_t type is accessible
-        coverage%filename = "test.f90"
+        allocate(coverage%files(1))
+        coverage%files(1)%filename = "test.f90"
         
         ! Test 3b: coverage_line_t type is accessible
         line%line_number = 1
@@ -155,14 +156,14 @@ contains
         line%is_executable = .true.
         
         ! Test 3c: coverage_stats_t type is accessible
-        stats%total_lines = 100
-        stats%executable_lines = 80
-        stats%covered_lines = 60
+        stats%total_count = 100
+        stats%covered_count = 60
+        stats%percentage = 60.0
         
         ! Verify basic field access works
-        passed = (coverage%filename == "test.f90" .and. &
+        passed = (coverage%files(1)%filename == "test.f90" .and. &
                  line%line_number == 1 .and. &
-                 stats%total_lines == 100)
+                 stats%total_count == 100)
         
         if (passed) then
             print *, "    PASSED"
@@ -188,7 +189,8 @@ contains
         result = analyze_coverage(config)
         
         ! Test 4b: Operations that cross module boundaries work
-        coverage%filename = "test.f90"
+        allocate(coverage%files(1))
+        coverage%files(1)%filename = "test.f90"
         
         ! If we reach here without compilation errors, dependencies are valid
         passed = .true.
@@ -254,7 +256,7 @@ contains
         
         ! check_exclude_patterns(character(*), config_t) -> logical
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
-        allocate(config%exclude_patterns(0))  ! Empty array
+        allocate(character(len=256) :: config%exclude_patterns(0))  ! Empty array
         exclude_result = check_exclude_patterns("test.f90", config)
         
         ! If compilation succeeds and we reach here, signatures are compatible
@@ -293,9 +295,10 @@ contains
         config%output_path = "/tmp/test.json"
         
         ! Coverage data type fields
-        coverage%filename = "test.f90"
-        if (.not. allocated(coverage%lines)) then
-            allocate(coverage%lines(1))
+        allocate(coverage%files(1))
+        coverage%files(1)%filename = "test.f90"
+        if (.not. allocated(coverage%files(1)%lines)) then
+            allocate(coverage%files(1)%lines(1))
         end if
         
         ! Coverage line type fields
@@ -304,9 +307,9 @@ contains
         line%is_executable = .true.
         
         ! Coverage statistics type fields
-        stats%total_lines = 100
-        stats%executable_lines = 80
-        stats%covered_lines = 60
+        stats%total_count = 100
+        stats%covered_count = 60
+        stats%percentage = 60.0
         
         ! If we can access all these fields, type definitions are stable
         passed = .true.
@@ -318,7 +321,7 @@ contains
         end if
         
         ! Cleanup
-        if (allocated(coverage%lines)) deallocate(coverage%lines)
+        if (allocated(coverage%files(1)%lines)) deallocate(coverage%files(1)%lines)
     end function test_type_definitions
 
     function test_error_handling_interfaces() result(passed)
