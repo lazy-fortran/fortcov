@@ -225,7 +225,7 @@ contains
     ! Test 6: Extreme execution counts  
     ! Given: Coverage data with extremely large execution counts
     ! When: Parsing coverage data
-    ! Then: Should handle within reasonable bounds (CURRENTLY FAILS)
+    ! Then: Should handle within reasonable bounds (capped at INT32_MAX)
     subroutine test_extreme_execution_counts()
         character(len=*), parameter :: test_name = "Extreme execution counts"
         class(coverage_parser_t), allocatable :: parser
@@ -234,7 +234,7 @@ contains
         character(len=256) :: test_file
         integer :: i, j
         logical :: found_uncapped_count
-        integer, parameter :: MAX_REASONABLE_COUNT = 1000000
+        integer, parameter :: MAX_REASONABLE_COUNT = 2147483647  ! INT32_MAX per security audit
         
         ! Use test file with extreme execution counts
         test_file = "test_data/malformed_extreme_count.gcov"

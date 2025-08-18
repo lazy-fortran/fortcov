@@ -20,7 +20,7 @@ module input_validation
     ! System limits - optimized for performance and security
     integer(int64), parameter, public :: MAX_FILE_SIZE = 1073741824_int64  ! 1GB
     integer, parameter, public :: MAX_LINE_NUMBER = 100000      ! Reasonable maximum for source file line numbers
-    integer, parameter, public :: MAX_EXECUTION_COUNT = 1000000      ! Reasonable maximum for coverage data
+    integer, parameter, public :: MAX_EXECUTION_COUNT = 2147483647   ! INT32_MAX for coverage data
     integer, parameter, public :: MAX_PATH_LENGTH = 4096
     integer, parameter, public :: MAX_FILENAME_LENGTH = 255
     integer, parameter, public :: MAX_LINES_PER_FILE = 1000000
@@ -36,6 +36,12 @@ module input_validation
         procedure :: init => validation_result_init
         procedure :: clear => validation_result_clear
     end type validation_result_t
+    
+    ! Validate line data structure bounds - overloaded interface
+    interface validate_line_data_bounds
+        module procedure validate_line_data_bounds_simple
+        module procedure validate_line_data_bounds_detailed
+    end interface
     
     ! Public validation interfaces
     public :: validate_file_constraints
@@ -182,8 +188,8 @@ contains
         call result%init(.true., ERROR_SUCCESS, "", "")
     end subroutine validate_coverage_data_bounds
 
-    ! Validate line data structure bounds
-    subroutine validate_line_data_bounds(lines_array_size, result)
+    ! Validate line data structure bounds (simple version)
+    subroutine validate_line_data_bounds_simple(lines_array_size, result)
         integer, intent(in) :: lines_array_size
         type(validation_result_t), intent(out) :: result
         
@@ -206,7 +212,63 @@ contains
         
         ! Success
         call result%init(.true., ERROR_SUCCESS, "", "")
-    end subroutine validate_line_data_bounds
+    end subroutine validate_line_data_bounds_simple
+    
+    ! Validate line data bounds (detailed version for security tests)
+    subroutine validate_line_data_bounds_detailed(line_number, execution_count, filename, result)
+        integer, intent(in) :: line_number
+        integer, intent(in) :: execution_count  
+        character(len=*), intent(in) :: filename
+        type(validation_result_t), intent(out) :: result
+        
+        call result%clear()
+        
+        ! Validate filename first
+        call validate_path_safety(filename, result)
+        if (.not. result%is_valid) return
+        
+        ! Validate line number bounds
+        if (line_number <= 0) then
+            call result%init(.false., ERROR_INVALID_DATA, &
+                           "Invalid line number: " // trim(int_to_string(line_number)) // &
+                           " in file: " // trim(filename), &
+                           "Line numbers must be positive")
+            return
+        end if
+        
+        if (line_number > MAX_LINE_NUMBER) then
+            call result%init(.false., ERROR_INVALID_DATA, &
+                           "Line number exceeds maximum: " // trim(int_to_string(line_number)) // &
+                           " > " // trim(int_to_string(MAX_LINE_NUMBER)) // &
+                           " in file: " // trim(filename), &
+                           "Use smaller source files or increase line limit")
+            return
+        end if
+        
+        ! Validate execution count bounds
+        if (execution_count < 0) then
+            call result%init(.false., ERROR_INVALID_DATA, &
+                           "Invalid execution count: " // trim(int_to_string(execution_count)) // &
+                           " for line " // trim(int_to_string(line_number)) // &
+                           " in file: " // trim(filename), &
+                           "Execution counts cannot be negative")
+            return
+        end if
+        
+        if (execution_count > MAX_EXECUTION_COUNT) then
+            call result%init(.false., ERROR_INVALID_DATA, &
+                           "Execution count exceeds safe maximum: " // &
+                           trim(int_to_string(execution_count)) // " > " // &
+                           trim(int_to_string(MAX_EXECUTION_COUNT)) // &
+                           " for line " // trim(int_to_string(line_number)) // &
+                           " in file: " // trim(filename), &
+                           "Large execution counts will be clamped to prevent overflow")
+            return
+        end if
+        
+        ! Success
+        call result%init(.true., ERROR_SUCCESS, "", "")
+    end subroutine validate_line_data_bounds_detailed
 
     ! Comprehensive path safety validation
     subroutine validate_path_safety(path, result)

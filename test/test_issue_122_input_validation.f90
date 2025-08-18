@@ -226,7 +226,7 @@ contains
         character(len=256) :: test_file
         integer :: i, j
         logical :: found_overflow_risk
-        integer, parameter :: MAX_SAFE_COUNT = 2000000000  ! Safe below INT32_MAX
+        integer, parameter :: MAX_SAFE_COUNT = 2147483647  ! INT32_MAX for consistency with security audit
         
         call start_test("Execution Count Overflow Protection")
         

@@ -283,6 +283,7 @@ contains
         character(len=:), allocatable :: files(:)
         type(coverage_data_t) :: coverage
         integer :: i
+        integer :: exit_code
         
         call start_quality_domain("Memory Management and Resource Efficiency")
         
@@ -306,7 +307,7 @@ contains
         do i = 1, 3
             config%output_path = "/nonexistent/path" // trim(adjustl(int_to_string(i))) // ".md"
             config%output_format = "markdown"
-            call analyze_coverage(config)
+            exit_code = analyze_coverage(config)
             ! Should not accumulate memory across error conditions
         end do
         call assert_quality_test(.true., &
@@ -363,8 +364,9 @@ contains
         config1%quiet = .false.
         config2%verbose = .false.
         config2%quiet = .true.
-        call assert_quality_test(config1%verbose /= config2%verbose .and. &
-                               config1%quiet /= config2%quiet, &
+        ! Ensure configs are different and independent
+        call assert_quality_test((config1%verbose .and. .not. config2%verbose) .and. &
+                               (.not. config1%quiet .and. config2%quiet), &
             "Functions should have clear, independent responsibilities", "CQ-002")
         
         ! Test 5.3: Predictable behavior patterns
@@ -410,6 +412,7 @@ contains
         type(config_t) :: config
         character(len=:), allocatable :: files(:)
         integer :: exit_code
+        logical :: result
         
         call start_quality_domain("Interface Design and Contracts")
         

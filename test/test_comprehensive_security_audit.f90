@@ -15,6 +15,7 @@ program test_comprehensive_security_audit
     use atomic_temp_file_manager
     use command_timeout_manager
     use error_handling
+    use iso_fortran_env, only: int64
     implicit none
     
     logical :: all_tests_passed = .true.
@@ -100,7 +101,7 @@ contains
             "Excessive line numbers should be rejected", "SV-004")
         
         ! Test 1.5: Execution count overflow protection
-        call validate_coverage_data_bounds(1, 2147483647, "test.f90", result)
+        call validate_line_data_bounds(1, 2147483647, "test.f90", result)
         call assert_security_test(result%is_valid, &
             "Maximum valid execution count should be accepted", "SV-005")
         
@@ -115,7 +116,7 @@ contains
         ! Test 1.7: Integer overflow protection
         block
             integer :: safe_value
-            safe_value = safe_integer_calculation(2000000000, 500000000)
+            safe_value = safe_integer_calculation(2000000000, 500000000, "add")
             call assert_security_test(safe_value <= 2147483647, &
                 "Integer overflow should be prevented", "SV-007")
         end block
@@ -395,7 +396,8 @@ contains
         !! Then: Resource exhaustion should be prevented
         
         type(validation_result_t) :: result
-        type(command_timeout_manager_t) :: timeout_manager
+        type(timeout_command_executor_t) :: timeout_manager
+        type(error_context_t) :: error_ctx
         
         call start_security_domain("Resource Exhaustion Protection")
         
@@ -419,8 +421,8 @@ contains
             "Excessive memory allocation should be rejected", "RE-003")
         
         ! Test 7.4: Command timeout protection
-        call timeout_manager%init(1000)  ! 1 second timeout
-        call assert_security_test(timeout_manager%is_initialized(), &
+        call create_timeout_executor(timeout_manager, 30, error_ctx)
+        call assert_security_test(error_ctx%error_code == ERROR_SUCCESS, &
             "Command timeout should be configurable", "RE-004")
         
         ! Test 7.5: Maximum line count validation
@@ -434,8 +436,8 @@ contains
             count = 0
             ! Test that we don't allow unbounded loops
             do i = 1, 1000
+                if (count >= 100) exit  ! Enforce bound before incrementing
                 count = count + 1
-                if (count > 100) exit  ! Reasonable limit
             end do
             call assert_security_test(count <= 100, &
                 "Bounded operations should be enforced", "RE-006")
@@ -450,6 +452,7 @@ contains
         !! Then: Sensitive information should not be disclosed
         
         type(error_context_t) :: error_ctx
+        type(validation_result_t) :: result
         character(len=:), allocatable :: safe_path
         
         call start_security_domain("Error Information Disclosure Protection")
@@ -476,9 +479,9 @@ contains
         end if
         
         ! Test 8.3: Memory address disclosure
-        call validate_memory_allocation_request(-1_int64, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            call assert_security_test(index(error_ctx%message, "0x") == 0, &
+        call validate_memory_allocation_request(-1_int64, result)
+        if (result%error_code /= ERROR_SUCCESS) then
+            call assert_security_test(index(result%error_message, "0x") == 0, &
                 "Error message should not contain memory addresses", "ED-003")
         else
             call assert_security_test(.true., &
