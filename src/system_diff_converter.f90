@@ -38,6 +38,9 @@ contains
         
         success = .false.
         
+        ! Initialize output to prevent segfaults
+        xml_output = ''
+        
         ! Import JSON data
         call import_json_coverage_safe(json_content, coverage_data, import_error)
         if (import_error) return
