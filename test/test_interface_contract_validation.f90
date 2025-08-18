@@ -380,28 +380,28 @@ contains
         print *, "  Test 6: Coverage model contracts"
         
         ! Contract: coverage_data_t can be independently created
-        coverage1%filename = "module1.f90"
-        coverage2%filename = "module2.f90"
+        call coverage1%init()
+        call coverage2%init()
         
-        passed = (coverage1%filename == "module1.f90" .and. &
-                 coverage2%filename == "module2.f90")
+        passed = (allocated(coverage1%files) .and. &
+                 allocated(coverage2%files))
         
         if (.not. passed) then
             print *, "    FAILED: Independent coverage_data_t creation failed"
             return
         end if
         
-        ! Contract: lines array can be allocated independently
-        allocate(coverage1%lines(2))
-        allocate(coverage2%lines(3))
+        ! Contract: files array can be allocated independently
+        allocate(coverage1%files(2))
+        allocate(coverage2%files(3))
         
-        passed = (allocated(coverage1%lines) .and. allocated(coverage2%lines) .and. &
-                 size(coverage1%lines) == 2 .and. size(coverage2%lines) == 3)
+        passed = (allocated(coverage1%files) .and. allocated(coverage2%files) .and. &
+                 size(coverage1%files) == 2 .and. size(coverage2%files) == 3)
         
         if (.not. passed) then
-            print *, "    FAILED: Independent lines allocation failed"
-            if (allocated(coverage1%lines)) deallocate(coverage1%lines)
-            if (allocated(coverage2%lines)) deallocate(coverage2%lines)
+            print *, "    FAILED: Independent files allocation failed"
+            if (allocated(coverage1%files)) deallocate(coverage1%files)
+            if (allocated(coverage2%files)) deallocate(coverage2%files)
             return
         end if
         
@@ -418,8 +418,8 @@ contains
                  line1%execution_count == 3 .and. line2%execution_count == 0 .and. &
                  line1%is_executable .and. .not. line2%is_executable)
         
-        if (allocated(coverage1%lines)) deallocate(coverage1%lines)
-        if (allocated(coverage2%lines)) deallocate(coverage2%lines)
+        if (allocated(coverage1%files)) deallocate(coverage1%files)
+        if (allocated(coverage2%files)) deallocate(coverage2%files)
         
         if (passed) then
             print *, "    PASSED"
@@ -447,7 +447,7 @@ contains
         exit_code = analyze_coverage(config)
         
         ! Should return error code, not crash
-        passed = (exit_code >= 0 .and. exit_code <= 10)  # Reasonable error code range
+        passed = (exit_code >= 0 .and. exit_code <= 10)  ! Reasonable error code range
         
         if (.not. passed) then
             print *, "    FAILED: Error handling contract violated, exit code:", exit_code
