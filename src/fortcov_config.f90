@@ -338,7 +338,34 @@ contains
         is_flag = (len_trim(arg) > 1) .and. (arg(1:1) == "-")
     end function is_flag_argument
     
+    ! Helper function to detect short options that expect values
+    function is_short_option_with_value(arg) result(has_value)
+        character(len=*), intent(in) :: arg
+        logical :: has_value
+        
+        ! Short options that expect values: -s, -t, -o
+        has_value = (trim(arg) == "-s" .or. trim(arg) == "-t" .or. trim(arg) == "-o")
+    end function is_short_option_with_value
+    
+    ! Helper function to convert short options to long form
+    function get_long_form(short_arg) result(long_form)
+        character(len=*), intent(in) :: short_arg
+        character(len=:), allocatable :: long_form
+        
+        select case (trim(short_arg))
+        case ("-s")
+            long_form = "--source"
+        case ("-t")
+            long_form = "--fail-under"
+        case ("-o")
+            long_form = "--output"
+        case default
+            long_form = trim(short_arg)  ! Return as-is for other flags
+        end select
+    end function get_long_form
+    
     ! Classify arguments into flags and positional arguments
+    ! Supports both key=value and space-separated short options
     subroutine classify_arguments(args, flags, flag_count, positionals, &
                                  positional_count)
         character(len=*), intent(in) :: args(:)
@@ -355,16 +382,31 @@ contains
         flag_count = 0
         positional_count = 0
         
-        ! Classify each argument
-        do i = 1, argc
-            if (len_trim(args(i)) == 0) cycle
+        ! Classify each argument, handling space-separated short options
+        i = 1
+        do while (i <= argc)
+            if (len_trim(args(i)) == 0) then
+                i = i + 1
+                cycle
+            end if
             
             if (is_flag_argument(args(i))) then
                 flag_count = flag_count + 1
-                temp_flags(flag_count) = trim(args(i))
+                
+                ! Check for space-separated short options (-s, -t, -o)
+                if (is_short_option_with_value(args(i)) .and. i < argc) then
+                    ! Combine flag and next argument as key=value
+                    temp_flags(flag_count) = get_long_form(trim(args(i))) // "=" // trim(args(i+1))
+                    i = i + 2  ! Skip next argument as it's the value
+                else
+                    ! Regular flag (no value or already has = sign)
+                    temp_flags(flag_count) = trim(args(i))
+                    i = i + 1
+                end if
             else
                 positional_count = positional_count + 1
                 temp_positionals(positional_count) = trim(args(i))
+                i = i + 1
             end if
         end do
         
