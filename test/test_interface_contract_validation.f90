@@ -264,18 +264,21 @@ contains
         end if
         
         ! Test 4b: coverage_data_t type contract
-        coverage%filename = "test.f90"
-        if (.not. allocated(coverage%lines)) then
-            allocate(coverage%lines(2))
+        allocate(coverage%files(1))
+        coverage%files(1)%filename = "test.f90"
+        if (.not. allocated(coverage%files(1)%lines)) then
+            allocate(coverage%files(1)%lines(2))
         end if
         
-        passed = (coverage%filename == "test.f90" .and. &
-                 allocated(coverage%lines) .and. &
-                 size(coverage%lines) == 2)
+        passed = (allocated(coverage%files) .and. &
+                 size(coverage%files) == 1 .and. &
+                 coverage%files(1)%filename == "test.f90" .and. &
+                 allocated(coverage%files(1)%lines) .and. &
+                 size(coverage%files(1)%lines) == 2)
         
         if (.not. passed) then
             print *, "    FAILED: coverage_data_t type contract violated"
-            if (allocated(coverage%lines)) deallocate(coverage%lines)
+            if (allocated(coverage%files)) deallocate(coverage%files)
             return
         end if
         
@@ -290,20 +293,20 @@ contains
         
         if (.not. passed) then
             print *, "    FAILED: coverage_line_t type contract violated"
-            if (allocated(coverage%lines)) deallocate(coverage%lines)
+            if (allocated(coverage%files)) deallocate(coverage%files)
             return
         end if
         
         ! Test 4d: coverage_stats_t type contract
-        stats%total_lines = 100
-        stats%executable_lines = 80
-        stats%covered_lines = 60
+        stats%total_count = 100
+        stats%covered_count = 60
+        stats%percentage = 60.0
         
-        passed = (stats%total_lines == 100 .and. &
-                 stats%executable_lines == 80 .and. &
-                 stats%covered_lines == 60)
+        passed = (stats%total_count == 100 .and. &
+                 stats%covered_count == 60 .and. &
+                 abs(stats%percentage - 60.0) < 1.0e-6)
         
-        if (allocated(coverage%lines)) deallocate(coverage%lines)
+        if (allocated(coverage%files)) deallocate(coverage%files)
         
         if (passed) then
             print *, "    PASSED"
