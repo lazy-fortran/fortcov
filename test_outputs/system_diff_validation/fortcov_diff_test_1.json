@@ -1,9 +1,0 @@
-{
-    "tool": "fortcov",
-    "baseline": "baseline.json",
-    "current": "current.json",
-    "files_changed": 2,
-    "lines_added": 5,
-    "lines_removed": 2,
-    "coverage_change": 0.05
-}
