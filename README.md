@@ -160,7 +160,7 @@ fpm build --flag "-fprofile-arcs -ftest-coverage"
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # 3. Generate .gcov files
-gcov src/*.f90
+cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
 
 # 4. Check files exist
 ls -la *.gcov
@@ -217,7 +217,7 @@ fortcov --source=src/utils --output=utils.md
 
 # Or clean up and regenerate
 find . -name "*.gcov" -size +10M -delete
-gcov src/*.f90
+cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
 ```
 
 ### Getting Help
@@ -249,8 +249,8 @@ jobs:
         fpm test --flag "-fprofile-arcs -ftest-coverage"
     - name: Generate coverage report
       run: |
-        gcov src/*.f90
-        fpm run -- --source=src --output=coverage.md --fail-under=80 --quiet
+        cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+        fpm run fortcov -- build/*.gcov --output=coverage.md --fail-under=80 --quiet
     - name: Upload coverage
       uses: actions/upload-artifact@v3
       with:
@@ -265,8 +265,8 @@ coverage:
   script:
     - fpm build --flag "-fprofile-arcs -ftest-coverage"
     - fpm test --flag "-fprofile-arcs -ftest-coverage"  
-    - gcov src/*.f90
-    - fpm run -- --source=src --output=coverage.md --quiet
+    - cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+    - fpm run fortcov -- build/*.gcov --output=coverage.md --quiet
   artifacts:
     paths:
       - coverage.md
@@ -289,8 +289,8 @@ fpm test
 # Test with coverage
 fpm build --flag "-fprofile-arcs -ftest-coverage"  
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
-fpm run -- --source=src --output=coverage.md
+cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+fpm run fortcov -- build/*.gcov --output=coverage.md
 ```
 
 ### Guidelines
