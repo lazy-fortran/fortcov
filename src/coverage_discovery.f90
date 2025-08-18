@@ -145,8 +145,8 @@ contains
         search_path = trim(directory_path) // "/" // trim(pattern)
         files = find_files(search_path)
         
-        ! TODO: Add true recursive search in subdirectories
-        ! For now, just search the given directory
+        ! Note: Current implementation searches the given directory only
+        ! Future enhancement: Add recursive subdirectory search capability
     end function find_files_recursive
     
     function has_matching_gcno(gcda_file) result(has_match)
