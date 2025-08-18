@@ -17,9 +17,11 @@ Get up and running with FortCov in under 2 minutes:
 ```bash
 # 1. Build your Fortran project with coverage flags
 fpm build --flag "-fprofile-arcs -ftest-coverage"
+
+# 2. Run tests to generate coverage data
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# 2. Create coverage report with source discovery
+# 3. Create coverage report with source discovery
 fortcov --source=. --exclude=build/*,test/* --output=coverage.md
 ```
 
