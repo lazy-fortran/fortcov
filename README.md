@@ -19,11 +19,11 @@ Get up and running with FortCov in under 2 minutes:
 fpm build --flag "-fprofile-arcs -ftest-coverage"
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# 2. Generate coverage data from build directory
-cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+# 2. Generate .gcov files from source  
+gcov src/*.f90
 
 # 3. Create coverage report
-fpm run fortcov -- build/*.gcov --output=coverage.md
+fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
 ```
 
 That's it! Open `coverage.md` to see your coverage report.
@@ -159,14 +159,11 @@ fpm build --flag "-fprofile-arcs -ftest-coverage"
 # 2. Run your tests to generate .gcda files  
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# 3. Generate .gcov files
-cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+# 3. Generate .gcov files  
+gcov src/*.f90
 
-# 4. Check files exist
-ls -la *.gcov
-
-# 5. Run fortcov
-fortcov --source=. --output=coverage.md
+# 4. Run fortcov
+fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
 ```
 
 #### ❌ "Command not found: fortcov"
@@ -215,9 +212,9 @@ find . -name "*.gcov" -exec ls -lh {} \; | sort -k5 -hr | head -5
 fortcov --source=src/core --output=core.md
 fortcov --source=src/utils --output=utils.md
 
-# Or clean up and regenerate
+# Or clean up and regenerate coverage data  
 find . -name "*.gcov" -size +10M -delete
-cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+fpm test --flag "-fprofile-arcs -ftest-coverage"
 ```
 
 ### Getting Help
@@ -249,8 +246,8 @@ jobs:
         fpm test --flag "-fprofile-arcs -ftest-coverage"
     - name: Generate coverage report
       run: |
-        cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
-        fpm run fortcov -- build/*.gcov --output=coverage.md --fail-under=80 --quiet
+        gcov src/*.f90
+        fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md --fail-under=80 --quiet
     - name: Upload coverage
       uses: actions/upload-artifact@v3
       with:
@@ -265,8 +262,8 @@ coverage:
   script:
     - fpm build --flag "-fprofile-arcs -ftest-coverage"
     - fpm test --flag "-fprofile-arcs -ftest-coverage"  
-    - cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
-    - fpm run fortcov -- build/*.gcov --output=coverage.md --quiet
+    - gcov src/*.f90
+    - fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md --quiet
   artifacts:
     paths:
       - coverage.md
@@ -289,8 +286,8 @@ fpm test
 # Test with coverage
 fpm build --flag "-fprofile-arcs -ftest-coverage"  
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
-fpm run fortcov -- build/*.gcov --output=coverage.md
+gcov src/*.f90  
+fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
 ```
 
 ### Guidelines
