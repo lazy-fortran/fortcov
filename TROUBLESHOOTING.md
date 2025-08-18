@@ -640,7 +640,7 @@ echo "" >> fortcov-debug.txt
 echo "=== System Information ===" >> fortcov-debug.txt
 uname -a >> fortcov-debug.txt
 echo "gfortran: $(which gfortran) $(gfortran --version | head -1)" >> fortcov-debug.txt
-echo "fpm: $(which fpm) $(fmp --version 2>/dev/null || echo 'version unknown')" >> fortcov-debug.txt
+echo "fpm: $(which fpm) $(fpm --version 2>/dev/null || echo 'version unknown')" >> fortcov-debug.txt
 echo "gcov: $(which gcov) $(gcov --version | head -1)" >> fortcov-debug.txt
 echo "" >> fortcov-debug.txt
 
