@@ -51,6 +51,10 @@ module error_handling
     public :: handle_circular_dependency_detection
     public :: handle_incomplete_coverage
     public :: handle_fatal_error_with_trace
+    public :: handle_no_coverage_files
+    public :: handle_gcov_not_found
+    public :: handle_invalid_arguments
+    public :: handle_threshold_not_met
     public :: log_error
     public :: format_error_message
     public :: is_recoverable_error
@@ -70,12 +74,17 @@ contains
         error_ctx%error_code = ERROR_MISSING_SOURCE_FILE
         error_ctx%recoverable = .true.
         
-        write(error_ctx%message, '(A,A,A)') &
-            "Source file missing: ", trim(source_file), &
-            ". Reporting 0% coverage for this file."
+        write(error_ctx%message, '(A,A)') &
+            "Cannot find source file: ", trim(source_file)
         
         write(error_ctx%suggestion, '(A)') &
-            "Ensure all source files are available or adjust source paths."
+            "1. Check if file exists: ls -la " // trim(source_file)
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Verify --source path includes this file's directory"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Use absolute paths if needed: --source=$(pwd)/src"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Check if file was moved or renamed since gcov run"
         
         write(error_ctx%context, '(A)') "Source file resolution"
     end subroutine handle_missing_source
@@ -88,11 +97,17 @@ contains
         error_ctx%error_code = ERROR_PERMISSION_DENIED
         error_ctx%recoverable = .false.
         
-        write(error_ctx%message, '(A,A,A)') &
-            "Permission denied: Cannot write to ", trim(file_path), "."
+        write(error_ctx%message, '(A,A)') &
+            "Permission denied accessing: ", trim(file_path)
         
         write(error_ctx%suggestion, '(A)') &
-            "Check file permissions or choose different output directory."
+            "1. Check permissions: ls -la " // trim(file_path)
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Make directory writable: chmod 755 $(dirname " // trim(file_path) // ")"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Choose different output location: --output=coverage.md"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Run with appropriate user permissions (avoid sudo if possible)"
         
         write(error_ctx%context, '(A)') "File system access"
     end subroutine handle_permission_denied
@@ -106,14 +121,18 @@ contains
         error_ctx%recoverable = .false.
         
         write(error_ctx%message, '(A,I0,A)') &
-            "Out of memory: Failed to allocate ", requested_size, " bytes."
+            "Memory exhausted: Cannot allocate ", requested_size, " bytes"
         
         write(error_ctx%suggestion, '(A)') &
-            "Try processing smaller file sets or increase available memory."
+            "1. Check available memory: free -h"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "Consider using exclude patterns to reduce data size."
+            "2. Process smaller batches: fortcov --source=src/core --output=core.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "See documentation for memory optimization solutions."
+            "3. Exclude large files: --exclude='large_module.f90'"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Clean up large .gcov files: find . -name '*.gcov' -size +10M -delete"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "5. Increase system memory or use a larger machine"
         
         write(error_ctx%context, '(A)') "Memory allocation"
     end subroutine handle_out_of_memory
@@ -127,12 +146,17 @@ contains
         error_ctx%error_code = ERROR_INVALID_CONFIG
         error_ctx%recoverable = .false.
         
-        write(error_ctx%message, '(A,A,A,I0,A)') &
-            "Invalid configuration in ", trim(config_file), &
-            " at line ", line_number, ": Syntax error."
+        write(error_ctx%message, '(A,A,A,I0)') &
+            "Configuration error in ", trim(config_file), " at line ", line_number
         
         write(error_ctx%suggestion, '(A)') &
-            "Check configuration file syntax and fix errors."
+            "1. Check syntax: gfortran -fsyntax-only -x f90 " // trim(config_file)
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Copy example: cp fortcov.nml.example " // trim(config_file)
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Common issues: comments inside namelist, missing quotes, missing '/'"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Test basic config: fortcov --config=" // trim(config_file) // " --help"
         
         write(error_ctx%context, '(A)') "Configuration parsing"
     end subroutine handle_invalid_config
@@ -327,6 +351,100 @@ contains
             date_str(1:4), '-', date_str(5:6), '-', date_str(7:8), ' ', &
             time_str(1:2), ':', time_str(3:4), ':', time_str(5:6)
     end subroutine get_timestamp
+
+    ! Handle "no coverage files found" error
+    subroutine handle_no_coverage_files(source_path, error_ctx)
+        character(len=*), intent(in) :: source_path
+        type(error_context_t), intent(out) :: error_ctx
+        
+        error_ctx%error_code = ERROR_MISSING_FILE
+        error_ctx%recoverable = .false.
+        
+        write(error_ctx%message, '(A,A)') &
+            "No coverage files found in: ", trim(source_path)
+        
+        write(error_ctx%suggestion, '(A)') &
+            "1. Build with coverage: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Run tests: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Generate .gcov files: gcov src/*.f90"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Check files exist: ls -la *.gcov"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "5. Verify source path: --source=" // trim(source_path)
+        
+        write(error_ctx%context, '(A)') "Coverage file discovery"
+    end subroutine handle_no_coverage_files
+
+    ! Handle gcov command not found error
+    subroutine handle_gcov_not_found(gcov_path, error_ctx)
+        character(len=*), intent(in) :: gcov_path
+        type(error_context_t), intent(out) :: error_ctx
+        
+        error_ctx%error_code = ERROR_MISSING_FILE
+        error_ctx%recoverable = .false.
+        
+        write(error_ctx%message, '(A,A)') &
+            "gcov tool not found: ", trim(gcov_path)
+        
+        write(error_ctx%suggestion, '(A)') &
+            "1. Install gcov: sudo apt install gcc (Ubuntu) or brew install gcc (macOS)"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Find gcov location: which gcov || find /usr -name 'gcov*'"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Specify path: --gcov=/usr/bin/gcov-11"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Check gcc installation: gcc --version"
+        
+        write(error_ctx%context, '(A)') "External tool validation"
+    end subroutine handle_gcov_not_found
+
+    ! Handle invalid command line arguments
+    subroutine handle_invalid_arguments(arg_name, error_ctx)
+        character(len=*), intent(in) :: arg_name
+        type(error_context_t), intent(out) :: error_ctx
+        
+        error_ctx%error_code = ERROR_INVALID_CONFIG
+        error_ctx%recoverable = .false.
+        
+        write(error_ctx%message, '(A,A)') &
+            "Invalid or missing argument: ", trim(arg_name)
+        
+        write(error_ctx%suggestion, '(A)') &
+            "1. Check help: fortcov --help"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Required argument: --source=PATH (source directory)"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Basic usage: fortcov --source=src --output=coverage.md"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. See examples: fortcov --help | grep -A10 EXAMPLES"
+        
+        write(error_ctx%context, '(A)') "Command line parsing"
+    end subroutine handle_invalid_arguments
+
+    ! Handle threshold not met error
+    subroutine handle_threshold_not_met(current_coverage, required_coverage, error_ctx)
+        real, intent(in) :: current_coverage, required_coverage
+        type(error_context_t), intent(out) :: error_ctx
+        
+        error_ctx%error_code = ERROR_THRESHOLD_NOT_MET
+        error_ctx%recoverable = .false.
+        
+        write(error_ctx%message, '(A,F0.1,A,F0.1,A)') &
+            "Coverage ", current_coverage, "% below required ", required_coverage, "%"
+        
+        write(error_ctx%suggestion, '(A)') &
+            "1. Review coverage report to identify uncovered code"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "2. Add tests for uncovered functions and branches"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "3. Focus on critical code paths first"
+        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
+            "4. Consider adjusting threshold: --fail-under=75"
+        
+        write(error_ctx%context, '(A)') "Coverage validation"
+    end subroutine handle_threshold_not_met
 
     ! Safe message writing with bounds checking
     subroutine safe_write_message(error_ctx, text)

@@ -36,7 +36,13 @@ program main
       call show_version()
       call exit(EXIT_SUCCESS)
     else
-      print *, "Error:", trim(error_message)
+      print *, "❌ Error: " // trim(error_message)
+      print *, ""
+      print *, "💡 Quick troubleshooting:"
+      print *, "   • Run 'fortcov --help' for usage examples"
+      print *, "   • Ensure source directory exists: ls -la <your_source_path>"
+      print *, "   • Check if .gcov files are present: find . -name '*.gcov'"
+      print *, "   • Try: fortcov --source=src --output=coverage.md"
       call exit(EXIT_FAILURE)
     end if
   end if
@@ -44,10 +50,15 @@ program main
   ! Validate configuration for security and accessibility
   call validate_config(config, error_ctx)
   if (error_ctx%error_code /= ERROR_SUCCESS) then
-    print *, "Configuration validation failed:", trim(error_ctx%message)
+    print *, "⚠️  Configuration validation failed: " // trim(error_ctx%message)
+    print *, ""
     if (len_trim(error_ctx%suggestion) > 0) then
-      print *, "Suggestion:", trim(error_ctx%suggestion)
+      print *, "🔧 Suggested fix: " // trim(error_ctx%suggestion)
+      print *, ""
     end if
+    print *, "📚 For configuration help:"
+    print *, "   • See example: cat fortcov.nml.example"
+    print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
     call exit(EXIT_FAILURE)
   end if
   
