@@ -148,11 +148,7 @@ find src/ -name "*.gcov" -exec ls -lh {} \; | sort -k5 -hr | head -5
 fortcov --source=src/core --output=core_coverage.md
 fortcov --source=src/utils --output=utils_coverage.md
 
-# Option 2: Increase limits in config
-echo "&input_validation max_file_size_mb = 500 /" > custom.nml
-fortcov --config=custom.nml --source=src
-
-# Option 3: Clean up large gcov files
+# Option 2: Clean up large gcov files and regenerate  
 find . -name "*.gcov" -size +50M -delete
 gcov src/*.f90  # Regenerate smaller files
 ```
@@ -182,11 +178,7 @@ fortcov --source=src --verbose --output=coverage.md
 
 **Solution**:
 ```bash
-# Enable strict validation mode
-echo "&input_validation enable_strict_validation = .true. /" > fortcov.nml
-fortcov --config=fortcov.nml --source=src
-
-# Check for problematic data patterns
+# Check for problematic data patterns  
 grep -n ":" src/*.gcov | grep -E "(^[^:]*:[^:]*:-|:[0-9]{10,}:)"
 
 # Contact support if legitimate data triggers false positives
@@ -221,15 +213,7 @@ fortcov --source=src --output=coverage.md  # No sudo required
 
 ### Security Configuration
 
-Configure timeout protection in `fortcov.nml`:
-
-```fortran
-&timeout_config
-    default_command_timeout = 30
-    gcov_timeout = 60
-    max_concurrent_commands = 10
-/
-```
+Note: Timeout protection is automatically configured for security. Custom timeout configuration will be added in a future release.
 
 **Note**: FortCov automatically rejects dangerous file patterns and validates all inputs. No additional security configuration is required for normal usage.
 
@@ -259,9 +243,6 @@ find src/ -name "*.gcov" -exec ls -lh {} \; | head -5
 # Process large projects in batches
 fortcov --source=src/core --output=core_coverage.md
 fortcov --source=src/utils --output=utils_coverage.md
-
-# Configure higher limits via config file
-fortcov --config=fortcov.nml --source=src --output=coverage.md
 ```
 
 ### Memory Management
@@ -280,17 +261,7 @@ fortcov --source=src --verbose --output=coverage.md
 
 ### Validation Configuration
 
-Configure input validation limits in `fortcov.nml`:
-
-```fortran
-&input_validation
-    max_file_size_mb = 100
-    max_line_number = 1000000
-    max_lines_per_file = 1000000
-    enable_strict_validation = .true.
-    memory_limit_mb = 2048
-/
-```
+Note: Input validation limits are currently hardcoded for security. Configuration of these limits will be added in a future release.
 
 ### Integration with CI/CD
 
