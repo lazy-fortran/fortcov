@@ -19,11 +19,11 @@ Get up and running with FortCov in under 2 minutes:
 fpm build --flag "-fprofile-arcs -ftest-coverage"
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# 2. Generate coverage data
-gcov src/*.f90
+# 2. Generate coverage data from build directory
+cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
 
 # 3. Create coverage report
-fortcov --source=src --output=coverage.md
+fpm run fortcov -- build/*.gcov --output=coverage.md
 ```
 
 That's it! Open `coverage.md` to see your coverage report.

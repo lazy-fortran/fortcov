@@ -81,17 +81,17 @@ test_readme_quick_start_workflow() {
         fi
     fi
     
-    # Step 3: gcov src/*.f90
+    # Step 3: cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
     if [[ "$workflow_success" == "true" ]]; then
-        if ! gcov src/*.f90 >/dev/null 2>&1; then
+        if ! (cd build && find . -name "src_*.gcno" | xargs gcov && cd ..) >/dev/null 2>&1; then
             workflow_success=false
             error_message="Step 3 failed: gcov generation"
         fi
     fi
     
-    # Step 4: fortcov --source=src --output=coverage.md
+    # Step 4: fpm run fortcov -- build/*.gcov --output=coverage.md
     if [[ "$workflow_success" == "true" ]]; then
-        if ! fpm run fortcov -- --source=src --output=coverage.md >/dev/null 2>&1; then
+        if ! fpm run fortcov -- build/*.gcov --output=coverage.md >/dev/null 2>&1; then
             workflow_success=false
             error_message="Step 4 failed: fortcov execution"
         fi

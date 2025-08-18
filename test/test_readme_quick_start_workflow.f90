@@ -22,10 +22,10 @@ program test_readme_quick_start_workflow
     print *, "================================================================="
     print *, ""
     print *, "CRITICAL VALIDATION SCOPE:"
-    print *, "  ✓ Step 1: fpm build --flag \"-fprofile-arcs -ftest-coverage\""
-    print *, "  ✓ Step 2: fpm test --flag \"-fprofile-arcs -ftest-coverage\""
-    print *, "  ✓ Step 3: gcov src/*.f90"
-    print *, "  ✓ Step 4: fortcov --source=src --output=coverage.md"
+    print *, "  ✓ Step 1: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
+    print *, "  ✓ Step 2: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
+    print *, "  ✓ Step 3: cd build && find . -name ""src_*.gcno"" | xargs gcov && cd .."
+    print *, "  ✓ Step 4: fpm run fortcov -- build/*.gcov --output=coverage.md"
     print *, "  ✓ Expected Result: coverage.md file created successfully"
     print *, ""
     
@@ -433,7 +433,7 @@ contains
         character(len=*), intent(out) :: error_message
         
         integer :: step1_exit, step2_exit, step3_exit, step4_exit
-        logical :: step1_ok, step2_ok, step3_ok, step4_ok
+        logical :: step1_ok, step2_ok, step3_ok, step4_ok, coverage_md_exists
         character(len=1000) :: output_buffer
         
         successful = .false.
@@ -471,7 +471,6 @@ contains
         end if
         
         ! Verify coverage.md was created
-        logical :: coverage_md_exists
         call verify_coverage_md_created(coverage_md_exists)
         if (.not. coverage_md_exists) then
             error_message = "coverage.md file not created"
@@ -511,8 +510,8 @@ contains
         character(len=*), intent(out) :: output
         logical, intent(out) :: successful
         
-        ! Execute: gcov src/*.f90
-        call execute_command('gcov src/*.f90', exit_code, output)
+        ! Execute: cd build && find . -name "src_*.gcno" | xargs gcov && cd ..
+        call execute_command('cd build && find . -name "src_*.gcno" | xargs gcov && cd ..', exit_code, output)
         successful = (exit_code == 0)
         
     end subroutine execute_gcov_generation
@@ -522,8 +521,8 @@ contains
         character(len=*), intent(out) :: output
         logical, intent(out) :: successful
         
-        ! Execute: fortcov --source=src --output=coverage.md
-        call execute_command('fpm run fortcov -- --source=src --output=coverage.md', &
+        ! Execute: fpm run fortcov -- build/*.gcov --output=coverage.md
+        call execute_command('fpm run fortcov -- build/*.gcov --output=coverage.md', &
                            exit_code, output)
         successful = (exit_code == 0)
         
