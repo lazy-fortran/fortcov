@@ -7,6 +7,7 @@ program test_refactoring_boundary_validation
     !! after refactoring operations.
     use coverage_engine
     use coverage_model
+    use coverage_statistics
     use fortcov_config
     implicit none
     
@@ -86,7 +87,7 @@ contains
         
         ! Test 1c: check_exclude_patterns function is accessible
         if (allocated(test_config%exclude_patterns)) deallocate(test_config%exclude_patterns)
-        allocate(test_config%exclude_patterns(1))
+        allocate(character(len=10) :: test_config%exclude_patterns(1))
         test_config%exclude_patterns(1) = "test_*"
         exclude_result = check_exclude_patterns("test_file.f90", test_config)
         passed = .true.  ! Function should execute without error

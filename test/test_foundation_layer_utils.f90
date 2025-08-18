@@ -4,7 +4,15 @@ program test_foundation_layer_utils
     !! This test suite validates the utility functions that will be extracted
     !! as part of the Issue #126 refactoring to ensure behavioral consistency
     !! before and after module decomposition.
+    use string_utils, only: to_lower, format_integer, matches_pattern, &
+                           check_exclude_patterns_list
     implicit none
+    
+    ! Simplified config type for testing
+    type :: config_ref_t
+        logical :: has_exclude_patterns = .false.
+        character(len=:), allocatable :: exclude_patterns(:)
+    end type config_ref_t
     
     logical :: all_tests_passed
     
@@ -62,7 +70,7 @@ contains
         print *, "  Test 1: String to lowercase conversion"
         
         ! Test normal mixed case
-        result = to_lower_ref("Hello World")
+        result = to_lower("Hello World")
         passed = (result == "hello world")
         
         if (.not. passed) then
@@ -71,7 +79,7 @@ contains
         end if
         
         ! Test all uppercase
-        result = to_lower_ref("FORTCOV")
+        result = to_lower("FORTCOV")
         passed = (result == "fortcov")
         
         if (.not. passed) then
@@ -80,7 +88,7 @@ contains
         end if
         
         ! Test all lowercase (should remain unchanged)
-        result = to_lower_ref("already_lower")
+        result = to_lower("already_lower")
         passed = (result == "already_lower")
         
         if (.not. passed) then
@@ -89,7 +97,7 @@ contains
         end if
         
         ! Test with numbers and special characters
-        result = to_lower_ref("Test123_File.f90")
+        result = to_lower("Test123_File.f90")
         passed = (result == "test123_file.f90")
         
         if (passed) then
@@ -109,7 +117,7 @@ contains
         print *, "  Test 2: Integer to string conversion"
         
         ! Test positive integer
-        result = int_to_string_ref(42)
+        result = format_integer(42)
         passed = (result == "42")
         
         if (.not. passed) then
@@ -118,7 +126,7 @@ contains
         end if
         
         ! Test zero
-        result = int_to_string_ref(0)
+        result = format_integer(0)
         passed = (result == "0")
         
         if (.not. passed) then
@@ -127,7 +135,7 @@ contains
         end if
         
         ! Test negative integer
-        result = int_to_string_ref(-123)
+        result = format_integer(-123)
         passed = (result == "-123")
         
         if (.not. passed) then
@@ -136,7 +144,7 @@ contains
         end if
         
         ! Test large integer
-        result = int_to_string_ref(999999)
+        result = format_integer(999999)
         passed = (result == "999999")
         
         if (passed) then
@@ -156,7 +164,7 @@ contains
         print *, "  Test 3: Simple pattern matching without wildcards"
         
         ! Test exact match
-        result = matches_pattern_ref("test.f90", "test.f90")
+        result = matches_pattern("test.f90", "test.f90")
         passed = result
         
         if (.not. passed) then
@@ -165,7 +173,7 @@ contains
         end if
         
         ! Test no match
-        result = matches_pattern_ref("test.f90", "other.f90")
+        result = matches_pattern("test.f90", "other.f90")
         passed = (.not. result)
         
         if (.not. passed) then
@@ -174,7 +182,7 @@ contains
         end if
         
         ! Test case sensitivity
-        result = matches_pattern_ref("Test.f90", "test.f90")
+        result = matches_pattern("Test.f90", "test.f90")
         passed = (.not. result)  ! Should not match due to case sensitivity
         
         if (passed) then
@@ -194,7 +202,7 @@ contains
         print *, "  Test 4: Pattern matching with wildcard at end"
         
         ! Test wildcard at end
-        result = matches_pattern_ref("test.f90", "test*")
+        result = matches_pattern("test.f90", "test*")
         passed = result
         
         if (.not. passed) then
@@ -203,7 +211,7 @@ contains
         end if
         
         ! Test no match with wildcard
-        result = matches_pattern_ref("other.f90", "test*")
+        result = matches_pattern("other.f90", "test*")
         passed = (.not. result)
         
         if (.not. passed) then
@@ -212,7 +220,7 @@ contains
         end if
         
         ! Test empty prefix with wildcard
-        result = matches_pattern_ref("anything.f90", "*")
+        result = matches_pattern("anything.f90", "*")
         passed = result
         
         if (passed) then
@@ -232,7 +240,7 @@ contains
         print *, "  Test 5: Pattern matching with wildcard at beginning"
         
         ! Test wildcard at beginning
-        result = matches_pattern_ref("src/test.f90", "*.f90")
+        result = matches_pattern("src/test.f90", "*.f90")
         passed = result
         
         if (.not. passed) then
@@ -241,7 +249,7 @@ contains
         end if
         
         ! Test no match with suffix wildcard
-        result = matches_pattern_ref("test.c", "*.f90")
+        result = matches_pattern("test.c", "*.f90")
         passed = (.not. result)
         
         if (passed) then
@@ -261,7 +269,7 @@ contains
         print *, "  Test 6: Pattern matching with middle wildcard"
         
         ! Test middle wildcard
-        result = matches_pattern_ref("test_module.f90", "test*.f90")
+        result = matches_pattern("test_module.f90", "test*.f90")
         passed = result
         
         if (.not. passed) then
@@ -270,7 +278,7 @@ contains
         end if
         
         ! Test no match with middle wildcard
-        result = matches_pattern_ref("other_module.c", "test*.f90")
+        result = matches_pattern("other_module.c", "test*.f90")
         passed = (.not. result)
         
         if (passed) then
@@ -281,19 +289,19 @@ contains
     end function test_pattern_matching_wildcard_middle
 
     function test_exclude_patterns_empty() result(passed)
-        !! Given: Config with no exclude patterns
+        !! Given: Empty exclude patterns array
         !! When: Checking if file should be excluded
         !! Then: Should not exclude any files
         logical :: passed
-        type(config_ref_t) :: config
+        character(len=:), allocatable :: empty_patterns(:)
         logical :: result
         
         print *, "  Test 7: Check exclude patterns with empty patterns"
         
-        ! Initialize config with no exclude patterns
-        config%has_exclude_patterns = .false.
+        ! Initialize empty patterns array
+        allocate(character(len=1) :: empty_patterns(0))
         
-        result = check_exclude_patterns_ref("any_file.f90", config)
+        result = check_exclude_patterns_list("any_file.f90", empty_patterns)
         passed = (.not. result)  ! Should not exclude
         
         if (passed) then
@@ -304,35 +312,31 @@ contains
     end function test_exclude_patterns_empty
 
     function test_exclude_patterns_single_match() result(passed)
-        !! Given: Config with single exclude pattern
+        !! Given: Single exclude pattern
         !! When: Checking files against pattern
         !! Then: Should exclude matching files only
         logical :: passed
-        type(config_ref_t) :: config
+        character(len=:), allocatable :: patterns(:)
         logical :: result
         
         print *, "  Test 8: Check exclude patterns with single match"
         
-        ! Initialize config with one exclude pattern
-        config%has_exclude_patterns = .true.
-        allocate(config%exclude_patterns(1))
-        config%exclude_patterns(1) = "test_*.f90"
+        ! Initialize patterns array with one exclude pattern
+        allocate(character(len=10) :: patterns(1))
+        patterns(1) = "test_*.f90"
         
         ! Test matching file
-        result = check_exclude_patterns_ref("test_module.f90", config)
+        result = check_exclude_patterns_list("test_module.f90", patterns)
         passed = result  ! Should exclude
         
         if (.not. passed) then
             print *, "    FAILED: Should exclude matching file"
-            deallocate(config%exclude_patterns)
             return
         end if
         
         ! Test non-matching file
-        result = check_exclude_patterns_ref("main.f90", config)
+        result = check_exclude_patterns_list("main.f90", patterns)
         passed = (.not. result)  ! Should not exclude
-        
-        deallocate(config%exclude_patterns)
         
         if (passed) then
             print *, "    PASSED"
@@ -342,57 +346,51 @@ contains
     end function test_exclude_patterns_single_match
 
     function test_exclude_patterns_multiple() result(passed)
-        !! Given: Config with multiple exclude patterns
+        !! Given: Multiple exclude patterns
         !! When: Checking files against patterns
         !! Then: Should exclude files matching any pattern
         logical :: passed
-        type(config_ref_t) :: config
+        character(len=:), allocatable :: patterns(:)
         logical :: result
         
         print *, "  Test 9: Check exclude patterns with multiple patterns"
         
-        ! Initialize config with multiple exclude patterns
-        config%has_exclude_patterns = .true.
-        allocate(config%exclude_patterns(3))
-        config%exclude_patterns(1) = "test_*.f90"
-        config%exclude_patterns(2) = "*.bak"
-        config%exclude_patterns(3) = "debug_*"
+        ! Initialize patterns array with multiple exclude patterns
+        allocate(character(len=15) :: patterns(3))
+        patterns(1) = "test_*.f90"
+        patterns(2) = "*.bak"
+        patterns(3) = "debug_*"
         
         ! Test first pattern match
-        result = check_exclude_patterns_ref("test_module.f90", config)
+        result = check_exclude_patterns_list("test_module.f90", patterns)
         passed = result
         
         if (.not. passed) then
             print *, "    FAILED: Should exclude file matching first pattern"
-            deallocate(config%exclude_patterns)
             return
         end if
         
         ! Test second pattern match
-        result = check_exclude_patterns_ref("config.bak", config)
+        result = check_exclude_patterns_list("config.bak", patterns)
         passed = result
         
         if (.not. passed) then
             print *, "    FAILED: Should exclude file matching second pattern"
-            deallocate(config%exclude_patterns)
             return
         end if
         
         ! Test third pattern match
-        result = check_exclude_patterns_ref("debug_output.txt", config)
+        result = check_exclude_patterns_list("debug_output.txt", patterns)
         passed = result
         
         if (.not. passed) then
             print *, "    FAILED: Should exclude file matching third pattern"
-            deallocate(config%exclude_patterns)
             return
         end if
         
         ! Test no match
-        result = check_exclude_patterns_ref("main.f90", config)
+        result = check_exclude_patterns_list("main.f90", patterns)
         passed = (.not. result)
-        
-        deallocate(config%exclude_patterns)
         
         if (passed) then
             print *, "    PASSED"
@@ -412,7 +410,7 @@ contains
         print *, "  Test 10: Edge cases for utility functions"
         
         ! Test empty string conversion
-        result = to_lower_ref("")
+        result = to_lower("")
         passed = (result == "")
         
         if (.not. passed) then
@@ -421,7 +419,7 @@ contains
         end if
         
         ! Test single character
-        result = to_lower_ref("A")
+        result = to_lower("A")
         passed = (result == "a")
         
         if (.not. passed) then
@@ -430,7 +428,7 @@ contains
         end if
         
         ! Test pattern matching with empty pattern
-        bool_result = matches_pattern_ref("test.f90", "")
+        bool_result = matches_pattern("test.f90", "")
         passed = (.not. bool_result)  ! Empty pattern should not match
         
         if (.not. passed) then
@@ -439,7 +437,7 @@ contains
         end if
         
         ! Test pattern matching with empty filepath
-        bool_result = matches_pattern_ref("", "test*")
+        bool_result = matches_pattern("", "test*")
         passed = (.not. bool_result)  ! Empty filepath should not match
         
         if (passed) then
@@ -545,11 +543,5 @@ contains
             end if
         end do
     end function check_exclude_patterns_ref
-
-    ! Simplified config type for testing
-    type :: config_ref_t
-        logical :: has_exclude_patterns = .false.
-        character(len=:), allocatable :: exclude_patterns(:)
-    end type config_ref_t
 
 end program test_foundation_layer_utils

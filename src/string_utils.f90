@@ -11,6 +11,9 @@ module string_utils
     public :: validate_string_input
     public :: sanitize_filename
     public :: is_safe_path
+    public :: to_lower
+    public :: matches_pattern
+    public :: check_exclude_patterns_list
     
 contains
 
@@ -311,5 +314,77 @@ contains
             return
         end if
     end function is_safe_path
+
+    ! Convert string to lowercase (helper function)
+    function to_lower(str) result(lower_str)
+        character(len=*), intent(in) :: str
+        character(len=len(str)) :: lower_str
+        integer :: i, ascii_val
+        
+        lower_str = str
+        do i = 1, len(str)
+            ascii_val = ichar(str(i:i))
+            if (ascii_val >= 65 .and. ascii_val <= 90) then  ! A-Z
+                lower_str(i:i) = char(ascii_val + 32)
+            end if
+        end do
+    end function to_lower
+
+    ! Simple pattern matching (supports * wildcard)
+    function matches_pattern(filepath, pattern) result(matches)
+        character(len=*), intent(in) :: filepath
+        character(len=*), intent(in) :: pattern
+        logical :: matches
+        
+        character(len=:), allocatable :: pattern_lower, filepath_lower
+        integer :: star_pos
+        
+        ! Convert to lowercase for case-insensitive matching
+        pattern_lower = to_lower(trim(pattern))
+        filepath_lower = to_lower(trim(filepath))
+        
+        star_pos = index(pattern_lower, "*")
+        
+        if (star_pos == 0) then
+            ! No wildcard, exact match
+            matches = (filepath_lower == pattern_lower)
+        else if (star_pos == len(pattern_lower)) then
+            ! Pattern ends with *, check prefix
+            matches = (filepath_lower(1:star_pos-1) == &
+                      pattern_lower(1:star_pos-1))
+        else if (star_pos == 1) then
+            ! Pattern starts with *, check suffix
+            matches = (len(filepath_lower) >= len(pattern_lower) - 1) .and. &
+                     (filepath_lower(len(filepath_lower) - len(pattern_lower) + 2:) == &
+                      pattern_lower(2:))
+        else
+            ! Wildcard in middle - check both prefix and suffix match
+            matches = (index(filepath_lower, pattern_lower(1:star_pos-1)) == 1) .and. &
+                     (index(filepath_lower, pattern_lower(star_pos+1:)) > 0)
+        end if
+    end function matches_pattern
+
+    ! Check if filepath matches any exclude pattern in a list
+    function check_exclude_patterns_list(filepath, exclude_patterns) result(should_exclude)
+        character(len=*), intent(in) :: filepath
+        character(len=*), intent(in) :: exclude_patterns(:)
+        logical :: should_exclude
+        
+        integer :: i
+        
+        should_exclude = .false.
+        
+        ! Check if exclude patterns are empty
+        if (size(exclude_patterns) == 0) then
+            return
+        end if
+        
+        do i = 1, size(exclude_patterns)
+            if (matches_pattern(filepath, exclude_patterns(i))) then
+                should_exclude = .true.
+                return
+            end if
+        end do
+    end function check_exclude_patterns_list
 
 end module string_utils

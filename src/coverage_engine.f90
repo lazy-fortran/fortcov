@@ -319,8 +319,6 @@ contains
         type(config_t), intent(in) :: config
         logical :: should_exclude
         
-        integer :: i
-        
         should_exclude = .false.
         
         ! Check if exclude patterns are allocated and not empty
@@ -329,47 +327,10 @@ contains
             return
         end if
         
-        do i = 1, size(config%exclude_patterns)
-            if (matches_pattern(filepath, config%exclude_patterns(i))) then
-                should_exclude = .true.
-                return
-            end if
-        end do
+        ! Use foundation layer utility
+        should_exclude = check_exclude_patterns_list(filepath, config%exclude_patterns)
     end function check_exclude_patterns
 
-    ! Simple pattern matching (supports * wildcard)
-    function matches_pattern(filepath, pattern) result(matches)
-        character(len=*), intent(in) :: filepath
-        character(len=*), intent(in) :: pattern
-        logical :: matches
-        
-        character(len=:), allocatable :: pattern_lower, filepath_lower
-        integer :: star_pos
-        
-        ! For now, do case-sensitive matching (to_lower not available)
-        pattern_lower = trim(pattern)
-        filepath_lower = trim(filepath)
-        
-        star_pos = index(pattern_lower, "*")
-        
-        if (star_pos == 0) then
-            ! No wildcard, exact match
-            matches = (filepath_lower == pattern_lower)
-        else if (star_pos == len(pattern_lower)) then
-            ! Pattern ends with *, check prefix
-            matches = (filepath_lower(1:star_pos-1) == &
-                      pattern_lower(1:star_pos-1))
-        else if (star_pos == 1) then
-            ! Pattern starts with *, check suffix
-            matches = (len(filepath_lower) >= len(pattern_lower) - 1) .and. &
-                     (filepath_lower(len(filepath_lower) - len(pattern_lower) + 2:) == &
-                      pattern_lower(2:))
-        else
-            ! Wildcard in middle - check both prefix and suffix match
-            matches = (index(filepath_lower, pattern_lower(1:star_pos-1)) == 1) .and. &
-                     (index(filepath_lower, pattern_lower(star_pos+1:)) > 0)
-        end if
-    end function matches_pattern
 
     ! Parse coverage data from all files and merge
     function parse_all_coverage_files(files, config, error_flag, error_context) &
@@ -442,34 +403,11 @@ contains
             call merged_coverage%init(all_files)
             error_flag = .true.
             error_context = "No valid coverage data found in any of the " // &
-                           trim(int_to_string(size(files))) // " coverage files"
+                           trim(format_integer(size(files))) // " coverage files"
         end if
     end function parse_all_coverage_files
 
-    ! Convert string to lowercase (helper function)
-    function to_lower(str) result(lower_str)
-        character(len=*), intent(in) :: str
-        character(len=len(str)) :: lower_str
-        integer :: i, ascii_val
-        
-        lower_str = str
-        do i = 1, len(str)
-            ascii_val = ichar(str(i:i))
-            if (ascii_val >= 65 .and. ascii_val <= 90) then  ! A-Z
-                lower_str(i:i) = char(ascii_val + 32)
-            end if
-        end do
-    end function to_lower
 
-    ! Convert integer to string (helper function)
-    function int_to_string(value) result(str)
-        integer, intent(in) :: value
-        character(len=:), allocatable :: str
-        character(len=20) :: temp
-        
-        write(temp, '(I0)') value
-        str = trim(temp)
-    end function int_to_string
 
     ! Enhanced coverage analysis with comprehensive error handling
     function analyze_coverage_safe(config, error_ctx) result(exit_code)
