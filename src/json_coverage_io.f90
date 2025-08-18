@@ -161,18 +161,14 @@ contains
         
         result = '{"files": ['
         
-        ! Memory safety: Check if files array is allocated
-        if (allocated(coverage_data%files)) then
-            do i = 1, size(coverage_data%files)
+        do i = 1, size(coverage_data%files)
             if (i > 1) result = result // ', '
             
             result = result // '{"filename": "' // &
                     trim(coverage_data%files(i)%filename) // '", "lines": ['
             
-                ! Memory safety: Check if lines array is allocated for this file
-                if (allocated(coverage_data%files(i)%lines)) then
-                    ! Add lines
-                    do j = 1, size(coverage_data%files(i)%lines)
+            ! Add lines
+            do j = 1, size(coverage_data%files(i)%lines)
                 if (j > 1) result = result // ', '
                 
                 block
@@ -183,41 +179,35 @@ contains
                         bool_str = "false"
                     end if
                     write(line_buffer, '(A,I0,A,I0,A,A,A)') &
-                        '{"line_number": ', &
-                        coverage_data%files(i)%lines(j)%line_number, &
-                        ', "execution_count": ', &
-                        coverage_data%files(i)%lines(j)%execution_count, &
+                        '{"line_number": ', coverage_data%files(i)%lines(j)%line_number, &
+                        ', "execution_count": ', coverage_data%files(i)%lines(j)%execution_count, &
                         ', "is_executable": ', bool_str, '}'
                 end block
                 
-                        result = result // trim(line_buffer)
-                    end do
-                end if
-                
-                result = result // ']'
+                result = result // trim(line_buffer)
+            end do
             
-                ! Add functions if they exist
-                if (allocated(coverage_data%files(i)%functions)) then
-                    if (size(coverage_data%files(i)%functions) > 0) then
-                        result = result // ', "functions": ['
-                        
-                        do j = 1, size(coverage_data%files(i)%functions)
+            result = result // ']'
+            
+            ! Add functions if they exist
+            if (allocated(coverage_data%files(i)%functions)) then
+                if (size(coverage_data%files(i)%functions) > 0) then
+                    result = result // ', "functions": ['
+                    
+                    do j = 1, size(coverage_data%files(i)%functions)
                         if (j > 1) result = result // ', '
                         
                         block
                             character(len=5) :: func_bool_str
-                            if (coverage_data%files(i)%functions(j)%&
-                                is_module_procedure) then
+                            if (coverage_data%files(i)%functions(j)%is_module_procedure) then
                                 func_bool_str = "true"
                             else
                                 func_bool_str = "false"
                             end if
                             write(func_buffer, '(A,A,A,A,A,A,A,I0,A,I0,A,A,A)') &
-                                '{"name": "', &
-                                trim(coverage_data%files(i)%functions(j)%name), &
+                                '{"name": "', trim(coverage_data%files(i)%functions(j)%name), &
                                 '", "parent_module": "', &
-                                trim(coverage_data%files(i)%functions(j)%&
-                                     parent_module), &
+                                trim(coverage_data%files(i)%functions(j)%parent_module), &
                                 '", "is_module_procedure": ', func_bool_str, &
                                 ', "execution_count": ', &
                                 coverage_data%files(i)%functions(j)%execution_count, &
@@ -227,17 +217,15 @@ contains
                                 trim(coverage_data%files(i)%functions(j)%filename), '"}'
                         end block
                         
-                            result = result // trim(func_buffer)
-                        end do
-                        
-                        result = result // ']'
-                    end if
+                        result = result // trim(func_buffer)
+                    end do
+                    
+                    result = result // ']'
                 end if
-                
-                result = result // '}'
-            end do
-        end if
-        
+            end if
+            
+            result = result // '}'
+        end do
         
         result = result // ']}'
         json_output = result
@@ -297,7 +285,7 @@ contains
                             ! Check for double-escaped backslash
                             if (pos > start_pos + 1 .and. &
                                 json_content(pos-2:pos-1) == '\\') then
-                                ! Properly escaped quote after backslash
+                                ! This is a properly escaped quote after escaped backslash
                                 exit
                             else
                                 ! This is an escaped quote, continue looking
@@ -327,10 +315,8 @@ contains
             case ('0':'9', '-')
                 ! Number token
                 do while (pos <= content_length .and. &
-                         (json_content(pos:pos) >= '0' .and. &
-                          json_content(pos:pos) <= '9' .or. &
-                          json_content(pos:pos) == '.' .or. &
-                          json_content(pos:pos) == '-'))
+                         (json_content(pos:pos) >= '0' .and. json_content(pos:pos) <= '9' .or. &
+                          json_content(pos:pos) == '.' .or. json_content(pos:pos) == '-'))
                     pos = pos + 1
                 end do
                 
@@ -397,7 +383,7 @@ contains
 
     ! Parse coverage object from tokens
     subroutine parse_coverage_object(tokens, current_pos, token_count, coverage_data, &
-                                   & error_caught)
+                                   error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -436,11 +422,12 @@ contains
     end subroutine parse_coverage_object
 
     ! Parse JSON array format: [{...}, {...}]
-    subroutine parse_coverage_array(tokens, pos, count, data, error_caught)
+    subroutine parse_coverage_array(tokens, current_pos, token_count, &
+                                   coverage_data, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: pos
-        integer, intent(in) :: count
-        type(coverage_data_t), intent(out) :: data
+        integer, intent(inout) :: current_pos
+        integer, intent(in) :: token_count
+        type(coverage_data_t), intent(out) :: coverage_data
         logical, intent(out) :: error_caught
         
         type(coverage_file_t), allocatable :: files(:)
@@ -449,18 +436,12 @@ contains
         error_caught = .false.
         
         ! Parse array of file objects directly (parse_files_array handles brackets)
-        call parse_files_array(tokens, pos, count, files, &
+        call parse_files_array(tokens, current_pos, token_count, files, &
                               files_count, error_caught)
         if (error_caught) return
         
         ! Initialize coverage data with parsed files
-        if (files_count > 0) then
-            call data%init(files(1:files_count))
-        else
-            call data%init()
-        end if
-        
-        if (allocated(files)) deallocate(files)
+        call coverage_data%init(files)
     end subroutine parse_coverage_array
 
     ! Skip to specified key in JSON object
@@ -482,8 +463,7 @@ contains
             if (tokens(current_pos)%type == JSON_STRING .and. &
                 tokens(current_pos)%value == key_name) then
                 current_pos = current_pos + 1  ! Skip key
-                if (current_pos > token_count .or. &
-                    tokens(current_pos)%value /= ':') then
+                if (current_pos > token_count .or. tokens(current_pos)%value /= ':') then
                     error_caught = .true.
                     return
                 end if
@@ -498,7 +478,7 @@ contains
 
     ! Parse files array from JSON
     subroutine parse_files_array(tokens, current_pos, token_count, files, files_count, &
-                                & error_caught)
+                                error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -549,16 +529,12 @@ contains
         end do
         
         ! Allocate and copy files
-        if (files_count > 0) then
-            allocate(files, source=temp_files(1:files_count))
-        else
-            allocate(files(0))
-        end if
+        allocate(files(files_count))
+        files(1:files_count) = temp_files(1:files_count)
     end subroutine parse_files_array
 
     ! Parse individual file object from JSON
-    subroutine parse_file_object(tokens, current_pos, token_count, &
-                                 file_obj, error_caught)
+    subroutine parse_file_object(tokens, current_pos, token_count, file_obj, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -573,8 +549,6 @@ contains
         logical :: filename_found, lines_found
         
         error_caught = .false.
-        filename_found = .false.
-        lines_found = .false.
         
         ! Expect opening brace
         if (current_pos > token_count .or. tokens(current_pos)%value /= '{') then
@@ -582,7 +556,10 @@ contains
             return
         end if
         current_pos = current_pos + 1
+        
         object_start_pos = current_pos
+        filename_found = .false.
+        lines_found = .false.
         
         ! Parse filename - try from current position
         call try_parse_key_value(tokens, object_start_pos, token_count, 'filename', &
@@ -600,16 +577,15 @@ contains
             return
         end if
         
-        ! Try to parse functions (optional) - try from object start
-        call try_parse_functions_array(tokens, object_start_pos, token_count, filename, &
+        ! Try to parse functions (optional)
+        call try_parse_functions_array(tokens, current_pos, token_count, filename, &
                                      functions, functions_count)
         
         ! Skip to closing brace
         do while (current_pos <= token_count .and. tokens(current_pos)%value /= '}')
             current_pos = current_pos + 1
         end do
-        if (current_pos <= token_count) &
-            current_pos = current_pos + 1  ! Skip closing brace
+        if (current_pos <= token_count) current_pos = current_pos + 1  ! Skip closing brace
         
         ! Initialize file object
         if (lines_count > 0) then
@@ -634,7 +610,7 @@ contains
 
     ! Parse lines array from JSON
     subroutine parse_lines_array(tokens, current_pos, token_count, filename, lines, &
-                                & lines_count, error_caught)
+                                lines_count, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -686,16 +662,13 @@ contains
         end do
         
         ! Allocate and copy lines
-        if (lines_count > 0) then
-            allocate(lines, source=temp_lines(1:lines_count))
-        else
-            allocate(lines(0))
-        end if
+        allocate(lines(lines_count))
+        lines(1:lines_count) = temp_lines(1:lines_count)
     end subroutine parse_lines_array
 
-    ! Parse individual line object from JSON with field order independence
+    ! Parse individual line object from JSON
     subroutine parse_line_object(tokens, current_pos, token_count, filename, line_obj, &
-                               & error_caught)
+                               error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -707,7 +680,6 @@ contains
         logical :: is_executable
         integer :: object_start_pos
         logical :: line_number_found, execution_count_found, is_executable_found
-        character(len=:), allocatable :: temp_value
         
         error_caught = .false.
         line_number_found = .false.
@@ -750,8 +722,7 @@ contains
         do while (current_pos <= token_count .and. tokens(current_pos)%value /= '}')
             current_pos = current_pos + 1
         end do
-        if (current_pos <= token_count) &
-            current_pos = current_pos + 1  ! Skip closing brace
+        if (current_pos <= token_count) current_pos = current_pos + 1  ! Skip closing brace
         
         ! Initialize line object
         call line_obj%init(execution_count, line_number, filename, is_executable)
@@ -760,7 +731,7 @@ contains
 
     ! Try to parse functions array (optional field)
     subroutine try_parse_functions_array(tokens, current_pos, token_count, filename, &
-                                       & functions, functions_count)
+                                       functions, functions_count)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -830,7 +801,7 @@ contains
 
     ! Parse individual function object from JSON
     subroutine parse_function_object(tokens, current_pos, token_count, filename, &
-                                   & func_obj, error_caught)
+                                   func_obj, error_caught)
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
@@ -862,8 +833,7 @@ contains
         current_pos = current_pos + 1
         
         ! Parse parent_module
-        call skip_to_key(tokens, current_pos, token_count, &
-                         'parent_module', error_caught)
+        call skip_to_key(tokens, current_pos, token_count, 'parent_module', error_caught)
         if (error_caught) return
         if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_STRING) then
             error_caught = .true.
@@ -873,11 +843,9 @@ contains
         current_pos = current_pos + 1
         
         ! Parse is_module_procedure
-        call skip_to_key(tokens, current_pos, token_count, &
-                         'is_module_procedure', error_caught)
+        call skip_to_key(tokens, current_pos, token_count, 'is_module_procedure', error_caught)
         if (error_caught) return
-        if (current_pos > token_count .or. &
-            tokens(current_pos)%type /= JSON_BOOLEAN) then
+        if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_BOOLEAN) then
             error_caught = .true.
             return
         end if
@@ -885,8 +853,7 @@ contains
         current_pos = current_pos + 1
         
         ! Parse execution_count
-        call skip_to_key(tokens, current_pos, token_count, &
-                         'execution_count', error_caught)
+        call skip_to_key(tokens, current_pos, token_count, 'execution_count', error_caught)
         if (error_caught) return
         if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_NUMBER) then
             error_caught = .true.
@@ -923,8 +890,7 @@ contains
         do while (current_pos <= token_count .and. tokens(current_pos)%value /= '}')
             current_pos = current_pos + 1
         end do
-        if (current_pos <= token_count) &
-            current_pos = current_pos + 1  ! Skip closing brace
+        if (current_pos <= token_count) current_pos = current_pos + 1  ! Skip closing brace
         
         ! Initialize function object
         call func_obj%init(name, parent_module, is_module_procedure, execution_count, &
