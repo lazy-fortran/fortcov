@@ -716,7 +716,7 @@ contains
         windows_paths(4) = ".\\coverage.html"
         
         ! Validate path structure
-        path_structure_valid = validate_path_separator_structure(windows_paths, 4, "\"")
+        path_structure_valid = validate_path_separator_structure(windows_paths, 4, "\\")
         
         is_valid = path_structure_valid
     end function
