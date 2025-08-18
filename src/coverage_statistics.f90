@@ -1,6 +1,7 @@
 module coverage_statistics
     use coverage_model
     use string_utils, only: compress_ranges
+    use input_validation
     implicit none
     private
     
@@ -101,15 +102,8 @@ contains
             end do
         end do
         
-        ! Calculate percentage with validation
-        if (total_lines > 0) then
-            percentage = real(covered_lines) / real(total_lines) * 100.0
-        else
-            percentage = 0.0  ! No executable lines means 0% coverage
-        end if
-        
-        ! Input validation: Clamp percentage to valid range
-        percentage = clamp_percentage(percentage)
+        ! Calculate percentage with enhanced division by zero protection
+        percentage = safe_percentage_calculation(covered_lines, total_lines)
         
         ! Process missing line numbers for range compression
         if (missing_count > 0) then
@@ -153,15 +147,8 @@ contains
             end if
         end do
         
-        ! Calculate percentage with validation
-        if (total_branches > 0) then
-            percentage = real(covered_branches) / real(total_branches) * 100.0
-        else
-            percentage = 0.0  ! No branches means 0% coverage
-        end if
-        
-        ! Input validation: Clamp percentage to valid range
-        percentage = clamp_percentage(percentage)
+        ! Calculate percentage with enhanced division by zero protection
+        percentage = safe_percentage_calculation(covered_branches, total_branches)
         
         call stats%init(percentage, covered_branches, total_branches, "")
     end function calculate_branch_coverage
@@ -190,15 +177,8 @@ contains
             end if
         end do
         
-        ! Calculate percentage with validation
-        if (total_functions > 0) then
-            percentage = real(covered_functions) / real(total_functions) * 100.0
-        else
-            percentage = 0.0  ! No functions means 0% coverage
-        end if
-        
-        ! Input validation: Clamp percentage to valid range
-        percentage = clamp_percentage(percentage)
+        ! Calculate percentage with enhanced division by zero protection
+        percentage = safe_percentage_calculation(covered_functions, total_functions)
         
         call stats%init(percentage, covered_functions, total_functions, "")
     end function calculate_function_coverage
@@ -249,41 +229,15 @@ contains
             end if
         end do
         
-        ! Calculate percentages with validation
-        if (stats%total_functions > 0) then
-            stats%function_percentage = real(stats%covered_functions) / &
-                                         real(stats%total_functions) * 100.0
-            stats%function_percentage = clamp_percentage(stats%function_percentage)
-        else
-            stats%function_percentage = 0.0
-        end if
-        
-        if (stats%total_branches > 0) then
-            stats%branch_percentage = real(stats%covered_branches) / &
-                                       real(stats%total_branches) * 100.0
-            stats%branch_percentage = clamp_percentage(stats%branch_percentage)
-        else
-            stats%branch_percentage = 0.0
-        end if
+        ! Calculate percentages with enhanced division by zero protection
+        stats%function_percentage = safe_percentage_calculation(stats%covered_functions, stats%total_functions)
+        stats%branch_percentage = safe_percentage_calculation(stats%covered_branches, stats%total_branches)
         
         ! Line percentage calculation would require mapping lines to modules
         ! For now, set to 0 as the test expects
         stats%line_percentage = 0.0
     end function calculate_module_coverage
 
-    ! Input validation: Clamp percentage values to valid range [0.0, 100.0]
-    function clamp_percentage(percentage) result(clamped)
-        real, intent(in) :: percentage
-        real :: clamped
-        
-        ! Handle invalid values (clamp to valid range)
-        if (percentage < 0.0) then
-            clamped = 0.0  ! Clamp negative percentages to 0
-        else if (percentage > 100.0) then
-            clamped = 100.0  ! Clamp excessive percentages to 100
-        else
-            clamped = percentage
-        end if
-    end function clamp_percentage
+    ! Input validation functions now provided by input_validation module
 
 end module coverage_statistics
