@@ -22,7 +22,7 @@ fpm build --flag "-fprofile-arcs -ftest-coverage"
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # 3. Create coverage report with source discovery
-fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
 ```
 
 That's it! Open `coverage.md` to see your coverage report.

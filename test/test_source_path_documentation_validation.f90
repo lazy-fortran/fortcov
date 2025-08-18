@@ -107,19 +107,19 @@ contains
         integer, intent(inout) :: test_count, failed_count
         
         logical :: test_passed
-        character(len=100), dimension(3) :: expected_sources
+        character(len=9), dimension(3) :: expected_sources
         
         print *, "--- Testing Multiple Source Paths Pattern ---"
         test_count = test_count + 1
         test_passed = .true.
         
         ! Test documented multiple source pattern
-        expected_sources = ["src/core", "src/utils", "        "]
+        expected_sources = ["src/core ", "src/utils", "         "]
         call test_source_path_parsing("--source=src/core --source=src/utils", &
                                     expected_sources(1:2), 2, test_passed)
         
         ! Test with different variations
-        expected_sources = ["src", "lib", "app"]
+        expected_sources = ["src      ", "lib      ", "app      "]
         call test_source_path_parsing("--source=src --source=lib --source=app", &
                                     expected_sources, 3, test_passed)
         

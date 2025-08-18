@@ -364,15 +364,13 @@ contains
             "No coverage files found in: ", trim(source_path)
         
         write(error_ctx%suggestion, '(A)') &
-            "1. Build with coverage: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
+            "1. Verify you built with coverage flags: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "2. Run tests: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
+            "2. Run your tests to generate .gcda files: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "3. Generate .gcov files: gcov src/*.f90"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "4. Check files exist: ls -la *.gcov"
-        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "5. Verify source path: --source=" // trim(source_path)
+            "4. Run fortcov: fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md"
         
         write(error_ctx%context, '(A)') "Coverage file discovery"
     end subroutine handle_no_coverage_files
@@ -412,13 +410,13 @@ contains
             "Invalid or missing argument: ", trim(arg_name)
         
         write(error_ctx%suggestion, '(A)') &
-            "1. Check help: fortcov --help"
+            "1. Required argument: --source=PATH (source directory)"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "2. Required argument: --source=PATH (source directory)"
+            "2. Basic usage: fortcov --source=src --output=coverage.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "3. Basic usage: fortcov --source=src --output=coverage.md"
+            "3. Quick start: fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "4. See examples: fortcov --help | grep -A10 EXAMPLES"
+            "4. For help and examples: fortcov --help"
         
         write(error_ctx%context, '(A)') "Command line parsing"
     end subroutine handle_invalid_arguments
