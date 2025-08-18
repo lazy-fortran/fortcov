@@ -74,6 +74,9 @@ test_*.info
 debug_*
 *.log
 
+# Test output directory (system test artifacts)
+test_outputs/
+
 # Temporary test executables and analysis files
 acceptance_test_*
 performance_analysis
