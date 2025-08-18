@@ -45,8 +45,12 @@ contains
         
         exit_code = EXIT_SUCCESS
         
-        if (config%verbose .and. .not. config%quiet) then
-            print *, "Starting coverage analysis..."
+        if (.not. config%quiet) then
+            if (config%verbose) then
+                print *, "🚀 Starting coverage analysis with verbose output..."
+            else
+                print *, "📊 Analyzing coverage..."
+            end if
         end if
         
         ! Check if we're importing JSON instead of analyzing gcov files
@@ -72,7 +76,11 @@ contains
         
         if (size(coverage_files) == 0) then
             if (.not. config%quiet) then
-                print *, "Warning: No coverage files found"
+                print *, "⚠️  No coverage files found in source directories"
+                print *, "💡 Make sure you:"
+                print *, "   1. Built with coverage: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
+                print *, "   2. Ran your tests: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
+                print *, "   3. Generated .gcov files: gcov src/*.f90"
             end if
             ! Issue #109: Differentiate between strict and default modes
             if (config%strict_mode) then
@@ -88,7 +96,8 @@ contains
         
         if (size(filtered_files) == 0) then
             if (.not. config%quiet) then
-                print *, "Warning: All coverage files were excluded"
+                print *, "⚠️  All coverage files were excluded by filters"
+                print *, "💡 Check your --exclude patterns or remove filters to include files"
             end if
             ! Issue #109: Differentiate between strict and default modes
             if (config%strict_mode) then
@@ -99,8 +108,17 @@ contains
             return
         end if
         
-        if (config%verbose .and. .not. config%quiet) then
-            print *, "Found", size(filtered_files), "coverage files to process"
+        if (.not. config%quiet) then
+            print *, "📁 Found", size(filtered_files), "coverage file(s) to process"
+            if (config%verbose) then
+                print *, "🔍 Processing:"
+                do i = 1, min(5, size(filtered_files))
+                    print *, "   • " // trim(filtered_files(i))
+                end do
+                if (size(filtered_files) > 5) then
+                    print *, "   ... and", size(filtered_files) - 5, "more files"
+                end if
+            end if
         end if
         
         ! Parse coverage data from all files using safe parsing
@@ -112,10 +130,10 @@ contains
             if (parse_error_ctx%error_code /= ERROR_SUCCESS .and. &
                 .not. parse_error_ctx%recoverable) then
                 if (.not. config%quiet) then
-                    print *, "Error: Coverage parsing failed - " // &
+                    print *, "❌ Coverage parsing failed: " // &
                             trim(parse_error_ctx%message)
                     if (len_trim(parse_error_ctx%suggestion) > 0) then
-                        print *, "Suggestion: " // trim(parse_error_ctx%suggestion)
+                        print *, "🔧 Solution: " // trim(parse_error_ctx%suggestion)
                     end if
                 end if
                 exit_code = EXIT_FAILURE
@@ -124,7 +142,8 @@ contains
                      parse_error_ctx%recoverable) then
                 ! Report partial processing issues as warnings
                 if (.not. config%quiet) then
-                    print *, "Warning: " // trim(parse_error_ctx%message)
+                    print *, "⚠️  " // trim(parse_error_ctx%message)
+                    print *, "✅ Continuing with available coverage data..."
                 end if
             end if
         end block
@@ -132,52 +151,84 @@ contains
         ! Calculate coverage statistics
         line_stats = calculate_line_coverage(merged_coverage)
         
-        if (config%verbose .and. .not. config%quiet) then
-            print *, "Line coverage:", line_stats%percentage, "%"
+        if (.not. config%quiet) then
+            print *, "📊 Overall coverage:", line_stats%percentage, "%"
+            if (config%verbose) then
+                print *, "📈 Coverage statistics:"
+                print *, "   • Total lines:", line_stats%total_count
+                print *, "   • Covered lines:", line_stats%covered_count
+                print *, "   • Percentage:", line_stats%percentage, "%"
+            end if
         end if
         
         ! Generate report
         call create_reporter(config%output_format, reporter, reporter_error)
         if (reporter_error) then
             if (.not. config%quiet) then
-                print *, "Error: Unsupported output format '" // &
-                        trim(config%output_format) // &
-                        "'. Supported formats: markdown, md, json, xml, html"
+                print *, "❌ Unsupported output format: '" // &
+                        trim(config%output_format) // "'"
+                print *, "📊 Supported formats: markdown, md, json, xml, html"
+                print *, "💡 Try: --output-format=markdown"
             end if
             exit_code = EXIT_FAILURE
             return
+        end if
+        
+        if (.not. config%quiet) then
+            print *, "📝 Generating " // trim(config%output_format) // " report..."
         end if
         
         call reporter%generate_report(merged_coverage, config%output_path, &
                                      reporter_error, config%quiet)
         if (reporter_error) then
             if (.not. config%quiet) then
-                print *, "Error: Failed to generate report at: ", &
-                        config%output_path
+                print *, "❌ Failed to generate report at: " // &
+                        trim(config%output_path)
+                print *, "💡 Check directory permissions and disk space"
             end if
             exit_code = EXIT_FAILURE
             return
         end if
         
-        ! Provide user feedback for HTML report creation (Issue #104)
-        if (.not. config%quiet .and. trim(config%output_format) == "html" .and. &
-            config%output_path /= "-") then
-            print *, "HTML report saved to: ", trim(config%output_path)
+        ! Provide user feedback for report creation
+        if (.not. config%quiet .and. config%output_path /= "-") then
+            select case(trim(config%output_format))
+            case("html")
+                print *, "✨ HTML report saved to: " // trim(config%output_path)
+            case("json")
+                print *, "📊 JSON report saved to: " // trim(config%output_path)
+            case("markdown", "md")
+                print *, "📝 Markdown report saved to: " // trim(config%output_path)
+            case default
+                print *, "✅ Report saved to: " // trim(config%output_path)
+            end select
         end if
         
         ! Check coverage threshold
         if (line_stats%percentage < config%minimum_coverage) then
             if (.not. config%quiet) then
-                print *, "Coverage threshold not met: ", &
-                        line_stats%percentage, "% < ", &
-                        config%minimum_coverage, "%"
+                print *, "⚠️  Coverage threshold not met:"
+                print *, "   📉 Current: ", line_stats%percentage, "%"
+                print *, "   🎯 Required: ", config%minimum_coverage, "%"
+                print *, "   🚀 Shortfall: ", config%minimum_coverage - line_stats%percentage, "%"
             end if
             exit_code = EXIT_THRESHOLD_NOT_MET
             return
         end if
         
-        if (config%verbose .and. .not. config%quiet) then
-            print *, "Coverage analysis completed successfully"
+        if (.not. config%quiet) then
+            if (config%minimum_coverage > 0.0 .and. &
+                line_stats%percentage >= config%minimum_coverage) then
+                print *, "✅ Coverage analysis completed successfully! Threshold met."
+            else
+                print *, "✅ Coverage analysis completed successfully!"
+            end if
+            if (config%verbose) then
+                print *, "🎉 Analysis summary:"
+                print *, "   • Files processed: ", size(filtered_files)
+                print *, "   • Final coverage: ", line_stats%percentage, "%"
+                print *, "   • Output format: ", trim(config%output_format)
+            end if
         end if
     end function analyze_coverage
 

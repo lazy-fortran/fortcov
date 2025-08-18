@@ -191,10 +191,10 @@ contains
                 case ("--output-format")
                     config%output_format = trim(value)
                     
-                case ("--output")
+                case ("--output", "-o")
                     config%output_path = trim(value)
                     
-                case ("--source")
+                case ("--source", "-s")
                     call add_to_array(trim(value), temp_sources, num_sources, &
                                      MAX_ARRAY_SIZE, "source paths")
                     
@@ -202,7 +202,7 @@ contains
                     call add_to_array(trim(value), temp_excludes, num_excludes, &
                                      MAX_ARRAY_SIZE, "exclude patterns")
                     
-                case ("--fail-under")
+                case ("--fail-under", "-t")
                     call parse_threshold(trim(value), config%minimum_coverage, &
                                         success, error_message)
                     if (.not. success) return
@@ -662,79 +662,98 @@ contains
     end subroutine load_config_file
 
     subroutine show_help()
-        print *, "FortCov - Coverage analysis tool for Fortran projects"
+        print *, "FortCov - Modern coverage analysis for Fortran projects"
         print *, ""
         print *, "USAGE:"
-        print *, "  fortcov --source=PATH --output=FILE [OPTIONS]"
+        print *, "  fortcov [OPTIONS] --source=PATH"
         print *, ""
         print *, "QUICK START:"
-        print *, "  fortcov --source=src --output=coverage.md        # Basic coverage report"
-        print *, "  fortcov --source=src --fail-under=80 --quiet     # CI/CD usage"
-        print *, "  fortcov --source=src --tui                       # Interactive browser"
+        print *, "  fortcov -s src -o coverage.md              # Generate basic report"
+        print *, "  fortcov -s src -t 80 -q                    # CI/CD with threshold"
+        print *, "  fortcov -s src --tui                       # Interactive browser"
         print *, ""
-        print *, "COMMON OPTIONS:"
-        print *, "  -s, --source=PATH         Source directory to analyze (required)"
-        print *, "  -o, --output=FILE         Output file [default: stdout]"
-        print *, "  -t, --fail-under=N        Minimum coverage threshold (0-100)"
-        print *, "  -v, --verbose             Show detailed processing information"
-        print *, "  -q, --quiet               Only show errors (perfect for CI/CD)"
-        print *, "  -h, --help                Show this help message"
+        print *, "ESSENTIAL OPTIONS:"
+        print *, "  -s, --source=PATH         📁 Source directory to analyze (required)"
+        print *, "  -o, --output=FILE         📄 Output file [default: stdout]"
+        print *, "  -t, --fail-under=N        🎯 Minimum coverage threshold (0-100)"
+        print *, "  -v, --verbose             💬 Show detailed processing information"
+        print *, "  -q, --quiet               🔇 Only show errors (CI/CD friendly)"
+        print *, "  -h, --help                ❓ Show this help message"
+        print *, "  -V, --version             📋 Show version information"
         print *, ""
-        print *, "INPUT/OUTPUT OPTIONS:"
-        print *, "  --input-format=FORMAT     Input: gcov, lcov, json [default: gcov]"
-        print *, "  --output-format=FORMAT    Output: markdown, json, html [default: markdown]"
-        print *, "  --import=FILE             Import existing coverage data (JSON format)"
+        print *, "OUTPUT FORMATS:"
+        print *, "  --output-format=FORMAT    📊 Output: markdown, json, html [default: markdown]"
+        print *, "  --input-format=FORMAT     📥 Input: gcov, lcov, json [default: gcov]"
+        print *, "  --import=FILE             📂 Import existing coverage data (JSON format)"
         print *, ""
-        print *, "FILTERING OPTIONS:"
-        print *, "  --exclude=PATTERN         Skip files matching pattern (use multiple times)"
-        print *, "                            Example: --exclude='*.mod' --exclude='test/*'"
+        print *, "FILTERING & EXCLUSIONS:"
+        print *, "  --exclude=PATTERN         🚫 Skip files matching pattern (use multiple times)"
+        print *, "                               Example: --exclude='test/*' --exclude='*.mod'"
         print *, ""
-        print *, "ADVANCED OPTIONS:"
-        print *, "  --config=FILE             Use configuration file (see fortcov.nml.example)"
-        print *, "  --gcov=EXECUTABLE         Custom gcov path [default: gcov]"
-        print *, "  --tui                     Interactive terminal interface"
-        print *, "  --diff=BASE,CURRENT       Compare two coverage datasets"
-        print *, "  --strict                  Exit with error if no coverage files found"
+        print *, "ADVANCED FEATURES:"
+        print *, "  --config=FILE             ⚙️  Use configuration file (see fortcov.nml.example)"
+        print *, "  --gcov=EXECUTABLE         🔧 Custom gcov path [default: gcov]"
+        print *, "  --gcov-args=ARGS          🎛️  Additional gcov arguments"
+        print *, "  --keep-gcov-files         💾 Keep .gcov files after analysis"
+        print *, "  --tui                     🖥️  Interactive terminal interface"
+        print *, "  --strict                  🚨 Exit with error if no coverage files found"
+        print *, ""
+        print *, "DIFFERENTIAL ANALYSIS:"
+        print *, "  --diff=BASE,CURRENT       🔍 Compare two coverage datasets"
+        print *, "  --threshold=N             📈 Diff reporting threshold (default: 0.0)"
+        print *, "  --include-unchanged       📋 Include unchanged lines in diff report"
         print *, ""
         print *, "EXIT CODES:"
-        print *, "  0   Success"
-        print *, "  1   Error (missing files, invalid options, etc.)"
-        print *, "  2   Coverage below --fail-under threshold"
+        print *, "  0   ✅ Success - Coverage analysis completed"
+        print *, "  1   ❌ Error - Missing files, invalid options, system errors"
+        print *, "  2   ⚠️  Coverage below threshold - Quality gate not met"
+        print *, "  3   📭 No coverage data found (strict mode only)"
         print *, ""
         print *, "EXAMPLES:"
         print *, ""
-        print *, "  Basic usage:"
-        print *, "    fortcov --source=src --output=coverage.md"
+        print *, "  🚀 Basic coverage report:"
+        print *, "     fortcov -s src -o coverage.md"
         print *, ""
-        print *, "  CI/CD pipeline:"
-        print *, "    fortcov --source=src --fail-under=80 --quiet"
+        print *, "  🏗️  CI/CD pipeline integration:"
+        print *, "     fortcov -s src -t 80 -q --output-format=json -o coverage.json"
         print *, ""
-        print *, "  Exclude test files:"
-        print *, "    fortcov --source=src --exclude='test/*' --exclude='*_test.f90'"
+        print *, "  🧹 Exclude test and build files:"
+        print *, "     fortcov -s src --exclude='test/*' --exclude='build/*' -o coverage.md"
         print *, ""
-        print *, "  Multiple output formats:"
-        print *, "    fortcov --source=src --output-format=json --output=coverage.json"
-        print *, "    fortcov --source=src --output-format=html --output=report.html"
+        print *, "  🌐 Generate HTML report:"
+        print *, "     fortcov -s src --output-format=html -o report.html"
         print *, ""
-        print *, "  Interactive analysis:"
-        print *, "    fortcov --source=src --tui"
+        print *, "  🔍 Interactive coverage browser:"
+        print *, "     fortcov -s src --tui"
         print *, ""
-        print *, "  Compare coverage between versions:"
-        print *, "    fortcov --diff=v1.0.json,v1.1.json --threshold=5.0"
+        print *, "  📊 Compare coverage between versions:"
+        print *, "     fortcov --diff=baseline.json,current.json --threshold=5.0"
         print *, ""
-        print *, "GETTING STARTED:"
-        print *, "  1. Build with coverage: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
-        print *, "  2. Run tests:           fpm test --flag ""-fprofile-arcs -ftest-coverage"""
-        print *, "  3. Generate data:       gcov src/*.f90"
-        print *, "  4. Create report:       fortcov --source=src --output=coverage.md"
+        print *, "WORKFLOW QUICKSTART:"
+        print *, "  1️⃣  Build with coverage:  fpm build --flag ""-fprofile-arcs -ftest-coverage"""
+        print *, "  2️⃣  Run your tests:       fpm test --flag ""-fprofile-arcs -ftest-coverage"""
+        print *, "  3️⃣  Generate .gcov data:  gcov src/*.f90"
+        print *, "  4️⃣  Create report:        fortcov -s src -o coverage.md"
+        print *, "  5️⃣  View your results:    cat coverage.md"
         print *, ""
-        print *, "For detailed documentation see: https://github.com/krystophny/fortcov"
+        print *, "📚 Documentation: https://github.com/krystophny/fortcov"
+        print *, "🐛 Issues & Support: https://github.com/krystophny/fortcov/issues"
     end subroutine show_help
 
     subroutine show_version()
-        print *, "fortcov version 1.0.0"
-        print *, "Coverage analysis tool for Fortran code"
-        print *, "Copyright (c) 2025 fortcov contributors"
+        print *, "🚀 FortCov v1.0.0"
+        print *, "📊 Modern coverage analysis tool for Fortran projects"
+        print *, ""
+        print *, "✨ Features:"
+        print *, "   • Fast & reliable coverage analysis"
+        print *, "   • Multiple output formats (Markdown, JSON, HTML)"
+        print *, "   • Interactive terminal interface (TUI)"
+        print *, "   • Differential coverage analysis"
+        print *, "   • CI/CD integration ready"
+        print *, ""
+        print *, "🏗️  Built for modern Fortran with security & performance in mind"
+        print *, "📝 Copyright (c) 2025 FortCov Contributors"
+        print *, "📖 Documentation: https://github.com/krystophny/fortcov"
     end subroutine show_version
 
     subroutine initialize_config(config)
@@ -939,8 +958,7 @@ contains
         if (size(args) == 0) then
             config%show_help = .true.
             success = .false.
-            error_message = "No arguments provided. " // &
-                          "Use --help for usage information."
+            error_message = "No arguments provided. Try 'fortcov --help' for usage examples."
         end if
     end subroutine validate_input_sources
 
