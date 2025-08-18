@@ -218,7 +218,9 @@ contains
                 all_files(1:total_count) = temp_files
             end if
         else
-            ! Search in each specified source directory
+            ! OPTIMIZED: Pre-calculate total file count to avoid O(n²) array extensions
+            ! First pass: count total files needed
+            total_count = 0
             do i = 1, size(config%source_paths)
                 if (trim(config%input_format) == "gcov") then
                     search_pattern = trim(config%source_paths(i)) // "/*.gcov"
@@ -227,19 +229,30 @@ contains
                 end if
                 
                 temp_files = find_files(search_pattern)
-                current_count = size(temp_files)
-                
-                if (current_count > 0) then
-                    if (total_count == 0) then
-                        allocate(character(len=256) :: all_files(current_count))
-                        all_files(1:current_count) = temp_files
-                    else
-                        ! Extend array
-                        all_files = [all_files, temp_files]
-                    end if
-                    total_count = total_count + current_count
-                end if
+                total_count = total_count + size(temp_files)
             end do
+            
+            ! Allocate result array once with correct size
+            if (total_count > 0) then
+                allocate(character(len=256) :: all_files(total_count))
+                current_count = 0
+                
+                ! Second pass: populate the pre-allocated array
+                do i = 1, size(config%source_paths)
+                    if (trim(config%input_format) == "gcov") then
+                        search_pattern = trim(config%source_paths(i)) // "/*.gcov"
+                    else
+                        search_pattern = trim(config%source_paths(i)) // "/*.gcov"
+                    end if
+                    
+                    temp_files = find_files(search_pattern)
+                    if (size(temp_files) > 0) then
+                        all_files(current_count+1:current_count+size(temp_files)) = &
+                            temp_files
+                        current_count = current_count + size(temp_files)
+                    end if
+                end do
+            end if
         end if
         
         ! Return result
@@ -646,8 +659,15 @@ contains
                     allocate(all_files(current_files))
                     all_files = file_coverage%files
                 else
-                    ! Merge with existing files
-                    all_files = [all_files, file_coverage%files]
+                    ! OPTIMIZED: Use move_alloc for efficient array merging
+                    block
+                        type(coverage_file_t), allocatable :: temp_files(:)
+                        allocate(temp_files(total_files + current_files))
+                        temp_files(1:total_files) = all_files
+                        temp_files(total_files+1:total_files+current_files) = &
+                            file_coverage%files
+                        call move_alloc(temp_files, all_files)
+                    end block
                 end if
                 total_files = total_files + current_files
             end if
