@@ -337,11 +337,24 @@ contains
         logical :: matches
         
         character(len=:), allocatable :: pattern_trimmed, filepath_trimmed
-        integer :: star_pos
+        integer :: star_pos, prefix_len, suffix_len
         
         ! Use case-sensitive matching to maintain backward compatibility
         pattern_trimmed = trim(pattern)
         filepath_trimmed = trim(filepath)
+        
+        ! Handle edge cases first
+        if (len(pattern_trimmed) == 0) then
+            ! Empty pattern only matches empty filepath
+            matches = (len(filepath_trimmed) == 0)
+            return
+        end if
+        
+        if (len(filepath_trimmed) == 0) then
+            ! Empty filepath only matches empty pattern or single "*"
+            matches = (pattern_trimmed == "*")
+            return
+        end if
         
         star_pos = index(pattern_trimmed, "*")
         
@@ -350,17 +363,38 @@ contains
             matches = (filepath_trimmed == pattern_trimmed)
         else if (star_pos == len(pattern_trimmed)) then
             ! Pattern ends with *, check prefix
-            matches = (filepath_trimmed(1:star_pos-1) == &
-                      pattern_trimmed(1:star_pos-1))
+            prefix_len = star_pos - 1
+            if (prefix_len == 0) then
+                ! Just "*", matches everything non-empty
+                matches = .true.
+            else if (len(filepath_trimmed) >= prefix_len) then
+                matches = (filepath_trimmed(1:prefix_len) == pattern_trimmed(1:prefix_len))
+            else
+                matches = .false.
+            end if
         else if (star_pos == 1) then
             ! Pattern starts with *, check suffix
-            matches = (len(filepath_trimmed) >= len(pattern_trimmed) - 1) .and. &
-                     (filepath_trimmed(len(filepath_trimmed) - len(pattern_trimmed) + 2:) == &
-                      pattern_trimmed(2:))
+            suffix_len = len(pattern_trimmed) - 1
+            if (suffix_len == 0) then
+                ! Just "*", matches everything
+                matches = .true.
+            else if (len(filepath_trimmed) >= suffix_len) then
+                matches = (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
+                          pattern_trimmed(2:))
+            else
+                matches = .false.
+            end if
         else
             ! Wildcard in middle - check both prefix and suffix match
-            matches = (index(filepath_trimmed, pattern_trimmed(1:star_pos-1)) == 1) .and. &
-                     (index(filepath_trimmed, pattern_trimmed(star_pos+1:)) > 0)
+            prefix_len = star_pos - 1
+            suffix_len = len(pattern_trimmed) - star_pos
+            if (len(filepath_trimmed) >= prefix_len + suffix_len) then
+                matches = (filepath_trimmed(1:prefix_len) == pattern_trimmed(1:prefix_len)) .and. &
+                         (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
+                          pattern_trimmed(star_pos + 1:))
+            else
+                matches = .false.
+            end if
         end if
     end function matches_pattern
 
