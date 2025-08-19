@@ -190,7 +190,7 @@ fortcov --diff=baseline.json,current.json --threshold=5.0 --output=diff.md
 
 | Option | Short | Description | Example |
 |--------|-------|-------------|---------|
-| `--source=PATH` | `-s` | Source directory to search for .gcov files (required) | `--source=src` |
+| `--source=PATH` | `-s` | Source directory to search for .gcov files (default: current directory) | `--source=src` |
 | `--output=FILE` | `-o` | Output file | `--output=coverage.md` |
 | `--fail-under=N` | `-t` | Coverage threshold | `--fail-under=80` |
 | `--quiet` | `-q` | Suppress output | `--quiet` |
