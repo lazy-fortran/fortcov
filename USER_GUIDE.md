@@ -506,6 +506,68 @@ fortcov --config=configs/staging.nml
 fortcov --config=configs/prod.nml
 ```
 
+### Security Considerations
+
+FortCov includes comprehensive input validation to protect against security vulnerabilities. This is especially important in CI/CD environments where user input may come from external sources.
+
+#### Built-in Security Features
+
+**Path Validation**: All file paths are validated to prevent:
+- Command injection attacks (`;`, `|`, `&`, `$`, etc.)
+- Path traversal attacks (`../../../etc/passwd`)
+- Control character exploitation
+
+**Memory Safety**: Input size validation prevents:
+- Memory exhaustion attacks (files >1GB)
+- Integer overflow in coverage data
+- Resource exhaustion denial-of-service
+
+**Configuration Security**: All configuration options are validated:
+- Threshold values (0-100 range)
+- File path safety
+- Parameter bounds checking
+
+#### Security Best Practices
+
+**CI/CD Environment**:
+
+```bash
+# ✅ Safe patterns
+fortcov --source=src --output=coverage.md --fail-under=80 --quiet
+
+# ✅ Environment variables (properly quoted)
+OUTPUT_FILE="coverage-${CI_JOB_ID}.md"
+fortcov --source=src --output="$OUTPUT_FILE"
+
+# ❌ Avoid dynamic path construction
+# Don't: --source="$(find . -name src)"
+# Don't: --output="coverage$(whoami).md"
+```
+
+**Production Environments**:
+
+```bash
+# Use absolute paths when possible
+fortcov --source=/app/src --output=/reports/coverage.md
+
+# Validate configuration files before use
+fortcov --config=production.nml --verbose
+```
+
+#### Handling Security Errors
+
+**Path Validation Errors**:
+- **Error**: `❌ Invalid source path: Unsafe character in path: ';'`
+- **Solution**: Use only alphanumeric characters, dots, dashes, and slashes
+- **CI/CD Fix**: Review parameter passing and shell escaping
+
+**Memory Validation Errors**:
+- **Error**: `❌ Memory allocation request too large`
+- **Solution**: Process files in smaller batches or exclude large problematic files
+- **Prevention**: Set file size limits in CI/CD pipelines
+
+For complete security troubleshooting, see [TROUBLESHOOTING.md - Input Validation Errors](TROUBLESHOOTING.md#invalid-source-path--invalid-output-path).
+
 ---
 
 ## Project Manager
