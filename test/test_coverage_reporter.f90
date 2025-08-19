@@ -158,6 +158,8 @@ contains
         type(coverage_file_t), allocatable :: files(:)
         type(coverage_line_t), allocatable :: lines(:)
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         
         print *, "  Test 6: Mock reporter for testing"
         
@@ -172,10 +174,10 @@ contains
         test_data = coverage_data_t(files=files)
         
         ! When: Calling generate_report()
-        call reporter%generate_report(test_data, "mock_output.txt", error_flag, .false.)
+        call reporter%generate_report(test_data, "mock_output.txt", gen_success, error_msg)
         
         ! Then: Should record the coverage_data passed
-        passed = (.not. error_flag) .and. reporter%was_called
+        passed = gen_success .and. reporter%was_called
         if (passed) then
             passed = (size(reporter%captured_data%files) == 1)
         end if
@@ -196,6 +198,8 @@ contains
         type(coverage_file_t), allocatable :: files(:)
         type(coverage_line_t), allocatable :: lines(:)
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         character(len=*), parameter :: test_file = "test_output.md"
         logical :: file_exists
         integer :: unit, iostat
@@ -218,11 +222,11 @@ contains
         
         ! Given: Output path "test_output.md"
         ! When: Calling generate_report()
-        call reporter%generate_report(test_data, test_file, error_flag, .false.)
+        call reporter%generate_report(test_data, test_file, gen_success, error_msg)
         
         ! Then: Should create file at specified path
         inquire(file=test_file, exist=file_exists)
-        passed = (.not. error_flag) .and. file_exists
+        passed = gen_success .and. file_exists
         
         ! Clean up
         if (file_exists) then
@@ -246,6 +250,8 @@ contains
         type(coverage_file_t), allocatable :: files(:)
         type(coverage_line_t), allocatable :: lines(:)
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         
         print *, "  Test 8: Reporter stdout output"
         
@@ -261,14 +267,14 @@ contains
         
         ! Given: Output path "-" (stdout indicator)
         ! When: Calling generate_report()
-        call reporter%generate_report(test_data, "-", error_flag, .false.)
+        call reporter%generate_report(test_data, "-", gen_success, error_msg)
         
         ! Then: Should write to standard output (and not error)
-        passed = .not. error_flag
+        passed = gen_success
         
         if (.not. passed) then
             print *, "    FAILED: Stdout output should not error"
-            print *, "    Error flag:", error_flag
+            print *, "    Success flag:", gen_success
         else
             print *, "    PASSED"
         end if
@@ -281,6 +287,8 @@ contains
         type(coverage_file_t), allocatable :: files(:)
         type(coverage_line_t), allocatable :: lines(:)
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         character(len=*), parameter :: test_file = "content_validation.md"
         character(len=1000) :: content
         integer :: unit, iostat
@@ -314,11 +322,11 @@ contains
         expected_coverage = files(1)%get_line_coverage_percentage()
         
         ! Generate report
-        call reporter%generate_report(test_data, test_file, error_flag, .false.)
+        call reporter%generate_report(test_data, test_file, gen_success, error_msg)
         
         ! Read and validate content
         inquire(file=test_file, exist=file_exists)
-        passed = (.not. error_flag) .and. file_exists
+        passed = gen_success .and. file_exists
         
         if (passed) then
             open(newunit=unit, file=test_file, status='old')

@@ -57,6 +57,8 @@ contains
         class(coverage_reporter_t), allocatable :: reporter
         type(coverage_data_t) :: coverage_data
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         
         ! Given: Sample coverage data
         call create_sample_coverage_data(coverage_data)
@@ -68,11 +70,11 @@ contains
             return
         end if
         
-        call reporter%generate_report(coverage_data, "-", error_flag, .false.)
+        call reporter%generate_report(coverage_data, "-", gen_success, error_msg)
         
         ! Then: Should not have error
-        call assert(.not. error_flag, "markdown report generation", &
-                   "no error", merge("error   ", "no error", error_flag))
+        call assert(gen_success, "markdown report generation", &
+                   "no error", merge("error   ", "no error", .not. gen_success))
         
         ! And: Should have correct format name
         call assert(trim(reporter%get_format_name()) == "markdown", &
@@ -88,6 +90,8 @@ contains
         class(coverage_reporter_t), allocatable :: reporter
         type(coverage_data_t) :: coverage_data
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         
         ! Given: Sample coverage data
         call create_sample_coverage_data(coverage_data)
@@ -99,11 +103,11 @@ contains
             return
         end if
         
-        call reporter%generate_report(coverage_data, "-", error_flag, .false.)
+        call reporter%generate_report(coverage_data, "-", gen_success, error_msg)
         
         ! Then: Should not have error
-        call assert(.not. error_flag, "json report generation", &
-                   "no error", merge("error   ", "no error", error_flag))
+        call assert(gen_success, "json report generation", &
+                   "no error", merge("error   ", "no error", .not. gen_success))
         
         ! And: Should have correct format name
         call assert(trim(reporter%get_format_name()) == "json", &
@@ -124,6 +128,8 @@ contains
         class(coverage_reporter_t), allocatable :: reporter
         type(coverage_data_t) :: coverage_data
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         
         ! Given: Sample coverage data
         call create_sample_coverage_data(coverage_data)
@@ -135,11 +141,11 @@ contains
             return
         end if
         
-        call reporter%generate_report(coverage_data, "-", error_flag, .false.)
+        call reporter%generate_report(coverage_data, "-", gen_success, error_msg)
         
         ! Then: Should not have error
-        call assert(.not. error_flag, "xml report generation", &
-                   "no error", merge("error   ", "no error", error_flag))
+        call assert(gen_success, "xml report generation", &
+                   "no error", merge("error   ", "no error", .not. gen_success))
         
         ! And: Should have correct format name
         call assert(trim(reporter%get_format_name()) == "xml", &
