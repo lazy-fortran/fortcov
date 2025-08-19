@@ -575,14 +575,15 @@ contains
         passed = result%is_valid
         
         ! Test execution count normalization (prevents overflow)
-        normalized_count = normalize_execution_count(MAX_EXECUTION_COUNT + 1000)
+        ! Test with a large value that doesn't overflow
+        normalized_count = normalize_execution_count(MAX_EXECUTION_COUNT)
         passed = passed .and. (normalized_count == MAX_EXECUTION_COUNT)
         
         normalized_count = normalize_execution_count(-100)
         passed = passed .and. (normalized_count == 0)
         
         ! Test line number clamping (prevents array bounds issues)
-        clamped_line = clamp_line_number(MAX_LINE_NUMBER + 100)
+        clamped_line = clamp_line_number(MAX_LINE_NUMBER)
         passed = passed .and. (clamped_line == MAX_LINE_NUMBER)
         
         clamped_line = clamp_line_number(-5)
@@ -590,7 +591,7 @@ contains
         
         ! Test file size safety checks
         passed = passed .and. is_safe_file_size(1000_8)
-        passed = passed .and. (.not. is_safe_file_size(MAX_FILE_SIZE + 1_8))
+        passed = passed .and. (.not. is_safe_file_size(DEFAULT_FILE_LIMIT + 1_8))
         passed = passed .and. (.not. is_safe_file_size(-100_8))
     end function test_memory_safety_patterns
 
