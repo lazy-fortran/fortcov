@@ -802,7 +802,7 @@ coverage:
     - ./scripts/fpm_coverage_bridge.sh root coverage.md
     # Check coverage threshold with proper exit code handling
     - |
-      fmp run fortcov -- --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
+      fpm run fortcov -- --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
       EXIT_CODE=$?
       case $EXIT_CODE in
           0) echo "✅ Coverage threshold met" ;;
