@@ -16,6 +16,8 @@ contains
         type(json_reporter_t) :: reporter
         type(coverage_data_t) :: large_dataset
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         integer :: start_time, end_time, count_rate
         real :: elapsed_time
         
@@ -27,7 +29,7 @@ contains
         ! Measure performance
         call system_clock(start_time, count_rate)
         call reporter%generate_report(large_dataset, "test_large.json", &
-                                     error_flag, .false.)
+                                     gen_success, error_msg)
         call system_clock(end_time)
         
         ! Calculate elapsed time
@@ -40,7 +42,7 @@ contains
             stop 1
         end if
         
-        if (error_flag) then
+        if (.not. gen_success) then
             write(*,*) "FAIL: Large dataset generation failed"
             stop 1
         end if
@@ -52,6 +54,8 @@ contains
         type(json_reporter_t) :: reporter
         type(coverage_data_t) :: dataset
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         integer :: i
         
         write(*,*) "Testing memory efficiency with repeated calls..."
@@ -60,8 +64,8 @@ contains
         do i = 1, 100
             call create_large_dataset(dataset, 10, 100)
             call reporter%generate_report(dataset, "test_memory.json", &
-                                         error_flag, .false.)
-            if (error_flag) then
+                                         gen_success, error_msg)
+            if (.not. gen_success) then
                 write(*,*) "FAIL: Memory efficiency test failed at iteration", i
                 stop 1
             end if
