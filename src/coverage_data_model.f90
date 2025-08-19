@@ -125,6 +125,7 @@ module coverage_data_model
         procedure :: get_total_lines => data_get_total_lines
         procedure :: get_covered_lines => data_get_covered_lines
         procedure :: init => data_init
+        procedure :: serialize => data_serialize
     end type coverage_data_t
     
     ! coverage_stats_t moved to coverage_statistics module to avoid duplication
@@ -599,5 +600,52 @@ contains
         end select
         
     end subroutine line_diff_init
+    
+    ! Serialize coverage data to JSON-like string format
+    function data_serialize(this) result(serialized)
+        class(coverage_data_t), intent(in) :: this
+        character(len=:), allocatable :: serialized
+        character(len=:), allocatable :: files_json
+        integer :: i, j
+        
+        ! Start JSON object
+        serialized = '{"files":['
+        files_json = ''
+        
+        ! Serialize files
+        if (allocated(this%files)) then
+            do i = 1, size(this%files)
+                if (i > 1) files_json = files_json // ','
+                
+                files_json = files_json // '{"filename":"' // this%files(i)%filename // '"'
+                files_json = files_json // ',"lines":['
+                
+                ! Serialize lines
+                if (allocated(this%files(i)%lines)) then
+                    do j = 1, size(this%files(i)%lines)
+                        if (j > 1) files_json = files_json // ','
+                        files_json = files_json // '{"line_number":' // &
+                            trim(adjustl(int_to_string(this%files(i)%lines(j)%line_number))) // &
+                            ',"execution_count":' // &
+                            trim(adjustl(int_to_string(this%files(i)%lines(j)%execution_count))) // '}'
+                    end do
+                end if
+                
+                files_json = files_json // ']}'
+            end do
+        end if
+        
+        serialized = serialized // files_json // ']}'
+    end function data_serialize
+    
+    ! Utility function to convert integer to string
+    function int_to_string(int_val) result(str_val)
+        integer, intent(in) :: int_val
+        character(len=:), allocatable :: str_val
+        character(len=20) :: temp_str
+        
+        write(temp_str, '(I0)') int_val
+        str_val = trim(adjustl(temp_str))
+    end function int_to_string
     
 end module coverage_data_model
