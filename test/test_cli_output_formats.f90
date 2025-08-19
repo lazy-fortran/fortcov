@@ -67,7 +67,7 @@ contains
         config%output_format = "json"
         
         ! When: Validate config
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         
         ! Then: Should not have validation error
         call assert(error_ctx%error_code == ERROR_SUCCESS, &
@@ -89,7 +89,7 @@ contains
         config%output_format = "xml"
         
         ! When: Validate config
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         
         ! Then: Should not have validation error
         call assert(error_ctx%error_code == ERROR_SUCCESS, &
@@ -111,7 +111,7 @@ contains
         config%output_format = "markdown"
         
         ! When: Validate config
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         
         ! Then: Should not have validation error
         call assert(error_ctx%error_code == ERROR_SUCCESS, &
@@ -133,7 +133,7 @@ contains
         config%output_format = "md"
         
         ! When: Validate config
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         
         ! Then: Should not have validation error
         call assert(error_ctx%error_code == ERROR_SUCCESS, &
@@ -251,7 +251,7 @@ contains
         config%output_format = "html"
         
         ! When: Validate config
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         
         ! Then: Should not have validation error
         call assert(error_ctx%error_code == ERROR_SUCCESS, &

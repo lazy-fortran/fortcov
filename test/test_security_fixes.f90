@@ -227,7 +227,7 @@ contains
         ! Test malicious gcov executable should be rejected
         call initialize_config(config)
         config%gcov_executable = "gcov; rm -rf /"
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         if (error_ctx%error_code == ERROR_SUCCESS) then
             print *, "    FAIL: Malicious gcov executable should be rejected"
             failed_tests = failed_tests + 1
@@ -239,7 +239,7 @@ contains
         ! Test invalid coverage threshold should be rejected
         call initialize_config(config)
         config%minimum_coverage = -10.0
-        call validate_config(config, error_ctx)
+        call validate_config_with_context(config, error_ctx)
         if (error_ctx%error_code == ERROR_SUCCESS) then
             print *, "    FAIL: Negative coverage threshold should be rejected"
             failed_tests = failed_tests + 1

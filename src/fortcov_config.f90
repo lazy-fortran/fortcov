@@ -9,6 +9,7 @@ module fortcov_config
     use config_parser
     use config_validator
     use config_storage
+    use error_handling, only: error_context_t, ERROR_SUCCESS, ERROR_INVALID_CONFIG
     implicit none
     private
     
@@ -23,6 +24,9 @@ module fortcov_config
     
     ! Re-export constants for interface compatibility
     integer, parameter, public :: MAX_ARRAY_SIZE = 100
+    
+    ! Additional validation interface for error context
+    public :: validate_config_with_context
     
 contains
     
@@ -64,6 +68,27 @@ contains
         is_valid = validate_complete_config(config)
         
     end function validate_config
+    
+    subroutine validate_config_with_context(config, error_ctx)
+        !! Subroutine interface for validation with error context
+        !! Delegates to config_validator module
+        type(config_t), intent(in) :: config
+        type(error_context_t), intent(out) :: error_ctx
+        
+        logical :: is_valid
+        
+        is_valid = validate_complete_config(config)
+        
+        if (is_valid) then
+            error_ctx%error_code = ERROR_SUCCESS
+            error_ctx%message = ""
+        else
+            error_ctx%error_code = ERROR_INVALID_CONFIG
+            error_ctx%message = "Configuration validation failed"
+            error_ctx%suggestion = "Check configuration parameters"
+        end if
+        
+    end subroutine validate_config_with_context
     
     subroutine load_config_file(config, success, error_message)
         !! Delegates to config_parser module
