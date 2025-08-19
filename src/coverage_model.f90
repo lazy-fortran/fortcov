@@ -447,8 +447,7 @@ contains
         class(coverage_data_t), intent(inout) :: this
         type(coverage_file_t), intent(in), optional :: files(:)
         
-        ! Clean up existing allocation if present
-        if (allocated(this%files)) deallocate(this%files)
+        ! Automatic deallocation on reassignment
         
         if (present(files)) then
             allocate(this%files, source=files)
@@ -524,16 +523,12 @@ contains
         class(coverage_data_t), intent(inout) :: this
         character(len=*), intent(in) :: serialized
         
-        ! Clean up existing allocation if present
-        if (allocated(this%files)) deallocate(this%files)
+        ! Automatic deallocation on reassignment
         
         ! Placeholder implementation: create empty structure
         ! Real implementation would parse the serialized string
         allocate(this%files(0))
         
-        ! Suppress unused variable warning
-        associate(dummy => serialized)
-        end associate
     end subroutine coverage_data_deserialize
 
     ! Line diff constructor
