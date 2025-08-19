@@ -109,7 +109,8 @@ contains
         type(coverage_file_t) :: empty_files(0)
         
         ! Given: Empty coverage data for edge case testing
-        call coverage_data%init(empty_files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=empty_files)
     end function generate_empty_coverage_data
 
     function generate_identical_coverage_data() result(coverage_data)
@@ -183,7 +184,8 @@ contains
                 call lines(j)%init(filename, j, base_coverage, .true.)
             end do
             
-            call files(i)%init(filename, lines)
+            call initialize_coverage_file(files(i), filename)
+            allocate(files(i)%lines, source=lines)
         end do
         
         call initialize_coverage_data(coverage_data)
@@ -223,7 +225,8 @@ contains
                 end if
             end do
             
-            call files(i)%init(filename, lines)
+            call initialize_coverage_file(files(i), filename)
+            allocate(files(i)%lines, source=lines)
         end do
         
         call initialize_coverage_data(coverage_data)
