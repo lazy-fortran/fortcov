@@ -253,6 +253,8 @@ jobs:
 
 ## Integration Examples
 
+**Note**: For comprehensive build system integration examples (FPM, CMake, Meson, Makefiles) and CI/CD workflows, see [examples/build_systems/](examples/build_systems/).
+
 ### Example 1: Multi-Module Scientific Library
 
 **Project structure**:

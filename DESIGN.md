@@ -1007,3 +1007,599 @@ end subroutine
 - **Quality Process Integration**: Documentation validation becomes integral part of development process
 
 **EXPECTED OUTCOME**: Documentation-implementation alignment creates foundation for reliable user experience, establishes automated validation preventing future documentation drift, and transforms documentation from liability into strategic asset for user adoption and technical communication.
+
+## Build System Integration Architecture (Issue #164)
+
+### Real-World Build System Integration Patterns
+
+**Issue Classification**: [TECHNICAL-DEBT] - Architecture documentation gap affecting tool adoption and integration guidance for development teams
+
+**Strategic Architecture Context:**
+The fortcov tool successfully handles coverage analysis but lacks comprehensive documentation of build system integration patterns. This creates adoption barriers for teams using different build systems and deployment scenarios.
+
+#### Current Implementation Analysis
+
+**Observed Build Directory Structure Pattern:**
+```
+fortcov/
+├── src/                          # Source code
+├── build/                        # FPM build artifacts
+│   ├── gfortran_*/              # Compiler-specific build directories  
+│   │   └── fortcov/             # Coverage data files (.gcno/.gcda)
+│   └── dependencies/            # External dependencies
+├── *.gcov                       # Generated coverage files (project root)
+├── fpm.toml                     # FPM project configuration
+└── README.md                    # User documentation
+```
+
+**Coverage File Discovery Implementation:**
+- **Priority 1**: Search current directory for `.gcov` files
+- **Priority 2**: Search specified `--source` paths for `.gcov` files
+- **Build Integration**: Expects `.gcov` files in accessible locations (not `.gcno/.gcda` files)
+- **Performance Pattern**: O(n) file discovery with pre-allocation (Issue #124 optimization)
+
+### Multi-Build System Architecture Strategy
+
+#### 1. Fortran Package Manager (FPM) Integration
+
+**Current FPM Configuration Analysis:**
+```toml
+name = "fortcov"
+version = "0.1.0"
+[build]
+auto-executables = true
+auto-tests = true
+auto-examples = true
+[fortran]
+implicit-typing = false
+implicit-external = false
+source-form = "free"
+```
+
+**FPM Coverage Integration Patterns:**
+
+**Pattern 1: Standard FPM + gcov Workflow**
+```bash
+# Generate coverage instrumentation
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+
+# Extract coverage data from build directories
+gcov src/*.f90
+
+# Analyze with fortcov
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+```
+
+**Pattern 2: Build-Integrated Coverage Discovery**
+```bash
+# Alternative workflow for nested build structures
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+find build -name "*.gcda" -path "*/fortcov/*" -execdir gcov {} \;
+find build -name "*.gcov" -exec cp {} . \;
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+```
+
+**Pattern 3: In-Place Build Directory Analysis**
+```bash
+# Direct analysis of build directory coverage
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+fortcov --source="build/gfortran_*/fortcov" --output=coverage.md
+```
+
+#### 2. CMake Integration Architecture
+
+**CMake-codecov Pattern Integration:**
+Based on RWTH-HPC/CMake-codecov best practices and ukaea/fortran-skeleton patterns.
+
+**CMake Configuration Pattern:**
+```cmake
+# Enable coverage support
+find_package(codecov)
+
+# Mark targets for coverage
+add_coverage(fortran_target)
+
+# Configure build types
+set(CMAKE_Fortran_FLAGS_TESTING "-g -O0 -fprofile-arcs -ftest-coverage")
+set(CMAKE_Fortran_FLAGS_DEBUG "-g -O0")
+set(CMAKE_Fortran_FLAGS_RELEASE "-O3")
+
+# Integration with fortcov
+add_custom_target(fortcov_report
+    COMMAND gcov ${CMAKE_BINARY_DIR}/CMakeFiles/fortran_target.dir/*.gcno
+    COMMAND fortcov --source=${CMAKE_SOURCE_DIR} --output=coverage.html
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    DEPENDS fortran_target
+)
+```
+
+**CMake Workflow Integration:**
+```bash
+# Configure with coverage
+cmake -DCMAKE_BUILD_TYPE=Testing -DENABLE_COVERAGE=On ..
+
+# Build and test
+make && make test
+
+# Generate coverage report
+make fortcov_report
+```
+
+#### 3. Traditional Makefile Integration
+
+**Makefile Coverage Pattern:**
+```makefile
+# Coverage compilation flags
+COVERAGE_FLAGS = -fprofile-arcs -ftest-coverage
+FORTRAN_FLAGS = $(COVERAGE_FLAGS) -g -O0
+
+# Coverage target
+coverage: test
+	gcov $(SOURCES)
+	fortcov --source=. --exclude=*.o,*.mod --output=coverage.html
+
+clean-coverage:
+	rm -f *.gcov *.gcda *.gcno
+
+.PHONY: coverage clean-coverage
+```
+
+#### 4. Meson Integration Architecture
+
+**Meson Configuration Pattern:**
+```meson
+# meson.build
+project('fortran_project', 'fortran')
+
+# Coverage configuration
+if get_option('coverage')
+    add_project_arguments('-fprofile-arcs', '-ftest-coverage', language: 'fortran')
+    add_project_link_arguments('-lgcov', language: 'fortran')
+endif
+
+# Custom target for coverage analysis
+fortcov = find_program('fortcov', required: false)
+if fortcov.found()
+    run_target('coverage',
+        command: [find_program('bash'), '-c', 
+                 'gcov @0@/*.f90 && fortcov --source=@0@ --output=coverage.html'.format(meson.source_root())]
+    )
+endif
+```
+
+### Deployment and CI/CD Integration Patterns
+
+#### 1. GitHub Actions Integration
+
+**Comprehensive GitHub Actions Workflow:**
+```yaml
+name: Coverage Analysis
+on: [push, pull_request]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Fortran
+      uses: fortran-lang/setup-fortran@v1
+      with:
+        compiler: gfortran
+        version: 13
+    
+    - name: Install FPM
+      uses: fortran-lang/setup-fpm@v5
+      
+    - name: Build with coverage
+      run: |
+        fpm test --flag "-fprofile-arcs -ftest-coverage"
+        
+    - name: Generate coverage data
+      run: |
+        # Extract coverage from build directories if needed
+        find build -name "*.gcda" -path "*/fortcov/*" -execdir gcov {} \; || true
+        # Standard source coverage
+        gcov src/*.f90 || true
+        
+    - name: Generate coverage report
+      run: |
+        fpm run fortcov -- --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
+        
+    - name: Upload coverage
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.md
+```
+
+#### 2. GitLab CI Integration
+
+**GitLab CI Coverage Pipeline:**
+```yaml
+# .gitlab-ci.yml
+stages:
+  - build
+  - test
+  - coverage
+
+variables:
+  COVERAGE_FLAGS: "-fprofile-arcs -ftest-coverage"
+
+coverage:
+  stage: coverage
+  image: fortran/gfortran:latest
+  script:
+    - fpm test --flag "$COVERAGE_FLAGS"
+    - gcov src/*.f90
+    - fpm run fortcov -- --source=. --exclude='build/*' --output=coverage.html
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+    paths:
+      - coverage.html
+  coverage: '/Total coverage: (\d+\.\d+)%/'
+```
+
+#### 3. Jenkins Integration
+
+**Jenkins Pipeline Pattern:**
+```groovy
+pipeline {
+    agent any
+    
+    stages {
+        stage('Build with Coverage') {
+            steps {
+                sh 'fpm test --flag "-fprofile-arcs -ftest-coverage"'
+            }
+        }
+        
+        stage('Generate Coverage') {
+            steps {
+                sh 'gcov src/*.f90'
+                sh 'fpm run fortcov -- --source=. --exclude="build/*" --output=coverage.html'
+            }
+        }
+        
+        stage('Publish Coverage') {
+            steps {
+                publishHTML([
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: '.',
+                    reportFiles: 'coverage.html',
+                    reportName: 'Coverage Report'
+                ])
+            }
+        }
+    }
+}
+```
+
+### Container and HPC Integration Architecture
+
+#### 1. Docker Integration Patterns
+
+**Multi-Stage Docker Build with Coverage:**
+```dockerfile
+FROM fortran/gfortran:latest as builder
+
+# Install FPM
+RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux-x86_64 -o /usr/local/bin/fpm \
+    && chmod +x /usr/local/bin/fpm
+
+WORKDIR /app
+COPY . .
+
+# Build with coverage
+RUN fpm test --flag "-fprofile-arcs -ftest-coverage"
+RUN gcov src/*.f90
+RUN fpm run fortcov -- --source=. --output=coverage.html
+
+# Production stage
+FROM alpine:latest
+COPY --from=builder /app/coverage.html /coverage/
+EXPOSE 8080
+CMD ["python3", "-m", "http.server", "8080", "--directory", "/coverage"]
+```
+
+#### 2. HPC Module System Integration
+
+**Environment Module Pattern:**
+```bash
+#!/bin/bash
+# fortcov-coverage.sh - HPC module script
+
+module load gcc/13.2.0
+module load cmake/3.25.0
+
+# Set coverage environment
+export FCFLAGS="-fprofile-arcs -ftest-coverage"
+export LDFLAGS="-lgcov"
+
+# Build and analyze
+make clean && make test
+gcov src/*.f90
+fortcov --source=src --exclude='*test*' --output=coverage-$(date +%Y%m%d).html
+```
+
+**SLURM Job Integration:**
+```bash
+#!/bin/bash
+#SBATCH --job-name=fortcov-coverage
+#SBATCH --ntasks=1
+#SBATCH --time=00:30:00
+#SBATCH --partition=testing
+
+module load fortran-coverage-tools
+
+# Run coverage analysis
+srun fpm test --flag "-fprofile-arcs -ftest-coverage"
+srun gcov src/*.f90  
+srun fortcov --source=. --output=coverage-${SLURM_JOB_ID}.html
+
+# Copy results to shared storage
+cp coverage-${SLURM_JOB_ID}.html /shared/coverage-reports/
+```
+
+### IDE Integration Architecture
+
+#### 1. Visual Studio Code Integration
+
+**VS Code Tasks Configuration (.vscode/tasks.json):**
+```json
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "FPM Coverage Build",
+            "type": "shell",
+            "command": "fpm",
+            "args": ["test", "--flag", "-fprofile-arcs -ftest-coverage"],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "Generate Coverage Report",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "gcov src/*.f90 && fpm run fortcov -- --source=. --output=coverage.html && code coverage.html"
+            ],
+            "dependsOn": "FPM Coverage Build",
+            "group": "test"
+        }
+    ]
+}
+```
+
+#### 2. CLion Integration
+
+**CMake Configuration for CLion:**
+```cmake
+# Add coverage configuration
+set(CMAKE_CXX_FLAGS_COVERAGE "-g -O0 -fprofile-arcs -ftest-coverage")
+set(CMAKE_Fortran_FLAGS_COVERAGE "-g -O0 -fprofile-arcs -ftest-coverage")
+set(CMAKE_EXE_LINKER_FLAGS_COVERAGE "-lgcov")
+
+# Custom target for CLion integration
+add_custom_target(coverage_report
+    COMMAND gcov ${CMAKE_BINARY_DIR}/*.gcno
+    COMMAND fortcov --source=${CMAKE_SOURCE_DIR} --output=coverage.html
+    COMMAND xdg-open coverage.html
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    COMMENT "Generating coverage report"
+)
+```
+
+### Advanced Integration Patterns
+
+#### 1. Parallel Coverage Analysis
+
+**MPI-Aware Coverage Collection:**
+```bash
+#!/bin/bash
+# mpi-coverage.sh - Parallel coverage collection
+
+mpirun -np 4 ./fortran_mpi_test
+
+# Collect coverage from all ranks
+for rank in {0..3}; do
+    gcov -o rank_${rank} src/*.f90
+    mv *.gcov coverage_rank_${rank}/
+done
+
+# Merge coverage data
+fortcov --source=coverage_rank_* --output=mpi_coverage.html
+```
+
+#### 2. Cross-Platform Coverage
+
+**Multi-Compiler Coverage Matrix:**
+```yaml
+# GitHub Actions matrix strategy
+strategy:
+  matrix:
+    compiler: [gfortran, ifort, flang]
+    os: [ubuntu-latest, macos-latest]
+    exclude:
+      - os: macos-latest
+        compiler: ifort  # Intel Fortran not available on macOS
+        
+steps:
+  - name: Generate Coverage (${{ matrix.compiler }})
+    run: |
+      export FC=${{ matrix.compiler }}
+      fpm test --flag "-fprofile-arcs -ftest-coverage"
+      gcov src/*.f90
+      fortcov --source=. --output=coverage-${{ matrix.compiler }}-${{ matrix.os }}.html
+```
+
+### Performance and Scalability Architecture
+
+#### 1. Large Project Coverage Strategies
+
+**Incremental Coverage Analysis:**
+```bash
+#!/bin/bash
+# incremental-coverage.sh - For large codebases
+
+# Only analyze changed files
+GIT_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep '\.f90$')
+
+if [ -n "$GIT_CHANGED" ]; then
+    # Generate coverage for changed files only
+    for file in $GIT_CHANGED; do
+        gcov "$file"
+    done
+    
+    fortcov --source=. --include="$(echo $GIT_CHANGED | tr ' ' ',')" --output=incremental_coverage.html
+else
+    echo "No Fortran files changed"
+fi
+```
+
+#### 2. Memory-Efficient Coverage Processing
+
+**Streaming Coverage Analysis:**
+```bash
+#!/bin/bash
+# streaming-coverage.sh - Memory-efficient for large projects
+
+# Process coverage in batches to avoid memory issues
+find src -name "*.f90" | split -l 50 - batch_
+
+for batch_file in batch_*; do
+    while IFS= read -r fortran_file; do
+        gcov "$fortran_file"
+    done < "$batch_file"
+    
+    fortcov --source=. --output="coverage_$(basename $batch_file).json"
+    
+    # Clean up intermediate files
+    rm -f *.gcov
+done
+
+# Merge batch results
+fortcov --import="coverage_batch_*.json" --output=final_coverage.html
+
+# Cleanup
+rm -f batch_* coverage_batch_*.json
+```
+
+### Integration Risk Assessment and Mitigation
+
+#### Technical Risk Analysis
+
+**Risk: Build System Diversity Creates Integration Complexity**
+- **Impact**: Different flag syntax, different output locations, different toolchain integration
+- **Mitigation**: Standardized wrapper scripts and detection patterns
+- **Architecture Solution**: Build system detection and auto-configuration
+
+**Risk: Coverage Data Location Variability**
+- **Impact**: Tool cannot find coverage files in diverse build environments  
+- **Mitigation**: Comprehensive search strategy with fallback patterns
+- **Architecture Solution**: Configurable search paths with intelligent defaults
+
+**Risk: Compiler-Specific Coverage Format Differences**
+- **Impact**: Different compilers generate different coverage data formats
+- **Mitigation**: Multi-compiler testing and format normalization
+- **Architecture Solution**: Compiler detection and format adaptation layer
+
+#### Quality Risk Analysis
+
+**Risk: Integration Documentation Becomes Outdated**
+- **Impact**: New build system versions break documented workflows
+- **Mitigation**: Automated integration testing and documentation validation
+- **Architecture Solution**: CI/CD testing of documented integration patterns
+
+**Risk: Performance Degradation in Complex Build Environments**
+- **Impact**: Coverage analysis becomes bottleneck in large projects
+- **Mitigation**: Incremental analysis and streaming processing patterns
+- **Architecture Solution**: Performance monitoring and optimization triggers
+
+### Success Metrics and Quality Gates
+
+#### Integration Success Metrics
+- **Build System Coverage**: Support for 95% of common Fortran build systems (FPM, CMake, Make, Meson)
+- **CI/CD Integration**: Validated workflows for 3+ major CI/CD platforms
+- **Documentation Accuracy**: 100% of documented integration patterns tested automatically
+- **Performance Targets**: <10% overhead for coverage instrumentation, <5 minutes analysis time for typical projects
+
+#### Architecture Quality Metrics
+- **Integration Flexibility**: Single tool works across diverse build environments without modification
+- **Error Recovery**: Clear guidance when automatic detection fails
+- **Scalability**: Linear performance scaling with project size
+- **Maintainability**: Integration patterns remain stable across tool updates
+
+### Strategic Innovation Opportunities
+
+#### Next-Generation Integration Features
+
+**1. Automatic Build System Detection**
+```fortran
+! Future enhancement: build_system_detector.f90
+module build_system_detector
+contains
+    function detect_build_system() result(build_type)
+        ! Analyze project structure and auto-configure
+        ! - Check for fpm.toml → FPM integration
+        ! - Check for CMakeLists.txt → CMake integration  
+        ! - Check for Makefile → Make integration
+        ! - Check for meson.build → Meson integration
+    end function
+end module
+```
+
+**2. Plugin Architecture for Build Systems**
+```fortran
+! Future enhancement: extensible build system plugins
+module build_system_plugins
+contains
+    ! Plugin interface for custom build system integration
+    type, abstract :: build_system_plugin_t
+    contains
+        procedure(detect_interface), deferred :: detect
+        procedure(configure_interface), deferred :: configure_coverage
+        procedure(extract_interface), deferred :: extract_coverage_data
+    end type
+end module
+```
+
+**3. Smart Coverage Optimization**
+```fortran
+! Future enhancement: intelligent coverage optimization
+module smart_coverage_optimizer
+contains
+    ! Analyze project patterns and optimize coverage workflow
+    ! - Detect incremental changes for targeted analysis
+    ! - Optimize coverage flags for build system
+    ! - Cache coverage data for faster subsequent runs
+end module
+```
+
+### Long-Term Strategic Benefits
+
+#### Development Ecosystem Integration
+- **Standardization**: Common coverage analysis across all Fortran build systems
+- **Adoption Acceleration**: Reduced barriers to coverage analysis adoption
+- **Quality Improvement**: Consistent coverage practices across diverse projects
+- **Performance Optimization**: Build system-specific optimizations for maximum efficiency
+
+#### Architectural Foundation Benefits
+- **Future-Proofing**: Extensible architecture adapts to new build systems
+- **Cross-Platform Consistency**: Uniform coverage experience across platforms
+- **Integration Ecosystem**: Foundation for advanced analysis and reporting tools
+- **Community Contribution**: Architecture enables community-driven build system plugins
+
+**EXPECTED OUTCOME**: Comprehensive build system integration architecture transforms fortcov from standalone tool into ecosystem-integrated solution, enabling seamless coverage analysis across all major Fortran development environments while establishing foundation for next-generation coverage optimization and automation capabilities.
