@@ -93,7 +93,9 @@ module coverage_data_model
         procedure :: get_line_coverage => file_get_line_coverage
         procedure :: get_branch_coverage => file_get_branch_coverage
         procedure :: get_function_coverage => file_get_function_coverage
-        procedure :: init => file_init
+        procedure :: file_init_simple
+        procedure :: file_init_with_lines
+        generic :: init => file_init_simple, file_init_with_lines
     end type coverage_file_t
     
     ! Compatible file coverage type for JSON I/O
@@ -165,7 +167,7 @@ module coverage_data_model
     
     ! Generic interfaces for overloaded procedures
     interface
-        module subroutine file_init(this, filename)
+        module subroutine file_init_simple(this, filename)
             class(coverage_file_t), intent(out) :: this
             character(len=*), intent(in) :: filename
         end subroutine
@@ -480,7 +482,7 @@ contains
         
     end function file_get_function_coverage
     
-    module subroutine file_init(this, filename)
+    module subroutine file_init_simple(this, filename)
         class(coverage_file_t), intent(out) :: this
         character(len=*), intent(in) :: filename
         
@@ -489,7 +491,7 @@ contains
         this%covered_lines = 0
         this%line_coverage = 0.0
         
-    end subroutine file_init
+    end subroutine file_init_simple
     
     module subroutine file_init_with_lines(this, filename, lines)
         class(coverage_file_t), intent(out) :: this
