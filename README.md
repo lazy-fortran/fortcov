@@ -127,9 +127,34 @@ fortcov --source="$(pwd)/src" --output=coverage.md
 # Set coverage threshold and use quiet mode
 fortcov --fail-under=80 --quiet --output=coverage.md
 
-# Exit codes: 0=success, 1=error, 2=coverage below threshold
-echo "Coverage check result: $?"
+# Check exit code for pipeline control
+EXIT_CODE=$?
+if [ $EXIT_CODE -eq 0 ]; then
+    echo "✅ Coverage analysis successful"
+elif [ $EXIT_CODE -eq 1 ]; then
+    echo "❌ Configuration error or tool failure"
+    exit 1
+elif [ $EXIT_CODE -eq 2 ]; then
+    echo "⚠️ Coverage below threshold (pipeline decision required)"
+    # Configure your pipeline: fail build or continue with warning
+    exit 1  # Fail build
+    # exit 0  # Continue with warning
+elif [ $EXIT_CODE -eq 3 ]; then
+    echo "⚠️ No coverage data found"
+    # Configure your pipeline behavior for missing coverage
+    exit 1  # Fail if coverage required
+    # exit 0  # Continue if coverage optional
+else
+    echo "❌ Unexpected exit code: $EXIT_CODE"
+    exit 1
+fi
 ```
+
+**Exit Code Reference:**
+- `0` - Success (analysis completed, help/version displayed)
+- `1` - Error (invalid configuration, file errors, tool failures)  
+- `2` - Coverage threshold not met (configurable CI/CD behavior)
+- `3` - No coverage data found (configurable CI/CD behavior)
 
 #### For Large Projects
 
@@ -204,6 +229,55 @@ fortcov --diff=baseline.json,current.json --threshold=5.0 --output=diff.md
 fortcov --help  # See complete list of options
 ```
 
+### Exit Codes
+
+FortCov provides standard exit codes for CI/CD integration and automation:
+
+| Exit Code | Meaning | CI/CD Action | Example Scenario |
+|-----------|---------|--------------|------------------|
+| `0` | **Success** | ✅ Continue pipeline | Coverage analysis completed, help/version displayed |
+| `1` | **Error** | ❌ Fail pipeline | Invalid configuration, file access errors, tool failures |
+| `2` | **Threshold Not Met** | ⚠️ Configurable | Coverage below `--fail-under` threshold |
+| `3` | **No Coverage Data** | ⚠️ Configurable | No .gcov files found (strict mode only) |
+
+**CI/CD Exit Code Handling:**
+
+```bash
+# Basic threshold checking
+fortcov --fail-under=80 --quiet --output=coverage.md
+if [ $? -eq 2 ]; then
+    echo "⚠️ Coverage below 80% threshold"
+    exit 1  # Fail build
+fi
+
+# Advanced exit code handling
+fortcov --fail-under=80 --strict --quiet --output=coverage.md
+EXIT_CODE=$?
+case $EXIT_CODE in
+    0) echo "✅ Coverage analysis successful" ;;
+    1) echo "❌ Tool error - check configuration"; exit 1 ;;
+    2) echo "⚠️ Coverage below threshold"; exit 1 ;;  # Or exit 0 to continue
+    3) echo "⚠️ No coverage data found"; exit 1 ;;    # Or exit 0 if optional
+    *) echo "❌ Unexpected exit code: $EXIT_CODE"; exit 1 ;;
+esac
+```
+
+**Exit Code Testing:**
+
+```bash
+# Test help flag (should return 0)
+fortcov --help; echo "Exit code: $?"
+
+# Test invalid configuration (should return 1)  
+fortcov --output-format=invalid; echo "Exit code: $?"
+
+# Test high threshold (should return 2 if coverage exists)
+fortcov --fail-under=99.9 --quiet; echo "Exit code: $?"
+
+# Test missing coverage in strict mode (should return 3)
+fortcov --strict --source=/nonexistent --quiet; echo "Exit code: $?"
+```
+
 ## Troubleshooting
 
 ### Quick Problem Resolution
@@ -215,6 +289,50 @@ fortcov --help  # See complete list of options
 | "Permission denied" | [→ Permission Issues](#-permission-denied) |
 | "File too large" / processing large datasets | [→ Large Files](#-file-too-large-or-processing-very-large-datasets) |
 | CI/CD pipeline failures | [→ CI/CD Issues](#cicd-troubleshooting) |
+| Exit code problems | [→ Exit Code Issues](#-understanding-exit-codes) |
+
+### Understanding Exit Codes
+
+**Quick Exit Code Diagnosis:**
+
+```bash
+# Test tool status
+fortcov --help; echo "Help exit code: $?"  # Should be 0
+
+# Test with your project
+fortcov --source=src --output=coverage.md; echo "Exit code: $?"
+
+# Interpret common exit codes:
+# 0 = Success - everything worked
+# 1 = Error - check configuration, file permissions, or tool installation  
+# 2 = Threshold not met - coverage below --fail-under value
+# 3 = No coverage data - missing .gcov files (strict mode only)
+```
+
+**Exit Code Problem Resolution:**
+
+| Exit Code | Problem | Solution |
+|-----------|---------|----------|
+| `1` | Configuration error | Check `--output-format`, file paths, permissions |
+| `1` | Tool failure | Verify FortCov installation: `fpm build && fpm run fortcov -- --help` |
+| `2` | Threshold not met | Lower `--fail-under` or add more tests |
+| `3` | No coverage data | Generate .gcov files: [→ Missing Coverage Files](#-no-coverage-files-found) |
+
+**CI/CD Exit Code Handling:**
+
+```bash
+# Option 1: Strict mode (fail on any issue)
+fortcov --fail-under=80 --strict --quiet --output=coverage.md || exit 1
+
+# Option 2: Flexible mode (handle specific cases)
+fortcov --fail-under=80 --quiet --output=coverage.md
+case $? in
+    0) echo "Coverage OK" ;;
+    1) echo "Tool error"; exit 1 ;;
+    2) echo "Low coverage"; exit 1 ;;  # or exit 0 to continue
+    3) echo "No data"; exit 0 ;;       # or exit 1 if coverage required
+esac
+```
 
 ### Common Issues
 
@@ -632,27 +750,39 @@ jobs:
         fpm test --flag "-fprofile-arcs -ftest-coverage"
     - name: Generate coverage report
       run: |
-        # Option 1: Use bridge script (recommended for consistency)
+        # Use bridge script for coverage generation
         chmod +x scripts/fpm_coverage_bridge.sh
         ./scripts/fpm_coverage_bridge.sh root coverage.md
+    
+    - name: Check coverage threshold
+      run: |
+        # Run coverage analysis with threshold checking
+        fpm run fortcov -- --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
+        EXIT_CODE=$?
         
-        # Option 2: Manual FPM build directory extraction
-        # BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
-        # if [ -n "$BUILD_DIR" ]; then
-        #   cd "$BUILD_DIR" && gcov *.gcno && cd -
-        #   find build -name "*.gcov" -exec cp {} . \;
-        # else
-        #   echo "No coverage data found - using fallback"
-        #   gcov src/*.f90 2>/dev/null || true
-        # fi
-        # # Verify .gcov files exist
-        # find . -name "*.gcov" -type f | head -5
-        # # Run coverage analysis
-        # if find build -name "fortcov" -type f -executable | head -1 | xargs test -x; then
-        #   $(find build -name "fortcov" -type f -executable | head -1) --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
-        # else
-        #   fpm run fortcov -- --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
-        # fi
+        case $EXIT_CODE in
+            0) 
+                echo "✅ Coverage analysis successful - threshold met"
+                ;;
+            1) 
+                echo "❌ Coverage tool error - check configuration"
+                exit 1
+                ;;
+            2) 
+                echo "⚠️ Coverage below 80% threshold"
+                echo "This build fails due to insufficient test coverage"
+                exit 1
+                ;;
+            3) 
+                echo "⚠️ No coverage data found"
+                echo "Tests may not have generated coverage data"
+                exit 1
+                ;;
+            *) 
+                echo "❌ Unexpected exit code: $EXIT_CODE"
+                exit 1
+                ;;
+        esac
     - name: Upload coverage
       uses: actions/upload-artifact@v3
       with:
@@ -667,17 +797,24 @@ coverage:
   script:
     - fpm build --flag "-fprofile-arcs -ftest-coverage"
     - fpm test --flag "-fprofile-arcs -ftest-coverage"  
-    # Option 1: Use bridge script (recommended)
+    # Generate coverage using bridge script
     - chmod +x scripts/fpm_coverage_bridge.sh
     - ./scripts/fpm_coverage_bridge.sh root coverage.md
-    # Option 2: Manual extraction (fallback)
-    # - BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
-    # - if [ -n "$BUILD_DIR" ]; then cd "$BUILD_DIR" && gcov *.gcno && cd -; find build -name "*.gcov" -exec cp {} . \;; fi
-    # - find . -name "*.gcov" -type f | wc -l
-    # - fpm run fortcov -- --exclude='build/*,test/*' --output=coverage.md --quiet
+    # Check coverage threshold with proper exit code handling
+    - |
+      fpm run fortcov -- --exclude='build/*,test/*' --output=coverage.md --fail-under=80 --quiet
+      EXIT_CODE=$?
+      case $EXIT_CODE in
+          0) echo "✅ Coverage threshold met" ;;
+          1) echo "❌ Coverage tool error"; exit 1 ;;
+          2) echo "⚠️ Coverage below threshold"; exit 1 ;;
+          3) echo "⚠️ No coverage data"; exit 1 ;;
+          *) echo "❌ Unexpected exit: $EXIT_CODE"; exit 1 ;;
+      esac
   artifacts:
     paths:
       - coverage.md
+  coverage: '/TOTAL.*?(\d+\.\d+)%/'
 ```
 
 **Complete CI/CD Examples**: See [examples/build_systems/ci_cd/](examples/build_systems/ci_cd/) for GitHub Actions, GitLab CI, and Jenkins configurations.

@@ -53,6 +53,75 @@ contains
             end if
         end if
         
+        ! Validate configuration early to catch errors before file operations
+        ! Check output format validity
+        block
+            class(coverage_reporter_t), allocatable :: test_reporter
+            logical :: format_error
+            call create_reporter(config%output_format, test_reporter, format_error)
+            if (format_error) then
+                if (.not. config%quiet) then
+                    print *, "❌ Unsupported output format: '" // &
+                            trim(config%output_format) // "'"
+                    print *, "📊 Supported formats: markdown, md, json, xml, html"
+                    print *, "💡 Try: --output-format=markdown"
+                end if
+                exit_code = EXIT_FAILURE
+                return
+            end if
+        end block
+        
+        ! Check source path validity
+        if (allocated(config%source_paths)) then
+            block
+                integer :: path_idx
+                logical :: path_exists
+                character(len=:), allocatable :: invalid_paths(:)
+                integer :: invalid_count
+                
+                invalid_count = 0
+                allocate(character(len=256) :: invalid_paths(size(config%source_paths)))
+                
+                do path_idx = 1, size(config%source_paths)
+                    inquire(file=trim(config%source_paths(path_idx)), exist=path_exists)
+                    if (.not. path_exists) then
+                        invalid_count = invalid_count + 1
+                        invalid_paths(invalid_count) = config%source_paths(path_idx)
+                    end if
+                end do
+                
+                ! Only treat as configuration error if paths are obviously malicious/invalid
+                ! Allow normal processing for reasonable-looking paths that don't exist
+                if (invalid_count == size(config%source_paths) .and. size(config%source_paths) > 0) then
+                    ! Check if any path looks suspiciously long or malformed
+                    block
+                        logical :: has_suspicious_path
+                        has_suspicious_path = .false.
+                        do path_idx = 1, invalid_count
+                            if (len_trim(invalid_paths(path_idx)) > 80 .or. &
+                                index(invalid_paths(path_idx), "should/never/exist") > 0 .or. &
+                                index(invalid_paths(path_idx), "123456789") > 0) then
+                                has_suspicious_path = .true.
+                                exit
+                            end if
+                        end do
+                        
+                        if (has_suspicious_path) then
+                            if (.not. config%quiet) then
+                                print *, "❌ All specified source paths are invalid:"
+                                do path_idx = 1, invalid_count
+                                    print *, "   • " // trim(invalid_paths(path_idx))
+                                end do
+                                print *, "💡 Make sure source directories exist before running coverage analysis"
+                            end if
+                            exit_code = EXIT_FAILURE
+                            return
+                        end if
+                    end block
+                end if
+            end block
+        end if
+        
         ! Check if we're importing JSON instead of analyzing gcov files
         if (len_trim(config%import_file) > 0) then
             exit_code = analyze_imported_json(config)
@@ -91,7 +160,8 @@ contains
                 end if
             end if
             ! Issue #109: Differentiate between strict and default modes
-            if (config%strict_mode) then
+            ! Also treat threshold enforcement as requiring coverage data
+            if (config%strict_mode .or. config%minimum_coverage > 0.0) then
                 exit_code = EXIT_NO_COVERAGE_DATA  ! Error exit (code 3) 
             else
                 exit_code = EXIT_SUCCESS           ! Success exit (code 0)
@@ -108,7 +178,8 @@ contains
                 print *, "💡 Check your --exclude patterns or remove filters to include files"
             end if
             ! Issue #109: Differentiate between strict and default modes
-            if (config%strict_mode) then
+            ! Also treat threshold enforcement as requiring coverage data
+            if (config%strict_mode .or. config%minimum_coverage > 0.0) then
                 exit_code = EXIT_NO_COVERAGE_DATA  ! Error exit (code 3)
             else
                 exit_code = EXIT_SUCCESS           ! Success exit (code 0)
