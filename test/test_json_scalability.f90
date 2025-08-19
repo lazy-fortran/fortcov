@@ -73,7 +73,8 @@ contains
     subroutine test_linear_scaling()
         type(json_reporter_t) :: reporter
         type(coverage_data_t) :: dataset
-        logical :: error_flag
+        logical :: success
+        character(len=:), allocatable :: error_msg
         integer :: start_time, end_time, count_rate
         real :: time_100, time_1000, scaling_factor
         
@@ -82,11 +83,11 @@ contains
         ! Test with 100 files, 100 lines each
         call create_large_dataset(dataset, 100, 100)
         call system_clock(start_time, count_rate)
-        call reporter%generate_report(dataset, "test_100.json", error_flag, .false.)
+        call reporter%generate_report(dataset, "test_100.json", success, error_msg)
         call system_clock(end_time)
         time_100 = real(end_time - start_time) / real(count_rate)
         
-        if (error_flag) then
+        if (.not. success) then
             write(*,*) "FAIL: Small dataset test failed"
             stop 1
         end if
@@ -94,11 +95,11 @@ contains
         ! Test with 1000 files, 100 lines each (10x more data)
         call create_large_dataset(dataset, 1000, 100)
         call system_clock(start_time, count_rate)
-        call reporter%generate_report(dataset, "test_1000.json", error_flag, .false.)
+        call reporter%generate_report(dataset, "test_1000.json", success, error_msg)
         call system_clock(end_time)
         time_1000 = real(end_time - start_time) / real(count_rate)
         
-        if (error_flag) then
+        if (.not. success) then
             write(*,*) "FAIL: Large dataset test failed"
             stop 1
         end if
