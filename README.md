@@ -5,7 +5,7 @@ A modern coverage analysis tool specifically designed for Fortran projects. Fort
 ## Why FortCov?
 
 - **🎯 Fortran-First Design**: Built specifically for Fortran with deep understanding of modules, interfaces, and modern Fortran constructs
-- **⚡ Fast & Reliable**: Processes large codebases efficiently with comprehensive error handling
+- **⚡ Fast & Reliable**: Processes large codebases efficiently with robust memory management and comprehensive error handling
 - **🔒 Secure by Default**: Built-in protections against common security vulnerabilities and malformed input
 - **📊 Multiple Output Formats**: Generate Markdown, JSON, HTML reports that integrate seamlessly with your workflow
 - **🛠️ Developer Friendly**: Clear error messages, progress indicators, and extensive configuration options
@@ -29,6 +29,7 @@ fortcov --exclude='build/*,test/*' --output=coverage.md
 **Alternative approach** (using provided helper script):
 ```bash
 # Use the FPM coverage bridge script for simplified workflow
+# (From FortCov repository root directory)
 ./scripts/fpm_coverage_bridge.sh root coverage.md
 # OR for src directory pattern:
 ./scripts/fpm_coverage_bridge.sh src coverage.md
@@ -212,7 +213,7 @@ fortcov --help  # See complete list of options
 | "No coverage files found" | [→ Missing Coverage Files](#-no-coverage-files-found) |
 | "Command not found: fortcov" | [→ Command Not Found](#-command-not-found-fortcov) |
 | "Permission denied" | [→ Permission Issues](#-permission-denied) |
-| "File too large" / "Memory exhaustion" | [→ Large Files](#-file-too-large-or-memory-exhaustion) |
+| "File too large" / processing large datasets | [→ Large Files](#-file-too-large-or-processing-very-large-datasets) |
 | CI/CD pipeline failures | [→ CI/CD Issues](#cicd-troubleshooting) |
 
 ### Common Issues
@@ -345,9 +346,11 @@ else
 fi
 ```
 
-#### ❌ "File too large" or "Memory exhaustion"
+#### ❌ "File too large" or processing very large datasets
 
-**Cause**: Very large `.gcov` files consuming excessive memory
+**Cause**: Extremely large coverage datasets affecting processing performance
+
+**Note**: Core memory allocation bugs have been fixed (Issue #178). This section covers handling very large datasets efficiently.
 
 **Immediate Diagnosis**:
 ```bash
@@ -357,34 +360,28 @@ find . -name "*.gcov" -exec ls -lh {} \; | sort -k5 -hr | head -10
 # Check total .gcov file size
 du -sh $(find . -name "*.gcov")
 
-# Check available system memory
-free -h
+# Check available system resources
+free -h && df -h .
 ```
 
 **Solution Strategy**:
 ```bash
-# Strategy 1: Process in smaller batches by directory
+# Strategy 1: Process in smaller batches (for massive projects)
 fortcov --source=src/core --output=core-coverage.md
 fortcov --source=src/utils --output=utils-coverage.md
 fortcov --source=src/tests --output=tests-coverage.md
 
-# Strategy 2: Remove largest files and regenerate cleaner coverage
-# Remove files larger than 10MB
+# Strategy 2: Clean up unnecessarily large files (if problematic)
+# Review files larger than 10MB
 find . -name "*.gcov" -size +10M -ls
-find . -name "*.gcov" -size +10M -delete
+# Remove only if truly problematic
+find . -name "*.gcov" -size +50M -delete  # Only extreme cases
 
-# Clean rebuild for smaller coverage files
-fpm clean
-fpm build --flag "-fprofile-arcs -ftest-coverage"
-# Use timeout to prevent hanging tests
-timeout 300 fpm test --flag "-fprofile-arcs -ftest-coverage" || echo "Tests timed out"
-gcov src/*.f90
+# Strategy 3: Use exclude patterns to focus analysis
+fortcov --source=. --exclude='**/problematic_module.f90.gcov,build/*,test/*' --output=coverage.md
 
-# Strategy 3: Use exclude patterns to skip problematic files
-fortcov --source=. --exclude='**/large_module.f90.gcov,build/*,test/*' --output=coverage.md
-
-# Strategy 4: For CI/CD - set memory limits and timeouts
-timeout 300 fortcov --source=src --output=coverage.md || echo "Coverage generation timed out"
+# Strategy 4: For CI/CD - reasonable timeouts for large projects
+timeout 600 fortcov --source=src --output=coverage.md || echo "Coverage generation timed out"
 ```
 
 ### CI/CD Troubleshooting

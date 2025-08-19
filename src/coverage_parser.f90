@@ -135,9 +135,6 @@ contains
         allocate(coverage_line_t :: lines_array(100)) ! Initial capacity for lines
         allocate(coverage_file_t :: files_array(10))    ! Initial capacity for files
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
         
         ! Open and parse the gcov file
         open(unit, file=path, status="old", iostat=iostat_val)
@@ -487,9 +484,6 @@ contains
             supported = .false.
         end if
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
     end function gcov_can_parse
 
     function gcov_get_required_files(this) result(extensions)
@@ -500,9 +494,6 @@ contains
         allocate(character(len=5) :: extensions(1))
         extensions(1) = ".gcov"
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
     end function gcov_get_required_files
 
     ! Mock parser implementations
@@ -515,9 +506,6 @@ contains
         error_flag = .false.
         coverage_data = this%injected_data
         
-        ! Suppress unused variable warning
-        associate(dummy => path)
-        end associate
     end function mock_parse
 
     function mock_can_parse(this, path) result(supported)
@@ -528,9 +516,6 @@ contains
         ! Mock parser supports anything for testing
         supported = .true.
         
-        ! Suppress unused variable warnings
-        associate(dummy1 => this, dummy2 => path)
-        end associate
     end function mock_can_parse
 
     function mock_get_required_files(this) result(extensions)
@@ -540,9 +525,6 @@ contains
         allocate(character(len=5) :: extensions(1))
         extensions(1) = ".mock"
         
-        ! Suppress unused variable warning
-        associate(dummy => this)
-        end associate
     end function mock_get_required_files
 
     subroutine mock_inject_data(this, data)

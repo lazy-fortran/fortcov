@@ -280,7 +280,9 @@ sudo chown $USER:$USER coverage.md
 
 ### ❌ "File too large" or "Memory exhaustion"
 
-**Problem**: Coverage files exceed limits
+**Problem**: Very large coverage files affecting processing
+
+**Note**: Memory allocation issues in FortCov core have been resolved (Issue #178). This section covers handling extremely large coverage datasets.
 
 **Diagnosis**:
 
@@ -298,22 +300,21 @@ df -h .
 **Solution**:
 
 ```bash
-# Option 1: Process in smaller batches
+# Option 1: Process in smaller batches (for very large projects)
 fortcov --source=src/core --output=core-coverage.md
 fortcov --source=src/utils --output=utils-coverage.md
 
-# Option 2: Clean up large files
+# Option 2: Clean up unnecessarily large files
 find . -name "*.gcov" -size +10M -ls  # Find large files
-find . -name "*.gcov" -size +50M -delete  # Remove very large files
+find . -name "*.gcov" -size +50M -delete  # Remove very large files if needed
 
 # Option 3: Regenerate with specific files
 rm -f *.gcov
 gcov src/specific_module.f90  # Only generate for specific files
 fortcov --source=src --output=coverage.md
 
-# Option 4: Increase system limits (if allowed)
-ulimit -n 4096  # Increase file descriptor limit
-ulimit -v unlimited  # Remove virtual memory limit (careful!)
+# Option 4: For extreme cases, increase system limits
+ulimit -n 4096  # Increase file descriptor limit if needed
 ```
 
 ### ❌ "Integer overflow" or "Division by zero"

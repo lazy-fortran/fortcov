@@ -373,6 +373,11 @@ contains
         character(len=*), intent(in) :: filename
         type(coverage_line_t), intent(in) :: lines(:)
         
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%lines)) then
+            deallocate(this%lines)
+        end if
+        
         this%filename = filename
         allocate(this%lines, source=lines)
     end subroutine file_init
@@ -447,8 +452,10 @@ contains
         class(coverage_data_t), intent(inout) :: this
         type(coverage_file_t), intent(in), optional :: files(:)
         
-        ! Clean up existing allocation if present
-        if (allocated(this%files)) deallocate(this%files)
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%files)) then
+            deallocate(this%files)
+        end if
         
         if (present(files)) then
             allocate(this%files, source=files)
@@ -524,16 +531,15 @@ contains
         class(coverage_data_t), intent(inout) :: this
         character(len=*), intent(in) :: serialized
         
-        ! Clean up existing allocation if present
-        if (allocated(this%files)) deallocate(this%files)
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%files)) then
+            deallocate(this%files)
+        end if
         
         ! Placeholder implementation: create empty structure
         ! Real implementation would parse the serialized string
         allocate(this%files(0))
         
-        ! Suppress unused variable warning
-        associate(dummy => serialized)
-        end associate
     end subroutine coverage_data_deserialize
 
     ! Line diff constructor
@@ -607,7 +613,10 @@ contains
         type(line_diff_t), intent(in) :: line_diffs(:)
         
         this%filename = filename
-        if (allocated(this%line_diffs)) deallocate(this%line_diffs)
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%line_diffs)) then
+            deallocate(this%line_diffs)
+        end if
         allocate(this%line_diffs, source=line_diffs)
         call this%calculate_summary()
     end subroutine file_diff_init
@@ -667,7 +676,10 @@ contains
         logical, intent(in), optional :: include_unchanged
         real, intent(in), optional :: threshold
         
-        if (allocated(this%file_diffs)) deallocate(this%file_diffs)
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%file_diffs)) then
+            deallocate(this%file_diffs)
+        end if
         allocate(this%file_diffs, source=file_diffs)
         
         if (present(include_unchanged)) then
