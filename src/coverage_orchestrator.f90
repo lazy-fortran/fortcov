@@ -24,11 +24,7 @@ module coverage_orchestrator
     public :: analyze_coverage_safe
     public :: validate_system_integration
     
-    ! Preserve original exit codes for interface compatibility
-    integer, parameter, public :: EXIT_SUCCESS = 0
-    integer, parameter, public :: EXIT_FAILURE = 1
-    integer, parameter, public :: EXIT_THRESHOLD_NOT_MET = 2
-    integer, parameter, public :: EXIT_NO_COVERAGE_DATA = 3
+    ! Exit codes are imported from foundation_constants
     
 contains
     
@@ -38,7 +34,7 @@ contains
         type(config_t), intent(in) :: config
         integer :: exit_code
         
-        type(orchestrator_interface_t), allocatable :: orchestrator
+        class(orchestrator_interface_t), allocatable :: orchestrator
         type(status_result_t) :: operation_result
         
         ! Use architectural pattern for clean orchestration

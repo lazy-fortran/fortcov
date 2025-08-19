@@ -6,6 +6,7 @@ module json_coverage_io
     !! 
     !! Original module size: 1,053 lines → Now: <100 lines
     !! Decomposed into: json_io_core + json_parser + json_validator
+    use coverage_model
     use json_io_core
     use json_parser
     use json_validator

@@ -306,12 +306,12 @@ contains
         
         if (allocated(this%events_subscribed)) then
             n = size(this%events_subscribed)
-            allocate(temp_events(n + 1))
+            allocate(character(len=len(event)) :: temp_events(n + 1))
             temp_events(1:n) = this%events_subscribed
             temp_events(n + 1) = event
             call move_alloc(temp_events, this%events_subscribed)
         else
-            allocate(this%events_subscribed(1))
+            allocate(character(len=len(event)) :: this%events_subscribed(1))
             this%events_subscribed(1) = event
         end if
     end subroutine subscribe_to_event
@@ -324,15 +324,21 @@ contains
         
         if (allocated(this%events_subscribed)) then
             n = size(this%events_subscribed)
-            allocate(temp_events(n - 1))
-            j = 0
-            do i = 1, n
-                if (this%events_subscribed(i) /= event) then
-                    j = j + 1
-                    temp_events(j) = this%events_subscribed(i)
-                end if
-            end do
-            call move_alloc(temp_events, this%events_subscribed)
+            if (n > 1) then
+                allocate(character(len=len(this%events_subscribed(1))) :: temp_events(n - 1))
+                j = 0
+                do i = 1, n
+                    if (this%events_subscribed(i) /= event) then
+                        j = j + 1
+                        if (j <= n - 1) then
+                            temp_events(j) = this%events_subscribed(i)
+                        end if
+                    end if
+                end do
+                call move_alloc(temp_events, this%events_subscribed)
+            else
+                deallocate(this%events_subscribed)
+            end if
         end if
     end subroutine unsubscribe_from_event
     

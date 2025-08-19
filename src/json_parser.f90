@@ -220,8 +220,8 @@ contains
         
         ! Copy files to coverage data
         if (files_count > 0) then
-            allocate(coverage_data%files(files_count))
-            coverage_data%files(1:files_count) = temp_files(1:files_count)
+            allocate(coverage_data%files_json(files_count))
+            coverage_data%files_json(1:files_count) = temp_files(1:files_count)
         end if
         
     end subroutine parse_files_array_from_tokens
@@ -504,26 +504,142 @@ contains
         type(json_token_t), intent(in) :: tokens(:)
         integer, intent(inout) :: current_pos
         integer, intent(in) :: token_count
-        character(len=*), intent(in) :: key_name
+        character(len=:), allocatable, intent(out) :: key_name
         logical, intent(out) :: parse_error
         
         parse_error = .false.
         
-        ! This would parse a specific key-value pair
-        ! For now, just skip to the next key or end of object
-        do while (current_pos <= token_count)
-            if (tokens(current_pos)%value == "," .or. tokens(current_pos)%value == "}") then
-                exit
-            end if
-            current_pos = current_pos + 1
-        end do
+        ! Expect string key
+        if (current_pos > token_count .or. tokens(current_pos)%type /= JSON_STRING) then
+            parse_error = .true.
+            return
+        end if
         
-        ! Skip comma if present
-        if (current_pos <= token_count .and. tokens(current_pos)%value == ",") then
+        key_name = tokens(current_pos)%value
+        current_pos = current_pos + 1
+        
+        ! Expect colon
+        if (current_pos > token_count .or. tokens(current_pos)%value /= ":") then
+            parse_error = .true.
+            return
+        end if
+        
+        current_pos = current_pos + 1
+        
+    end subroutine parse_key_value_pair
+
+    subroutine parse_string_value(tokens, current_pos, output_string, parse_error)
+        !! Parses a string value from JSON tokens
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        character(len=:), allocatable, intent(out) :: output_string
+        logical, intent(out) :: parse_error
+        
+        parse_error = .false.
+        
+        if (tokens(current_pos)%type /= JSON_STRING) then
+            parse_error = .true.
+            return
+        end if
+        
+        output_string = tokens(current_pos)%value
+        current_pos = current_pos + 1
+        
+    end subroutine parse_string_value
+
+    subroutine parse_number_value(tokens, current_pos, output_number, parse_error)
+        !! Parses a number value from JSON tokens
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        integer, intent(out) :: output_number
+        logical, intent(out) :: parse_error
+        
+        integer :: iostat_value
+        
+        parse_error = .false.
+        
+        if (tokens(current_pos)%type /= JSON_NUMBER) then
+            parse_error = .true.
+            return
+        end if
+        
+        read(tokens(current_pos)%value, *, iostat=iostat_value) output_number
+        parse_error = (iostat_value /= 0)
+        
+        if (.not. parse_error) then
             current_pos = current_pos + 1
         end if
         
-    end subroutine parse_key_value_pair
+    end subroutine parse_number_value
+
+    subroutine skip_value(tokens, current_pos, token_count, parse_error)
+        !! Skips a JSON value (string, number, object, array, literal)
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        integer, intent(in) :: token_count
+        logical, intent(out) :: parse_error
+        
+        integer :: depth
+        
+        parse_error = .false.
+        
+        if (current_pos > token_count) then
+            parse_error = .true.
+            return
+        end if
+        
+        select case (tokens(current_pos)%type)
+        case (JSON_STRING, JSON_NUMBER, JSON_BOOLEAN, JSON_NULL)
+            ! Simple values - just skip
+            current_pos = current_pos + 1
+        case (JSON_OBJECT)
+            if (tokens(current_pos)%value == "{") then
+                depth = 1
+                current_pos = current_pos + 1
+                do while (current_pos <= token_count .and. depth > 0)
+                    if (tokens(current_pos)%value == "{") then
+                        depth = depth + 1
+                    else if (tokens(current_pos)%value == "}") then
+                        depth = depth - 1
+                    end if
+                    current_pos = current_pos + 1
+                end do
+            end if
+        case (JSON_ARRAY)
+            if (tokens(current_pos)%value == "[") then
+                depth = 1
+                current_pos = current_pos + 1
+                do while (current_pos <= token_count .and. depth > 0)
+                    if (tokens(current_pos)%value == "[") then
+                        depth = depth + 1
+                    else if (tokens(current_pos)%value == "]") then
+                        depth = depth - 1
+                    end if
+                    current_pos = current_pos + 1
+                end do
+            end if
+        case default
+            current_pos = current_pos + 1
+        end select
+        
+    end subroutine skip_value
+
+    subroutine grow_files_array(temp_files, capacity)
+        !! Grows the files array by doubling capacity
+        type(file_coverage_t), allocatable, intent(inout) :: temp_files(:)
+        integer, intent(inout) :: capacity
+        
+        type(file_coverage_t), allocatable :: new_files(:)
+        integer :: old_capacity
+        
+        old_capacity = capacity
+        capacity = capacity * 2
+        
+        allocate(new_files(capacity))
+        new_files(1:old_capacity) = temp_files(1:old_capacity)
+        call move_alloc(new_files, temp_files)
+        
+    end subroutine grow_files_array
 
     subroutine parse_line_object(tokens, current_pos, token_count, line_obj, parse_error)
         !! Parses a line coverage object from JSON tokens
@@ -533,24 +649,51 @@ contains
         type(line_coverage_t), intent(out) :: line_obj
         logical, intent(out) :: parse_error
         
+        character(len=:), allocatable :: key_name
+        
         parse_error = .false.
         
         ! Initialize line object
         line_obj%line_number = 0
         line_obj%execution_count = 0
         
-        ! This would parse the line object structure
-        ! For now, just skip the JSON object
-        if (current_pos <= token_count .and. tokens(current_pos)%value == "{") then
-            current_pos = current_pos + 1
-            ! Skip to closing brace
-            do while (current_pos <= token_count .and. tokens(current_pos)%value /= "}")
-                current_pos = current_pos + 1
-            end do
-            if (current_pos <= token_count) current_pos = current_pos + 1
-        else
+        ! Expect opening brace
+        if (.not. expect_token_type(tokens, current_pos, token_count, "{")) then
             parse_error = .true.
+            return
         end if
+        
+        ! Parse object fields
+        do while (current_pos <= token_count)
+            ! Check for closing brace
+            if (tokens(current_pos)%value == "}") then
+                current_pos = current_pos + 1
+                exit
+            end if
+            
+            ! Parse key-value pair
+            call parse_key_value_pair(tokens, current_pos, token_count, key_name, parse_error)
+            if (parse_error) return
+            
+            ! Handle specific keys
+            select case (trim(key_name))
+            case ("line_number")
+                call parse_number_value(tokens, current_pos, line_obj%line_number, parse_error)
+                if (parse_error) return
+            case ("execution_count")
+                call parse_number_value(tokens, current_pos, line_obj%execution_count, parse_error)
+                if (parse_error) return
+            case default
+                ! Skip unknown fields
+                call skip_value(tokens, current_pos, token_count, parse_error)
+                if (parse_error) return
+            end select
+            
+            ! Skip comma if present
+            if (current_pos <= token_count .and. tokens(current_pos)%value == ",") then
+                current_pos = current_pos + 1
+            end if
+        end do
         
     end subroutine parse_line_object
 

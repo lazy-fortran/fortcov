@@ -6,6 +6,7 @@ module json_io_core
     use foundation_constants
     use foundation_layer_utils
     use coverage_model
+    use coverage_operations, only: calculate_coverage_statistics
     use json_parser
     use json_validator
     use input_validation
@@ -63,15 +64,17 @@ contains
         type(error_context_t) :: error_ctx
         
         ! Initialize error context
-        call initialize_error_context(error_ctx, "json_io_core", &
-                                    "import_coverage_from_json_safe")
+        ! Initialize error context (simplified)
+        error_ctx%error_code = ERROR_SUCCESS
+        error_ctx%message = ""
+        error_ctx%suggestion = ""
         
         error_caught = .false.
         
         ! Validate JSON format before processing
         if (.not. validate_json_coverage_format(json_content)) then
-            call set_error_context_failure(error_ctx, "Invalid JSON format", &
-                                          FOUNDATION_INVALID_INPUT)
+            error_ctx%error_code = ERROR_INVALID_DATA
+            error_ctx%message = "Invalid JSON format"
             error_caught = .true.
             return
         end if
@@ -81,13 +84,14 @@ contains
         
         ! Check if import was successful by validating coverage data
         if (.not. is_coverage_data_valid(coverage_data)) then
-            call set_error_context_failure(error_ctx, "Coverage data validation failed", &
-                                          FOUNDATION_ERROR)
+            error_ctx%error_code = ERROR_INVALID_DATA
+            error_ctx%message = "Coverage data validation failed"
             error_caught = .true.
             return
         end if
         
-        call set_error_context_success(error_ctx, "JSON import completed successfully")
+        error_ctx%error_code = ERROR_SUCCESS
+        error_ctx%message = "JSON import completed successfully"
         
     end subroutine import_coverage_from_json_safe
     
@@ -178,11 +182,11 @@ contains
         
         files_json = "["
         
-        if (allocated(coverage_data%files)) then
-            do i = 1, size(coverage_data%files)
+        if (allocated(coverage_data%files_json)) then
+            do i = 1, size(coverage_data%files_json)
                 if (i > 1) files_json = files_json // ","
                 
-                call format_file_json(coverage_data%files(i), file_json)
+                call format_file_json(coverage_data%files_json(i), file_json)
                 files_json = files_json // file_json
             end do
         end if

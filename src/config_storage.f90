@@ -163,10 +163,10 @@ contains
             current_size = size(array)
             
             ! Check size limits
-            if (current_size >= MAX_ARRAY_SIZE) then
+            if (current_size >= MAX_FILES) then
                 success = .false.
                 write(error_message, '(A, I0, A)') &
-                    "Maximum " // trim(type_name) // " count exceeded (", MAX_ARRAY_SIZE, ")"
+                    "Maximum " // trim(type_name) // " count exceeded (", MAX_FILES, ")"
                 return
             end if
             
