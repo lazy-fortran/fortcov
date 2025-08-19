@@ -41,7 +41,7 @@ jobs:
     - name: Generate coverage report
       run: |
         echo "Running fortcov analysis..."
-        # In real usage: fpm run fortcov -- --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
+        # In real usage: fpm run fortcov -- --exclude='build/*' --exclude='test/*' --output=coverage.md
         
         # Create demonstration coverage report
         cat > coverage.md << 'EOF'

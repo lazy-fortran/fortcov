@@ -36,7 +36,7 @@ find build -name "*.gcov" -exec cp {} . \; || echo "No .gcov files found to copy
 
 echo
 echo "Step 4: Analyzing with fortcov..."
-echo "Command: fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
+echo "Command: fortcov --exclude=build/*,test/* --output=coverage.md"
 
 # Create mock fortcov output for demonstration  
 cat > coverage_build_integrated.md << 'EOF'

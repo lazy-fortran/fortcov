@@ -71,7 +71,7 @@ echo "Generating coverage data..."
 srun gcov src/*.f90 || true
 
 echo "Running fortcov analysis..."
-# In real usage: srun fortcov --source=. --output=coverage-${SLURM_JOB_ID}.html
+# In real usage: srun fortcov --output=coverage-${SLURM_JOB_ID}.html
 
 # Create demonstration coverage report
 cat > coverage-${SLURM_JOB_ID}.html << EOF
