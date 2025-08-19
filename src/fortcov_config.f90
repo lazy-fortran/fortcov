@@ -131,14 +131,14 @@ contains
             ! Check for help flag
             if (arg == "--help" .or. arg == "-h") then
                 config%show_help = .true.
-                success = .false.
+                success = .true.
                 return
             end if
             
             ! Check for version flag
             if (arg == "--version" .or. arg == "-V") then
                 config%show_version = .true.
-                success = .false.
+                success = .true.
                 return
             end if
             
@@ -1012,8 +1012,7 @@ contains
         ! should show help instead of attempting to run coverage analysis
         if (size(args) == 0) then
             config%show_help = .true.
-            success = .false.
-            error_message = "No arguments provided. Try 'fortcov --help' for usage examples."
+            success = .true.
             return
         end if
         

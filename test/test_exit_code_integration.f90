@@ -238,7 +238,7 @@ contains
         
         call initialize_config(config)
         config%quiet = .true.
-        config%coverage_threshold = -50.0  ! Invalid negative threshold
+        config%minimum_coverage = -50.0  ! Invalid negative threshold
         
         if (allocated(config%source_paths)) deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(1))
@@ -280,7 +280,7 @@ contains
         
         call initialize_config(config)
         config%quiet = .true.
-        config%coverage_threshold = 99.99  ! Extremely high threshold
+        config%minimum_coverage = 99.99  ! Extremely high threshold
         
         if (allocated(config%source_paths)) deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(1))
@@ -423,7 +423,7 @@ contains
         
         call initialize_config(config)
         config%quiet = .true.
-        config%coverage_threshold = 100.0  ! Impossible threshold
+        config%minimum_coverage = 100.0  ! Impossible threshold
         
         if (allocated(config%source_paths)) deallocate(config%source_paths)
         allocate(character(len=256) :: config%source_paths(1))

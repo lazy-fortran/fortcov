@@ -29,22 +29,23 @@ program main
   call parse_config(args, config, success, error_message)
   
   if (.not. success) then
-    if (config%show_help) then
-      call show_help()
-      call exit(EXIT_SUCCESS)
-    else if (config%show_version) then
-      call show_version()
-      call exit(EXIT_SUCCESS)
-    else
-      print *, "❌ Error: " // trim(error_message)
-      print *, ""
-      print *, "💡 Quick troubleshooting:"
-      print *, "   • Run 'fortcov --help' for usage examples"
-      print *, "   • Ensure source directory exists: ls -la <your_source_path>"
-      print *, "   • Check if .gcov files are present: find . -name '*.gcov'"
-      print *, "   • Try: fortcov --source=src --output=coverage.md"
-      call exit(EXIT_FAILURE)
-    end if
+    print *, "❌ Error: " // trim(error_message)
+    print *, ""
+    print *, "💡 Quick troubleshooting:"
+    print *, "   • Run 'fortcov --help' for usage examples"
+    print *, "   • Ensure source directory exists: ls -la <your_source_path>"
+    print *, "   • Check if .gcov files are present: find . -name '*.gcov'"
+    print *, "   • Try: fortcov --source=src --output=coverage.md"
+    call exit(EXIT_FAILURE)
+  end if
+  
+  ! Check for help/version flags after successful parsing
+  if (config%show_help) then
+    call show_help()
+    call exit(EXIT_SUCCESS)
+  else if (config%show_version) then
+    call show_version()
+    call exit(EXIT_SUCCESS)
   end if
   
   ! Validate configuration for security and accessibility
