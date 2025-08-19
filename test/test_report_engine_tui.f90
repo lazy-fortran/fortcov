@@ -42,7 +42,8 @@ contains
         block
             type(coverage_line_t), allocatable :: test_lines(:)
             allocate(test_lines(0))
-            call test_file%init("test.f90", test_lines)
+            call test_file%init("test.f90")
+        test_file%lines = test_lines
         end block
         call engine%source_data%init([test_file])
         

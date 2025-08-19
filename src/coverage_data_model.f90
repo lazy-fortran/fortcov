@@ -135,7 +135,11 @@ module coverage_data_model
         character(len=:), allocatable :: filename
         integer :: old_count = 0
         integer :: new_count = 0
+        integer :: execution_count_delta = 0  ! new_count - old_count
+        integer :: diff_type = 0  ! DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
         character(len=1) :: status = ' '  ! '+', '-', '='
+    contains
+        procedure :: init => line_diff_init
     end type line_diff_t
     
     type :: file_diff_t
@@ -155,6 +159,20 @@ module coverage_data_model
         integer :: removed_lines = 0
         integer :: modified_lines = 0
     end type coverage_diff_t
+    
+    ! Generic interfaces for overloaded procedures
+    interface
+        module subroutine file_init(this, filename)
+            class(coverage_file_t), intent(out) :: this
+            character(len=*), intent(in) :: filename
+        end subroutine
+        
+        module subroutine file_init_with_lines(this, filename, lines)
+            class(coverage_file_t), intent(out) :: this
+            character(len=*), intent(in) :: filename
+            type(coverage_line_t), intent(in) :: lines(:)
+        end subroutine
+    end interface
     
 contains
     
@@ -459,7 +477,7 @@ contains
         
     end function file_get_function_coverage
     
-    subroutine file_init(this, filename)
+    module subroutine file_init(this, filename)
         class(coverage_file_t), intent(out) :: this
         character(len=*), intent(in) :: filename
         
@@ -469,6 +487,19 @@ contains
         this%line_coverage = 0.0
         
     end subroutine file_init
+    
+    module subroutine file_init_with_lines(this, filename, lines)
+        class(coverage_file_t), intent(out) :: this
+        character(len=*), intent(in) :: filename
+        type(coverage_line_t), intent(in) :: lines(:)
+        
+        this%filename = filename
+        this%total_lines = 0
+        this%covered_lines = 0
+        this%line_coverage = 0.0
+        allocate(this%lines, source=lines)
+        
+    end subroutine file_init_with_lines
     
     subroutine data_calculate_overall_coverage(this)
         class(coverage_data_t), intent(inout) :: this
@@ -533,5 +564,34 @@ contains
         this%overall_coverage = 0.0
         
     end subroutine data_init
+    
+    subroutine line_diff_init(this, baseline_line, current_line, diff_type)
+        class(line_diff_t), intent(inout) :: this
+        type(coverage_line_t), intent(in) :: baseline_line
+        type(coverage_line_t), intent(in) :: current_line
+        integer, intent(in) :: diff_type
+        
+        this%line_number = current_line%line_number
+        this%filename = current_line%filename
+        this%old_count = baseline_line%execution_count
+        this%new_count = current_line%execution_count
+        this%execution_count_delta = current_line%execution_count - baseline_line%execution_count
+        this%diff_type = diff_type
+        
+        ! Set status character based on diff type
+        select case (diff_type)
+        case (0)  ! DIFF_UNCHANGED
+            this%status = '='
+        case (1)  ! DIFF_ADDED
+            this%status = '+'
+        case (2)  ! DIFF_REMOVED
+            this%status = '-'
+        case (3)  ! DIFF_CHANGED
+            this%status = '~'
+        case default
+            this%status = '?'
+        end select
+        
+    end subroutine line_diff_init
     
 end module coverage_data_model

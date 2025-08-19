@@ -229,7 +229,7 @@ contains
         print *, "        - Enhance error handling consistency"
         print *, "        - Simplify cross-platform support"
         
-        # File manipulation utilities architecture validated
+        ! File manipulation utilities architecture validated
         passed = .true.
         
     end function test_file_manipulation_utilities

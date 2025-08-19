@@ -208,8 +208,8 @@ contains
         allocate(files(1))
         allocate(lines(2))
         
-        call lines(1)%init(5, 1, 'test.f90', .true.)
-        call lines(2)%init(0, 2, 'test.f90', .true.)
+        call lines(1)%init('test.f90', 1, 5, .true.)
+        call lines(2)%init('test.f90', 2, 0, .true.)
         
         call files(1)%init('test.f90', lines)
         call coverage_data%init(files)
@@ -226,14 +226,14 @@ contains
         allocate(lines2(2))
         
         ! File 1: test.f90
-        call lines1(1)%init(10, 1, 'test.f90', .true.)
-        call lines1(2)%init(0, 2, 'test.f90', .true.)
-        call lines1(3)%init(5, 3, 'test.f90', .true.)
+        call lines1(1)%init('test.f90', 1, 10, .true.)
+        call lines1(2)%init('test.f90', 2, 0, .true.)
+        call lines1(3)%init('test.f90', 3, 5, .true.)
         call files(1)%init('test.f90', lines1)
         
         ! File 2: module.f90
-        call lines2(1)%init(2, 1, 'module.f90', .true.)
-        call lines2(2)%init(8, 2, 'module.f90', .true.)
+        call lines2(1)%init('module.f90', 1, 2, .true.)
+        call lines2(2)%init('module.f90', 2, 8, .true.)
         call files(2)%init('module.f90', lines2)
         
         call coverage_data%init(files)

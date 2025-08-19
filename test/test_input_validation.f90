@@ -517,17 +517,19 @@ contains
         ! (This tests the clamp_percentage function indirectly)
         
         ! Initialize test lines with extreme counts that could overflow
-        call test_lines(1)%init(1000000000, 1, "test.f90", .true.)
-        call test_lines(2)%init(0, 2, "test.f90", .true.)
-        call test_lines(3)%init(2000000000, 3, "test.f90", .true.) 
-        call test_lines(4)%init(0, 4, "test.f90", .true.)
-        call test_lines(5)%init(0, 5, "test.f90", .true.)
+        call test_lines(1)%init("test.f90", 1, 1000000000, .true.)
+        call test_lines(2)%init("test.f90", 2, 0, .true.)
+        call test_lines(3)%init("test.f90", 3, 2000000000, .true.) 
+        call test_lines(4)%init("test.f90", 4, 0, .true.)
+        call test_lines(5)%init("test.f90", 5, 0, .true.)
         
         ! Create file with test lines
-        call test_file%init("test.f90", test_lines)
+        call test_file%init("test.f90")
+        test_file%lines = test_lines
         
         ! Create coverage data
-        call coverage_data%init([test_file])
+        call coverage_data%init()
+        coverage_data%files = [test_file]
         
         ! Calculate coverage statistics
         stats = calculate_line_coverage(coverage_data)

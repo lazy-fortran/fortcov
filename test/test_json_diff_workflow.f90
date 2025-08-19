@@ -72,14 +72,14 @@ contains
         print *, "Test: Export JSON and use in diff computation..."
         
         ! Create baseline coverage data
-        call baseline_lines(1)%init(3, 10, "test.f90", .true.)
-        call baseline_lines(2)%init(0, 15, "test.f90", .true.)
+        call baseline_lines(1)%init("test.f90", 10, 3, .true.)
+        call baseline_lines(2)%init("test.f90", 15, 0, .true.)
         call baseline_files(1)%init("test.f90", baseline_lines)
         call baseline_coverage%init(baseline_files)
         
         ! Create current coverage data (with changes)
-        call current_lines(1)%init(5, 10, "test.f90", .true.)  ! Increased from 3 to 5
-        call current_lines(2)%init(2, 15, "test.f90", .true.)  ! Increased from 0 to 2
+        call current_lines(1)%init("test.f90", 10, 5, .true.)  ! Increased from 3 to 5
+        call current_lines(2)%init("test.f90", 15, 2, .true.)  ! Increased from 0 to 2
         call current_files(1)%init("test.f90", current_lines)
         call current_coverage%init(current_files)
         
@@ -147,11 +147,11 @@ contains
         print *, "Test: CLI diff command with exported JSON files..."
         
         ! Create test coverage data
-        call baseline_lines(1)%init(2, 10, "cli_test.f90", .true.)
+        call baseline_lines(1)%init("cli_test.f90", 10, 2, .true.)
         call baseline_files(1)%init("cli_test.f90", baseline_lines)
         call baseline_coverage%init(baseline_files)
         
-        call current_lines(1)%init(4, 10, "cli_test.f90", .true.)
+        call current_lines(1)%init("cli_test.f90", 10, 4, .true.)
         call current_files(1)%init("cli_test.f90", current_lines)
         call current_coverage%init(current_files)
         

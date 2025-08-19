@@ -1,6 +1,7 @@
 program test_diff_performance
     use test_diff_data_generation
     use coverage_model
+    use coverage_diff, only: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
     implicit none
     
     logical :: all_tests_passed
@@ -65,8 +66,8 @@ contains
             write(filename, '(A,I0,A)') "memory_test_file_", i, ".f90"
             
             do j = 1, 100
-                call baseline_line%init(j, j, filename, .true.)
-                call current_line%init(j + 1, j, filename, .true.)
+                call baseline_line%init(filename, j, j, .true.)
+                call current_line%init(filename, j, j + 1, .true.)
                 call line_diffs(j)%init(baseline_line, current_line, DIFF_CHANGED)
             end do
             
@@ -114,8 +115,8 @@ contains
                 write(filename, '(A,I0,A,I0,A)') "leak_test_", cycle, "_file_", i, ".f90"
                 
                 do j = 1, 50
-                    call baseline_line%init(j * cycle, j, filename, .true.)
-                    call current_line%init((j + 1) * cycle, j, filename, .true.)
+                    call baseline_line%init(filename, j, j * cycle, .true.)
+                    call current_line%init(filename, j, (j + 1) * cycle, .true.)
                     call line_diffs(j)%init(baseline_line, current_line, DIFF_CHANGED)
                 end do
                 

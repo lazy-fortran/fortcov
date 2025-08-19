@@ -230,16 +230,16 @@ contains
         allocate(lines2(3))
         
         ! File 1: Main module with good coverage
-        call lines1(1)%init(15, 10, 'src/main_module.f90', .true.)
-        call lines1(2)%init(8, 15, 'src/main_module.f90', .true.)
-        call lines1(3)%init(0, 20, 'src/main_module.f90', .true.)  ! Uncovered
-        call lines1(4)%init(12, 25, 'src/main_module.f90', .true.)
+        call lines1(1)%init('src/main_module.f90', 10, 15, .true.)
+        call lines1(2)%init('src/main_module.f90', 15, 8, .true.)
+        call lines1(3)%init('src/main_module.f90', 20, 0, .true.)  ! Uncovered
+        call lines1(4)%init('src/main_module.f90', 25, 12, .true.)
         call files(1)%init('src/main_module.f90', lines1)
         
         ! File 2: Utility module with partial coverage
-        call lines2(1)%init(5, 5, 'src/utils.f90', .true.)
-        call lines2(2)%init(0, 10, 'src/utils.f90', .true.)  ! Uncovered
-        call lines2(3)%init(7, 15, 'src/utils.f90', .true.)
+        call lines2(1)%init('src/utils.f90', 5, 5, .true.)
+        call lines2(2)%init('src/utils.f90', 10, 0, .true.)  ! Uncovered
+        call lines2(3)%init('src/utils.f90', 15, 7, .true.)
         call files(2)%init('src/utils.f90', lines2)
         
         call coverage_data%init(files)
@@ -257,15 +257,15 @@ contains
         
         ! Same structure as fortcov but slightly different execution counts
         ! (simulating tool measurement variations within acceptable tolerance)
-        call lines1(1)%init(16, 10, 'src/main_module.f90', .true.)  ! Slightly higher
-        call lines1(2)%init(8, 15, 'src/main_module.f90', .true.)   ! Same
-        call lines1(3)%init(0, 20, 'src/main_module.f90', .true.)   ! Same - uncovered
-        call lines1(4)%init(11, 25, 'src/main_module.f90', .true.)  ! Slightly lower
+        call lines1(1)%init('src/main_module.f90', 10, 16, .true.)  ! Slightly higher
+        call lines1(2)%init('src/main_module.f90', 15, 8, .true.)   ! Same
+        call lines1(3)%init('src/main_module.f90', 20, 0, .true.)   ! Same - uncovered
+        call lines1(4)%init('src/main_module.f90', 25, 11, .true.)  ! Slightly lower
         call files(1)%init('src/main_module.f90', lines1)
         
-        call lines2(1)%init(6, 5, 'src/utils.f90', .true.)   ! Slightly higher
-        call lines2(2)%init(0, 10, 'src/utils.f90', .true.)  ! Same - uncovered
-        call lines2(3)%init(7, 15, 'src/utils.f90', .true.)  ! Same
+        call lines2(1)%init('src/utils.f90', 5, 6, .true.)   ! Slightly higher
+        call lines2(2)%init('src/utils.f90', 10, 0, .true.)  ! Same - uncovered
+        call lines2(3)%init('src/utils.f90', 15, 7, .true.)  ! Same
         call files(2)%init('src/utils.f90', lines2)
         
         call coverage_data%init(files)
@@ -281,11 +281,11 @@ contains
         allocate(lines(5))
         
         ! Baseline: 80% coverage (4 out of 5 lines covered)
-        call lines(1)%init(10, 5, 'src/feature.f90', .true.)
-        call lines(2)%init(8, 10, 'src/feature.f90', .true.)
-        call lines(3)%init(15, 15, 'src/feature.f90', .true.)
-        call lines(4)%init(0, 20, 'src/feature.f90', .true.)  ! Uncovered
-        call lines(5)%init(12, 25, 'src/feature.f90', .true.)
+        call lines(1)%init('src/feature.f90', 5, 10, .true.)
+        call lines(2)%init('src/feature.f90', 10, 8, .true.)
+        call lines(3)%init('src/feature.f90', 15, 15, .true.)
+        call lines(4)%init('src/feature.f90', 20, 0, .true.)  ! Uncovered
+        call lines(5)%init('src/feature.f90', 25, 12, .true.)
         
         call files(1)%init('src/feature.f90', lines)
         call coverage_data%init(files)
@@ -301,11 +301,11 @@ contains
         allocate(lines(5))
         
         ! Current: 80% coverage with slightly different execution counts
-        call lines(1)%init(11, 5, 'src/feature.f90', .true.)   ! Slight increase
-        call lines(2)%init(7, 10, 'src/feature.f90', .true.)   ! Slight decrease
-        call lines(3)%init(16, 15, 'src/feature.f90', .true.)  ! Slight increase
-        call lines(4)%init(0, 20, 'src/feature.f90', .true.)   ! Same - uncovered
-        call lines(5)%init(12, 25, 'src/feature.f90', .true.)  ! Same
+        call lines(1)%init('src/feature.f90', 5, 11, .true.)   ! Slight increase
+        call lines(2)%init('src/feature.f90', 10, 7, .true.)   ! Slight decrease
+        call lines(3)%init('src/feature.f90', 15, 16, .true.)  ! Slight increase
+        call lines(4)%init('src/feature.f90', 20, 0, .true.)   ! Same - uncovered
+        call lines(5)%init('src/feature.f90', 25, 12, .true.)  ! Same
         
         call files(1)%init('src/feature.f90', lines)
         call coverage_data%init(files)

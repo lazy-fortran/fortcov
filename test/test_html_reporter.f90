@@ -150,9 +150,9 @@ contains
         call data%init()
         
         allocate(test_lines(3))
-        call test_lines(1)%init(5, 1, "test_module.f90", .true.)
-        call test_lines(2)%init(0, 2, "test_module.f90", .true.)
-        call test_lines(3)%init(3, 3, "test_module.f90", .true.)
+        call test_lines(1)%init("test_module.f90", 1, 5, .true.)
+        call test_lines(2)%init("test_module.f90", 2, 0, .true.)
+        call test_lines(3)%init("test_module.f90", 3, 3, .true.)
         
         call test_file%init("test_module.f90", test_lines)
         data%files = [test_file]

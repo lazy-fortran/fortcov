@@ -6,9 +6,10 @@ module coverage_diff
     
     ! Diff type constants
     integer, parameter :: DIFF_UNCHANGED = 0
-    integer, parameter :: DIFF_CHANGED = 1
-    integer, parameter :: DIFF_ADDED = 2
-    integer, parameter :: DIFF_REMOVED = 3
+    integer, parameter :: DIFF_ADDED = 1
+    integer, parameter :: DIFF_REMOVED = 2
+    integer, parameter :: DIFF_CHANGED = 3
+    public :: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
     public :: compute_coverage_diff
     public :: compute_file_diff
     public :: compute_line_diff
@@ -186,6 +187,8 @@ contains
         line_diff%filename = baseline_line%filename
         line_diff%old_count = baseline_line%execution_count
         line_diff%new_count = current_line%execution_count
+        line_diff%execution_count_delta = current_line%execution_count - baseline_line%execution_count
+        line_diff%diff_type = diff_type
         if (diff_type == DIFF_UNCHANGED) then
             line_diff%status = '='
         else
@@ -209,6 +212,8 @@ contains
         line_diff%filename = current_line%filename
         line_diff%old_count = 0
         line_diff%new_count = current_line%execution_count
+        line_diff%execution_count_delta = current_line%execution_count
+        line_diff%diff_type = DIFF_ADDED
         line_diff%status = '+'
     end function compute_line_diff_new
     
@@ -228,6 +233,8 @@ contains
         line_diff%filename = baseline_line%filename
         line_diff%old_count = baseline_line%execution_count
         line_diff%new_count = 0
+        line_diff%execution_count_delta = -baseline_line%execution_count
+        line_diff%diff_type = DIFF_REMOVED
         line_diff%status = '-'
     end function compute_line_diff_removed
     

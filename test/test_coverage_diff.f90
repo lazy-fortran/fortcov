@@ -1,6 +1,7 @@
 program test_coverage_diff
     use coverage_model
     use json_coverage_io
+    use coverage_diff, only: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
     implicit none
     
     logical :: all_tests_passed
@@ -64,8 +65,8 @@ contains
         passed = .false.
         
         ! Given: Baseline line with 0 coverage and current line with 5 executions
-        call baseline_line%init(0, 10, "test.f90", .true.)
-        call current_line%init(5, 10, "test.f90", .true.)
+        call baseline_line%init("test.f90", 10, 0, .true.)
+        call current_line%init("test.f90", 10, 5, .true.)
         
         ! When: Creating a line diff with DIFF_CHANGED type
         call line_diff%init(baseline_line, current_line, DIFF_CHANGED)
@@ -91,8 +92,10 @@ contains
         passed = .false.
         
         ! Given: Lines for different diff scenarios
-        call baseline_line%init(3, 5, "test.f90", .true.)
-        call current_line%init(3, 5, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 5, 3, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 5, 3, .true.
         
         ! When: Creating diffs with different types
         call added_diff%init(baseline_line, current_line, DIFF_ADDED)
@@ -119,8 +122,10 @@ contains
         passed = .false.
         
         ! Given: Uncovered baseline line and covered current line
-        call baseline_uncovered%init(0, 15, "src/module.f90", .true.)
-        call current_covered%init(2, 15, "src/module.f90", .true.)
+        call baseline_uncovered%init("src/module.f90")
+        baseline_uncovered%lines = 15, 0, .true.
+        call current_covered%init("src/module.f90")
+        current_covered%lines = 15, 2, .true.
         
         ! When: Creating line diff
         call line_diff%init(baseline_uncovered, current_covered, DIFF_CHANGED)
@@ -145,8 +150,10 @@ contains
         passed = .false.
         
         ! Given: Covered baseline line and uncovered current line
-        call baseline_covered%init(4, 20, "src/utils.f90", .true.)
-        call current_uncovered%init(0, 20, "src/utils.f90", .true.)
+        call baseline_covered%init("src/utils.f90")
+        baseline_covered%lines = 20, 4, .true.
+        call current_uncovered%init("src/utils.f90")
+        current_uncovered%lines = 20, 0, .true.
         
         ! When: Creating line diff
         call line_diff%init(baseline_covered, current_uncovered, DIFF_CHANGED)
@@ -171,16 +178,22 @@ contains
         passed = .false.
         
         ! Given: Lines with different execution counts
-        call baseline_line%init(5, 1, "test.f90", .true.)
-        call current_line%init(8, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 5, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 8, .true.
         call positive_delta%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call baseline_line%init(10, 2, "test.f90", .true.)
-        call current_line%init(3, 2, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 2, 10, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 2, 3, .true.
         call negative_delta%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call baseline_line%init(7, 3, "test.f90", .true.)
-        call current_line%init(7, 3, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 3, 7, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 3, 7, .true.
         call zero_delta%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         ! When/Then: Should calculate correct deltas
@@ -204,24 +217,33 @@ contains
         passed = .false.
         
         ! Given: File with mixed line diff types
-        call baseline_line%init(0, 1, "test.f90", .true.)
-        call current_line%init(3, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 0, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 3, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_ADDED)
         
-        call baseline_line%init(5, 2, "test.f90", .true.)
-        call current_line%init(0, 2, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 2, 5, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 2, 0, .true.
         call line_diffs(2)%init(baseline_line, current_line, DIFF_REMOVED)
         
-        call baseline_line%init(2, 3, "test.f90", .true.)
-        call current_line%init(7, 3, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 3, 2, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 3, 7, .true.
         call line_diffs(3)%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call baseline_line%init(4, 4, "test.f90", .true.)
-        call current_line%init(4, 4, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 4, 4, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 4, 4, .true.
         call line_diffs(4)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         ! When: Creating file diff
-        call file_diff%init("test.f90", line_diffs)
+        call file_diff%init("test.f90")
+        file_diff%lines = line_diffs
         
         ! Then: Should calculate correct summary statistics
         if (file_diff%added_lines == 1 .and. &
@@ -245,11 +267,14 @@ contains
         passed = .false.
         
         ! Given: File diff with known coverage percentages
-        call baseline_line%init(0, 1, "test.f90", .true.)
-        call current_line%init(1, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 0, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 1, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call file_diff%init("test.f90", line_diffs)
+        call file_diff%init("test.f90")
+        file_diff%lines = line_diffs
         
         ! Set test coverage percentages
         file_diff%baseline_coverage_percentage = 75.0
@@ -276,13 +301,17 @@ contains
         passed = .false.
         
         ! Given: Two files with different diff patterns
-        call baseline_line%init(0, 1, "file1.f90", .true.)
-        call current_line%init(5, 1, "file1.f90", .true.)
+        call baseline_line%init("file1.f90")
+        baseline_line%lines = 1, 0, .true.
+        call current_line%init("file1.f90")
+        current_line%lines = 1, 5, .true.
         call file1_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         call file_diffs(1)%init("file1.f90", file1_diffs)
         
-        call baseline_line%init(3, 1, "file2.f90", .true.)
-        call current_line%init(3, 1, "file2.f90", .true.)
+        call baseline_line%init("file2.f90")
+        baseline_line%lines = 1, 3, .true.
+        call current_line%init("file2.f90")
+        current_line%lines = 1, 3, .true.
         call file2_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         call file_diffs(2)%init("file2.f90", file2_diffs)
         
@@ -311,32 +340,43 @@ contains
         
         ! Given: File with all types of changes and newly covered/uncovered lines
         ! Newly covered line
-        call baseline_line%init(0, 1, "mixed.f90", .true.)
-        call current_line%init(2, 1, "mixed.f90", .true.)
+        call baseline_line%init("mixed.f90")
+        baseline_line%lines = 1, 0, .true.
+        call current_line%init("mixed.f90")
+        current_line%lines = 1, 2, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
         ! Newly uncovered line
-        call baseline_line%init(3, 2, "mixed.f90", .true.)
-        call current_line%init(0, 2, "mixed.f90", .true.)
+        call baseline_line%init("mixed.f90")
+        baseline_line%lines = 2, 3, .true.
+        call current_line%init("mixed.f90")
+        current_line%lines = 2, 0, .true.
         call line_diffs(2)%init(baseline_line, current_line, DIFF_CHANGED)
         
         ! Added line
-        call baseline_line%init(0, 3, "mixed.f90", .true.)
-        call current_line%init(1, 3, "mixed.f90", .true.)
+        call baseline_line%init("mixed.f90")
+        baseline_line%lines = 3, 0, .true.
+        call current_line%init("mixed.f90")
+        current_line%lines = 3, 1, .true.
         call line_diffs(3)%init(baseline_line, current_line, DIFF_ADDED)
         
         ! Removed line
-        call baseline_line%init(4, 4, "mixed.f90", .true.)
-        call current_line%init(0, 4, "mixed.f90", .true.)
+        call baseline_line%init("mixed.f90")
+        baseline_line%lines = 4, 4, .true.
+        call current_line%init("mixed.f90")
+        current_line%lines = 4, 0, .true.
         call line_diffs(4)%init(baseline_line, current_line, DIFF_REMOVED)
         
         ! Unchanged line
-        call baseline_line%init(5, 5, "mixed.f90", .true.)
-        call current_line%init(5, 5, "mixed.f90", .true.)
+        call baseline_line%init("mixed.f90")
+        baseline_line%lines = 5, 5, .true.
+        call current_line%init("mixed.f90")
+        current_line%lines = 5, 5, .true.
         call line_diffs(5)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         ! When: Creating file diff
-        call file_diff%init("mixed.f90", line_diffs)
+        call file_diff%init("mixed.f90")
+        file_diff%lines = line_diffs
         
         ! Then: Should count newly covered/uncovered lines correctly
         if (file_diff%newly_covered_lines == 1 .and. &
@@ -364,22 +404,30 @@ contains
         
         ! Given: Project with multiple files and known coverage changes
         ! File 1: 1 newly covered, 0 newly uncovered
-        call baseline_line%init(0, 1, "file1.f90", .true.)
-        call current_line%init(1, 1, "file1.f90", .true.)
+        call baseline_line%init("file1.f90")
+        baseline_line%lines = 1, 0, .true.
+        call current_line%init("file1.f90")
+        current_line%lines = 1, 1, .true.
         call file1_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call baseline_line%init(2, 2, "file1.f90", .true.)
-        call current_line%init(3, 2, "file1.f90", .true.)
+        call baseline_line%init("file1.f90")
+        baseline_line%lines = 2, 2, .true.
+        call current_line%init("file1.f90")
+        current_line%lines = 2, 3, .true.
         call file1_diffs(2)%init(baseline_line, current_line, DIFF_CHANGED)
         call file_diffs(1)%init("file1.f90", file1_diffs)
         
         ! File 2: 0 newly covered, 1 newly uncovered
-        call baseline_line%init(5, 1, "file2.f90", .true.)
-        call current_line%init(0, 1, "file2.f90", .true.)
+        call baseline_line%init("file2.f90")
+        baseline_line%lines = 1, 5, .true.
+        call current_line%init("file2.f90")
+        current_line%lines = 1, 0, .true.
         call file2_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call baseline_line%init(1, 2, "file2.f90", .true.)
-        call current_line%init(1, 2, "file2.f90", .true.)
+        call baseline_line%init("file2.f90")
+        baseline_line%lines = 2, 1, .true.
+        call current_line%init("file2.f90")
+        current_line%lines = 2, 1, .true.
         call file2_diffs(2)%init(baseline_line, current_line, DIFF_UNCHANGED)
         call file_diffs(2)%init("file2.f90", file2_diffs)
         
@@ -409,16 +457,22 @@ contains
         passed = .false.
         
         ! Given: Project with specific line changes
-        call baseline_line%init(0, 1, "stats.f90", .true.)
-        call current_line%init(1, 1, "stats.f90", .true.)
+        call baseline_line%init("stats.f90")
+        baseline_line%lines = 1, 0, .true.
+        call current_line%init("stats.f90")
+        current_line%lines = 1, 1, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_ADDED)
         
-        call baseline_line%init(2, 2, "stats.f90", .true.)
-        call current_line%init(0, 2, "stats.f90", .true.)
+        call baseline_line%init("stats.f90")
+        baseline_line%lines = 2, 2, .true.
+        call current_line%init("stats.f90")
+        current_line%lines = 2, 0, .true.
         call line_diffs(2)%init(baseline_line, current_line, DIFF_REMOVED)
         
-        call baseline_line%init(3, 3, "stats.f90", .true.)
-        call current_line%init(5, 3, "stats.f90", .true.)
+        call baseline_line%init("stats.f90")
+        baseline_line%lines = 3, 3, .true.
+        call current_line%init("stats.f90")
+        current_line%lines = 3, 5, .true.
         call line_diffs(3)%init(baseline_line, current_line, DIFF_CHANGED)
         
         call file_diffs(1)%init("stats.f90", line_diffs)
@@ -456,8 +510,10 @@ contains
         passed = .false.
         
         ! Given: Files with different coverage percentage deltas
-        call baseline_line%init(1, 1, "small_change.f90", .true.)
-        call current_line%init(1, 1, "small_change.f90", .true.)
+        call baseline_line%init("small_change.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("small_change.f90")
+        current_line%lines = 1, 1, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         call file_diffs(1)%init("small_change.f90", line_diffs)
         file_diffs(1)%coverage_percentage_delta = 1.0  ! Below threshold
@@ -494,15 +550,19 @@ contains
         passed = .false.
         
         ! Given: Files with changed and unchanged lines
-        call baseline_line%init(5, 1, "test.f90", .true.)
-        call current_line%init(5, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 5, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 5, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         call file_diffs(1)%init("unchanged.f90", line_diffs)
         file_diffs(1)%coverage_percentage_delta = 0.0
         
-        call baseline_line%init(2, 1, "test.f90", .true.)
-        call current_line%init(8, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 2, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 8, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         call file_diffs(2)%init("changed.f90", line_diffs)
         file_diffs(2)%coverage_percentage_delta = 15.0
@@ -557,12 +617,16 @@ contains
         passed = .false.
         
         ! Given: Identical baseline and current coverage
-        call baseline_line%init(3, 1, "identical.f90", .true.)
-        call current_line%init(3, 1, "identical.f90", .true.)
+        call baseline_line%init("identical.f90")
+        baseline_line%lines = 1, 3, .true.
+        call current_line%init("identical.f90")
+        current_line%lines = 1, 3, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
-        call baseline_line%init(7, 2, "identical.f90", .true.)
-        call current_line%init(7, 2, "identical.f90", .true.)
+        call baseline_line%init("identical.f90")
+        baseline_line%lines = 2, 7, .true.
+        call current_line%init("identical.f90")
+        current_line%lines = 2, 7, .true.
         call line_diffs(2)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         call file_diffs(1)%init("identical.f90", line_diffs)
@@ -645,8 +709,8 @@ contains
             write(filename, '(A,I0,A)') "large_file_", i, ".f90"
             
             do j = 1, LINES_PER_FILE
-                call baseline_line%init(j, j, filename, .true.)
-                call current_line%init(j + 1, j, filename, .true.)
+                call baseline_line%init(filename, j, j, .true.)
+                call current_line%init(filename, j, j + 1, .true.)
                 call line_diffs(j)%init(baseline_line, current_line, DIFF_CHANGED)
             end do
             
@@ -689,8 +753,8 @@ contains
             write(filename, '(A,I0,A)') "mem_test_", i, ".f90"
             
             do j = 1, 50
-                call baseline_line%init(j * 2, j, filename, .true.)
-                call current_line%init(j * 3, j, filename, .true.)
+                call baseline_line%init(filename, j, j * 2, .true.)
+                call current_line%init(filename, j, j * 3, .true.)
                 call line_diffs(j)%init(baseline_line, current_line, DIFF_CHANGED)
             end do
             
@@ -734,20 +798,20 @@ contains
                 ! Create varied diff patterns
                 if (mod(j, 4) == 0) then
                     diff_type = DIFF_ADDED
-                    call baseline_line%init(0, j, filename, .true.)
-                    call current_line%init(1, j, filename, .true.)
+                    call baseline_line%init(filename, j, 0, .true.)
+                    call current_line%init(filename, j, 1, .true.)
                 else if (mod(j, 4) == 1) then
                     diff_type = DIFF_REMOVED
-                    call baseline_line%init(3, j, filename, .true.)
-                    call current_line%init(0, j, filename, .true.)
+                    call baseline_line%init(filename, j, 3, .true.)
+                    call current_line%init(filename, j, 0, .true.)
                 else if (mod(j, 4) == 2) then
                     diff_type = DIFF_CHANGED
-                    call baseline_line%init(2, j, filename, .true.)
-                    call current_line%init(5, j, filename, .true.)
+                    call baseline_line%init(filename, j, 2, .true.)
+                    call current_line%init(filename, j, 5, .true.)
                 else
                     diff_type = DIFF_UNCHANGED
-                    call baseline_line%init(4, j, filename, .true.)
-                    call current_line%init(4, j, filename, .true.)
+                    call baseline_line%init(filename, j, 4, .true.)
+                    call current_line%init(filename, j, 4, .true.)
                 end if
                 
                 call line_diffs(j)%init(baseline_line, current_line, diff_type)
@@ -788,8 +852,10 @@ contains
         passed = .false.
         
         ! Given: Valid data structures
-        call baseline_line%init(2, 1, "structure_test.f90", .true.)
-        call current_line%init(5, 1, "structure_test.f90", .true.)
+        call baseline_line%init("structure_test.f90")
+        baseline_line%lines = 1, 2, .true.
+        call current_line%init("structure_test.f90")
+        current_line%lines = 1, 5, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         call file_diffs(1)%init("structure_test.f90", line_diffs)
         
@@ -817,8 +883,10 @@ contains
         passed = .false.
         
         ! Given: Line diff with specific characteristics
-        call baseline_line%init(0, 10, "line_test.f90", .true.)
-        call current_line%init(3, 10, "line_test.f90", .true.)
+        call baseline_line%init("line_test.f90")
+        baseline_line%lines = 10, 0, .true.
+        call current_line%init("line_test.f90")
+        current_line%lines = 10, 3, .true.
         
         ! When: Creating line diff
         call line_diff%init(baseline_line, current_line, DIFF_CHANGED)
@@ -847,16 +915,21 @@ contains
         passed = .false.
         
         ! Given: File diff with multiple line changes
-        call baseline_line%init(1, 1, "file_struct_test.f90", .true.)
-        call current_line%init(2, 1, "file_struct_test.f90", .true.)
+        call baseline_line%init("file_struct_test.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("file_struct_test.f90")
+        current_line%lines = 1, 2, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
-        call baseline_line%init(0, 2, "file_struct_test.f90", .true.)
-        call current_line%init(4, 2, "file_struct_test.f90", .true.)
+        call baseline_line%init("file_struct_test.f90")
+        baseline_line%lines = 2, 0, .true.
+        call current_line%init("file_struct_test.f90")
+        current_line%lines = 2, 4, .true.
         call line_diffs(2)%init(baseline_line, current_line, DIFF_ADDED)
         
         ! When: Creating file diff
-        call file_diff%init("file_struct_test.f90", line_diffs)
+        call file_diff%init("file_struct_test.f90")
+        file_diff%lines = line_diffs
         
         ! Then: Should initialize and calculate all fields correctly
         if (file_diff%filename == "file_struct_test.f90" .and. &

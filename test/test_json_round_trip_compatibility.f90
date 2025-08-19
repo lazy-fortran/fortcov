@@ -52,9 +52,9 @@ contains
         print *, "Test: Basic JSON export/import round-trip..."
         
         ! Create test coverage data
-        call lines(1)%init(5, 10, "test.f90", .true.)
-        call lines(2)%init(0, 15, "test.f90", .true.)  
-        call lines(3)%init(3, 20, "test.f90", .true.)
+        call lines(1)%init("test.f90", 10, 5, .true.)
+        call lines(2)%init("test.f90", 15, 0, .true.)  
+        call lines(3)%init("test.f90", 20, 3, .true.)
         
         call files(1)%init("test.f90", lines)
         call original_coverage%init(files)
@@ -180,8 +180,8 @@ contains
         print *, "Test: Complex coverage data with functions..."
         
         ! Create test coverage with functions
-        call lines(1)%init(3, 10, "module.f90", .true.)
-        call lines(2)%init(1, 20, "module.f90", .true.)
+        call lines(1)%init("module.f90", 10, 3, .true.)
+        call lines(2)%init("module.f90", 20, 1, .true.)
         
         call functions(1)%init("test_function", "test_module", .true., 2, 10, "module.f90")
         

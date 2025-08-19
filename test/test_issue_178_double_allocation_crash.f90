@@ -50,8 +50,8 @@ contains
         
         ! **Given**: Create initial coverage data with files allocated
         allocate(test_lines(2))
-        call test_lines(1)%init(5, 1, "test.f90", .true.)
-        call test_lines(2)%init(0, 2, "test.f90", .true.)
+        call test_lines(1)%init("test.f90", 1, 5, .true.)
+        call test_lines(2)%init("test.f90", 2, 0, .true.)
         
         allocate(test_files(1))
         call test_files(1)%init("test.f90", test_lines)
@@ -93,7 +93,7 @@ contains
         ! First batch of files
         allocate(lines1(3))
         do i = 1, 3
-            call lines1(i)%init(i, i, "batch1.f90", .true.)
+            call lines1(i)%init("batch1.f90", i, i, .true.)
         end do
         allocate(files_batch1(1))
         call files_batch1(1)%init("batch1.f90", lines1)
@@ -101,7 +101,7 @@ contains
         ! Second batch of files
         allocate(lines2(2))
         do i = 1, 2
-            call lines2(i)%init(i*2, i, "batch2.f90", .true.)
+            call lines2(i)%init("batch2.f90", i, i*2, .true.)
         end do
         allocate(files_batch2(1))
         call files_batch2(1)%init("batch2.f90", lines2)
@@ -109,7 +109,7 @@ contains
         ! Third batch of files
         allocate(lines3(4))
         do i = 1, 4
-            call lines3(i)%init(i*3, i, "batch3.f90", .true.)
+            call lines3(i)%init("batch3.f90", i, i*3, .true.)
         end do
         allocate(files_batch3(1))
         call files_batch3(1)%init("batch3.f90", lines3)
@@ -151,7 +151,7 @@ contains
         ! File 1: Small file
         allocate(lines_set(5))
         do i = 1, 5
-            call lines_set(i)%init(i*2, i, "small.f90", .true.)
+            call lines_set(i)%init("small.f90", i, i*2, .true.)
         end do
         call files_set(1)%init("small.f90", lines_set)
         deallocate(lines_set)
@@ -159,7 +159,7 @@ contains
         ! File 2: Medium file
         allocate(lines_set(15))
         do i = 1, 15
-            call lines_set(i)%init(mod(i,3), i, "medium.f90", .true.)
+            call lines_set(i)%init("medium.f90", i, mod(i,3), .true.)
         end do
         call files_set(2)%init("medium.f90", lines_set)
         deallocate(lines_set)
@@ -167,7 +167,7 @@ contains
         ! File 3: Large file
         allocate(lines_set(50))
         do i = 1, 50
-            call lines_set(i)%init(mod(i,5), i, "large.f90", .true.)
+            call lines_set(i)%init("large.f90", i, mod(i,5), .true.)
         end do
         call files_set(3)%init("large.f90", lines_set)
         
@@ -219,7 +219,7 @@ contains
             
             allocate(temp_lines(line_count))
             do line_count = 1, size(temp_lines)
-                call temp_lines(line_count)%init(iteration, line_count, "test.f90", .true.)
+                call temp_lines(line_count)%init("test.f90", line_count, iteration, .true.)
             end do
             
             write(filename, '(A,I0,A)') "file_", iteration, ".f90"

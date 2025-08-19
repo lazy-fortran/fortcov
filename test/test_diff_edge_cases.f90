@@ -2,6 +2,7 @@ program test_diff_edge_cases
     use coverage_model
     use test_diff_data_generation
     use json_coverage_io
+    use coverage_diff, only: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
     implicit none
     
     logical :: all_tests_passed

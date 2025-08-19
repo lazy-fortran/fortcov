@@ -243,7 +243,7 @@ contains
         print *, "    Test 1d: Coverage Model Baseline (900 lines -> target: 2 modules)"
         
         ! Test coverage data type functionality
-        call test_line%init(1, 1, "test.f90", .true.)
+        call test_line%init("test.f90", 1, 1, .true.)
         if (test_line%line_number == 1) then
             print *, "      BASELINE: Coverage data types operational"
             print *, "      DECOMPOSITION TARGET: Split into 2 focused modules"
@@ -625,7 +625,7 @@ contains
         print *, "        - coverage_stats_t with all fields and methods"
         
         ! Test type accessibility and initialization
-        call test_line%init(1, 1, "test.f90", .true.)
+        call test_line%init("test.f90", 1, 1, .true.)
         if (test_line%line_number == 1) then
             print *, "      TYPE ACCESSIBILITY: CONFIRMED"
             print *, "      PRESERVATION STRATEGY:"

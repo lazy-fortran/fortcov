@@ -158,9 +158,10 @@ contains
         passed = .false.
         
         ! Create test coverage data
-        call test_lines(1)%init(5, 1, "test.f90", .true.)
-        call test_lines(2)%init(0, 2, "test.f90", .true.)
-        call test_file%init("test.f90", test_lines)
+        call test_lines(1)%init("test.f90", 1, 5, .true.)
+        call test_lines(2)%init("test.f90", 2, 0, .true.)
+        call test_file%init("test.f90")
+        test_file%lines = test_lines
         call coverage_data%init([test_file])
         
         ! Export to JSON
@@ -190,8 +191,9 @@ contains
         passed = .false.
         
         ! Create original data
-        call test_lines(1)%init(3, 10, "roundtrip.f90", .true.)
-        call test_file%init("roundtrip.f90", test_lines)
+        call test_lines(1)%init("roundtrip.f90", 10, 3, .true.)
+        call test_file%init("roundtrip.f90")
+        test_file%lines = test_lines
         call original_data%init([test_file])
         
         ! Export to JSON then import back
