@@ -84,7 +84,7 @@ contains
         end if
         
         ! Calculate statistics
-        call calculate_coverage_statistics(merged_coverage, line_stats)
+        line_stats = calculate_line_coverage(merged_coverage)
         
         ! Generate and output reports
         call generate_coverage_reports(merged_coverage, line_stats, config, &
@@ -97,12 +97,12 @@ contains
         
         ! Apply threshold validation
         if (config%strict_mode .and. config%minimum_coverage > 0.0) then
-            if (line_stats%line_coverage < config%minimum_coverage) then
+            if (line_stats%percentage < config%minimum_coverage) then
                 if (.not. config%quiet) then
                     print *, "❌ Coverage threshold not met"
                     write(*, '(A, F5.1, A, F5.1, A)') &
                         "   Required: ", config%minimum_coverage, "%, Actual: ", &
-                        line_stats%line_coverage, "%"
+                        line_stats%percentage, "%"
                 end if
                 exit_code = EXIT_THRESHOLD_NOT_MET
             end if
@@ -172,8 +172,8 @@ contains
             return
         end if
         
-        ! Calculate statistics for imported data
-        call calculate_coverage_statistics(imported_coverage, line_stats)
+        ! Calculate statistics for imported data using specific function
+        line_stats = calculate_line_coverage(imported_coverage)
         
         ! Generate reports for imported data
         call generate_coverage_reports(imported_coverage, line_stats, config, &
@@ -186,12 +186,12 @@ contains
         
         ! Apply threshold validation
         if (config%strict_mode .and. config%minimum_coverage > 0.0) then
-            if (line_stats%line_coverage < config%minimum_coverage) then
+            if (line_stats%percentage < config%minimum_coverage) then
                 if (.not. config%quiet) then
                     print *, "❌ Coverage threshold not met for imported data"
                     write(*, '(A, F5.1, A, F5.1, A)') &
                         "   Required: ", config%minimum_coverage, "%, Actual: ", &
-                        line_stats%line_coverage, "%"
+                        line_stats%percentage, "%"
                 end if
                 exit_code = EXIT_THRESHOLD_NOT_MET
             end if
@@ -287,7 +287,7 @@ contains
     subroutine calculate_coverage_statistics(coverage_data, stats)
         !! Calculates coverage statistics from data
         type(coverage_data_t), intent(in) :: coverage_data
-        type(coverage_stats_t), intent(out) :: stats
+        type(extended_coverage_stats_t), intent(out) :: stats
         
         ! Implementation would calculate statistics
         call calculate_statistics(coverage_data, stats)

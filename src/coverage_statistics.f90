@@ -1,5 +1,5 @@
 module coverage_statistics
-    use coverage_model
+    use coverage_data_model, only: coverage_data_t
     use string_utils, only: compress_ranges
     use input_validation
     implicit none
@@ -7,6 +7,7 @@ module coverage_statistics
     
     ! Public types
     public :: coverage_stats_t
+    public :: extended_coverage_stats_t
     public :: module_stats_t
     
     ! Public procedures
@@ -15,7 +16,7 @@ module coverage_statistics
     public :: calculate_function_coverage
     public :: calculate_module_coverage
     
-    ! Statistics result type
+    ! Statistics result type for line/branch/function coverage calculations
     type :: coverage_stats_t
         real :: percentage
         integer :: covered_count
@@ -24,6 +25,21 @@ module coverage_statistics
     contains
         procedure :: init => stats_init
     end type coverage_stats_t
+    
+    ! Extended statistics type for overall coverage tracking
+    type :: extended_coverage_stats_t
+        real :: line_coverage = 0.0
+        real :: branch_coverage = 0.0
+        real :: function_coverage = 0.0
+        integer :: total_lines = 0
+        integer :: covered_lines = 0
+        integer :: total_branches = 0
+        integer :: covered_branches = 0
+        integer :: total_functions = 0
+        integer :: covered_functions = 0
+        integer :: total_files = 0
+        integer :: covered_files = 0
+    end type extended_coverage_stats_t
     
     ! Module-specific statistics type
     type :: module_stats_t
@@ -224,8 +240,9 @@ contains
             ! Count functions in this module
             if (allocated(coverage_data%files(file_idx)%functions)) then
                 do func_idx = 1, size(coverage_data%files(file_idx)%functions)
-                    if (trim(coverage_data%files(file_idx)%functions(func_idx) &
-                             %parent_module) == trim(module_name)) then
+                    ! Check if function name contains module prefix
+                    if (index(coverage_data%files(file_idx)%functions(func_idx)%name, &
+                             trim(module_name)) > 0) then
                         stats%total_functions = stats%total_functions + 1
                         if (coverage_data%files(file_idx)%functions(func_idx) &
                             %execution_count > 0) then

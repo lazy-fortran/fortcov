@@ -8,6 +8,7 @@ module coverage_model
     !! Decomposed into: coverage_data_model + coverage_operations
     use coverage_data_model
     use coverage_operations
+    use coverage_statistics, only: coverage_stats_t, extended_coverage_stats_t
     implicit none
     private
     
@@ -18,10 +19,11 @@ module coverage_model
     public :: coverage_function_t
     public :: coverage_file_t
     public :: coverage_data_t
+    public :: coverage_stats_t
+    public :: extended_coverage_stats_t
     public :: coverage_diff_t
     public :: line_diff_t
     public :: file_diff_t
-    public :: coverage_stats_t
     public :: line_coverage_t
     public :: file_coverage_t
     
@@ -36,7 +38,7 @@ contains
     subroutine calculate_statistics(coverage_data, stats)
         !! Delegates to coverage_operations module
         type(coverage_data_t), intent(in) :: coverage_data
-        type(coverage_stats_t), intent(out) :: stats
+        type(extended_coverage_stats_t), intent(out) :: stats
         
         call calculate_coverage_statistics(coverage_data, stats)
         

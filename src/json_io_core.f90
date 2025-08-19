@@ -157,7 +157,7 @@ contains
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(out) :: summary_json
         
-        type(coverage_stats_t) :: stats
+        type(extended_coverage_stats_t) :: stats
         
         ! Calculate statistics
         call calculate_coverage_statistics(coverage_data, stats)

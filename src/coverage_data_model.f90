@@ -17,7 +17,7 @@ module coverage_data_model
     public :: coverage_diff_t
     public :: line_diff_t
     public :: file_diff_t
-    public :: coverage_stats_t
+    ! coverage_stats_t moved to coverage_statistics module
     public :: line_coverage_t
     public :: file_coverage_t
     
@@ -127,20 +127,7 @@ module coverage_data_model
         procedure :: init => data_init
     end type coverage_data_t
     
-    ! Coverage statistics type
-    type :: coverage_stats_t
-        real :: line_coverage = 0.0
-        real :: branch_coverage = 0.0
-        real :: function_coverage = 0.0
-        integer :: total_lines = 0
-        integer :: covered_lines = 0
-        integer :: total_branches = 0
-        integer :: covered_branches = 0
-        integer :: total_functions = 0
-        integer :: covered_functions = 0
-        integer :: total_files = 0
-        integer :: covered_files = 0
-    end type coverage_stats_t
+    ! coverage_stats_t moved to coverage_statistics module to avoid duplication
     
     ! Coverage diff types
     type :: line_diff_t

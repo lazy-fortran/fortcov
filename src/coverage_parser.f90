@@ -229,8 +229,8 @@ contains
                 call resize_lines_array(lines_array)
             end if
             
-            call lines_array(lines_count)%init(exec_count, line_num, &
-                                             source_filename, is_executable)
+            call lines_array(lines_count)%init(source_filename, line_num, &
+                                             exec_count, is_executable)
         end do
         
         close(unit)
@@ -243,8 +243,9 @@ contains
         
         ! Build coverage data if we have valid files
         if (files_count > 0) then
-            ! Create coverage data with all files
-            call coverage_data%init(files_array(1:files_count))
+            ! Initialize coverage data and assign files
+            call coverage_data%init()
+            coverage_data%files = files_array(1:files_count)
         else
             ! Set error flag if we have no useful data
             error_flag = .true.
@@ -375,10 +376,8 @@ contains
         end if
         
         ! Create function object with parsed data
-        call new_function%init(name=function_name, parent_module="", &
-                              is_module_procedure=.false., &
-                              execution_count=function_call_count, &
-                              line_number=0, filename=current_filename)
+        call new_function%init(function_name, current_filename, 0, &
+                              function_call_count)
         
         ! Add function to the current file (find or create file entry)
         call add_function_to_current_file(new_function, current_filename, &
@@ -442,7 +441,7 @@ contains
         end if
         
         ! Initialize the new file
-        call files_array(files_count)%init(filename, lines)
+        call files_array(files_count)%init(filename)
     end subroutine add_file_to_array
     
     ! Helper subroutine to resize files array when needed

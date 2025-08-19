@@ -455,7 +455,8 @@ contains
         call parse_classes_from_xml(xml_content, files, success)
         if (.not. success) return
         
-        call coverage_data%init(files)
+        call coverage_data%init()
+        coverage_data%files = files
         success = .true.
         
     end subroutine parse_cobertura_xml
@@ -538,7 +539,7 @@ contains
             if (.not. success) return
             
             ! Create file object
-            call files(i)%init(filename, lines)
+            call files(i)%init(filename)
             if (allocated(lines)) deallocate(lines)
             
             ! Move position for next class
@@ -616,7 +617,7 @@ contains
             if (.not. success) return
             
             ! Create line object - use dummy filename since we'll get it from parent
-            call lines(i)%init(hits, line_number, 'dummy.f90', .true.)
+            call lines(i)%init('dummy.f90', line_number, hits, .true.)
             
             ! Move position for next line - find actual end of current line element
             pos = index(class_xml(line_start:), '/>')

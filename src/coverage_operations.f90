@@ -6,6 +6,7 @@ module coverage_operations
     use foundation_constants
     use foundation_layer_utils
     use coverage_data_model
+    use coverage_statistics, only: extended_coverage_stats_t
     implicit none
     private
     
@@ -24,7 +25,7 @@ contains
     subroutine calculate_coverage_statistics(coverage_data, stats)
         !! Calculates comprehensive coverage statistics
         type(coverage_data_t), intent(in) :: coverage_data
-        type(coverage_stats_t), intent(out) :: stats
+        type(extended_coverage_stats_t), intent(out) :: stats
         
         integer :: i, j
         
@@ -334,7 +335,7 @@ contains
     subroutine calculate_file_statistics(file, stats)
         !! Calculates statistics for a single file
         type(coverage_file_t), intent(in) :: file
-        type(coverage_stats_t), intent(inout) :: stats
+        type(extended_coverage_stats_t), intent(inout) :: stats
         
         integer :: i
         
