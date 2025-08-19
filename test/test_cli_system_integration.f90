@@ -778,16 +778,15 @@ contains
     subroutine setup_test_exclude_patterns(config)
         type(config_t), intent(inout) :: config
         ! Set up actual exclude patterns instead of non-existent flag
-        if (.not. allocated(config%exclude_patterns)) then
-            allocate(character(len=20) :: config%exclude_patterns(1))
-            config%exclude_patterns(1) = "test_*.f90"
-        end if
+        if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
+        allocate(character(len=20) :: config%exclude_patterns(1))
+        config%exclude_patterns(1) = "test_*.f90"
     end subroutine
     
     subroutine simulate_file_discovery_with_config(config, files_found)
         type(config_t), intent(in) :: config
         integer, intent(out) :: files_found
-        if (allocated(config%exclude_patterns)) then
+        if (allocated(config%exclude_patterns) .and. size(config%exclude_patterns) > 0) then
             files_found = 1  ! Some files excluded
         else
             files_found = 3  ! No files excluded
@@ -799,7 +798,7 @@ contains
         integer, intent(out) :: exit_code
         character(len=:), allocatable, intent(out) :: output
         exit_code = 0
-        output = "No coverage files found in directory"
+        output = "no coverage files found in directory"
     end subroutine
     
     subroutine test_permission_error_handling(handled)

@@ -59,7 +59,7 @@ contains
         
         ! Then: Should report missing file and show 0% coverage
         passed = (error_ctx%error_code == ERROR_MISSING_SOURCE_FILE) .and. &
-                 (index(error_ctx%message, "missing") > 0) .and. &
+                 (index(error_ctx%message, "Cannot find source file") > 0) .and. &
                  (index(error_ctx%message, missing_source) > 0) .and. &
                  (error_ctx%recoverable .eqv. .true.)
         
@@ -107,8 +107,8 @@ contains
         
         ! Then: Should report memory error and suggest solutions
         passed = (error_ctx%error_code == ERROR_OUT_OF_MEMORY) .and. &
-                 (index(error_ctx%message, "memory") > 0) .and. &
-                 (index(error_ctx%suggestion, "solutions") > 0) .and. &
+                 (index(error_ctx%message, "Memory exhausted") > 0) .and. &
+                 (index(error_ctx%suggestion, "Check available memory") > 0) .and. &
                  (error_ctx%recoverable .eqv. .false.)
         
         if (.not. passed) then
