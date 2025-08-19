@@ -12,7 +12,7 @@ program test_large_module_decomposition_safety
     !! - Performance characteristics
     use coverage_engine
     use coverage_model
-    use fortcov_config
+    use fortcov_config, only: config_t, initialize_config
     use json_coverage_io
     use report_engine
     implicit none
@@ -107,7 +107,7 @@ contains
         print *, "    Test 1a: Coverage Engine Baseline (1180 lines -> target: 4 modules)"
         
         ! Test core coverage analysis function exists and callable
-        call test_config%initialize()
+        call initialize_config(test_config)
         test_config%quiet = .true.
         
         ! Test coverage file discovery functionality
@@ -191,7 +191,7 @@ contains
         print *, "    Test 1b: Config Module Baseline (1128 lines -> target: 3 modules)"
         
         ! Test configuration initialization
-        call test_config%initialize()
+        call initialize_config(test_config)
         init_success = .true.  ! If we reach here, initialization worked
         
         if (init_success) then
@@ -431,7 +431,7 @@ contains
         print *, "        - Import in other config modules as needed"
         
         ! Test config_t accessibility
-        call test_config%initialize()
+        call initialize_config(test_config)
         passed = .true.  ! If we reach here, config_t is accessible
         
     end function test_config_data_structure_preservation
