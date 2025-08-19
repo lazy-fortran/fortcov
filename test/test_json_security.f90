@@ -26,7 +26,8 @@ contains
     subroutine test_extremely_large_dataset()
         type(json_reporter_t) :: reporter
         type(coverage_data_t) :: dataset
-        logical :: error_flag
+        logical :: success
+        character(len=:), allocatable :: error_msg
         integer :: i, j
         
         print *, "Test: Extremely large dataset security..."
@@ -49,9 +50,9 @@ contains
         end do
         
         ! This should work without buffer overflow or crashes
-        call reporter%generate_report(dataset, "test_security_large.json", error_flag, .false.)
+        call reporter%generate_report(dataset, "test_security_large.json", success, error_msg)
         
-        if (error_flag) then
+        if (.not. success) then
             print *, "FAIL: Large dataset security test failed"
             test_passed = .false.
         else
@@ -70,7 +71,8 @@ contains
     subroutine test_very_long_filename_security()
         type(json_reporter_t) :: reporter
         type(coverage_data_t) :: dataset
-        logical :: error_flag
+        logical :: success
+        character(len=:), allocatable :: error_msg
         character(len=1000) :: very_long_filename
         integer :: i
         
@@ -95,9 +97,9 @@ contains
         
         allocate(dataset%files(1)%functions(0))
         
-        call reporter%generate_report(dataset, "test_security_filename.json", error_flag, .false.)
+        call reporter%generate_report(dataset, "test_security_filename.json", success, error_msg)
         
-        if (error_flag) then
+        if (.not. success) then
             print *, "FAIL: Long filename security test failed"
             test_passed = .false.
         else
