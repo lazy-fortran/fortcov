@@ -72,15 +72,15 @@ contains
         
         passed = .true.
         
-        ! Given: Empty file diffs array (null-like scenario)
+        ! Given: Empty file diffs array (null-like scenario)  
         ! When: Creating coverage diff with empty data
-        call coverage_diff%init(empty_file_diffs)
+        allocate(coverage_diff%file_diffs, source=empty_file_diffs)
         
         ! Then: Should handle empty data gracefully
         if (allocated(coverage_diff%file_diffs) .and. &
             size(coverage_diff%file_diffs) == 0 .and. &
-            coverage_diff%total_added_lines == 0 .and. &
-            coverage_diff%total_removed_lines == 0) then
+            coverage_diff%added_lines == 0 .and. &
+            coverage_diff%removed_lines == 0) then
             passed = .true.
         end if
         
@@ -118,7 +118,7 @@ contains
         passed = .true.
         
         ! Given: Line with corrupted/inconsistent data
-        call corrupted_line%init(-5, 0, "", .true.)  ! Negative execution count, empty filename
+        call corrupted_line%init("", 0, -5, .true.)  ! Negative execution count, empty filename
         
         ! When: Creating diff with corrupted data
         call line_diff%init(corrupted_line, corrupted_line, DIFF_UNCHANGED)
@@ -141,8 +141,10 @@ contains
         passed = .true.
         
         ! Given: Lines from different files (mismatched context)
-        call baseline_line%init(5, 10, "file1.f90", .true.)
-        call current_line%init(3, 15, "file2.f90", .true.)  ! Different filename and line number
+        call baseline_line%init("file1.f90")
+        baseline_line%lines = 10, 5, .true.
+        call current_line%init("file2.f90")
+        current_line%lines = 15, 3, .true.  ! Different filename and line number
         
         ! When: Creating diff with mismatched lines
         call line_diff%init(baseline_line, current_line, DIFF_CHANGED)
@@ -256,12 +258,14 @@ contains
         
         ! Given: File with no executable lines
         do i = 1, 3
-            call non_executable_lines(i)%init(0, i, "comments_only.f90", .false.)
+            call non_executable_lines(i)%init("comments_only.f90", i, 0, .false.)
             call line_diffs(i)%init(non_executable_lines(i), non_executable_lines(i), DIFF_UNCHANGED)
         end do
         
-        call empty_file%init("comments_only.f90", non_executable_lines)
-        call file_diff%init("comments_only.f90", line_diffs)
+        call empty_file%init("comments_only.f90")
+        empty_file%lines = non_executable_lines
+        call file_diff%init("comments_only.f90")
+        file_diff%lines = line_diffs
         
         ! When: Processing file diff with no executable lines
         ! Then: Should handle non-executable lines correctly
@@ -287,10 +291,11 @@ contains
         
         ! Given: File containing only comment lines
         do i = 1, 5
-            call comment_lines(i)%init(0, i, "comments.f90", .false.)  ! Not executable
+            call comment_lines(i)%init("comments.f90", i, 0, .false.)  ! Not executable
         end do
         
-        call comment_file%init("comments.f90", comment_lines)
+        call comment_file%init("comments.f90")
+        comment_file%lines = comment_lines
         call comments_only_data%init([comment_file])
         
         ! When: Validating comment-only file
@@ -321,7 +326,7 @@ contains
                            "coverage/data/from/such/files/in/fortran/coverage/analysis.f90"
         
         ! When: Creating coverage data with very long filename
-        call test_line%init(5, 1, very_long_filename, .true.)
+        call test_line%init(very_long_filename, 1, 5, .true.)
         call line_diff%init(test_line, test_line, DIFF_UNCHANGED)
         
         ! Then: Should handle long filenames without truncation
@@ -344,12 +349,12 @@ contains
         passed = .true.
         
         ! Given: Two files with identical filenames but different content
-        call lines1(1)%init(5, 1, "duplicate.f90", .true.)
-        call lines1(2)%init(3, 2, "duplicate.f90", .true.)
+        call lines1(1)%init("duplicate.f90", 1, 5, .true.)
+        call lines1(2)%init("duplicate.f90", 2, 3, .true.)
         call files(1)%init("duplicate.f90", lines1)
         
-        call lines2(1)%init(2, 1, "duplicate.f90", .true.)
-        call lines2(2)%init(7, 2, "duplicate.f90", .true.)
+        call lines2(1)%init("duplicate.f90", 1, 2, .true.)
+        call lines2(2)%init("duplicate.f90", 2, 7, .true.)
         call files(2)%init("duplicate.f90", lines2)
         
         call duplicate_data%init(files)
@@ -447,10 +452,11 @@ contains
         
         ! Given: File with zero coverage on all lines
         do i = 1, 4
-            call zero_lines(i)%init(0, i, "zero_coverage.f90", .true.)
+            call zero_lines(i)%init("zero_coverage.f90", i, 0, .true.)
         end do
         
-        call zero_file%init("zero_coverage.f90", zero_lines)
+        call zero_file%init("zero_coverage.f90")
+        zero_file%lines = zero_lines
         
         ! When: Processing zero coverage file
         ! Then: Should report 0% coverage
@@ -473,10 +479,11 @@ contains
         
         ! Given: File with 100% coverage
         do i = 1, 3
-            call full_lines(i)%init(i + 1, i, "full_coverage.f90", .true.)
+            call full_lines(i)%init("full_coverage.f90", i, i + 1, .true.)
         end do
         
-        call full_file%init("full_coverage.f90", full_lines)
+        call full_file%init("full_coverage.f90")
+        full_file%lines = full_lines
         
         ! When: Processing 100% coverage file
         ! Then: Should report 100% coverage
@@ -497,11 +504,12 @@ contains
         passed = .true.
         
         ! Given: File with inconsistent line numbering
-        call inconsistent_lines(1)%init(2, 5, "inconsistent.f90", .true.)    ! Line 5
-        call inconsistent_lines(2)%init(1, 2, "inconsistent.f90", .true.)    ! Line 2
-        call inconsistent_lines(3)%init(3, 10, "inconsistent.f90", .true.)   ! Line 10
+        call inconsistent_lines(1)%init("inconsistent.f90", 5, 2, .true.)    ! Line 5
+        call inconsistent_lines(2)%init("inconsistent.f90", 2, 1, .true.)    ! Line 2
+        call inconsistent_lines(3)%init("inconsistent.f90", 10, 3, .true.)   ! Line 10
         
-        call inconsistent_file%init("inconsistent.f90", inconsistent_lines)
+        call inconsistent_file%init("inconsistent.f90")
+        inconsistent_file%lines = inconsistent_lines
         
         ! When: Processing file with inconsistent line numbers
         ! Then: Should handle without crashing
@@ -549,11 +557,14 @@ contains
         passed = .true.
         
         ! Given: File diff with very small coverage differences
-        call baseline_line%init(1, 1, "precision.f90", .true.)
-        call current_line%init(1, 1, "precision.f90", .true.)
+        call baseline_line%init("precision.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("precision.f90")
+        current_line%lines = 1, 1, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
-        call file_diff%init("precision.f90", line_diffs)
+        call file_diff%init("precision.f90")
+        file_diff%lines = line_diffs
         file_diff%baseline_coverage_percentage = 66.666666
         file_diff%current_coverage_percentage = 66.666667
         call file_diff%calculate_summary()
@@ -579,10 +590,11 @@ contains
         
         ! Given: File with no executable lines (could cause division by zero)
         do i = 1, 2
-            call non_executable_lines(i)%init(0, i, "no_exec.f90", .false.)
+            call non_executable_lines(i)%init("no_exec.f90", i, 0, .false.)
         end do
         
-        call no_executable_file%init("no_exec.f90", non_executable_lines)
+        call no_executable_file%init("no_exec.f90")
+        no_executable_file%lines = non_executable_lines
         
         ! When: Calculating coverage percentage with no executable lines
         ! Then: Should handle division by zero gracefully
@@ -681,8 +693,10 @@ contains
         passed = .true.
         
         ! Given: Diff with zero threshold
-        call baseline_line%init(1, 1, "test.f90", .true.)
-        call current_line%init(1, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 1, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         call file_diffs(1)%init("unchanged.f90", line_diffs)
@@ -715,8 +729,10 @@ contains
         passed = .true.
         
         ! Given: Negative threshold value
-        call baseline_line%init(1, 1, "test.f90", .true.)
-        call current_line%init(2, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 2, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
         call file_diffs(1)%init("test.f90", line_diffs)
@@ -745,8 +761,10 @@ contains
         passed = .true.
         
         ! Given: Threshold above 100%
-        call baseline_line%init(1, 1, "test.f90", .true.)
-        call current_line%init(2, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 2, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_CHANGED)
         
         call file_diffs(1)%init("test.f90", line_diffs)
@@ -777,8 +795,10 @@ contains
         passed = .true.
         
         ! Given: Very small threshold and tiny changes
-        call baseline_line%init(1, 1, "test.f90", .true.)
-        call current_line%init(1, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90")
+        baseline_line%lines = 1, 1, .true.
+        call current_line%init("test.f90")
+        current_line%lines = 1, 1, .true.
         call line_diffs(1)%init(baseline_line, current_line, DIFF_UNCHANGED)
         
         call file_diffs(1)%init("tiny_change.f90", line_diffs)
