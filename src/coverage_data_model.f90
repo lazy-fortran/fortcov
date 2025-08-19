@@ -138,6 +138,8 @@ module coverage_data_model
         integer :: execution_count_delta = 0  ! new_count - old_count
         integer :: diff_type = 0  ! DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
         character(len=1) :: status = ' '  ! '+', '-', '='
+        logical :: is_newly_covered = .false.  ! old_count == 0 and new_count > 0
+        logical :: is_newly_uncovered = .false.  ! old_count > 0 and new_count == 0
     contains
         procedure :: init => line_diff_init
     end type line_diff_t
@@ -577,6 +579,10 @@ contains
         this%new_count = current_line%execution_count
         this%execution_count_delta = current_line%execution_count - baseline_line%execution_count
         this%diff_type = diff_type
+        
+        ! Set newly covered/uncovered status
+        this%is_newly_covered = (baseline_line%execution_count == 0 .and. current_line%execution_count > 0)
+        this%is_newly_uncovered = (baseline_line%execution_count > 0 .and. current_line%execution_count == 0)
         
         ! Set status character based on diff type
         select case (diff_type)
