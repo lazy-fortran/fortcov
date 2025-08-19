@@ -5,7 +5,7 @@ module json_validator
     !! Separated from parsing and I/O operations for better separation of concerns.
     use foundation_constants
     use foundation_layer_utils
-    use json_parser
+    use json_parser, only: json_token_t, expect_token_type
     use coverage_model
     implicit none
     private
@@ -391,23 +391,5 @@ contains
         
     end function find_key_in_current_object
     
-    function expect_token_type(tokens, current_pos, token_count, expected_value) result(matches)
-        !! Checks if current token matches expected value
-        type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        integer, intent(in) :: token_count
-        character(len=*), intent(in) :: expected_value
-        logical :: matches
-        
-        matches = .false.
-        
-        if (current_pos <= token_count) then
-            if (tokens(current_pos)%value == expected_value) then
-                matches = .true.
-                current_pos = current_pos + 1
-            end if
-        end if
-        
-    end function expect_token_type
     
 end module json_validator

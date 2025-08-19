@@ -19,6 +19,7 @@ module config_parser
     public :: process_positional_arguments
     public :: is_flag_argument
     public :: get_long_form_option
+    public :: initialize_default_config
     
     ! Configuration parsing types (moved from main config)
     type, public :: config_t

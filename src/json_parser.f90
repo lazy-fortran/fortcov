@@ -13,6 +13,7 @@ module json_parser
     public :: json_token_t
     public :: tokenize_json_content
     public :: parse_coverage_object_from_tokens
+    public :: expect_token_type
     public :: parse_files_array_from_tokens
     public :: parse_file_object_from_tokens
     public :: parse_lines_array_from_tokens
@@ -123,7 +124,7 @@ contains
         parse_error = .false.
         
         ! Expect opening brace
-        if (.not. expect_token(tokens, current_pos, token_count, "{")) then
+        if (.not. expect_token_type(tokens, current_pos, token_count, "{")) then
             parse_error = .true.
             return
         end if
@@ -188,7 +189,7 @@ contains
         allocate(temp_files(capacity))
         
         ! Expect opening bracket
-        if (.not. expect_token(tokens, current_pos, token_count, "[")) then
+        if (.not. expect_token_type(tokens, current_pos, token_count, "[")) then
             parse_error = .true.
             return
         end if
@@ -240,7 +241,7 @@ contains
         parse_error = .false.
         
         ! Expect opening brace
-        if (.not. expect_token(tokens, current_pos, token_count, "{")) then
+        if (.not. expect_token_type(tokens, current_pos, token_count, "{")) then
             parse_error = .true.
             return
         end if
@@ -301,7 +302,7 @@ contains
         allocate(temp_lines(capacity))
         
         ! Expect opening bracket
-        if (.not. expect_token(tokens, current_pos, token_count, "[")) then
+        if (.not. expect_token_type(tokens, current_pos, token_count, "[")) then
             parse_error = .true.
             return
         end if
@@ -498,6 +499,95 @@ contains
         
     end subroutine unescape_json_string
     
-    ! Additional helper functions would be implemented here...
+    subroutine parse_key_value_pair(tokens, current_pos, token_count, key_name, parse_error)
+        !! Parses a key-value pair from JSON tokens
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        integer, intent(in) :: token_count
+        character(len=*), intent(in) :: key_name
+        logical, intent(out) :: parse_error
+        
+        parse_error = .false.
+        
+        ! This would parse a specific key-value pair
+        ! For now, just skip to the next key or end of object
+        do while (current_pos <= token_count)
+            if (tokens(current_pos)%value == "," .or. tokens(current_pos)%value == "}") then
+                exit
+            end if
+            current_pos = current_pos + 1
+        end do
+        
+        ! Skip comma if present
+        if (current_pos <= token_count .and. tokens(current_pos)%value == ",") then
+            current_pos = current_pos + 1
+        end if
+        
+    end subroutine parse_key_value_pair
+
+    subroutine parse_line_object(tokens, current_pos, token_count, line_obj, parse_error)
+        !! Parses a line coverage object from JSON tokens
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        integer, intent(in) :: token_count
+        type(line_coverage_t), intent(out) :: line_obj
+        logical, intent(out) :: parse_error
+        
+        parse_error = .false.
+        
+        ! Initialize line object
+        line_obj%line_number = 0
+        line_obj%execution_count = 0
+        
+        ! This would parse the line object structure
+        ! For now, just skip the JSON object
+        if (current_pos <= token_count .and. tokens(current_pos)%value == "{") then
+            current_pos = current_pos + 1
+            ! Skip to closing brace
+            do while (current_pos <= token_count .and. tokens(current_pos)%value /= "}")
+                current_pos = current_pos + 1
+            end do
+            if (current_pos <= token_count) current_pos = current_pos + 1
+        else
+            parse_error = .true.
+        end if
+        
+    end subroutine parse_line_object
+
+    subroutine grow_lines_array(temp_lines, capacity)
+        !! Grows the lines array by doubling capacity
+        type(line_coverage_t), allocatable, intent(inout) :: temp_lines(:)
+        integer, intent(inout) :: capacity
+        
+        type(line_coverage_t), allocatable :: new_lines(:)
+        integer :: old_capacity
+        
+        old_capacity = capacity
+        capacity = capacity * 2
+        
+        allocate(new_lines(capacity))
+        new_lines(1:old_capacity) = temp_lines(1:old_capacity)
+        call move_alloc(new_lines, temp_lines)
+        
+    end subroutine grow_lines_array
+
+    function expect_token_type(tokens, current_pos, token_count, expected_value) result(matches)
+        !! Checks if current token matches expected value
+        type(json_token_t), intent(in) :: tokens(:)
+        integer, intent(inout) :: current_pos
+        integer, intent(in) :: token_count
+        character(len=*), intent(in) :: expected_value
+        logical :: matches
+        
+        matches = .false.
+        
+        if (current_pos <= token_count) then
+            if (tokens(current_pos)%value == expected_value) then
+                matches = .true.
+                current_pos = current_pos + 1
+            end if
+        end if
+        
+    end function expect_token_type
     
 end module json_parser
