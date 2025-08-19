@@ -29,6 +29,7 @@ fortcov --exclude='build/*,test/*' --output=coverage.md
 **Alternative approach** (using provided helper script):
 ```bash
 # Use the FPM coverage bridge script for simplified workflow
+# (From FortCov repository root directory)
 ./scripts/fpm_coverage_bridge.sh root coverage.md
 # OR for src directory pattern:
 ./scripts/fpm_coverage_bridge.sh src coverage.md
