@@ -613,7 +613,10 @@ contains
         type(line_diff_t), intent(in) :: line_diffs(:)
         
         this%filename = filename
-        if (allocated(this%line_diffs)) deallocate(this%line_diffs)
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%line_diffs)) then
+            deallocate(this%line_diffs)
+        end if
         allocate(this%line_diffs, source=line_diffs)
         call this%calculate_summary()
     end subroutine file_diff_init
@@ -673,7 +676,10 @@ contains
         logical, intent(in), optional :: include_unchanged
         real, intent(in), optional :: threshold
         
-        if (allocated(this%file_diffs)) deallocate(this%file_diffs)
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%file_diffs)) then
+            deallocate(this%file_diffs)
+        end if
         allocate(this%file_diffs, source=file_diffs)
         
         if (present(include_unchanged)) then
