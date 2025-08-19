@@ -356,7 +356,8 @@ contains
             end if
         end do
         
-        call filtered_data%init(temp_files)
+        call filtered_data%init()
+        filtered_data%files = temp_files
         success = .true.
     end subroutine report_engine_apply_filtering
     
@@ -763,7 +764,7 @@ contains
         include = .true.
         
         ! Check coverage threshold
-        file_coverage = file%get_line_coverage_percentage()
+        file_coverage = file%get_line_coverage()
         if (file_coverage < criteria%min_coverage_threshold) then
             include = .false.
             return
