@@ -373,6 +373,11 @@ contains
         character(len=*), intent(in) :: filename
         type(coverage_line_t), intent(in) :: lines(:)
         
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%lines)) then
+            deallocate(this%lines)
+        end if
+        
         this%filename = filename
         allocate(this%lines, source=lines)
     end subroutine file_init
@@ -447,7 +452,10 @@ contains
         class(coverage_data_t), intent(inout) :: this
         type(coverage_file_t), intent(in), optional :: files(:)
         
-        ! Automatic deallocation on reassignment
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%files)) then
+            deallocate(this%files)
+        end if
         
         if (present(files)) then
             allocate(this%files, source=files)
@@ -523,7 +531,10 @@ contains
         class(coverage_data_t), intent(inout) :: this
         character(len=*), intent(in) :: serialized
         
-        ! Automatic deallocation on reassignment
+        ! Ensure safe reallocation by checking if already allocated
+        if (allocated(this%files)) then
+            deallocate(this%files)
+        end if
         
         ! Placeholder implementation: create empty structure
         ! Real implementation would parse the serialized string
