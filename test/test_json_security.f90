@@ -113,7 +113,8 @@ contains
     subroutine test_json_structure_validation()
         type(json_reporter_t) :: reporter
         type(coverage_data_t) :: dataset
-        logical :: error_flag
+        logical :: success
+        character(len=:), allocatable :: error_msg
         character(len=:), allocatable :: json_content
         integer :: unit, ios, file_size
         character :: single_char
@@ -125,9 +126,9 @@ contains
         ! Create simple test dataset
         call create_simple_test_dataset(dataset)
         
-        call reporter%generate_report(dataset, "test_json_structure.json", error_flag, .false.)
+        call reporter%generate_report(dataset, "test_json_structure.json", success, error_msg)
         
-        if (error_flag) then
+        if (.not. success) then
             print *, "FAIL: JSON structure generation failed"
             test_passed = .false.
             return
