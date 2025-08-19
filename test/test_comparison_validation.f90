@@ -153,13 +153,15 @@ contains
         allocate(lines(4))
         
         ! 75% coverage: 3 out of 4 lines covered
-        call lines(1)%init(10, 1, 'module.f90', .true.)
-        call lines(2)%init(5, 2, 'module.f90', .true.)
-        call lines(3)%init(0, 3, 'module.f90', .true.)  ! Uncovered
-        call lines(4)%init(15, 4, 'module.f90', .true.)
+        call lines(1)%init('module.f90', 1, 10, .true.)
+        call lines(2)%init('module.f90', 2, 5, .true.)
+        call lines(3)%init('module.f90', 3, 0, .true.)  ! Uncovered
+        call lines(4)%init('module.f90', 4, 15, .true.)
         
-        call files(1)%init('module.f90', lines)
-        call coverage_data%init(files)
+        call files(1)%init('module.f90')
+        files(1)%lines = lines
+        call coverage_data%init()
+        coverage_data%files = files
         
     end subroutine create_fortcov_sample_data
     
@@ -173,13 +175,15 @@ contains
         
         ! Similar to fortcov but slightly different execution counts
         ! (simulating rounding differences or measurement variations)
-        call lines(1)%init(12, 1, 'module.f90', .true.)  ! Different count, still covered
-        call lines(2)%init(7, 2, 'module.f90', .true.)   ! Different count, still covered
-        call lines(3)%init(0, 3, 'module.f90', .true.)   ! Same - uncovered
-        call lines(4)%init(18, 4, 'module.f90', .true.)  ! Different count, still covered
+        call lines(1)%init('module.f90', 1, 12, .true.)  ! Different count, still covered
+        call lines(2)%init('module.f90', 2, 7, .true.)   ! Different count, still covered
+        call lines(3)%init('module.f90', 3, 0, .true.)   ! Same - uncovered
+        call lines(4)%init('module.f90', 4, 18, .true.)  ! Different count, still covered
         
-        call files(1)%init('module.f90', lines)
-        call coverage_data%init(files)
+        call files(1)%init('module.f90')
+        files(1)%lines = lines
+        call coverage_data%init()
+        coverage_data%files = files
         
     end subroutine create_pycobertura_equivalent_data
     
@@ -194,29 +198,33 @@ contains
         allocate(lines3(6))
         
         ! File 1: High coverage module
-        call lines1(1)%init(25, 5, 'math_utils.f90', .true.)
-        call lines1(2)%init(18, 8, 'math_utils.f90', .true.)
-        call lines1(3)%init(30, 12, 'math_utils.f90', .true.)
-        call lines1(4)%init(0, 15, 'math_utils.f90', .true.)  ! One uncovered line
-        call lines1(5)%init(22, 20, 'math_utils.f90', .true.)
-        call files(1)%init('math_utils.f90', lines1)
+        call lines1(1)%init('math_utils.f90', 5, 25, .true.)
+        call lines1(2)%init('math_utils.f90', 8, 18, .true.)
+        call lines1(3)%init('math_utils.f90', 12, 30, .true.)
+        call lines1(4)%init('math_utils.f90', 15, 0, .true.)  ! One uncovered line
+        call lines1(5)%init('math_utils.f90', 20, 22, .true.)
+        call files(1)%init('math_utils.f90')
+        files(1)%lines = lines1
         
         ! File 2: Medium coverage module
-        call lines2(1)%init(8, 3, 'io_utils.f90', .true.)
-        call lines2(2)%init(0, 7, 'io_utils.f90', .true.)    ! Uncovered
-        call lines2(3)%init(12, 10, 'io_utils.f90', .true.)
-        call files(2)%init('io_utils.f90', lines2)
+        call lines2(1)%init('io_utils.f90', 3, 8, .true.)
+        call lines2(2)%init('io_utils.f90', 7, 0, .true.)    ! Uncovered
+        call lines2(3)%init('io_utils.f90', 10, 12, .true.)
+        call files(2)%init('io_utils.f90')
+        files(2)%lines = lines2
         
         ! File 3: Lower coverage module
-        call lines3(1)%init(5, 2, 'string_utils.f90', .true.)
-        call lines3(2)%init(0, 4, 'string_utils.f90', .true.)  ! Uncovered
-        call lines3(3)%init(0, 6, 'string_utils.f90', .true.)  ! Uncovered
-        call lines3(4)%init(3, 8, 'string_utils.f90', .true.)
-        call lines3(5)%init(0, 11, 'string_utils.f90', .true.) ! Uncovered
-        call lines3(6)%init(7, 15, 'string_utils.f90', .true.)
-        call files(3)%init('string_utils.f90', lines3)
+        call lines3(1)%init('string_utils.f90', 2, 5, .true.)
+        call lines3(2)%init('string_utils.f90', 4, 0, .true.)  ! Uncovered
+        call lines3(3)%init('string_utils.f90', 6, 0, .true.)  ! Uncovered
+        call lines3(4)%init('string_utils.f90', 8, 3, .true.)
+        call lines3(5)%init('string_utils.f90', 11, 0, .true.) ! Uncovered
+        call lines3(6)%init('string_utils.f90', 15, 7, .true.)
+        call files(3)%init('string_utils.f90')
+        files(3)%lines = lines3
         
-        call coverage_data%init(files)
+        call coverage_data%init()
+        coverage_data%files = files
         
     end subroutine create_realistic_multi_file_data
     
