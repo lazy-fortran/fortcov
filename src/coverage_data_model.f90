@@ -126,7 +126,9 @@ module coverage_data_model
         procedure :: get_file_count => data_get_file_count
         procedure :: get_total_lines => data_get_total_lines
         procedure :: get_covered_lines => data_get_covered_lines
-        procedure :: init => data_init
+        procedure :: data_init_simple
+        procedure :: data_init_with_files
+        generic :: init => data_init_simple, data_init_with_files
         procedure :: serialize => data_serialize
     end type coverage_data_t
     
@@ -176,6 +178,15 @@ module coverage_data_model
             class(coverage_file_t), intent(out) :: this
             character(len=*), intent(in) :: filename
             type(coverage_line_t), intent(in) :: lines(:)
+        end subroutine
+        
+        module subroutine data_init_simple(this)
+            class(coverage_data_t), intent(out) :: this
+        end subroutine
+        
+        module subroutine data_init_with_files(this, files)
+            class(coverage_data_t), intent(out) :: this
+            type(coverage_file_t), intent(in) :: files(:)
         end subroutine
     end interface
     
@@ -558,7 +569,7 @@ contains
         
     end function data_get_covered_lines
     
-    subroutine data_init(this)
+    module subroutine data_init_simple(this)
         class(coverage_data_t), intent(out) :: this
         
         this%version = "1.0"
@@ -568,7 +579,28 @@ contains
         this%covered_lines = 0
         this%overall_coverage = 0.0
         
-    end subroutine data_init
+    end subroutine data_init_simple
+    
+    module subroutine data_init_with_files(this, files)
+        class(coverage_data_t), intent(out) :: this
+        type(coverage_file_t), intent(in) :: files(:)
+        
+        ! Initialize basic fields
+        this%version = "1.0"
+        this%tool = "fortcov"
+        this%total_files = 0
+        this%total_lines = 0
+        this%covered_lines = 0
+        this%overall_coverage = 0.0
+        
+        ! Copy files
+        allocate(this%files, source=files)
+        this%total_files = size(files)
+        
+        ! Calculate total lines and coverage
+        call this%calculate_overall_coverage()
+        
+    end subroutine data_init_with_files
     
     subroutine line_diff_init(this, baseline_line, current_line, diff_type)
         class(line_diff_t), intent(inout) :: this
