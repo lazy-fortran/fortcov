@@ -247,9 +247,9 @@ fortcov --source=src --verbose --output=coverage.md
 **Problem**: Input validation detected unsafe characters in file paths
 
 **Examples**:
-- `❌ Invalid source path: Unsafe character in path: ';'`
-- `❌ Invalid output path: Path contains dangerous characters`
-- `❌ Configuration validation failed: Path contains dangerous characters`
+- `❌ Error: Invalid source path: Unsafe character in path: ';'`
+- `❌ Error: Invalid output path: Unsafe character in path: ';'`
+- `⚠️  Configuration validation failed: Path contains dangerous characters`
 
 **Common Triggers**:
 - Shell injection characters: `;` `|` `&` `$` `` ` `` `()` `{}` `[]` `<` `>`

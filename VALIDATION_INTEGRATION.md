@@ -198,9 +198,13 @@ call validate_file_constraints(filename, result, size_limit)
 **Input**: `fortcov --source="dangerous;rm -rf /"`
 **Output**: 
 ```
-❌ Invalid source path: Unsafe character in path: ';'
-   Error: Unsafe character in path: ';'
-   💡 Remove special characters from file path
+❌ Error: Invalid source path: Unsafe character in path: ';'
+
+💡 Quick troubleshooting:
+   • Run 'fortcov --help' for usage examples
+   • Ensure source directory exists: ls -la <your_source_path>
+   • Check if .gcov files are present: find . -name '*.gcov'
+   • Try: fortcov --source=src --output=coverage.md
 ```
 
 ## Impact Assessment
