@@ -1,20 +1,23 @@
 // Jenkins Pipeline for fortcov coverage analysis
-// Demonstrates comprehensive Jenkins integration from DESIGN.md
+// Comprehensive CI/CD matrix coverage implementation for Issue #175
+// Demonstrates multi-compiler and multi-OS matrix validation
 
 pipeline {
-    agent any
+    agent none
     
-    // Environment variables
+    // Environment variables for matrix support
     environment {
         FC = 'gfortran'
         COVERAGE_FLAGS = '-fprofile-arcs -ftest-coverage'
+        MATRIX_BUILD = 'true'
     }
     
-    // Pipeline options
+    // Pipeline options with matrix support
     options {
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 45, unit: 'MINUTES')  // Extended for matrix builds
         buildDiscarder(logRotator(numToKeepStr: '10'))
         skipStagesAfterUnstable()
+        parallelsAlwaysFailFast()
     }
     
     stages {
