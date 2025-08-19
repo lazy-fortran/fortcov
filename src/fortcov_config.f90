@@ -3,11 +3,11 @@ module fortcov_config
     use file_utils
     use secure_command_executor
     use error_handling
+    use input_validation
     implicit none
     private
     
     ! Constants
-    integer, parameter :: MAX_PATH_LENGTH = 256
     integer, parameter :: MAX_ARRAY_SIZE = 100
     real, parameter :: MIN_COVERAGE = 0.0
     real, parameter :: MAX_COVERAGE = 100.0
@@ -192,9 +192,29 @@ contains
                     config%output_format = trim(value)
                     
                 case ("--output", "-o")
+                    ! Validate output path using input validation infrastructure
+                    block
+                        type(validation_result_t) :: path_validation
+                        call validate_path_safety(trim(value), path_validation)
+                        if (.not. path_validation%is_valid) then
+                            success = .false.
+                            error_message = "Invalid output path: " // trim(path_validation%error_message)
+                            return
+                        end if
+                    end block
                     config%output_path = trim(value)
                     
                 case ("--source", "-s")
+                    ! Validate source path using input validation infrastructure
+                    block
+                        type(validation_result_t) :: path_validation
+                        call validate_path_safety(trim(value), path_validation)
+                        if (.not. path_validation%is_valid) then
+                            success = .false.
+                            error_message = "Invalid source path: " // trim(path_validation%error_message)
+                            return
+                        end if
+                    end block
                     call add_to_array(trim(value), temp_sources, num_sources, &
                                      MAX_ARRAY_SIZE, "source paths")
                     
@@ -208,6 +228,12 @@ contains
                     call parse_threshold(trim(value), config%minimum_coverage, &
                                         success, error_message)
                     if (.not. success) return
+                    ! Validate threshold value using input validation infrastructure
+                    if (config%minimum_coverage < 0.0 .or. config%minimum_coverage > 100.0) then
+                        success = .false.
+                        error_message = "Invalid threshold value: must be between 0.0 and 100.0"
+                        return
+                    end if
                     
                 case ("--gcov")
                     config%gcov_executable = trim(value)
@@ -243,11 +269,31 @@ contains
                     end if
                     
                 case ("--import")
+                    ! Validate import file path using input validation infrastructure
+                    block
+                        type(validation_result_t) :: path_validation
+                        call validate_path_safety(trim(value), path_validation)
+                        if (.not. path_validation%is_valid) then
+                            success = .false.
+                            error_message = "Invalid import file path: " // trim(path_validation%error_message)
+                            return
+                        end if
+                    end block
                     config%import_file = trim(value)
                     ! When importing JSON, set input format to json automatically
                     config%input_format = "json"
                     
                 case ("--config")
+                    ! Validate config file path using input validation infrastructure
+                    block
+                        type(validation_result_t) :: path_validation
+                        call validate_path_safety(trim(value), path_validation)
+                        if (.not. path_validation%is_valid) then
+                            success = .false.
+                            error_message = "Invalid config file path: " // trim(path_validation%error_message)
+                            return
+                        end if
+                    end block
                     config%config_file = trim(value)
                     call load_config_file(config, success, error_message)
                     if (.not. success) return

@@ -10,6 +10,7 @@ module coverage_engine
     use coverage_diff
     use json_coverage_io
     use report_engine
+    use input_validation
     implicit none
     private
     
@@ -71,53 +72,34 @@ contains
             end if
         end block
         
-        ! Check source path validity
+        ! Validate source paths using input validation infrastructure
         if (allocated(config%source_paths)) then
             block
                 integer :: path_idx
-                logical :: path_exists
-                character(len=:), allocatable :: invalid_paths(:)
-                integer :: invalid_count
+                type(validation_result_t) :: path_validation
+                logical :: has_validation_failure
                 
-                invalid_count = 0
-                allocate(character(len=256) :: invalid_paths(size(config%source_paths)))
+                has_validation_failure = .false.
                 
                 do path_idx = 1, size(config%source_paths)
-                    inquire(file=trim(config%source_paths(path_idx)), exist=path_exists)
-                    if (.not. path_exists) then
-                        invalid_count = invalid_count + 1
-                        invalid_paths(invalid_count) = config%source_paths(path_idx)
+                    ! Use comprehensive path safety validation
+                    call validate_path_safety(config%source_paths(path_idx), path_validation)
+                    if (.not. path_validation%is_valid) then
+                        if (.not. config%quiet) then
+                            print *, "❌ Invalid source path: " // trim(config%source_paths(path_idx))
+                            print *, "   Error: " // trim(path_validation%error_message)
+                            if (len_trim(path_validation%suggested_fix) > 0) then
+                                print *, "   💡 " // trim(path_validation%suggested_fix)
+                            end if
+                        end if
+                        has_validation_failure = .true.
                     end if
                 end do
                 
-                ! Only treat as configuration error if paths are obviously malicious/invalid
-                ! Allow normal processing for reasonable-looking paths that don't exist
-                if (invalid_count == size(config%source_paths) .and. size(config%source_paths) > 0) then
-                    ! Check if any path looks suspiciously long or malformed
-                    block
-                        logical :: has_suspicious_path
-                        has_suspicious_path = .false.
-                        do path_idx = 1, invalid_count
-                            if (len_trim(invalid_paths(path_idx)) > 80 .or. &
-                                index(invalid_paths(path_idx), "should/never/exist") > 0 .or. &
-                                index(invalid_paths(path_idx), "123456789") > 0) then
-                                has_suspicious_path = .true.
-                                exit
-                            end if
-                        end do
-                        
-                        if (has_suspicious_path) then
-                            if (.not. config%quiet) then
-                                print *, "❌ All specified source paths are invalid:"
-                                do path_idx = 1, invalid_count
-                                    print *, "   • " // trim(invalid_paths(path_idx))
-                                end do
-                                print *, "💡 Make sure source directories exist before running coverage analysis"
-                            end if
-                            exit_code = EXIT_FAILURE
-                            return
-                        end if
-                    end block
+                ! Only fail if we have actual security validation failures
+                if (has_validation_failure) then
+                    exit_code = EXIT_FAILURE
+                    return
                 end if
             end block
         end if
@@ -406,15 +388,23 @@ contains
         logical :: exclude_file
         integer :: max_filename_len
         
-        ! Security: Find maximum filename length to prevent buffer issues
+        ! Security: Validate all filenames using input validation infrastructure
         max_filename_len = 0
         do i = 1, size(files)
+            block
+                type(validation_result_t) :: file_validation
+                call validate_path_safety(files(i), file_validation)
+                if (.not. file_validation%is_valid) then
+                    ! Skip files that fail security validation
+                    cycle
+                end if
+            end block
             max_filename_len = max(max_filename_len, len_trim(files(i)))
         end do
         
-        ! Security: Enforce reasonable filename length limits
-        if (max_filename_len > 4096) then
-            ! Extremely long filenames could indicate an attack
+        ! Additional validation using comprehensive file constraint checking
+        if (max_filename_len > MAX_PATH_LENGTH) then
+            ! Filenames exceed security limits
             allocate(character(len=256) :: filtered(0))
             return
         end if
@@ -425,6 +415,16 @@ contains
         count = 0
         
         do i = 1, size(files)
+            ! Apply input validation before processing file
+            block
+                type(validation_result_t) :: file_validation
+                call validate_path_safety(files(i), file_validation)
+                if (.not. file_validation%is_valid) then
+                    ! Skip files that fail security validation
+                    cycle
+                end if
+            end block
+            
             exclude_file = check_exclude_patterns(files(i), config)
             if (.not. exclude_file) then
                 count = count + 1

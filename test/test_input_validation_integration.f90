@@ -245,15 +245,15 @@ contains
         type(validation_result_t) :: result
         
         ! Test valid JSON data bounds
-        call validate_line_data_bounds_detailed(50, 10, "test.f90", result)
+        call validate_line_data_bounds(50, 10, "test.f90", result)
         passed = result%is_valid
         
         ! Test invalid JSON data bounds (negative line)
-        call validate_line_data_bounds_detailed(-5, 10, "test.f90", result) 
+        call validate_line_data_bounds(-5, 10, "test.f90", result) 
         passed = passed .and. (.not. result%is_valid .and. result%error_code == ERROR_INVALID_DATA)
         
         ! Test invalid JSON data bounds (excessive execution count)
-        call validate_line_data_bounds_detailed(50, MAX_EXECUTION_COUNT + 1, "test.f90", result)
+        call validate_line_data_bounds(50, MAX_EXECUTION_COUNT + 1, "test.f90", result)
         passed = passed .and. (.not. result%is_valid .and. result%error_code == ERROR_INVALID_DATA)
     end function test_json_data_validation
 

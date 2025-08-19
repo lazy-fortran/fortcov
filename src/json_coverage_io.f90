@@ -1,5 +1,8 @@
 module json_coverage_io
     use coverage_model
+    use input_validation
+    use error_handling
+    use iso_fortran_env, only: int64
     implicit none
     private
     
@@ -115,8 +118,22 @@ contains
         
         type(json_token_t), allocatable :: tokens(:)
         integer :: token_count, current_pos
+        type(validation_result_t) :: json_validation
         
         error_caught = .false.
+        
+        ! Validate JSON content size before processing
+        call validate_memory_allocation_request(int(len(json_content), int64), json_validation)
+        if (.not. json_validation%is_valid) then
+            error_caught = .true.
+            return
+        end if
+        
+        ! Validate JSON content is not empty
+        if (len_trim(json_content) == 0) then
+            error_caught = .true.
+            return
+        end if
         
         ! Initialize empty coverage data
         call coverage_data%init()
