@@ -242,6 +242,115 @@ gcov src/*.f90
 fortcov --source=src --verbose --output=coverage.md
 ```
 
+### ❌ "Invalid source path" / "Invalid output path"
+
+**Problem**: Input validation detected unsafe characters in file paths
+
+**Examples**:
+- `❌ Invalid source path: Unsafe character in path: ';'`
+- `❌ Invalid output path: Path contains dangerous characters`
+- `❌ Configuration validation failed: Path contains dangerous characters`
+
+**Common Triggers**:
+- Shell injection characters: `;` `|` `&` `$` `` ` `` `()` `{}` `[]` `<` `>`
+- Path traversal attempts: `../../../etc/passwd`
+- Control characters or null bytes in paths
+- Extremely long paths (>4096 characters)
+
+**Solution**:
+
+```bash
+# ✅ Use clean, simple paths
+fortcov --source=src --output=coverage.md
+
+# ✅ Absolute paths are fine
+fortcov --source=/home/user/project/src --output=/tmp/coverage.md
+
+# ❌ Avoid special characters
+fortcov --source="dangerous;rm -rf /" --output=coverage.md
+
+# ❌ Avoid path traversal
+fortcov --source="../../../etc" --output=coverage.md
+
+# 🔧 Fix: Remove special characters and use relative or absolute paths
+# Instead of: --source="src;backup"
+# Use: --source=src (process separately if multiple directories needed)
+
+# Instead of: --output="coverage$(date).md"  
+# Use: --output=coverage-2024-01-15.md
+```
+
+**Path Validation Rules**:
+- **Allowed**: Alphanumeric characters, dots, dashes, underscores, forward slashes
+- **Forbidden**: Shell metacharacters, control characters, excessive length
+- **Security**: Prevents command injection and path traversal attacks
+
+**CI/CD Considerations**:
+```bash
+# ✅ Safe CI/CD patterns
+fortcov --source=src --output=coverage.md --fail-under=80 --quiet
+
+# ✅ Use environment variables safely
+OUTPUT_FILE="coverage-${CI_JOB_ID}.md"
+fortcov --source=src --output="$OUTPUT_FILE" --quiet
+
+# ❌ Avoid dynamic path construction in CI
+# Don't: fortcov --source="$(find . -name src)" --output=coverage.md
+# Use: fortcov --source=src --output=coverage.md
+```
+
+### ❌ "Memory allocation validation failed"
+
+**Problem**: Input validation detected potential memory exhaustion attack
+
+**Examples**:
+- `❌ Memory allocation request too large`
+- `❌ File size exceeds safety limits`
+- `❌ JSON content size validation failed`
+
+**Common Triggers**:
+- Extremely large coverage files (>1GB)
+- Malformed .gcov files with excessive data
+- JSON import files larger than memory limits
+- Memory allocation requests exceeding system limits
+
+**Diagnosis**:
+
+```bash
+# Check file sizes
+find . -name "*.gcov" -exec ls -lh {} \; | sort -k5 -hr | head -5
+
+# Check total coverage data size
+du -sh $(find . -name "*.gcov")
+
+# Check available system memory
+free -h
+```
+
+**Solutions**:
+
+```bash
+# Strategy 1: Process in smaller batches
+fortcov --source=src/core --output=core-coverage.md
+fortcov --source=src/utils --output=utils-coverage.md
+
+# Strategy 2: Clean up problematic large files
+find . -name "*.gcov" -size +50M -ls
+# Remove only if truly problematic (backup first)
+
+# Strategy 3: Use exclude patterns for large files
+fortcov --source=src --exclude='**/large_module.f90.gcov' --output=coverage.md
+
+# Strategy 4: Check for corrupted .gcov files
+head -20 large_file.gcov  # Should show normal coverage format
+file large_file.gcov      # Should show text file
+```
+
+**Memory Safety Limits**:
+- **Maximum file size**: 1GB per file
+- **Maximum allocation**: System-dependent, typically 50-80% available RAM
+- **Protection**: Prevents denial-of-service attacks through memory exhaustion
+
 ## Runtime Issues
 
 ### ❌ "Permission denied"
