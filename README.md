@@ -20,12 +20,9 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # 2. Extract coverage data from FPM build directories
 BUILD_DIR=$(find build -name "*.gcda" | head -1 | xargs dirname)
-cd "$BUILD_DIR" && gcov *.gcno && cd -
+gcov --object-directory="$BUILD_DIR" "$BUILD_DIR"/*.gcno
 
-# 3. Copy .gcov files to project root
-find build -name "*.gcov" -exec cp {} . \;
-
-# 4. Create coverage report
+# 3. Create coverage report
 fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
 ```
 
