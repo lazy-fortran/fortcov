@@ -974,12 +974,11 @@ contains
                 end if
             end do
             
-            ! Replace file_diffs with filtered array
-            deallocate(this%file_diffs)
-            allocate(this%file_diffs, source=filtered)
+            ! Replace file_diffs with filtered array using safe move_alloc
+            call move_alloc(filtered, this%file_diffs)
         else
             ! No files pass threshold, keep empty array
-            deallocate(this%file_diffs)
+            if (allocated(this%file_diffs)) deallocate(this%file_diffs)
             allocate(this%file_diffs(0))
         end if
         
