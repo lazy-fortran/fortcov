@@ -91,7 +91,8 @@ contains
             content2 = simulate_file_content("MODULAR_ARCHITECTURE_GUIDE.md")
             
             if (detect_content_overlap(content1, content2)) then
-                call report_failure("Architecture content duplication detected between ARCHITECTURAL_DECOMPOSITION.md and MODULAR_ARCHITECTURE_GUIDE.md")
+                call report_failure("Architecture content duplication detected between " // &
+                    "ARCHITECTURAL_DECOMPOSITION.md and MODULAR_ARCHITECTURE_GUIDE.md")
                 call report_failure("These files should be consolidated into doc/developer/architecture.md")
                 test_passed = .false.
             end if
@@ -102,8 +103,10 @@ contains
             content2 = simulate_file_content("DESIGN.md")
             
             if (detect_content_overlap(content1, content2)) then
-                call report_failure("Architecture content duplication detected between FOUNDATION_LAYER_GUIDE.md and DESIGN.md")
-                call report_failure("Foundation layer content should be consolidated into unified architecture document")
+                call report_failure("Architecture content duplication detected between " // &
+                    "FOUNDATION_LAYER_GUIDE.md and DESIGN.md")
+                call report_failure("Foundation layer content should be consolidated " // &
+                    "into unified architecture document")
                 test_passed = .false.
             end if
         end if
@@ -141,8 +144,10 @@ contains
             content2 = simulate_file_content("README.md")
             
             if (detect_installation_overlap(content1, content2)) then
-                call report_failure("Installation procedure duplication between INSTALLATION.md and README.md")
-                call report_failure("Installation details should be in doc/user/installation.md with README containing brief overview only")
+                call report_failure("Installation procedure duplication between " // &
+                    "INSTALLATION.md and README.md")
+                call report_failure("Installation details should be in doc/user/installation.md " // &
+                    "with README containing brief overview only")
                 test_passed = .false.
             end if
         end if
@@ -153,7 +158,8 @@ contains
             
             if (detect_content_overlap(content1, content2)) then
                 call report_failure("Build system integration content duplicated across files")
-                call report_failure("Should be consolidated in doc/user/installation.md and doc/developer/build-integration.md")
+                call report_failure("Should be consolidated in doc/user/installation.md " // &
+                    "and doc/developer/build-integration.md")
                 test_passed = .false.
             end if
         end if
@@ -186,7 +192,8 @@ contains
         if (file_exists("README.md") .and. file_exists("EXAMPLES.md")) then
             if (detect_code_example_duplication("README.md", "EXAMPLES.md")) then
                 call report_failure("Code examples duplicated between README.md and EXAMPLES.md")
-                call report_failure("README should contain only basic example, detailed examples in doc/user/examples.md")
+                call report_failure("README should contain only basic example, " // &
+                    "detailed examples in doc/user/examples.md")
                 test_passed = .false.
             end if
         end if
@@ -274,7 +281,8 @@ contains
         
         if (scattered_files_count > 0) then
             write(*,'(A,I0,A)') "    FAILURE: ", scattered_files_count, " scattered documentation files detected"
-            call report_failure("Documentation files should be consolidated into organized doc/ structure")
+            call report_failure("Documentation files should be consolidated " // &
+                "into organized doc/ structure")
             test_passed = .false.
         end if
         
@@ -299,17 +307,20 @@ contains
         ! Count obsolete implementation reports
         if (file_exists("CLI_VALIDATION_REPORT.md")) then
             obsolete_files_count = obsolete_files_count + 1
-            call report_failure("CLI_VALIDATION_REPORT.md is obsolete implementation report - should be deleted")
+            call report_failure("CLI_VALIDATION_REPORT.md is obsolete implementation " // &
+                "report - should be deleted")
         end if
         
         if (file_exists("VALIDATION_INTEGRATION.md")) then
             obsolete_files_count = obsolete_files_count + 1
-            call report_failure("VALIDATION_INTEGRATION.md is obsolete implementation report - should be deleted")
+            call report_failure("VALIDATION_INTEGRATION.md is obsolete implementation " // &
+                "report - should be deleted")
         end if
         
         if (file_exists("ATOMIC_TEMP_FILE_GUIDE.md")) then
             obsolete_files_count = obsolete_files_count + 1
-            call report_failure("ATOMIC_TEMP_FILE_GUIDE.md is obsolete implementation report - should be deleted or merged")
+            call report_failure("ATOMIC_TEMP_FILE_GUIDE.md is obsolete implementation " // &
+                "report - should be deleted or merged")
         end if
         
         if (obsolete_files_count > 0) then
@@ -334,8 +345,10 @@ contains
         
         ! Check for files with overlapping purposes
         if (file_exists("BUILD_SYSTEM_INTEGRATION_COMPLETE.md") .and. file_exists("CI_CD_MATRIX_GUIDE.md")) then
-            call report_failure("BUILD_SYSTEM_INTEGRATION_COMPLETE.md and CI_CD_MATRIX_GUIDE.md have overlapping content")
-            call report_failure("Should be consolidated into doc/user/installation.md and doc/developer/build-integration.md")
+            call report_failure("BUILD_SYSTEM_INTEGRATION_COMPLETE.md and " // &
+                "CI_CD_MATRIX_GUIDE.md have overlapping content")
+            call report_failure("Should be consolidated into doc/user/installation.md " // &
+                "and doc/developer/build-integration.md")
             test_passed = .false.
         end if
         
