@@ -190,22 +190,26 @@ contains
         
         ! Test that scattered architecture docs are consolidated
         if (file_exists("ARCHITECTURAL_DECOMPOSITION.md")) then
-            call report_failure("ARCHITECTURAL_DECOMPOSITION.md still in root - should be consolidated into doc/developer/architecture.md")
+            call report_failure("ARCHITECTURAL_DECOMPOSITION.md still in root - " // &
+                "should be consolidated into doc/developer/architecture.md")
             test_passed = .false.
         end if
         
         if (file_exists("MODULAR_ARCHITECTURE_GUIDE.md")) then
-            call report_failure("MODULAR_ARCHITECTURE_GUIDE.md still in root - should be consolidated into doc/developer/architecture.md")
+            call report_failure("MODULAR_ARCHITECTURE_GUIDE.md still in root - " // &
+                "should be consolidated into doc/developer/architecture.md")
             test_passed = .false.
         end if
         
         if (file_exists("FOUNDATION_LAYER_GUIDE.md")) then
-            call report_failure("FOUNDATION_LAYER_GUIDE.md still in root - should be consolidated into doc/developer/architecture.md")
+            call report_failure("FOUNDATION_LAYER_GUIDE.md still in root - " // &
+                "should be consolidated into doc/developer/architecture.md")
             test_passed = .false.
         end if
         
         if (file_exists("COVERAGE_REPORTING_ARCHITECTURE.md")) then
-            call report_failure("COVERAGE_REPORTING_ARCHITECTURE.md still in root - should be consolidated into doc/developer/architecture.md")
+            call report_failure("COVERAGE_REPORTING_ARCHITECTURE.md still in root - " // &
+                "should be consolidated into doc/developer/architecture.md")
             test_passed = .false.
         end if
         
@@ -215,7 +219,8 @@ contains
         end if
         
         if (file_exists("BUILD_SYSTEM_INTEGRATION_COMPLETE.md")) then
-            call report_failure("BUILD_SYSTEM_INTEGRATION_COMPLETE.md still in root - should be moved to doc/developer/build-integration.md")
+            call report_failure("BUILD_SYSTEM_INTEGRATION_COMPLETE.md still in root - " // &
+                "should be moved to doc/developer/build-integration.md")
             test_passed = .false.
         end if
         
@@ -273,7 +278,8 @@ contains
         end if
         
         if (file_exists("TIMEOUT_PROTECTION_ARCHITECTURE.md")) then
-            call report_failure("TIMEOUT_PROTECTION_ARCHITECTURE.md should be merged into doc/implementation/security.md")
+            call report_failure("TIMEOUT_PROTECTION_ARCHITECTURE.md should be " // &
+                "merged into doc/implementation/security.md")
             test_passed = .false.
         end if
         
@@ -301,12 +307,14 @@ contains
         
         ! Test for scattered documentation files that should be gone
         if (file_exists("ENHANCED_CLI_GUIDE.md")) then
-            call report_failure("ENHANCED_CLI_GUIDE.md still in root - should be merged into doc/user/usage-guide.md")
+            call report_failure("ENHANCED_CLI_GUIDE.md still in root - " // &
+                "should be merged into doc/user/usage-guide.md")
             test_passed = .false.
         end if
         
         if (file_exists("CI_CD_MATRIX_GUIDE.md")) then
-            call report_failure("CI_CD_MATRIX_GUIDE.md still in root - should be merged into doc/user/installation.md")
+            call report_failure("CI_CD_MATRIX_GUIDE.md still in root - " // &
+                "should be merged into doc/user/installation.md")
             test_passed = .false.
         end if
         
