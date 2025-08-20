@@ -52,6 +52,9 @@ fortcov --source=src --verbose --output=coverage.md
 #### Pre-commit Workflow
 
 ```bash
+# Validate configuration first
+fortcov --source=src --validate-config || exit 1
+
 # Check coverage meets standards
 fortcov --source=src --fail-under=80 --quiet
 if [ $? -eq 0 ]; then
@@ -91,6 +94,9 @@ fortcov --source=src/critical --fail-under=95 --quiet
 
 # Normal components (80% required)  
 fortcov --source=src --exclude=critical/* --fail-under=80 --quiet
+
+# Performance optimization for large codebases
+fortcov --source=src --threads=4 --include='*.f90,*.F90' --fail-under=80
 ```
 
 ### For Project Managers
@@ -181,8 +187,11 @@ fortcov --source=src --source=lib --exclude='*.mod'
 # Use threads for large projects
 fortcov --source=src --threads=8
 
-# Exclude unnecessary files
-fortcov --source=src --exclude='*.mod' --exclude='vendor/*'
+# Target only relevant files with include patterns
+fortcov --source=src --include='*.f90,*.F90' --exclude='test/*'
+
+# Validate configuration before running expensive analysis
+fortcov --source=src --validate-config && fortcov --source=src --threads=4
 ```
 
 ### Integration Examples

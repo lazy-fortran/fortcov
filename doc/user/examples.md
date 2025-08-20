@@ -46,7 +46,12 @@ end module calculator
 # Build and test with coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 gcov src/*.f90
+
+# Basic coverage report
 fortcov --source=src --output=coverage.md
+
+# Enhanced with quality gate and performance optimization
+fortcov --source=src --include='*.f90' --fail-under=75 --threads=2 --output=coverage.md
 ```
 
 ## Build System Integration
@@ -108,11 +113,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+    - name: Validate Configuration
+      run: |
+        fortcov --source=src --validate-config
     - name: Generate Coverage
       run: |
         fpm test --flag "-fprofile-arcs -ftest-coverage"
         gcov src/*.f90
-        fortcov --source=src --fail-under=80 --output=coverage.md
+        fortcov --source=src --include='*.f90,*.F90' --fail-under=80 --threads=2 --quiet --output=coverage.md
+    - name: Upload Coverage Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage.md
 ```
 
 ### GitLab CI
@@ -120,10 +133,16 @@ jobs:
 ```yaml
 coverage:
   script:
+    - fortcov --source=src --validate-config
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - gcov src/*.f90
-    - fortcov --source=src --output-format=html --output=coverage.html
+    - fortcov --source=src --include='*.f90,*.F90' --output-format=html --output=coverage.html --threads=2
   coverage: '/Total coverage: (\d+\.\d+)%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
 ```
 
 For comprehensive build system integration examples, see the examples/build_systems/ directory.

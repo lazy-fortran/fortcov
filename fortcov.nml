@@ -36,8 +36,12 @@
                        'build/*',
                        'test/*',
                        'external/*'
+    include_patterns = '*.f90',
+                       '*.F90',
+                       '*.f95'
     gcov_executable = 'gcov'
-    minimum_coverage = 80.0
+    fail_under_threshold = 80.0
+    threads = 1
     verbose = .false.
     quiet = .false.
 /

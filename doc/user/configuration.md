@@ -160,14 +160,17 @@ Create `fortcov.nml`:
 
 ## Configuration Validation
 
-Test your configuration:
+Test your configuration before running expensive analysis:
 
 ```bash
-# Check if configuration is valid
-fortcov --config=fortcov.nml --verbose
-
-# Validate without running
+# Validate configuration file
 fortcov --config=fortcov.nml --validate-config
+
+# Validate command-line configuration
+fortcov --source=src --fail-under=80 --include='*.f90' --validate-config
+
+# Check configuration in verbose mode
+fortcov --config=fortcov.nml --verbose
 ```
 
 ## Environment Variables
@@ -218,11 +221,19 @@ fortcov --config=configs/prod.nml
 &fortcov_config
     source_paths = 'src/'
     exclude_patterns = '*.mod', 'test/*', 'build/*'
-    minimum_coverage = 80.0
+    include_patterns = '*.f90', '*.F90'
+    fail_under_threshold = 80.0
+    threads = 2
     output_format = 'markdown'
     output_path = 'coverage.md'
     verbose = .false.
 /
+```
+
+Validate template:
+```bash
+# Always validate configuration before use
+fortcov --config=fortcov-template.nml --validate-config
 ```
 
 For complete configuration options and advanced usage patterns, see the full configuration documentation.
