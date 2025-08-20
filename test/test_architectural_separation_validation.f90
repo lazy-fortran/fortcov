@@ -121,7 +121,7 @@ contains
         print *, "        - Benefits: Improved maintainability and testability"
         
         ! Single responsibility violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_coverage_engine_responsibility_analysis
 
@@ -160,7 +160,7 @@ contains
         print *, "        - Benefits: Clearer interfaces and better testability"
         
         ! Single responsibility violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_config_module_responsibility_analysis
 
@@ -199,7 +199,7 @@ contains
         print *, "        - Benefits: Better security and easier maintenance"
         
         ! Single responsibility violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_json_io_responsibility_analysis
 
@@ -237,7 +237,7 @@ contains
         print *, "        - Benefits: Cleaner data model and better performance"
         
         ! Single responsibility violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_coverage_model_responsibility_analysis
 
@@ -274,8 +274,8 @@ contains
         print *, "        - Target: 3 responsibilities per module (MARGINAL)"
         print *, "        - Benefits: Better output quality and easier customization"
         
-        # Single responsibility violations confirmed
-        passed = .false.  # Expected until separation implemented
+        ! Single responsibility violations confirmed
+        passed = .false.  ! Expected until separation implemented
         
     end function test_report_engine_responsibility_analysis
 
@@ -339,7 +339,7 @@ contains
         print *, "        - Interface overlap analysis"
         print *, "        - Responsibility alignment validation"
         
-        # Interface boundary clarity requirements identified
+        ! Interface boundary clarity requirements identified
         passed = .true.
         
     end function test_interface_boundary_clarity
@@ -522,7 +522,7 @@ contains
         print *, "        - Clearer business rule definition"
         
         ! Business logic separation violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_business_logic_separation
 
@@ -562,7 +562,7 @@ contains
         print *, "        - Clearer presentation responsibility"
         
         ! Presentation layer separation violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_presentation_layer_separation
 
@@ -602,7 +602,7 @@ contains
         print *, "        - Clearer data access responsibility"
         
         ! Data access layer separation violations confirmed
-        passed = .false.  # Expected until separation implemented
+        passed = .false.  ! Expected until separation implemented
         
     end function test_data_access_layer_separation
 
@@ -644,7 +644,7 @@ contains
         print *, "        - Enhanced system-wide consistency"
         
         ! Cross-cutting concern separation violations confirmed
-        passed = .false.  # Expected until foundation layer implemented
+        passed = .false.  ! Expected until foundation layer implemented
         
     end function test_cross_cutting_concern_separation
 
@@ -708,7 +708,7 @@ contains
         print *, "        - Improved interface testability"
         print *, "        - Enhanced interface maintainability"
         
-        # Public interface alignment requirements identified
+        ! Public interface alignment requirements identified
         passed = .true.
         
     end function test_public_interface_alignment
@@ -748,7 +748,7 @@ contains
         print *, "        - Better internal maintainability"
         print *, "        - Clearer internal responsibility separation"
         
-        # Internal interface coherence requirements identified
+        ! Internal interface coherence requirements identified
         passed = .true.
         
     end function test_internal_interface_coherence
@@ -790,7 +790,7 @@ contains
         print *, "        - Improved API usability"
         print *, "        - Enhanced maintainability"
         
-        # Interface contract consistency requirements identified
+        ! Interface contract consistency requirements identified
         passed = .true.
         
     end function test_interface_contract_consistency
@@ -831,7 +831,7 @@ contains
         print *, "        - Enhanced module responsibility clarity"
         print *, "        - Better architectural consistency"
         
-        # Interface responsibility mapping requirements identified
+        ! Interface responsibility mapping requirements identified
         passed = .true.
         
     end function test_interface_responsibility_mapping
@@ -846,16 +846,16 @@ contains
         
         print *, "  Test 5: Cross-Cutting Concern Identification"
         
-        # Test error handling cross-cutting concerns
+        ! Test error handling cross-cutting concerns
         passed = passed .and. test_error_handling_cross_cutting()
         
-        # Test security validation cross-cutting concerns
+        ! Test security validation cross-cutting concerns
         passed = passed .and. test_security_validation_cross_cutting()
         
-        # Test logging and monitoring cross-cutting concerns
+        ! Test logging and monitoring cross-cutting concerns
         passed = passed .and. test_logging_monitoring_cross_cutting()
         
-        # Test performance optimization cross-cutting concerns
+        ! Test performance optimization cross-cutting concerns
         passed = passed .and. test_performance_optimization_cross_cutting()
         
     end function test_cross_cutting_concern_identification
@@ -896,8 +896,8 @@ contains
         print *, "        - Improved error handling maintainability"
         print *, "        - Enhanced user experience through consistent errors"
         
-        # Error handling cross-cutting violations confirmed
-        passed = .false.  # Expected until foundation layer implemented
+        ! Error handling cross-cutting violations confirmed
+        passed = .false.  ! Expected until foundation layer implemented
         
     end function test_error_handling_cross_cutting
 
@@ -936,8 +936,8 @@ contains
         print *, "        - Improved security maintainability"
         print *, "        - Enhanced system security through centralization"
         
-        # Security validation cross-cutting violations confirmed
-        passed = .false.  # Expected until foundation layer implemented
+        ! Security validation cross-cutting violations confirmed
+        passed = .false.  ! Expected until foundation layer implemented
         
     end function test_security_validation_cross_cutting
 
@@ -976,8 +976,8 @@ contains
         print *, "        - Improved troubleshooting capability"
         print *, "        - Enhanced system observability"
         
-        # Logging/monitoring cross-cutting violations confirmed
-        passed = .false.  # Expected until foundation layer implemented
+        ! Logging/monitoring cross-cutting violations confirmed
+        passed = .false.  ! Expected until foundation layer implemented
         
     end function test_logging_monitoring_cross_cutting
 
@@ -1016,8 +1016,8 @@ contains
         print *, "        - Improved performance maintainability"
         print *, "        - Enhanced system-wide performance"
         
-        # Performance optimization cross-cutting violations confirmed
-        passed = .false.  # Expected until foundation layer implemented
+        ! Performance optimization cross-cutting violations confirmed
+        passed = .false.  ! Expected until foundation layer implemented
         
     end function test_performance_optimization_cross_cutting
 
@@ -1031,16 +1031,16 @@ contains
         
         print *, "  Test 6: Module Cohesion Validation"
         
-        # Test functional cohesion analysis
+        ! Test functional cohesion analysis
         passed = passed .and. test_functional_cohesion_analysis()
         
-        # Test data cohesion analysis
+        ! Test data cohesion analysis
         passed = passed .and. test_data_cohesion_analysis()
         
-        # Test procedural cohesion analysis
+        ! Test procedural cohesion analysis
         passed = passed .and. test_procedural_cohesion_analysis()
         
-        # Test cohesion improvement opportunities
+        ! Test cohesion improvement opportunities
         passed = passed .and. test_cohesion_improvement_opportunities()
         
     end function test_module_cohesion_validation
@@ -1081,8 +1081,8 @@ contains
         print *, "        - Better testability"
         print *, "        - Clearer module purpose"
         
-        # Functional cohesion violations confirmed
-        passed = .false.  # Expected until separation implemented
+        ! Functional cohesion violations confirmed
+        passed = .false.  ! Expected until separation implemented
         
     end function test_functional_cohesion_analysis
 
@@ -1122,8 +1122,8 @@ contains
         print *, "        - Better data maintainability"
         print *, "        - Clearer data ownership"
         
-        # Data cohesion violations confirmed
-        passed = .false.  # Expected until separation implemented
+        ! Data cohesion violations confirmed
+        passed = .false.  ! Expected until separation implemented
         
     end function test_data_cohesion_analysis
 
@@ -1163,8 +1163,8 @@ contains
         print *, "        - Better procedural maintainability"
         print *, "        - Clearer processing logic"
         
-        # Procedural cohesion violations confirmed
-        passed = .false.  # Expected until separation implemented
+        ! Procedural cohesion violations confirmed
+        passed = .false.  ! Expected until separation implemented
         
     end function test_procedural_cohesion_analysis
 
@@ -1203,7 +1203,7 @@ contains
         print *, "        - Data relationship validation"
         print *, "        - Procedural flow assessment"
         
-        # Cohesion improvement opportunities identified
+        ! Cohesion improvement opportunities identified
         passed = .true.
         
     end function test_cohesion_improvement_opportunities
@@ -1218,16 +1218,16 @@ contains
         
         print *, "  Test 7: Coupling Analysis and Minimization"
         
-        # Test data coupling analysis
+        ! Test data coupling analysis
         passed = passed .and. test_data_coupling_analysis()
         
-        # Test control coupling analysis
+        ! Test control coupling analysis
         passed = passed .and. test_control_coupling_analysis()
         
-        # Test stamp coupling analysis
+        ! Test stamp coupling analysis
         passed = passed .and. test_stamp_coupling_analysis()
         
-        # Test coupling minimization strategies
+        ! Test coupling minimization strategies
         passed = passed .and. test_coupling_minimization_strategies()
         
     end function test_coupling_analysis_minimization
@@ -1267,7 +1267,7 @@ contains
         print *, "        - Enhanced maintainability"
         print *, "        - Better testability"
         
-        # Data coupling analysis completed
+        ! Data coupling analysis completed
         passed = .true.
         
     end function test_data_coupling_analysis
@@ -1307,7 +1307,7 @@ contains
         print *, "        - Enhanced control clarity"
         print *, "        - Better control maintainability"
         
-        # Control coupling analysis completed
+        ! Control coupling analysis completed
         passed = .true.
         
     end function test_control_coupling_analysis
@@ -1347,7 +1347,7 @@ contains
         print *, "        - Appropriate data sharing"
         print *, "        - Good performance characteristics"
         
-        # Stamp coupling analysis completed - generally appropriate
+        ! Stamp coupling analysis completed - generally appropriate
         passed = .true.
         
     end function test_stamp_coupling_analysis
@@ -1388,7 +1388,7 @@ contains
         print *, "        - Module independence assessment"
         print *, "        - Interface clarity evaluation"
         
-        # Coupling minimization strategies identified
+        ! Coupling minimization strategies identified
         passed = .true.
         
     end function test_coupling_minimization_strategies
@@ -1403,16 +1403,16 @@ contains
         
         print *, "  Test 8: Architectural Constraint Enforcement"
         
-        # Test separation constraint definition
+        ! Test separation constraint definition
         passed = passed .and. test_separation_constraint_definition()
         
-        # Test constraint validation mechanisms
+        ! Test constraint validation mechanisms
         passed = passed .and. test_constraint_validation_mechanisms()
         
-        # Test constraint enforcement automation
+        ! Test constraint enforcement automation
         passed = passed .and. test_constraint_enforcement_automation()
         
-        # Test constraint violation prevention
+        ! Test constraint violation prevention
         passed = passed .and. test_constraint_violation_prevention()
         
     end function test_architectural_constraint_enforcement
@@ -1453,7 +1453,7 @@ contains
         print *, "        - Constraint validation procedures"
         print *, "        - Violation remediation guidelines"
         
-        # Separation constraint definitions established
+        ! Separation constraint definitions established
         passed = .true.
         
     end function test_separation_constraint_definition
@@ -1493,7 +1493,7 @@ contains
         print *, "        - Dependency analysis tools"
         print *, "        - Cohesion measurement utilities"
         
-        # Constraint validation mechanisms identified
+        ! Constraint validation mechanisms identified
         passed = .true.
         
     end function test_constraint_validation_mechanisms
@@ -1533,7 +1533,7 @@ contains
         print *, "        - Dependency validation scripts"
         print *, "        - Architectural compliance monitoring"
         
-        # Constraint enforcement automation strategy defined
+        ! Constraint enforcement automation strategy defined
         passed = .true.
         
     end function test_constraint_enforcement_automation
@@ -1573,7 +1573,7 @@ contains
         print *, "        - Design review templates"
         print *, "        - Architectural pattern libraries"
         
-        # Constraint violation prevention strategy defined
+        ! Constraint violation prevention strategy defined
         passed = .true.
         
     end function test_constraint_violation_prevention

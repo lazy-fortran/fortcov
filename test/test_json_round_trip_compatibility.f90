@@ -183,7 +183,7 @@ contains
         call lines(1)%init("module.f90", 10, 3, .true.)
         call lines(2)%init("module.f90", 20, 1, .true.)
         
-        call functions(1)%init("test_function", "test_module", .true., 2, 10, "module.f90")
+        call functions(1)%init("test_function", "module.f90", 10, 2, "test_module", .true.)
         
         call files(1)%init("module.f90", lines)
         allocate(files(1)%functions, source=functions)

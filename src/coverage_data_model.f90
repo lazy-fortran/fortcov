@@ -219,28 +219,9 @@ module coverage_data_model
         procedure :: filter_by_threshold => coverage_diff_filter_by_threshold
     end type coverage_diff_t
     
-    ! Generic interfaces for overloaded procedures
-    interface
-        module subroutine file_init_simple(this, filename)
-            class(coverage_file_t), intent(out) :: this
-            character(len=*), intent(in) :: filename
-        end subroutine
-        
-        module subroutine file_init_with_lines(this, filename, lines)
-            class(coverage_file_t), intent(out) :: this
-            character(len=*), intent(in) :: filename
-            type(coverage_line_t), intent(in) :: lines(:)
-        end subroutine
-        
-        module subroutine data_init_simple(this)
-            class(coverage_data_t), intent(out) :: this
-        end subroutine
-        
-        module subroutine data_init_with_files(this, files)
-            class(coverage_data_t), intent(out) :: this
-            type(coverage_file_t), intent(in) :: files(:)
-        end subroutine
-    end interface
+    ! Public procedures for initialization
+    public :: file_init_simple, file_init_with_lines
+    public :: data_init_simple, data_init_with_files
     
 contains
     
@@ -634,7 +615,7 @@ contains
         
     end function file_get_function_coverage
     
-    module subroutine file_init_simple(this, filename)
+    subroutine file_init_simple(this, filename)
         class(coverage_file_t), intent(out) :: this
         character(len=*), intent(in) :: filename
         
@@ -645,7 +626,7 @@ contains
         
     end subroutine file_init_simple
     
-    module subroutine file_init_with_lines(this, filename, lines)
+    subroutine file_init_with_lines(this, filename, lines)
         class(coverage_file_t), intent(out) :: this
         character(len=*), intent(in) :: filename
         type(coverage_line_t), intent(in) :: lines(:)
@@ -710,7 +691,7 @@ contains
         
     end function data_get_covered_lines
     
-    module subroutine data_init_simple(this)
+    subroutine data_init_simple(this)
         class(coverage_data_t), intent(out) :: this
         
         this%version = "1.0"
@@ -725,7 +706,7 @@ contains
         
     end subroutine data_init_simple
     
-    module subroutine data_init_with_files(this, files)
+    subroutine data_init_with_files(this, files)
         class(coverage_data_t), intent(out) :: this
         type(coverage_file_t), intent(in) :: files(:)
         

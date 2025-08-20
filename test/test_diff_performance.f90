@@ -124,7 +124,6 @@ contains
             end do
             
             call coverage_diff%init(file_diffs)
-            call coverage_diff%calculate_totals()
             
             ! Structures should be automatically deallocated when going out of scope
         end do
