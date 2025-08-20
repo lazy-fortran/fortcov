@@ -182,11 +182,11 @@ contains
         
         files_json = "["
         
-        if (allocated(coverage_data%files_json)) then
-            do i = 1, size(coverage_data%files_json)
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
                 if (i > 1) files_json = files_json // ","
                 
-                call format_file_json(coverage_data%files_json(i), file_json)
+                call format_coverage_file_json(coverage_data%files(i), file_json)
                 files_json = files_json // file_json
             end do
         end if
@@ -195,9 +195,9 @@ contains
         
     end subroutine format_files_json
     
-    subroutine format_file_json(file_data, file_json)
-        !! Formats single file data as JSON
-        type(file_coverage_t), intent(in) :: file_data
+    subroutine format_coverage_file_json(file_data, file_json)
+        !! Formats single coverage file data as JSON
+        type(coverage_file_t), intent(in) :: file_data
         character(len=:), allocatable, intent(out) :: file_json
         
         character(len=:), allocatable :: lines_json
@@ -205,16 +205,16 @@ contains
         file_json = '{"filename": "' // escape_json_string(file_data%filename) // '"'
         
         ! Add lines array
-        call format_lines_json(file_data, lines_json)
+        call format_coverage_lines_json(file_data, lines_json)
         file_json = file_json // ', "lines": ' // lines_json
         
         file_json = file_json // '}'
         
-    end subroutine format_file_json
+    end subroutine format_coverage_file_json
     
-    subroutine format_lines_json(file_data, lines_json)
-        !! Formats lines array as JSON
-        type(file_coverage_t), intent(in) :: file_data
+    subroutine format_coverage_lines_json(file_data, lines_json)
+        !! Formats coverage lines array as JSON
+        type(coverage_file_t), intent(in) :: file_data
         character(len=:), allocatable, intent(out) :: lines_json
         
         character(len=256) :: line_json
@@ -236,7 +236,7 @@ contains
         
         lines_json = lines_json // "]"
         
-    end subroutine format_lines_json
+    end subroutine format_coverage_lines_json
     
     function escape_json_string(input_str) result(escaped_str)
         !! Escapes special characters in JSON string
