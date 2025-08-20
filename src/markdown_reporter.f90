@@ -1,6 +1,12 @@
 module markdown_reporter
-    use coverage_model
-    use coverage_statistics
+    use coverage_model, only: source_location_t, coverage_line_t, &
+                              coverage_branch_t, coverage_function_t, &
+                              coverage_file_t, coverage_data_t, &
+                              coverage_diff_t, line_diff_t, file_diff_t, &
+                              line_coverage_t, file_coverage_t, &
+                              calculate_statistics, merge_coverage, &
+                              compare_coverage
+    use coverage_statistics, only: coverage_stats_t, calculate_line_coverage
     use string_utils
     implicit none
     private
@@ -60,7 +66,8 @@ contains
         
         ! Add total row if requested
         if (options%include_total) then
-            total_stats = calculate_line_coverage(coverage_data)
+            ! Calculate totals manually from coverage_data
+            call calculate_total_stats(coverage_data, total_stats)
             total_row = generate_table_row("TOTAL", total_stats)
             body = body // total_row
         end if
@@ -125,9 +132,9 @@ contains
         integer, allocatable :: uncovered_lines(:)
         integer :: uncovered_count
         
-        ! Use file's built-in methods which are working correctly
-        total_lines = file%get_executable_line_count()
-        covered_lines = file%get_covered_line_count()
+        ! Use file's built-in fields which are working correctly
+        total_lines = file%total_lines
+        covered_lines = file%covered_lines
         
         ! Count uncovered lines for missing ranges
         uncovered_count = total_lines - covered_lines
@@ -151,7 +158,7 @@ contains
         if (total_lines == 0) then
             call stats%init(100.0, 0, 0, "")
         else
-            call stats%init(file%get_line_coverage_percentage(), &
+            call stats%init(file%get_line_coverage(), &
                            covered_lines, total_lines, &
                            compress_ranges(uncovered_lines))
         end if
@@ -250,5 +257,32 @@ contains
             cleaned = trim(filename)
         end if
     end function clean_gcov_filename
+
+    ! Calculate total statistics across all files
+    subroutine calculate_total_stats(coverage_data, total_stats)
+        type(coverage_data_t), intent(in) :: coverage_data
+        type(coverage_stats_t), intent(out) :: total_stats
+        integer :: total_lines, covered_lines, i
+        real :: percentage
+        
+        total_lines = 0
+        covered_lines = 0
+        
+        ! Sum across all files
+        do i = 1, size(coverage_data%files)
+            total_lines = total_lines + coverage_data%files(i)%total_lines
+            covered_lines = covered_lines + coverage_data%files(i)%covered_lines
+        end do
+        
+        ! Calculate percentage
+        if (total_lines > 0) then
+            percentage = real(covered_lines) / real(total_lines) * 100.0
+        else
+            percentage = 100.0
+        end if
+        
+        ! Initialize stats
+        call total_stats%init(percentage, covered_lines, total_lines, "")
+    end subroutine calculate_total_stats
 
 end module markdown_reporter

@@ -72,6 +72,8 @@ contains
         class(coverage_reporter_t), allocatable :: reporter
         type(coverage_data_t) :: test_data
         logical :: error_flag
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         character(len=256) :: temp_file
         
         success = .false.
@@ -88,8 +90,8 @@ contains
         end if
         
         ! Generate HTML report
-        call reporter%generate_report(test_data, temp_file, error_flag, .false.)
-        if (error_flag) then
+        call reporter%generate_report(test_data, temp_file, gen_success, error_msg)
+        if (.not. gen_success) then
             print *, "Expected HTML report generation to succeed"
             return
         end if
@@ -102,6 +104,8 @@ contains
         class(coverage_reporter_t), allocatable :: reporter
         type(coverage_data_t) :: test_data
         logical :: error_flag, file_exists
+        logical :: gen_success
+        character(len=:), allocatable :: error_msg
         character(len=256) :: temp_file
         character(len=2000) :: file_contents
         character(len=200) :: line
@@ -117,8 +121,8 @@ contains
         call create_reporter("html", reporter, error_flag)
         if (error_flag) return
         
-        call reporter%generate_report(test_data, temp_file, error_flag, .false.)
-        if (error_flag) return
+        call reporter%generate_report(test_data, temp_file, gen_success, error_msg)
+        if (.not. gen_success) return
         
         ! Verify HTML file was created with reasonable size
         inquire(file=temp_file, exist=file_exists)
@@ -150,9 +154,9 @@ contains
         call data%init()
         
         allocate(test_lines(3))
-        call test_lines(1)%init(5, 1, "test_module.f90", .true.)
-        call test_lines(2)%init(0, 2, "test_module.f90", .true.)
-        call test_lines(3)%init(3, 3, "test_module.f90", .true.)
+        call test_lines(1)%init("test_module.f90", 1, 5, .true.)
+        call test_lines(2)%init("test_module.f90", 2, 0, .true.)
+        call test_lines(3)%init("test_module.f90", 3, 3, .true.)
         
         call test_file%init("test_module.f90", test_lines)
         data%files = [test_file]

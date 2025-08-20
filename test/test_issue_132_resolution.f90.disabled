@@ -54,10 +54,12 @@ contains
         print *, "Test 1: Round-trip compatibility..."
         
         ! Create test coverage data
-        call lines(1)%init(5, 10, "test.f90", .true.)
-        call lines(2)%init(0, 15, "test.f90", .true.)
-        call files(1)%init("test.f90", lines)
-        call original_coverage%init(files)
+        call lines(1)%init("test.f90", 10, 5, .true.)
+        call lines(2)%init("test.f90", 15, 0, .true.)
+        call files(1)%init("test.f90")
+        files(1)%lines = lines
+        call original_coverage%init()
+        original_coverage%files = files
         
         ! Export to JSON
         call export_json_coverage(original_coverage, json_output)
@@ -153,13 +155,17 @@ contains
         print *, "Test 5: Diff workflow integration..."
         
         ! Create test data
-        call baseline_lines(1)%init(2, 10, "test.f90", .true.)
-        call baseline_files(1)%init("test.f90", baseline_lines)
-        call baseline_coverage%init(baseline_files)
+        call baseline_lines(1)%init("test.f90", 10, 2, .true.)
+        call baseline_files(1)%init("test.f90")
+        baseline_files(1)%lines = baseline_lines
+        call baseline_coverage%init()
+        baseline_coverage%files = baseline_files
         
-        call current_lines(1)%init(4, 10, "test.f90", .true.)
-        call current_files(1)%init("test.f90", current_lines)
-        call current_coverage%init(current_files)
+        call current_lines(1)%init("test.f90", 10, 4, .true.)
+        call current_files(1)%init("test.f90")
+        current_files(1)%lines = current_lines
+        call current_coverage%init()
+        current_coverage%files = current_files
         
         ! Export to JSON
         call export_json_coverage(baseline_coverage, baseline_json)

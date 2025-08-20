@@ -499,7 +499,7 @@ contains
             
             ! Calculate coverage percentage
             annotated_file%coverage_percentage = &
-                coverage_file%get_line_coverage_percentage()
+                coverage_file%get_line_coverage()
         end if
         
         success = .true.
@@ -539,7 +539,7 @@ contains
             nav_tree%nodes(i)%path = input_data%files(i)%filename
             nav_tree%nodes(i)%is_directory = .false.
             nav_tree%nodes(i)%coverage_percentage = &
-                input_data%files(i)%get_line_coverage_percentage()
+                input_data%files(i)%get_line_coverage()
         end do
         
         nav_tree%has_hierarchy = .true.

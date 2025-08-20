@@ -18,7 +18,7 @@ program test_format_converter
     allocate(files(1))
     allocate(lines(1))
     
-    call lines(1)%init(5, 1, 'test.f90', .true.)
+    call lines(1)%init('test.f90', 1, 5, .true.)
     call files(1)%init('test.f90', lines)
     call test_data%init(files)
     

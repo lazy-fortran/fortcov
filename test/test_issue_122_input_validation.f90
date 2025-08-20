@@ -290,7 +290,8 @@ contains
         ! Then: Should handle gracefully without division by zero
         
         ! Test 1: Create coverage data with no executable lines
-        call empty_file%init("empty_test.f90", test_lines)
+        call empty_file%init("empty_test.f90")
+        empty_file%lines = test_lines
         call coverage_data%init([empty_file])
         
         ! Test 2: Calculate line coverage (should handle zero total)
@@ -473,11 +474,12 @@ contains
         ! Then: Should handle without overflow in calculations
         
         ! Test 1: Create coverage data with large execution counts
-        call test_lines(1)%init(NEAR_MAX_INT, 1, "test.f90", .true.)
-        call test_lines(2)%init(0, 2, "test.f90", .true.)
-        call test_lines(3)%init(1, 3, "test.f90", .true.)
+        call test_lines(1)%init("test.f90", 1, NEAR_MAX_INT, .true.)
+        call test_lines(2)%init("test.f90", 2, 0, .true.)
+        call test_lines(3)%init("test.f90", 3, 1, .true.)
         
-        call test_file%init("test.f90", test_lines)
+        call test_file%init("test.f90")
+        test_file%lines = test_lines
         call coverage_data%init([test_file])
         
         ! Test 2: Calculate statistics without overflow

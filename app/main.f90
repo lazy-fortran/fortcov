@@ -49,8 +49,9 @@ program main
   end if
   
   ! Validate configuration for security and accessibility
-  call validate_config(config, error_ctx)
-  if (error_ctx%error_code /= ERROR_SUCCESS) then
+  if (.not. validate_config(config)) then
+    error_ctx%error_code = ERROR_INVALID_CONFIG
+    error_ctx%message = "Configuration validation failed"
     print *, "⚠️  Configuration validation failed: " // trim(error_ctx%message)
     print *, ""
     if (len_trim(error_ctx%suggestion) > 0) then

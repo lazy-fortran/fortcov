@@ -758,24 +758,24 @@ contains
         ! File 1: Well-covered module
         allocate(lines(5))
         do i = 1, 5
-            call lines(i)%init(i * 2, i, 'src/coverage_engine.f90', .true.)
+            call lines(i)%init('src/coverage_engine.f90', i, i * 2, .true.)
         end do
         call files(1)%init('src/coverage_engine.f90', lines)
         
         ! File 2: Partially covered module
         deallocate(lines)
         allocate(lines(4))
-        call lines(1)%init(10, 1, 'src/coverage_parser.f90', .true.)
-        call lines(2)%init(0, 2, 'src/coverage_parser.f90', .true.)
-        call lines(3)%init(5, 3, 'src/coverage_parser.f90', .true.)
-        call lines(4)%init(0, 4, 'src/coverage_parser.f90', .true.)
+        call lines(1)%init('src/coverage_parser.f90', 1, 10, .true.)
+        call lines(2)%init('src/coverage_parser.f90', 2, 0, .true.)
+        call lines(3)%init('src/coverage_parser.f90', 3, 5, .true.)
+        call lines(4)%init('src/coverage_parser.f90', 4, 0, .true.)
         call files(2)%init('src/coverage_parser.f90', lines)
         
         ! File 3: Fully covered module
         deallocate(lines)
         allocate(lines(3))
         do i = 1, 3
-            call lines(i)%init(8, i, 'src/string_utils.f90', .true.)
+            call lines(i)%init('src/string_utils.f90', i, 8, .true.)
         end do
         call files(3)%init('src/string_utils.f90', lines)
         

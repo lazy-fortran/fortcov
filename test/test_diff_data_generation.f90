@@ -1,5 +1,6 @@
 module test_diff_data_generation
     use coverage_model
+    use coverage_data_model
     use json_coverage_io
     implicit none
     private
@@ -35,30 +36,34 @@ contains
         ! Given: Baseline coverage data with moderate coverage
         
         ! File 1: main.f90 - 60% coverage (3/5 lines)
-        call lines1(1)%init(3, 1, "src/main.f90", .true.)      ! covered
-        call lines1(2)%init(0, 2, "src/main.f90", .true.)      ! uncovered
-        call lines1(3)%init(5, 3, "src/main.f90", .true.)      ! covered
-        call lines1(4)%init(0, 4, "src/main.f90", .true.)      ! uncovered  
-        call lines1(5)%init(2, 5, "src/main.f90", .true.)      ! covered
-        call files(1)%init("src/main.f90", lines1)
+        call lines1(1)%init("src/main.f90", 1, 3, .true.)      ! covered
+        call lines1(2)%init("src/main.f90", 2, 0, .true.)      ! uncovered
+        call lines1(3)%init("src/main.f90", 3, 5, .true.)      ! covered
+        call lines1(4)%init("src/main.f90", 4, 0, .true.)      ! uncovered  
+        call lines1(5)%init("src/main.f90", 5, 2, .true.)      ! covered
+        call initialize_coverage_file(files(1), "src/main.f90")
+        allocate(files(1)%lines, source=lines1)
         
         ! File 2: utils.f90 - 75% coverage (3/4 lines)
-        call lines2(1)%init(1, 10, "src/utils.f90", .true.)    ! covered
-        call lines2(2)%init(4, 11, "src/utils.f90", .true.)    ! covered
-        call lines2(3)%init(0, 12, "src/utils.f90", .true.)    ! uncovered
-        call lines2(4)%init(2, 13, "src/utils.f90", .true.)    ! covered
-        call files(2)%init("src/utils.f90", lines2)
+        call lines2(1)%init("src/utils.f90", 10, 1, .true.)    ! covered
+        call lines2(2)%init("src/utils.f90", 11, 4, .true.)    ! covered
+        call lines2(3)%init("src/utils.f90", 12, 0, .true.)    ! uncovered
+        call lines2(4)%init("src/utils.f90", 13, 2, .true.)    ! covered
+        call initialize_coverage_file(files(2), "src/utils.f90")
+        allocate(files(2)%lines, source=lines2)
         
         ! File 3: math.f90 - 50% coverage (3/6 lines)
-        call lines3(1)%init(0, 20, "src/math.f90", .true.)     ! uncovered
-        call lines3(2)%init(3, 21, "src/math.f90", .true.)     ! covered
-        call lines3(3)%init(0, 22, "src/math.f90", .true.)     ! uncovered
-        call lines3(4)%init(1, 23, "src/math.f90", .true.)     ! covered
-        call lines3(5)%init(0, 24, "src/math.f90", .true.)     ! uncovered
-        call lines3(6)%init(5, 25, "src/math.f90", .true.)     ! covered
-        call files(3)%init("src/math.f90", lines3)
+        call lines3(1)%init("src/math.f90", 20, 0, .true.)     ! uncovered
+        call lines3(2)%init("src/math.f90", 21, 3, .true.)     ! covered
+        call lines3(3)%init("src/math.f90", 22, 0, .true.)     ! uncovered
+        call lines3(4)%init("src/math.f90", 23, 1, .true.)     ! covered
+        call lines3(5)%init("src/math.f90", 24, 0, .true.)     ! uncovered
+        call lines3(6)%init("src/math.f90", 25, 5, .true.)     ! covered
+        call initialize_coverage_file(files(3), "src/math.f90")
+        allocate(files(3)%lines, source=lines3)
         
-        call coverage_data%init(files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=files)
     end function generate_baseline_coverage_data
 
     function generate_current_coverage_data() result(coverage_data)
@@ -69,30 +74,34 @@ contains
         ! Given: Current coverage data with improvements and regressions
         
         ! File 1: main.f90 - 80% coverage (4/5 lines) - IMPROVEMENT
-        call lines1(1)%init(4, 1, "src/main.f90", .true.)      ! improved
-        call lines1(2)%init(2, 2, "src/main.f90", .true.)      ! newly covered  
-        call lines1(3)%init(6, 3, "src/main.f90", .true.)      ! improved
-        call lines1(4)%init(0, 4, "src/main.f90", .true.)      ! still uncovered
-        call lines1(5)%init(3, 5, "src/main.f90", .true.)      ! improved
-        call files(1)%init("src/main.f90", lines1)
+        call lines1(1)%init("src/main.f90", 1, 4, .true.)      ! improved
+        call lines1(2)%init("src/main.f90", 2, 2, .true.)      ! newly covered  
+        call lines1(3)%init("src/main.f90", 3, 6, .true.)      ! improved
+        call lines1(4)%init("src/main.f90", 4, 0, .true.)      ! still uncovered
+        call lines1(5)%init("src/main.f90", 5, 3, .true.)      ! improved
+        call initialize_coverage_file(files(1), "src/main.f90")
+        allocate(files(1)%lines, source=lines1)
         
         ! File 2: utils.f90 - 50% coverage (2/4 lines) - REGRESSION
-        call lines2(1)%init(0, 10, "src/utils.f90", .true.)    ! newly uncovered
-        call lines2(2)%init(5, 11, "src/utils.f90", .true.)    ! improved
-        call lines2(3)%init(0, 12, "src/utils.f90", .true.)    ! still uncovered
-        call lines2(4)%init(1, 13, "src/utils.f90", .true.)    ! reduced
-        call files(2)%init("src/utils.f90", lines2)
+        call lines2(1)%init("src/utils.f90", 10, 0, .true.)    ! newly uncovered
+        call lines2(2)%init("src/utils.f90", 11, 5, .true.)    ! improved
+        call lines2(3)%init("src/utils.f90", 12, 0, .true.)    ! still uncovered
+        call lines2(4)%init("src/utils.f90", 13, 1, .true.)    ! reduced
+        call initialize_coverage_file(files(2), "src/utils.f90")
+        allocate(files(2)%lines, source=lines2)
         
         ! File 3: math.f90 - 83% coverage (5/6 lines) - MAJOR IMPROVEMENT
-        call lines3(1)%init(2, 20, "src/math.f90", .true.)     ! newly covered
-        call lines3(2)%init(4, 21, "src/math.f90", .true.)     ! improved
-        call lines3(3)%init(1, 22, "src/math.f90", .true.)     ! newly covered
-        call lines3(4)%init(3, 23, "src/math.f90", .true.)     ! improved
-        call lines3(5)%init(0, 24, "src/math.f90", .true.)     ! still uncovered
-        call lines3(6)%init(7, 25, "src/math.f90", .true.)     ! improved
-        call files(3)%init("src/math.f90", lines3)
+        call lines3(1)%init("src/math.f90", 20, 2, .true.)     ! newly covered
+        call lines3(2)%init("src/math.f90", 21, 4, .true.)     ! improved
+        call lines3(3)%init("src/math.f90", 22, 1, .true.)     ! newly covered
+        call lines3(4)%init("src/math.f90", 23, 3, .true.)     ! improved
+        call lines3(5)%init("src/math.f90", 24, 0, .true.)     ! still uncovered
+        call lines3(6)%init("src/math.f90", 25, 7, .true.)     ! improved
+        call initialize_coverage_file(files(3), "src/math.f90")
+        allocate(files(3)%lines, source=lines3)
         
-        call coverage_data%init(files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=files)
     end function generate_current_coverage_data
 
     function generate_empty_coverage_data() result(coverage_data)
@@ -100,7 +109,8 @@ contains
         type(coverage_file_t) :: empty_files(0)
         
         ! Given: Empty coverage data for edge case testing
-        call coverage_data%init(empty_files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=empty_files)
     end function generate_empty_coverage_data
 
     function generate_identical_coverage_data() result(coverage_data)
@@ -111,18 +121,21 @@ contains
         ! Given: Identical baseline and current data
         
         ! File 1: identical coverage
-        call lines1(1)%init(5, 1, "test/identical.f90", .true.)
-        call lines1(2)%init(0, 2, "test/identical.f90", .true.)
-        call lines1(3)%init(3, 3, "test/identical.f90", .true.)
-        call files(1)%init("test/identical.f90", lines1)
+        call lines1(1)%init("test/identical.f90", 1, 5, .true.)
+        call lines1(2)%init("test/identical.f90", 2, 0, .true.)
+        call lines1(3)%init("test/identical.f90", 3, 3, .true.)
+        call initialize_coverage_file(files(1), "test/identical.f90")
+        allocate(files(1)%lines, source=lines1)
         
         ! File 2: identical coverage  
-        call lines2(1)%init(2, 10, "test/same.f90", .true.)
-        call lines2(2)%init(4, 11, "test/same.f90", .true.)
-        call lines2(3)%init(1, 12, "test/same.f90", .true.)
-        call files(2)%init("test/same.f90", lines2)
+        call lines2(1)%init("test/same.f90", 10, 2, .true.)
+        call lines2(2)%init("test/same.f90", 11, 4, .true.)
+        call lines2(3)%init("test/same.f90", 12, 1, .true.)
+        call initialize_coverage_file(files(2), "test/same.f90")
+        allocate(files(2)%lines, source=lines2)
         
-        call coverage_data%init(files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=files)
     end function generate_identical_coverage_data
 
     function generate_realistic_project_coverage(scenario_type, total_files) result(coverage_data)
@@ -168,13 +181,15 @@ contains
                     current_coverage = j
                 end select
                 
-                call lines(j)%init(base_coverage, j, filename, .true.)
+                call lines(j)%init(filename, j, base_coverage, .true.)
             end do
             
-            call files(i)%init(filename, lines)
+            call initialize_coverage_file(files(i), filename)
+            allocate(files(i)%lines, source=lines)
         end do
         
-        call coverage_data%init(files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=files)
         deallocate(files)
     end function generate_realistic_project_coverage
 
@@ -197,23 +212,25 @@ contains
                 ! Create realistic coverage pattern
                 if (mod(j, 10) == 0) then
                     ! 10% uncovered lines
-                    call lines(j)%init(0, j, filename, .true.)
+                    call lines(j)%init(filename, j, 0, .true.)
                 else if (mod(j, 5) == 0) then
                     ! 20% lightly covered lines  
-                    call lines(j)%init(1, j, filename, .true.)
+                    call lines(j)%init(filename, j, 1, .true.)
                 else if (mod(j, 3) == 0) then
                     ! 30% moderately covered lines
-                    call lines(j)%init(j / 3, j, filename, .true.)
+                    call lines(j)%init(filename, j, j / 3, .true.)
                 else
                     ! 40% well covered lines
-                    call lines(j)%init(j, j, filename, .true.)
+                    call lines(j)%init(filename, j, j, .true.)
                 end if
             end do
             
-            call files(i)%init(filename, lines)
+            call initialize_coverage_file(files(i), filename)
+            allocate(files(i)%lines, source=lines)
         end do
         
-        call coverage_data%init(files)
+        call initialize_coverage_data(coverage_data)
+        allocate(coverage_data%files, source=files)
         deallocate(files)
         deallocate(lines)
     end function generate_large_project_coverage

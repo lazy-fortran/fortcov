@@ -1,5 +1,6 @@
 program test_coverage_model_comprehensive
     use coverage_model
+    use coverage_diff
     implicit none
     
     logical :: all_tests_passed
@@ -96,8 +97,8 @@ contains
         allocate(line_diffs(100))  ! Large sample size
         
         ! Initialize baseline and current lines
-        baseline_line = coverage_line_t(0, 1, "test.f90", .true.)
-        current_line = coverage_line_t(5, 1, "test.f90", .true.)
+        call baseline_line%init("test.f90", 1, 0, .true.)
+        call current_line%init("test.f90", 1, 5, .true.)
         
         ! Fill with identical line diffs
         do i = 1, 100
@@ -105,7 +106,8 @@ contains
         end do
         
         ! Initialize file diff
-        call file_diff%init("test.f90", line_diffs)
+        call file_diff%init("test.f90")
+        file_diff%lines = line_diffs
         file_diff%baseline_coverage_percentage = 0.0
         file_diff%current_coverage_percentage = 50.0
         file_diff%coverage_percentage_delta = 50.0

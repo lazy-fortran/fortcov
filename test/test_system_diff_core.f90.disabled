@@ -209,12 +209,14 @@ contains
         allocate(files(1))
         allocate(lines(3))
         
-        call lines(1)%init(10, 1, 'test.f90', .true.)
-        call lines(2)%init(0, 2, 'test.f90', .true.)
-        call lines(3)%init(5, 3, 'test.f90', .true.)
+        call lines(1)%init('test.f90', 1, 10, .true.)
+        call lines(2)%init('test.f90', 2, 0, .true.)
+        call lines(3)%init('test.f90', 3, 5, .true.)
         
-        call files(1)%init('test.f90', lines)
-        call coverage_data%init(files)
+        call files(1)%init('test.f90')
+        files(1)%lines = lines
+        call coverage_data%init()
+        coverage_data%files = files
         
     end subroutine create_test_coverage_data
     
@@ -227,12 +229,14 @@ contains
         allocate(lines(3))
         
         ! Same structure, different execution counts
-        call lines(1)%init(15, 1, 'test.f90', .true.)
-        call lines(2)%init(2, 2, 'test.f90', .true.)
-        call lines(3)%init(8, 3, 'test.f90', .true.)
+        call lines(1)%init('test.f90', 1, 15, .true.)
+        call lines(2)%init('test.f90', 2, 2, .true.)
+        call lines(3)%init('test.f90', 3, 8, .true.)
         
-        call files(1)%init('test.f90', lines)
-        call coverage_data%init(files)
+        call files(1)%init('test.f90')
+        files(1)%lines = lines
+        call coverage_data%init()
+        coverage_data%files = files
         
     end subroutine create_modified_coverage_data
     

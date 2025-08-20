@@ -71,9 +71,9 @@ contains
         lines_b(2) = coverage_line_t(execution_count=1, line_number=2, &
                                    filename="file_b.f90", is_executable=.true.)
         
-        files(1) = coverage_file_t("file_a.f90", lines_a)
-        files(2) = coverage_file_t("file_b.f90", lines_b)
-        coverage_data = coverage_data_t(files)
+        call files(1)%init("file_a.f90", lines_a)
+        call files(2)%init("file_b.f90", lines_b)
+        call coverage_data%init(files)
         
         call options%init()
         
@@ -109,8 +109,8 @@ contains
             end if
         end do
         
-        file_cov = coverage_file_t("test.f90", lines)
-        coverage_data = coverage_data_t([file_cov])
+        call file_cov%init("test.f90", lines)
+        call coverage_data%init([file_cov])
         
         call options%init()
         
@@ -143,8 +143,8 @@ contains
             end if
         end do
         
-        file_cov = coverage_file_t("test.f90", lines)
-        coverage_data = coverage_data_t([file_cov])
+        call file_cov%init("test.f90", lines)
+        call coverage_data%init([file_cov])
         
         call options%init()
         
@@ -177,9 +177,9 @@ contains
         lines_b(3) = coverage_line_t(execution_count=1, line_number=3, &
                                    filename="b.f90", is_executable=.true.)
         
-        files(1) = coverage_file_t("a.f90", lines_a)
-        files(2) = coverage_file_t("b.f90", lines_b)
-        coverage_data = coverage_data_t(files)
+        call files(1)%init("a.f90", lines_a)
+        call files(2)%init("b.f90", lines_b)
+        call coverage_data%init(files)
         
         call options%init()
         
@@ -206,8 +206,8 @@ contains
                                      filename="perfect.f90", is_executable=.true.)
         end do
         
-        file_cov = coverage_file_t("perfect.f90", lines)
-        coverage_data = coverage_data_t([file_cov])
+        call file_cov%init("perfect.f90", lines)
+        call coverage_data%init([file_cov])
         
         call options%init()
         
@@ -234,8 +234,8 @@ contains
                                      filename="uncovered.f90", is_executable=.true.)
         end do
         
-        file_cov = coverage_file_t("uncovered.f90", lines)
-        coverage_data = coverage_data_t([file_cov])
+        call file_cov%init("uncovered.f90", lines)
+        call coverage_data%init([file_cov])
         
         call options%init()
         
@@ -260,8 +260,8 @@ contains
         ! Given: Simple coverage data
         line = coverage_line_t(execution_count=1, line_number=1, &
                               filename="test.f90", is_executable=.true.)
-        file_cov = coverage_file_t("test.f90", [line])
-        coverage_data = coverage_data_t([file_cov])
+        call file_cov%init("test.f90", [line])
+        call coverage_data%init([file_cov])
         
         call options%init()
         

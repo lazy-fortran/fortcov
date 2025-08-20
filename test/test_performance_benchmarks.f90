@@ -118,7 +118,8 @@ contains
     subroutine test_output_format_performance()
         type(coverage_data_t) :: dataset
         class(coverage_reporter_t), allocatable :: reporter
-        logical :: error_flag
+        logical :: error_flag, success
+        character(len=:), allocatable :: error_message
         integer :: start_time, end_time, count_rate
         real :: json_time, markdown_time
         character(len=20) :: formats(2) = ["json    ", "markdown"]
@@ -138,12 +139,15 @@ contains
             
             call system_clock(start_time, count_rate)
             call reporter%generate_report(dataset, &
-                "test_" // trim(formats(i)) // ".out", error_flag, .false.)
+                "test_" // trim(formats(i)) // ".out", success, error_message)
             call system_clock(end_time)
             
-            if (error_flag) then
+            if (.not. success) then
                 write(*,*) "ERROR: Report generation failed for", &
                           trim(formats(i))
+                if (allocated(error_message)) then
+                    write(*,*) "Error message: ", error_message
+                end if
                 cycle
             end if
             
