@@ -28,13 +28,17 @@ module config_parser
         character(len=:), allocatable :: output_path
         character(len=:), allocatable :: source_paths(:)
         character(len=:), allocatable :: exclude_patterns(:)
+        character(len=:), allocatable :: include_patterns(:)
         character(len=:), allocatable :: coverage_files(:)
         character(len=:), allocatable :: gcov_executable
         real :: minimum_coverage
+        real :: fail_under_threshold
+        integer :: threads
         logical :: verbose
         logical :: quiet
         logical :: show_help
         logical :: show_version
+        logical :: validate_config_only
         character(len=:), allocatable :: config_file
         logical :: enable_diff
         character(len=:), allocatable :: diff_baseline_file
@@ -327,8 +331,8 @@ contains
         
         select case (trim(long_flag))
         case ('--output', '--format', '--output-format', '--threshold', '--source', '--exclude', &
-              '--config', '--diff-baseline', '--diff-current', '--import', &
-              '--gcov-executable', '--gcov-args')
+              '--include', '--fail-under', '--threads', '--config', '--diff-baseline', &
+              '--diff-current', '--import', '--gcov-executable', '--gcov-args')
             requires_value = .true.
         case default
             requires_value = .false.
@@ -343,10 +347,13 @@ contains
         config%input_format = "gcov"
         config%output_format = "markdown"
         config%minimum_coverage = 0.0
+        config%fail_under_threshold = 0.0
+        config%threads = 1
         config%verbose = .false.
         config%quiet = .false.
         config%show_help = .false.
         config%show_version = .false.
+        config%validate_config_only = .false.
         config%enable_diff = .false.
         config%include_unchanged = .false.
         config%diff_threshold = 0.0
@@ -417,6 +424,22 @@ contains
             config%include_unchanged = .true.
         case ('--import')
             config%import_file = value
+        case ('--include')
+            call add_include_pattern(value, config, success, error_message)
+        case ('--fail-under')
+            call parse_real_value(value, real_value, success)
+            if (success) then
+                config%fail_under_threshold = real_value
+            else
+                error_message = "Invalid fail-under threshold value: " // trim(value)
+            end if
+        case ('--threads')
+            call parse_integer_value(value, config%threads, success)
+            if (.not. success) then
+                error_message = "Invalid threads value: " // trim(value)
+            end if
+        case ('--validate-config')
+            config%validate_config_only = .true.
         case default
             success = .false.
             error_message = "Unknown flag: " // trim(flag)
@@ -567,5 +590,67 @@ contains
         end if
         
     end subroutine add_exclude_pattern
+    
+    subroutine add_include_pattern(pattern, config, success, error_message)
+        !! Adds an include pattern to the config
+        character(len=*), intent(in) :: pattern
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: temp_array(:)
+        integer :: current_size, new_size
+        
+        success = .true.
+        error_message = ""
+        
+        if (len_trim(pattern) == 0) then
+            success = .false.
+            error_message = "Empty include pattern provided"
+            return
+        end if
+        
+        if (allocated(config%include_patterns)) then
+            current_size = size(config%include_patterns)
+            
+            ! Check size limits
+            if (current_size >= MAX_EXCLUDES) then
+                success = .false.
+                write(error_message, '(A, I0, A)') &
+                    "Maximum include pattern count exceeded (", MAX_EXCLUDES, ")"
+                return
+            end if
+            
+            ! Reallocate with increased size
+            new_size = current_size + 1
+            allocate(character(len=max(len(config%include_patterns), len_trim(pattern))) :: temp_array(new_size))
+            temp_array(1:current_size) = config%include_patterns
+            temp_array(new_size) = trim(pattern)
+            call move_alloc(temp_array, config%include_patterns)
+        else
+            ! Initial allocation
+            allocate(character(len=len_trim(pattern)) :: config%include_patterns(1))
+            config%include_patterns(1) = trim(pattern)
+        end if
+        
+    end subroutine add_include_pattern
+    
+    subroutine parse_integer_value(str, value, success)
+        !! Parses string to integer value
+        character(len=*), intent(in) :: str
+        integer, intent(out) :: value
+        logical, intent(out) :: success
+        
+        integer :: iostat
+        
+        read(str, *, iostat=iostat) value
+        success = (iostat == 0)
+        
+        ! Validate that threads value is positive
+        if (success .and. value <= 0) then
+            success = .false.
+        end if
+        
+    end subroutine parse_integer_value
     
 end module config_parser

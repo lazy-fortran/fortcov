@@ -108,6 +108,19 @@ contains
             end if
         end if
         
+        ! Apply fail-under threshold validation
+        if (config%fail_under_threshold > 0.0) then
+            if (line_stats%percentage < config%fail_under_threshold) then
+                if (.not. config%quiet) then
+                    print *, "❌ Coverage below fail-under threshold"
+                    write(*, '(A, F5.1, A, F5.1, A)') &
+                        "   Fail under: ", config%fail_under_threshold, "%, Actual: ", &
+                        line_stats%percentage, "%"
+                end if
+                exit_code = EXIT_THRESHOLD_NOT_MET
+            end if
+        end if
+        
     end function perform_coverage_analysis
     
     function perform_safe_coverage_analysis(config, error_ctx) result(exit_code)

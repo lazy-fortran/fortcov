@@ -66,19 +66,38 @@ contains
     end function discover_coverage_files
     
     function evaluate_exclude_patterns(filepath, config) result(should_exclude)
-        !! Exclude pattern evaluation implementation
-        !! Extracted from original check_exclude_patterns function
+        !! Pattern evaluation implementation for both include and exclude patterns
+        !! Enhanced from original check_exclude_patterns function
         character(len=*), intent(in) :: filepath
         type(config_t), intent(in) :: config
         logical :: should_exclude
         
         integer :: i
         character(len=:), allocatable :: normalized_path
+        logical :: matches_include
         
         should_exclude = .false.
+        matches_include = .true.  ! Default to include if no include patterns
         
         ! Normalize path for consistent matching
         normalized_path = normalize_path(filepath)
+        
+        ! Check against include patterns first - if specified, file must match at least one
+        if (allocated(config%include_patterns)) then
+            matches_include = .false.  ! Now require explicit match
+            do i = 1, size(config%include_patterns)
+                if (matches_pattern(normalized_path, config%include_patterns(i))) then
+                    matches_include = .true.
+                    exit  ! Found a match, no need to continue
+                end if
+            end do
+        end if
+        
+        ! If file doesn't match any include pattern, exclude it
+        if (.not. matches_include) then
+            should_exclude = .true.
+            return
+        end if
         
         ! Check against exclude patterns
         if (allocated(config%exclude_patterns)) then
