@@ -102,14 +102,16 @@ contains
         has_coverage_files = allocated(config%coverage_files)
         has_import_file = allocated(config%import_file)
         
-        ! Must have at least one input source
-        if (.not. has_source_paths .and. .not. has_coverage_files .and. &
-            .not. has_import_file) then
-            is_valid = .false.
-            error_message = "No input sources specified. Provide source paths, " // &
-                          "coverage files, or import file."
-            return
-        end if
+        ! For "sane default mode" (Issue #196), allow empty input sources
+        ! The tool will auto-discover coverage files from build directories
+        ! Legacy behavior: Must have at least one input source (disabled for sane default mode)
+        ! if (.not. has_source_paths .and. .not. has_coverage_files .and. &
+        !     .not. has_import_file) then
+        !     is_valid = .false.
+        !     error_message = "No input sources specified. Provide source paths, " // &
+        !                   "coverage files, or import file."
+        !     return
+        ! end if
         
         ! Validate source paths if provided
         if (has_source_paths) then

@@ -240,12 +240,14 @@ contains
     end function filter_coverage_files_by_patterns
     
     subroutine discover_gcov_files(config, files)
-        !! Discovers .gcov files in configured source paths
+        !! Discovers .gcov files in configured source paths with automatic gcov generation
+        !! Implements "sane default mode" - auto-discovers coverage files and runs gcov
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: files(:)
         
         character(len=:), allocatable :: search_paths(:)
         character(len=:), allocatable :: found_files(:)
+        character(len=:), allocatable :: generated_files(:)
         integer :: path_idx
         
         ! Use source paths for discovery
@@ -257,15 +259,121 @@ contains
             search_paths(1) = "."
         end if
         
-        ! Search for .gcov files in all paths
-        ! Use simple glob pattern for .gcov files
+        ! First, search for existing .gcov files
         found_files = find_files("*" // GCOV_EXTENSION)
+        
+        ! If no .gcov files found, attempt automatic generation
+        if (.not. allocated(found_files) .or. size(found_files) == 0) then
+            call auto_generate_gcov_files(generated_files)
+            if (allocated(generated_files)) then
+                files = generated_files
+                return
+            end if
+        end if
         
         if (allocated(found_files)) then
             files = found_files
         end if
         
     end subroutine discover_gcov_files
+    
+    subroutine auto_generate_gcov_files(generated_files)
+        !! Automatically discovers and generates .gcov files from build directories
+        !! Implements the core "sane default mode" functionality for Issue #196
+        character(len=:), allocatable, intent(out) :: generated_files(:)
+        
+        character(len=:), allocatable :: build_dirs(:)
+        character(len=:), allocatable :: gcno_files(:)
+        character(len=:), allocatable :: all_gcov_files(:)
+        character(len=300) :: command
+        character(len=1000) :: build_path
+        integer :: i, exit_status
+        logical :: success
+        
+        ! Find build directories with coverage data
+        call find_coverage_build_directories(build_dirs)
+        
+        if (.not. allocated(build_dirs) .or. size(build_dirs) == 0) then
+            return ! No build directories found
+        end if
+        
+        success = .false.
+        
+        ! Process each build directory
+        do i = 1, size(build_dirs)
+            build_path = trim(build_dirs(i))
+            
+            ! Generate gcov files for this directory (check if .gcno files exist)
+            write(command, '(A)') 'find "' // trim(build_path) // '" -name "src_*.f90.gcno" -execdir gcov {} \; 2>/dev/null'
+            call execute_command_line(command, exitstat=exit_status)
+            
+            if (exit_status == 0) then
+                success = .true.
+            end if
+        end do
+        
+        if (success) then
+            ! Copy generated .gcov files to project root and collect them
+            call collect_generated_gcov_files(build_dirs, all_gcov_files)
+            if (allocated(all_gcov_files)) then
+                generated_files = all_gcov_files
+            end if
+        end if
+        
+    end subroutine auto_generate_gcov_files
+    
+    subroutine find_coverage_build_directories(build_dirs)
+        !! Finds build directories containing coverage data files
+        character(len=:), allocatable, intent(out) :: build_dirs(:)
+        
+        character(len=:), allocatable :: gcda_files(:)
+        character(len=500) :: dir_path
+        integer :: i
+        
+        ! Find all .gcda files (indicates executed coverage data)
+        gcda_files = find_files("build/**/fortcov/*.gcda")
+        
+        if (allocated(gcda_files) .and. size(gcda_files) > 0) then
+            ! Use first .gcda file to determine build directory structure
+            ! For simplicity, assume all build dirs follow same pattern
+            dir_path = gcda_files(1)
+            
+            ! Extract directory path (remove filename)
+            i = index(dir_path, '/', back=.true.)
+            if (i > 0) then
+                dir_path = dir_path(1:i-1)
+                
+                ! Allocate and set single build directory
+                allocate(character(len=500) :: build_dirs(1))
+                build_dirs(1) = trim(dir_path)
+            end if
+        end if
+        
+    end subroutine find_coverage_build_directories
+    
+    subroutine collect_generated_gcov_files(build_dirs, gcov_files)
+        !! Collects generated .gcov files and copies them to project root
+        character(len=*), intent(in) :: build_dirs(:)
+        character(len=:), allocatable, intent(out) :: gcov_files(:)
+        
+        character(len=:), allocatable :: found_gcov_files(:)
+        character(len=300) :: command
+        integer :: i
+        
+        ! Copy all .gcov files from build directories to project root
+        do i = 1, size(build_dirs)
+            write(command, '(A)') 'find "' // trim(build_dirs(i)) // '" -name "*.gcov" -exec cp {} . \; 2>/dev/null'
+            call execute_command_line(command)
+        end do
+        
+        ! Now find the copied .gcov files in project root
+        found_gcov_files = find_files("*.gcov")
+        
+        if (allocated(found_gcov_files)) then
+            gcov_files = found_gcov_files
+        end if
+        
+    end subroutine collect_generated_gcov_files
     
     
     function is_test_file(filepath) result(is_test)

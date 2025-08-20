@@ -30,11 +30,12 @@ Fast, robust Fortran code coverage analysis with gcov integration, comprehensive
 # Build with coverage instrumentation
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# Generate coverage data
-gcov src/*.f90
+# Generate coverage data from build directory  
+find build -name "*.gcno" -path "*/fortcov/src_*.gcno" -execdir gcov {} \;
+find build -name "*.gcov" -exec cp {} . \;
 
 # Analyze coverage
-fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
+fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md
 ```
 
 ## Key Features
