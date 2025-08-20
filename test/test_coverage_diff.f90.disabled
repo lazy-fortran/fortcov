@@ -92,10 +92,8 @@ contains
         passed = .false.
         
         ! Given: Lines for different diff scenarios
-        call baseline_line%init("test.f90")
-        baseline_line%lines = 5, 3, .true.
-        call current_line%init("test.f90")
-        current_line%lines = 5, 3, .true.
+        call baseline_line%init("test.f90", 5, 3, .true.)
+        call current_line%init("test.f90", 5, 3, .true.)
         
         ! When: Creating diffs with different types
         call added_diff%init(baseline_line, current_line, DIFF_ADDED)
