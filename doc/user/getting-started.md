@@ -76,6 +76,22 @@ end program test_calculator
 
 ### Step 3: Generate Coverage
 
+**Option A: Automatic (Recommended)**
+
+Use the FPM coverage bridge script for seamless integration:
+
+```bash
+# One command handles everything
+scripts/fpm_coverage_bridge.sh src
+
+# View the report
+cat coverage.md
+```
+
+**Option B: Manual Process**
+
+For understanding or custom workflows:
+
 ```bash
 # Build and test with coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"

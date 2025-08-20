@@ -39,13 +39,24 @@ program main
     call exit(EXIT_FAILURE)
   end if
   
-  ! Check for help/version flags after successful parsing
+  ! Check for help/version/validate-config flags after successful parsing
   if (config%show_help) then
     call show_help()
     call exit(EXIT_SUCCESS)
   else if (config%show_version) then
     call show_version()
     call exit(EXIT_SUCCESS)
+  else if (config%validate_config_only) then
+    ! Only validate configuration, don't run analysis
+    if (.not. validate_config(config)) then
+      error_ctx%error_code = ERROR_INVALID_CONFIG
+      error_ctx%message = "Configuration validation failed"
+      print *, "❌ Configuration validation failed: " // trim(error_ctx%message)
+      call exit(EXIT_FAILURE)
+    else
+      print *, "✅ Configuration is valid"
+      call exit(EXIT_SUCCESS)
+    end if
   end if
   
   ! Validate configuration for security and accessibility

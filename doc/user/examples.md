@@ -53,6 +53,17 @@ fortcov --source=src --output=coverage.md
 
 ### FPM Integration
 
+**Recommended: Use the FPM bridge script**
+
+```bash
+# Automatic handling of FPM build complexities
+scripts/fpm_coverage_bridge.sh src               # Simple pattern
+scripts/fpm_coverage_bridge.sh root              # Root pattern  
+scripts/fpm_coverage_bridge.sh custom lib        # Custom directory
+```
+
+**Manual FPM workflow (for custom needs)**
+
 ```bash
 # Standard workflow
 fpm test --flag "-fprofile-arcs -ftest-coverage"

@@ -39,11 +39,15 @@ contains
         print *, ""
         print *, "ANALYSIS OPTIONS:"
         print *, "    -t, --threshold PCT     Coverage threshold percentage (0-100)"
+        print *, "    --fail-under PCT        Fail if coverage is below threshold"
         print *, "    -s, --source PATHS      Source directory paths (comma-separated)"
         print *, "    -e, --exclude PATTERNS  Exclude patterns (comma-separated)"
+        print *, "    --include PATTERNS      Include only matching patterns"
         print *, ""
         print *, "ADVANCED OPTIONS:"
         print *, "    --config FILE           Configuration file path"
+        print *, "    --validate-config       Validate configuration without running analysis"
+        print *, "    --threads N             Number of processing threads (default: 1)"
         print *, "    --tui                   Launch Terminal User Interface"
         print *, "    --strict                Enable strict mode validation"
         print *, "    --keep-gcov             Keep generated .gcov files"
@@ -107,11 +111,14 @@ contains
         end if
         
         write(*, '(A, F6.2, A)') "Threshold:        ", config%minimum_coverage, "%"
+        write(*, '(A, F6.2, A)') "Fail under:       ", config%fail_under_threshold, "%"
+        write(*, '(A, I0)') "Threads:          ", config%threads
         
         if (config%verbose) print *, "Verbose:          enabled"
         if (config%quiet) print *, "Quiet:            enabled"
         if (config%tui_mode) print *, "TUI mode:         enabled"
         if (config%strict_mode) print *, "Strict mode:      enabled"
+        if (config%validate_config_only) print *, "Validate only:    enabled"
         if (config%keep_gcov_files) print *, "Keep gcov files:  enabled"
         
         if (allocated(config%source_paths)) then
@@ -120,6 +127,10 @@ contains
         
         if (allocated(config%exclude_patterns)) then
             print *, "Exclude patterns: " // join_string_array(config%exclude_patterns, ", ")
+        end if
+        
+        if (allocated(config%include_patterns)) then
+            print *, "Include patterns: " // join_string_array(config%include_patterns, ", ")
         end if
         
         if (allocated(config%coverage_files)) then
