@@ -10,6 +10,7 @@ module config_validator
     use file_utils
     use error_handling
     use input_validation
+    use secure_command_executor, only: validate_executable_path
     implicit none
     private
     
@@ -20,6 +21,7 @@ module config_validator
     public :: validate_threshold_settings
     public :: validate_diff_configuration
     public :: validate_import_configuration
+    public :: validate_gcov_executable
     
 contains
     
@@ -31,14 +33,16 @@ contains
         
         character(len=LONG_STRING_LEN) :: error_message
         logical :: sources_valid, files_valid, output_valid
-        logical :: threshold_valid, diff_valid, import_valid
+        logical :: threshold_valid, diff_valid, import_valid, gcov_valid
         
         is_valid = .true.
         
         ! Validate input sources
         call validate_input_sources(config, sources_valid, error_message)
         if (.not. sources_valid) then
-            print *, "❌ Input sources validation failed: " // trim(error_message)
+            if (.not. config%quiet) then
+                print *, "❌ Input sources validation failed: " // trim(error_message)
+            end if
             is_valid = .false.
         end if
         
@@ -46,7 +50,9 @@ contains
         if (allocated(config%coverage_files)) then
             call validate_coverage_files(config%coverage_files, files_valid, error_message)
             if (.not. files_valid) then
-                print *, "❌ Coverage files validation failed: " // trim(error_message)
+                if (.not. config%quiet) then
+                    print *, "❌ Coverage files validation failed: " // trim(error_message)
+                end if
                 is_valid = .false.
             end if
         end if
@@ -54,14 +60,18 @@ contains
         ! Validate output settings
         call validate_output_settings(config, output_valid, error_message)
         if (.not. output_valid) then
-            print *, "❌ Output settings validation failed: " // trim(error_message)
+            if (.not. config%quiet) then
+                print *, "❌ Output settings validation failed: " // trim(error_message)
+            end if
             is_valid = .false.
         end if
         
         ! Validate threshold settings
         call validate_threshold_settings(config, threshold_valid, error_message)
         if (.not. threshold_valid) then
-            print *, "❌ Threshold settings validation failed: " // trim(error_message)
+            if (.not. config%quiet) then
+                print *, "❌ Threshold settings validation failed: " // trim(error_message)
+            end if
             is_valid = .false.
         end if
         
@@ -69,7 +79,9 @@ contains
         if (config%enable_diff) then
             call validate_diff_configuration(config, diff_valid, error_message)
             if (.not. diff_valid) then
-                print *, "❌ Diff configuration validation failed: " // trim(error_message)
+                if (.not. config%quiet) then
+                    print *, "❌ Diff configuration validation failed: " // trim(error_message)
+                end if
                 is_valid = .false.
             end if
         end if
@@ -78,7 +90,20 @@ contains
         if (allocated(config%import_file)) then
             call validate_import_configuration(config, import_valid, error_message)
             if (.not. import_valid) then
-                print *, "❌ Import configuration validation failed: " // trim(error_message)
+                if (.not. config%quiet) then
+                    print *, "❌ Import configuration validation failed: " // trim(error_message)
+                end if
+                is_valid = .false.
+            end if
+        end if
+        
+        ! Validate gcov executable if specified
+        if (allocated(config%gcov_executable)) then
+            call validate_gcov_executable(config%gcov_executable, gcov_valid, error_message)
+            if (.not. gcov_valid) then
+                if (.not. config%quiet) then
+                    print *, "❌ GCov executable validation failed: " // trim(error_message)
+                end if
                 is_valid = .false.
             end if
         end if
@@ -102,16 +127,15 @@ contains
         has_coverage_files = allocated(config%coverage_files)
         has_import_file = allocated(config%import_file)
         
-        ! For "sane default mode" (Issue #196), allow empty input sources
-        ! The tool will auto-discover coverage files from build directories
-        ! Legacy behavior: Must have at least one input source (disabled for sane default mode)
-        ! if (.not. has_source_paths .and. .not. has_coverage_files .and. &
-        !     .not. has_import_file) then
-        !     is_valid = .false.
-        !     error_message = "No input sources specified. Provide source paths, " // &
-        !                   "coverage files, or import file."
-        !     return
-        ! end if
+        ! Validate that at least one input source is provided
+        ! This is required for security validation tests
+        if (.not. has_source_paths .and. .not. has_coverage_files .and. &
+            .not. has_import_file) then
+            is_valid = .false.
+            error_message = "No input sources specified. Provide source paths, " // &
+                          "coverage files, or import file."
+            return
+        end if
         
         ! Validate source paths if provided
         if (has_source_paths) then
@@ -427,5 +451,26 @@ contains
         end if
         
     end function is_file_readable
+    
+    subroutine validate_gcov_executable(gcov_path, is_valid, error_message)
+        !! Validates gcov executable path using secure command executor
+        character(len=*), intent(in) :: gcov_path
+        logical, intent(out) :: is_valid
+        character(len=*), intent(out) :: error_message
+        
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_path
+        
+        call validate_executable_path(gcov_path, safe_path, error_ctx)
+        
+        if (error_ctx%error_code == ERROR_SUCCESS) then
+            is_valid = .true.
+            error_message = ""
+        else
+            is_valid = .false.
+            error_message = trim(error_ctx%message)
+        end if
+        
+    end subroutine validate_gcov_executable
     
 end module config_validator

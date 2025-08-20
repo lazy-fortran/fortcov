@@ -226,7 +226,11 @@ contains
         
         ! Test malicious gcov executable should be rejected
         call initialize_config(config)
+        config%quiet = .true.  ! Suppress output during testing
         config%gcov_executable = "gcov; rm -rf /"
+        ! Provide minimal input sources so validation focuses on gcov executable
+        allocate(character(len=1) :: config%source_paths(1))
+        config%source_paths(1) = "."
         call validate_config_with_context(config, error_ctx)
         if (error_ctx%error_code == ERROR_SUCCESS) then
             print *, "    FAIL: Malicious gcov executable should be rejected"
@@ -238,7 +242,11 @@ contains
         
         ! Test invalid coverage threshold should be rejected
         call initialize_config(config)
+        config%quiet = .true.  ! Suppress output during testing
         config%minimum_coverage = -10.0
+        ! Provide minimal input sources so validation focuses on threshold
+        allocate(character(len=1) :: config%source_paths(1))
+        config%source_paths(1) = "."
         call validate_config_with_context(config, error_ctx)
         if (error_ctx%error_code == ERROR_SUCCESS) then
             print *, "    FAIL: Negative coverage threshold should be rejected"
