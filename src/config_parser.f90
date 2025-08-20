@@ -176,7 +176,8 @@ contains
             is_flag = is_flag_argument(args(i))
             if (is_flag) then
                 flag_count = flag_count + 1
-                if (flag_requires_value(args(i))) then
+                ! For flags with '=', don't expect next arg as value
+                if (index(args(i), '=') == 0 .and. flag_requires_value(args(i))) then
                     is_value_for_prev_flag = .true.
                 end if
             else
@@ -207,7 +208,8 @@ contains
             if (is_flag) then
                 flag_count = flag_count + 1
                 flags(flag_count) = args(i)
-                if (flag_requires_value(args(i)) .and. i < n) then
+                ! For flags with '=', don't append next arg as value
+                if (index(args(i), '=') == 0 .and. flag_requires_value(args(i)) .and. i < n) then
                     flags(flag_count) = trim(flags(flag_count)) // "=" // trim(args(i+1))
                     is_value_for_prev_flag = .true.
                 end if
@@ -324,7 +326,7 @@ contains
         long_flag = get_long_form_option(flag)
         
         select case (trim(long_flag))
-        case ('--output', '--format', '--threshold', '--source', '--exclude', &
+        case ('--output', '--format', '--output-format', '--threshold', '--source', '--exclude', &
               '--config', '--diff-baseline', '--diff-current', '--import', &
               '--gcov-executable', '--gcov-args')
             requires_value = .true.
@@ -380,7 +382,7 @@ contains
             config%show_version = .true.
         case ('--output')
             config%output_path = value
-        case ('--format')
+        case ('--format', '--output-format')
             config%output_format = value
         case ('--threshold')
             call parse_real_value(value, real_value, success)
@@ -395,6 +397,26 @@ contains
             config%strict_mode = .true.
         case ('--keep-gcov')
             config%keep_gcov_files = .true.
+        case ('--source')
+            call add_source_path(value, config, success, error_message)
+        case ('--exclude')
+            call add_exclude_pattern(value, config, success, error_message)
+        case ('--config')
+            config%config_file = value
+        case ('--gcov-executable')
+            config%gcov_executable = value
+        case ('--gcov-args')
+            config%gcov_args = value
+        case ('--diff')
+            config%enable_diff = .true.
+        case ('--diff-baseline')
+            config%diff_baseline_file = value
+        case ('--diff-current')
+            config%diff_current_file = value
+        case ('--include-unchanged')
+            config%include_unchanged = .true.
+        case ('--import')
+            config%import_file = value
         case default
             success = .false.
             error_message = "Unknown flag: " // trim(flag)
@@ -457,5 +479,93 @@ contains
         end if
         
     end subroutine apply_html_default_filename
+    
+    subroutine add_source_path(path, config, success, error_message)
+        !! Adds a source path to the config
+        character(len=*), intent(in) :: path
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: temp_array(:)
+        integer :: current_size, new_size
+        
+        success = .true.
+        error_message = ""
+        
+        if (len_trim(path) == 0) then
+            success = .false.
+            error_message = "Empty source path provided"
+            return
+        end if
+        
+        if (allocated(config%source_paths)) then
+            current_size = size(config%source_paths)
+            
+            ! Check size limits
+            if (current_size >= MAX_FILES) then
+                success = .false.
+                write(error_message, '(A, I0, A)') &
+                    "Maximum source path count exceeded (", MAX_FILES, ")"
+                return
+            end if
+            
+            ! Reallocate with increased size
+            new_size = current_size + 1
+            allocate(character(len=max(len(config%source_paths), len_trim(path))) :: temp_array(new_size))
+            temp_array(1:current_size) = config%source_paths
+            temp_array(new_size) = trim(path)
+            call move_alloc(temp_array, config%source_paths)
+        else
+            ! Initial allocation
+            allocate(character(len=len_trim(path)) :: config%source_paths(1))
+            config%source_paths(1) = trim(path)
+        end if
+        
+    end subroutine add_source_path
+    
+    subroutine add_exclude_pattern(pattern, config, success, error_message)
+        !! Adds an exclude pattern to the config
+        character(len=*), intent(in) :: pattern
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: temp_array(:)
+        integer :: current_size, new_size
+        
+        success = .true.
+        error_message = ""
+        
+        if (len_trim(pattern) == 0) then
+            success = .false.
+            error_message = "Empty exclude pattern provided"
+            return
+        end if
+        
+        if (allocated(config%exclude_patterns)) then
+            current_size = size(config%exclude_patterns)
+            
+            ! Check size limits
+            if (current_size >= MAX_EXCLUDES) then
+                success = .false.
+                write(error_message, '(A, I0, A)') &
+                    "Maximum exclude pattern count exceeded (", MAX_EXCLUDES, ")"
+                return
+            end if
+            
+            ! Reallocate with increased size
+            new_size = current_size + 1
+            allocate(character(len=max(len(config%exclude_patterns), len_trim(pattern))) :: temp_array(new_size))
+            temp_array(1:current_size) = config%exclude_patterns
+            temp_array(new_size) = trim(pattern)
+            call move_alloc(temp_array, config%exclude_patterns)
+        else
+            ! Initial allocation
+            allocate(character(len=len_trim(pattern)) :: config%exclude_patterns(1))
+            config%exclude_patterns(1) = trim(pattern)
+        end if
+        
+    end subroutine add_exclude_pattern
     
 end module config_parser
