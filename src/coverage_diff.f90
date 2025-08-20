@@ -1,15 +1,22 @@
 module coverage_diff
-    use coverage_model
+    use coverage_data_model
+    use coverage_thresholds
     implicit none
     
     private
     
     ! Diff type constants
-    integer, parameter :: DIFF_UNCHANGED = 0
-    integer, parameter :: DIFF_ADDED = 1
-    integer, parameter :: DIFF_REMOVED = 2
-    integer, parameter :: DIFF_CHANGED = 3
-    public :: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
+    integer, parameter, public :: DIFF_UNCHANGED = 0
+    integer, parameter, public :: DIFF_ADDED = 1
+    integer, parameter, public :: DIFF_REMOVED = 2
+    integer, parameter, public :: DIFF_CHANGED = 3
+    
+    ! Re-export threshold types and constants
+    public :: diff_thresholds_t
+    public :: UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, CRITICAL_IMPROVEMENT
+    public :: MINOR_DEGRADATION, MAJOR_DEGRADATION, CRITICAL_DEGRADATION
+    public :: NEW_COVERAGE, LOST_COVERAGE
+    
     public :: compute_coverage_diff
     public :: compute_file_diff
     public :: compute_line_diff

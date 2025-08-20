@@ -9,6 +9,11 @@ module coverage_model
     use coverage_data_model
     use coverage_operations
     use coverage_statistics, only: coverage_stats_t, extended_coverage_stats_t
+    use coverage_diff, only: diff_thresholds_t, DIFF_UNCHANGED, DIFF_ADDED, &
+                            DIFF_REMOVED, DIFF_CHANGED, &
+                            UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, &
+                            CRITICAL_IMPROVEMENT, MINOR_DEGRADATION, MAJOR_DEGRADATION, &
+                            CRITICAL_DEGRADATION, NEW_COVERAGE, LOST_COVERAGE
     implicit none
     private
     
@@ -26,6 +31,13 @@ module coverage_model
     public :: file_diff_t
     public :: line_coverage_t
     public :: file_coverage_t
+    
+    ! Re-export diff-related types and constants
+    public :: diff_thresholds_t
+    public :: DIFF_UNCHANGED, DIFF_ADDED, DIFF_REMOVED, DIFF_CHANGED
+    public :: UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, CRITICAL_IMPROVEMENT
+    public :: MINOR_DEGRADATION, MAJOR_DEGRADATION, CRITICAL_DEGRADATION
+    public :: NEW_COVERAGE, LOST_COVERAGE
     
     ! Re-export public procedures for backward compatibility
     public :: calculate_statistics

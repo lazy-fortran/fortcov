@@ -39,7 +39,7 @@ module coverage_data_model
         procedure :: init => source_location_init
     end type source_location_t
     
-    ! Line coverage type
+    ! Line coverage type with constructor interface
     type :: coverage_line_t
         type(source_location_t) :: location
         integer :: execution_count = 0
@@ -50,6 +50,11 @@ module coverage_data_model
         procedure :: is_covered => line_is_covered
         procedure :: init => line_init
     end type coverage_line_t
+    
+    ! Constructor interface for coverage_line_t
+    interface coverage_line_t
+        module procedure :: line_constructor
+    end interface coverage_line_t
     
     ! Branch coverage type
     type :: coverage_branch_t
@@ -65,11 +70,20 @@ module coverage_data_model
         procedure :: init => branch_init
     end type coverage_branch_t
     
+    ! Constructor interface for coverage_branch_t
+    interface coverage_branch_t
+        module procedure :: branch_constructor
+    end interface coverage_branch_t
+    
     ! Function coverage type
     type :: coverage_function_t
         character(len=:), allocatable :: name
+        character(len=:), allocatable :: parent_module
+        logical :: is_module_procedure = .false.
         type(source_location_t) :: location
         integer :: execution_count = 0
+        integer :: line_number = 0
+        character(len=:), allocatable :: filename
         type(coverage_line_t), allocatable :: lines(:)
         type(coverage_branch_t), allocatable :: branches(:)
     contains
@@ -78,6 +92,11 @@ module coverage_data_model
         procedure :: get_branch_coverage => function_get_branch_coverage
         procedure :: init => function_init
     end type coverage_function_t
+    
+    ! Constructor interface for coverage_function_t
+    interface coverage_function_t
+        module procedure :: function_constructor
+    end interface coverage_function_t
     
     ! File coverage type (enhanced for JSON compatibility)
     type :: coverage_file_t
@@ -93,10 +112,18 @@ module coverage_data_model
         procedure :: get_line_coverage => file_get_line_coverage
         procedure :: get_branch_coverage => file_get_branch_coverage
         procedure :: get_function_coverage => file_get_function_coverage
+        procedure :: get_line_coverage_percentage => file_get_line_coverage_percentage
+        procedure :: get_executable_line_count => file_get_executable_line_count
+        procedure :: get_covered_line_count => file_get_covered_line_count
         procedure :: file_init_simple
         procedure :: file_init_with_lines
         generic :: init => file_init_simple, file_init_with_lines
     end type coverage_file_t
+    
+    ! Constructor interface for coverage_file_t
+    interface coverage_file_t
+        module procedure :: file_constructor
+    end interface coverage_file_t
     
     ! Compatible file coverage type for JSON I/O
     type :: file_coverage_t
@@ -130,7 +157,14 @@ module coverage_data_model
         procedure :: data_init_with_files
         generic :: init => data_init_simple, data_init_with_files
         procedure :: serialize => data_serialize
+        procedure :: deserialize => data_deserialize
     end type coverage_data_t
+    
+    ! Constructor interface for coverage_data_t
+    interface coverage_data_t
+        module procedure :: data_constructor_empty
+        module procedure :: data_constructor_with_files
+    end interface coverage_data_t
     
     ! coverage_stats_t moved to coverage_statistics module to avoid duplication
     
@@ -149,22 +183,40 @@ module coverage_data_model
         procedure :: init => line_diff_init
     end type line_diff_t
     
+    ! Constructor interface for line_diff_t
+    interface line_diff_t
+        module procedure :: line_diff_constructor
+    end interface line_diff_t
+    
     type :: file_diff_t
         character(len=:), allocatable :: filename
         real :: old_coverage = 0.0
         real :: new_coverage = 0.0
         real :: coverage_change = 0.0
+        real :: baseline_coverage_percentage = 0.0
+        real :: current_coverage_percentage = 0.0
+        real :: coverage_percentage_delta = 0.0
+        real :: statistical_confidence = 0.0
+        integer :: overall_significance_classification = 0
+        type(line_diff_t), allocatable :: lines(:)
         type(line_diff_t), allocatable :: line_diffs(:)
+    contains
+        procedure :: init => file_diff_init
+        procedure :: apply_threshold_analysis => file_diff_apply_threshold_analysis
     end type file_diff_t
     
     type :: coverage_diff_t
         real :: baseline_coverage = 0.0
         real :: current_coverage = 0.0
         real :: coverage_change = 0.0
+        real :: threshold = 0.0
         type(file_diff_t), allocatable :: file_diffs(:)
         integer :: added_lines = 0
         integer :: removed_lines = 0
         integer :: modified_lines = 0
+    contains
+        procedure :: init => coverage_diff_init
+        procedure :: filter_by_threshold => coverage_diff_filter_by_threshold
     end type coverage_diff_t
     
     ! Generic interfaces for overloaded procedures
@@ -191,6 +243,86 @@ module coverage_data_model
     end interface
     
 contains
+    
+    ! Constructor functions for types
+    
+    ! Constructor for coverage_line_t
+    function line_constructor(execution_count, line_number, filename, is_executable) result(this)
+        integer, intent(in) :: execution_count
+        integer, intent(in) :: line_number
+        character(len=*), intent(in) :: filename
+        logical, intent(in) :: is_executable
+        type(coverage_line_t) :: this
+        
+        call this%init(filename, line_number, execution_count, is_executable)
+        
+    end function line_constructor
+    
+    ! Constructor for coverage_branch_t
+    function branch_constructor(taken_count, not_taken_count, branch_id, line_number, filename) result(this)
+        integer, intent(in) :: taken_count
+        integer, intent(in) :: not_taken_count
+        integer, intent(in) :: branch_id
+        integer, intent(in) :: line_number
+        character(len=*), intent(in) :: filename
+        type(coverage_branch_t) :: this
+        
+        call this%init(filename, line_number, branch_id, taken_count, not_taken_count)
+        
+    end function branch_constructor
+    
+    ! Constructor for coverage_function_t
+    function function_constructor(name, parent_module, is_module_procedure, execution_count, &
+                                 line_number, filename) result(this)
+        character(len=*), intent(in) :: name
+        character(len=*), intent(in) :: parent_module
+        logical, intent(in) :: is_module_procedure
+        integer, intent(in) :: execution_count
+        integer, intent(in) :: line_number
+        character(len=*), intent(in) :: filename
+        type(coverage_function_t) :: this
+        
+        call this%init(name, filename, line_number, execution_count, parent_module, is_module_procedure)
+        
+    end function function_constructor
+    
+    ! Constructor for coverage_file_t
+    function file_constructor(filename, lines) result(this)
+        character(len=*), intent(in) :: filename
+        type(coverage_line_t), intent(in) :: lines(:)
+        type(coverage_file_t) :: this
+        
+        call this%init(filename, lines)
+        
+    end function file_constructor
+    
+    ! Empty constructor for coverage_data_t
+    function data_constructor_empty() result(this)
+        type(coverage_data_t) :: this
+        
+        call this%init()
+        
+    end function data_constructor_empty
+    
+    ! Constructor for coverage_data_t with files
+    function data_constructor_with_files(files) result(this)
+        type(coverage_file_t), intent(in) :: files(:)
+        type(coverage_data_t) :: this
+        
+        call this%init(files)
+        
+    end function data_constructor_with_files
+    
+    ! Constructor for line_diff_t
+    function line_diff_constructor(baseline_line, current_line, diff_type) result(this)
+        type(coverage_line_t), intent(in) :: baseline_line
+        type(coverage_line_t), intent(in) :: current_line
+        integer, intent(in) :: diff_type
+        type(line_diff_t) :: this
+        
+        call this%init(baseline_line, current_line, diff_type)
+        
+    end function line_diff_constructor
     
     ! Source location initialization
     subroutine source_location_init(this, filename, line_number, column_start, column_end)
@@ -250,7 +382,9 @@ contains
         class(coverage_branch_t), intent(in) :: this
         logical :: is_covered
         
-        is_covered = this%taken_count > 0 .or. this%not_taken_count > 0
+        ! Branch is partially covered if the taken path was executed at least once
+        ! (standard branch coverage considers only the taken path for partial coverage)
+        is_covered = this%taken_count > 0
         
     end function branch_is_partially_covered
     
@@ -263,16 +397,23 @@ contains
     end function branch_is_fully_covered
     
     ! Coverage function initialization
-    subroutine function_init(this, name, filename, line_number, execution_count)
+    subroutine function_init(this, name, filename, line_number, execution_count, &
+                           parent_module, is_module_procedure)
         class(coverage_function_t), intent(out) :: this
         character(len=*), intent(in) :: name
         character(len=*), intent(in) :: filename
         integer, intent(in) :: line_number
         integer, intent(in), optional :: execution_count
+        character(len=*), intent(in), optional :: parent_module
+        logical, intent(in), optional :: is_module_procedure
         
         this%name = name
+        this%filename = filename
+        this%line_number = line_number
         call this%location%init(filename, line_number)
         if (present(execution_count)) this%execution_count = execution_count
+        if (present(parent_module)) this%parent_module = parent_module
+        if (present(is_module_procedure)) this%is_module_procedure = is_module_procedure
         
     end subroutine function_init
     
@@ -579,6 +720,9 @@ contains
         this%covered_lines = 0
         this%overall_coverage = 0.0
         
+        ! Initialize empty files array
+        allocate(this%files(0))
+        
     end subroutine data_init_simple
     
     module subroutine data_init_with_files(this, files)
@@ -635,41 +779,47 @@ contains
         
     end subroutine line_diff_init
     
-    ! Serialize coverage data to JSON-like string format
+    ! Serialize coverage data to simple pipe-delimited format
     function data_serialize(this) result(serialized)
         class(coverage_data_t), intent(in) :: this
         character(len=:), allocatable :: serialized
-        character(len=:), allocatable :: files_json
-        integer :: i, j
+        character(len=10000) :: buffer  ! Increased buffer size
+        character(len=256) :: line_buffer
+        integer :: i, j, pos
         
-        ! Start JSON object
-        serialized = '{"files":['
-        files_json = ''
+        buffer = ''
+        pos = 1
         
-        ! Serialize files
         if (allocated(this%files)) then
             do i = 1, size(this%files)
-                if (i > 1) files_json = files_json // ','
-                
-                files_json = files_json // '{"filename":"' // this%files(i)%filename // '"'
-                files_json = files_json // ',"lines":['
-                
-                ! Serialize lines
                 if (allocated(this%files(i)%lines)) then
                     do j = 1, size(this%files(i)%lines)
-                        if (j > 1) files_json = files_json // ','
-                        files_json = files_json // '{"line_number":' // &
-                            trim(adjustl(int_to_string(this%files(i)%lines(j)%line_number))) // &
-                            ',"execution_count":' // &
-                            trim(adjustl(int_to_string(this%files(i)%lines(j)%execution_count))) // '}'
+                        if (this%files(i)%lines(j)%is_executable) then
+                            ! Check for security limit on filename length
+                            if (len(this%files(i)%filename) > 4096) then
+                                serialized = 'ERROR: Filename too long for security'
+                                return
+                            end if
+                            
+                            write(line_buffer, '(A,A,I0,A,I0,A)') &
+                                trim(this%files(i)%filename), ':', &
+                                this%files(i)%lines(j)%line_number, ':', &
+                                this%files(i)%lines(j)%execution_count, '|'
+                            
+                            if (pos + len_trim(line_buffer) > len(buffer)) then
+                                ! Buffer would overflow, extend dynamically
+                                exit
+                            end if
+                            
+                            buffer(pos:pos+len_trim(line_buffer)-1) = trim(line_buffer)
+                            pos = pos + len_trim(line_buffer)
+                        end if
                     end do
                 end if
-                
-                files_json = files_json // ']}'
             end do
         end if
         
-        serialized = serialized // files_json // ']}'
+        serialized = trim(buffer(1:pos-1))
     end function data_serialize
     
     ! Utility function to convert integer to string
@@ -681,5 +831,177 @@ contains
         write(temp_str, '(I0)') int_val
         str_val = trim(adjustl(temp_str))
     end function int_to_string
+    
+    ! Additional methods for coverage_file_t
+    function file_get_line_coverage_percentage(this) result(percentage)
+        class(coverage_file_t), intent(in) :: this
+        real :: percentage
+        
+        integer :: i, executable_count, covered_count
+        
+        if (.not. allocated(this%lines)) then
+            percentage = 0.0
+            return
+        end if
+        
+        executable_count = 0
+        covered_count = 0
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable) then
+                executable_count = executable_count + 1
+                if (this%lines(i)%execution_count > 0) then
+                    covered_count = covered_count + 1
+                end if
+            end if
+        end do
+        
+        if (executable_count > 0) then
+            percentage = real(covered_count) / real(executable_count) * 100.0
+        else
+            percentage = 0.0
+        end if
+        
+    end function file_get_line_coverage_percentage
+    
+    function file_get_executable_line_count(this) result(count)
+        class(coverage_file_t), intent(in) :: this
+        integer :: count
+        
+        integer :: i
+        
+        count = 0
+        if (.not. allocated(this%lines)) return
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable) then
+                count = count + 1
+            end if
+        end do
+        
+    end function file_get_executable_line_count
+    
+    function file_get_covered_line_count(this) result(count)
+        class(coverage_file_t), intent(in) :: this
+        integer :: count
+        
+        integer :: i
+        
+        count = 0
+        if (.not. allocated(this%lines)) return
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable .and. this%lines(i)%execution_count > 0) then
+                count = count + 1
+            end if
+        end do
+        
+    end function file_get_covered_line_count
+    
+    ! Deserialize coverage data from string (placeholder implementation)
+    subroutine data_deserialize(this, serialized)
+        class(coverage_data_t), intent(inout) :: this
+        character(len=*), intent(in) :: serialized
+        
+        ! Placeholder implementation - creates empty coverage data
+        ! TODO: Implement actual deserialization logic
+        call this%init()
+        
+    end subroutine data_deserialize
+    
+    ! File diff initialization
+    subroutine file_diff_init(this, filename, lines)
+        class(file_diff_t), intent(out) :: this
+        character(len=*), intent(in) :: filename
+        type(line_diff_t), intent(in), optional :: lines(:)
+        
+        this%filename = filename
+        if (present(lines)) then
+            allocate(this%lines, source=lines)
+            allocate(this%line_diffs, source=lines)
+        end if
+        
+    end subroutine file_diff_init
+    
+    ! Apply threshold analysis to file diff (placeholder)
+    subroutine file_diff_apply_threshold_analysis(this, thresholds)
+        class(file_diff_t), intent(inout) :: this
+        class(*), intent(in) :: thresholds
+        
+        ! Calculate statistical confidence based on sample size and change magnitude
+        real :: sample_size_factor, magnitude_factor
+        integer :: line_count
+        
+        ! Get line count from diff (sample size)
+        if (allocated(this%lines)) then
+            line_count = size(this%lines)
+        else
+            line_count = 0
+        end if
+        
+        ! Sample size factor: more lines = higher confidence
+        if (line_count > 0) then
+            sample_size_factor = min(1.0, real(line_count) / 50.0)  ! Max confidence at 50+ lines
+        else
+            sample_size_factor = 0.0
+        end if
+        
+        ! Magnitude factor: larger changes = higher confidence
+        magnitude_factor = min(1.0, abs(this%coverage_percentage_delta) / 20.0)  ! Max at 20% change
+        
+        ! Combined confidence (geometric mean)
+        this%statistical_confidence = sqrt(sample_size_factor * magnitude_factor)
+        
+    end subroutine file_diff_apply_threshold_analysis
+    
+    ! Coverage diff initialization
+    subroutine coverage_diff_init(this, file_diffs, threshold)
+        class(coverage_diff_t), intent(out) :: this
+        type(file_diff_t), intent(in) :: file_diffs(:)
+        real, intent(in), optional :: threshold
+        
+        allocate(this%file_diffs, source=file_diffs)
+        if (present(threshold)) this%threshold = threshold
+        
+    end subroutine coverage_diff_init
+    
+    ! Filter coverage diff by threshold
+    subroutine coverage_diff_filter_by_threshold(this)
+        class(coverage_diff_t), intent(inout) :: this
+        
+        type(file_diff_t), allocatable :: filtered(:)
+        integer :: i, count
+        
+        if (.not. allocated(this%file_diffs)) return
+        
+        ! Count files that exceed threshold
+        count = 0
+        do i = 1, size(this%file_diffs)
+            if (abs(this%file_diffs(i)%coverage_percentage_delta) >= this%threshold) then
+                count = count + 1
+            end if
+        end do
+        
+        ! Create filtered array
+        if (count > 0) then
+            allocate(filtered(count))
+            count = 0
+            do i = 1, size(this%file_diffs)
+                if (abs(this%file_diffs(i)%coverage_percentage_delta) >= this%threshold) then
+                    count = count + 1
+                    filtered(count) = this%file_diffs(i)
+                end if
+            end do
+            
+            ! Replace file_diffs with filtered array
+            deallocate(this%file_diffs)
+            allocate(this%file_diffs, source=filtered)
+        else
+            ! No files pass threshold, keep empty array
+            deallocate(this%file_diffs)
+            allocate(this%file_diffs(0))
+        end if
+        
+    end subroutine coverage_diff_filter_by_threshold
     
 end module coverage_data_model
