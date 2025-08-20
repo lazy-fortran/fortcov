@@ -1,38 +1,56 @@
-# FortCov
+# FortCov - Fortran Code Coverage Analysis Tool
 
-A modern coverage analysis tool specifically designed for Fortran projects.
+Fast, robust Fortran code coverage analysis with gcov integration, comprehensive reporting, and build system integration.
 
-## Installation
+## Quick Navigation
+
+### For Users
+- [Installation](doc/user/installation.md) - Setup procedures and requirements
+- [Getting Started](doc/user/getting-started.md) - Quick start with working examples  
+- [Usage Guide](doc/user/usage-guide.md) - Comprehensive usage documentation
+- [Examples](doc/user/examples.md) - Practical usage examples
+- [Troubleshooting](doc/user/troubleshooting.md) - Problem resolution guide
+- [Configuration](doc/user/configuration.md) - Configuration reference
+
+### For Developers
+- [Architecture](doc/developer/architecture.md) - System design and architecture
+- [API Reference](doc/developer/api-reference.md) - Programming interface documentation
+- [Build Integration](doc/developer/build-integration.md) - Build system integration patterns
+- [Development Guide](doc/developer/development-guide.md) - Contributor guidance
+- [Testing](doc/developer/testing.md) - Testing strategies and frameworks
+
+### Implementation Details
+- [Design Decisions](doc/implementation/design-decisions.md) - Architectural decision records
+- [Performance](doc/implementation/performance.md) - Performance analysis and optimization
+- [Security](doc/implementation/security.md) - Security architecture and considerations
+
+## Quick Start
 
 ```bash
-git clone https://github.com/lazy-fortran/fortcov.git
-cd fortcov
-fpm build --profile release
-```
-
-## Run gvoc on itself
-
-```bash
-# From FortCov repository root
-fpm build --flag "-fprofile-arcs -ftest-coverage"
+# Build with coverage instrumentation
 fpm test --flag "-fprofile-arcs -ftest-coverage"
+
+# Generate coverage data
 gcov src/*.f90
-fpm run fortcov -- --exclude='build/*,test/*' --output=gvoc-self-coverage.md
+
+# Analyze coverage
+fortcov --source=. --exclude='build/*,test/*' --output=coverage.md
 ```
 
-## Run fortcov on itself
+## Key Features
 
-```bash
-# From FortCov repository root
-fpm build --flag "-fprofile-arcs -ftest-coverage"
-fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
-fpm run fortcov -- --exclude='build/*,test/*' --output=fortcov-self-coverage.md
-```
+- **Fast Analysis**: O(n) performance optimized for large codebases
+- **Multiple Output Formats**: Markdown, HTML, JSON, XML
+- **Build System Integration**: FPM, CMake, Make, Meson support
+- **CI/CD Ready**: GitHub Actions, GitLab CI, Jenkins integration
+- **Comprehensive Reporting**: Line, function, and branch coverage
+- **Differential Analysis**: Coverage comparison between versions
+- **Security Hardened**: Input validation and memory safety
 
-## Alternative: Using helper script
+## License
 
-```bash
-# Simpler approach using provided script
-./scripts/fpm_coverage_bridge.sh root self-coverage.md
-```
+MIT License - see LICENSE file for details.
+
+## Contributing
+
+See [Development Guide](doc/developer/development-guide.md) for contributor information.
