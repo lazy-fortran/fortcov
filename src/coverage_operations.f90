@@ -109,9 +109,13 @@ contains
             end do
         end if
         
-        ! Assign merged files
+        ! Assign merged files (deallocate if already allocated from init)
+        if (allocated(merged_data%files)) deallocate(merged_data%files)
         allocate(merged_data%files(current_count))
         merged_data%files(1:current_count) = temp_files(1:current_count)
+        
+        ! Clean up temporary array
+        if (allocated(temp_files)) deallocate(temp_files)
         
         ! Recalculate overall coverage
         call merged_data%calculate_overall_coverage()
