@@ -27,7 +27,7 @@ contains
         character(len=:), allocatable, intent(out) :: coverage_pairs(:)
         integer, intent(out) :: pair_count
         
-        character(len=MAX_PATH_LENGTH) :: temp_pairs(MAX_FILES)
+        character(len=MAX_PATH_LENGTH), allocatable :: temp_pairs(:)
         character(len=:), allocatable :: gcda_files(:)
         logical :: dir_exists
         integer :: i
@@ -40,6 +40,9 @@ contains
             allocate(character(len=MAX_PATH_LENGTH) :: coverage_pairs(0))
             return
         end if
+        
+        ! Allocate temporary array on heap instead of stack
+        allocate(temp_pairs(MAX_FILES))
         
         ! Find all .gcda files recursively
         gcda_files = find_files_recursive(directory_path, "*.gcda")
@@ -61,6 +64,9 @@ contains
         else
             allocate(character(len=MAX_PATH_LENGTH) :: coverage_pairs(0))
         end if
+        
+        ! Clean up temporary array
+        if (allocated(temp_pairs)) deallocate(temp_pairs)
     end subroutine discover_coverage_files
     
     subroutine detect_input_type(input_path, input_type)
