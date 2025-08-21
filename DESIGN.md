@@ -2038,3 +2038,396 @@ end module
 - **Quality Process Integration**: Documentation quality becomes integral part of development workflow
 
 **EXPECTED OUTCOME**: Documentation consolidation architecture transforms scattered information chaos into professionally organized, audience-driven documentation ecosystem that serves as strategic asset for user adoption, developer onboarding, and project sustainability while establishing foundation for next-generation interactive and automated documentation capabilities.
+
+## Zero-Configuration Architecture (Issue #204)
+
+### Strategic User Experience Challenge
+
+**Issue Classification**: [ENHANCEMENT] + [USER-EXPERIENCE] - Current requirement for explicit arguments creates unnecessary friction for new users and typical use cases.
+
+**Architecture Assessment:**
+The tool currently requires users to specify source paths, exclusion patterns, and output locations explicitly. This creates cognitive overhead for simple use cases where reasonable defaults would suffice. A zero-configuration mode would dramatically improve first-run user experience.
+
+#### Current Usage Complexity Analysis
+
+**Current Required Workflow:**
+```bash
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+gcov src/*.f90
+fortcov --source=. --exclude=build/*,test/* --output=coverage.md
+```
+
+**Desired Zero-Configuration Workflow:**
+```bash
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+gcov -o build/gcov src/*.f90  # Use build/gcov from Issue #203
+fortcov                         # Just works!
+```
+
+### Zero-Configuration Architecture Strategy
+
+#### 1. Smart Default Configuration
+
+**Enhanced Configuration Defaults:**
+```fortran
+module fortcov_config
+    type :: fortcov_config_t
+        ! Smart defaults for zero-configuration mode
+        character(len=1024) :: output_path = "build/coverage/coverage.md"
+        logical :: auto_discover = .false.
+        character(len=1024), allocatable :: source_paths(:)
+        character(len=1024), allocatable :: exclude_patterns(:)
+        
+    contains
+        procedure :: initialize_defaults
+        procedure :: apply_smart_defaults
+    end type
+    
+contains
+    subroutine initialize_defaults(this)
+        class(fortcov_config_t), intent(inout) :: this
+        
+        ! When no arguments provided, enable smart defaults
+        if (command_argument_count() == 0) then
+            this%auto_discover = .true.
+            this%output_path = "build/coverage/coverage.md"
+            
+            ! Default exclusion patterns
+            allocate(this%exclude_patterns(2))
+            this%exclude_patterns = ["build/*", "test/*"]
+        end if
+    end subroutine
+end module
+```
+
+#### 2. Coverage Auto-Discovery Architecture
+
+**Intelligent File Discovery Module:**
+```fortran
+module coverage_discovery
+    use file_utils
+    use foundation_constants
+    implicit none
+    private
+    
+    public :: auto_discover_coverage_files
+    public :: auto_discover_source_files
+    public :: get_discovery_report
+    
+    ! Discovery configuration
+    integer, parameter :: MAX_SEARCH_DEPTH = 3
+    integer, parameter :: MAX_FILES_TO_DISCOVER = 10000
+    
+contains
+    function auto_discover_coverage_files() result(gcov_files)
+        character(len=:), allocatable :: gcov_files(:)
+        character(len=1024) :: search_locations(4)
+        integer :: i, file_count
+        
+        ! Priority-ordered search locations
+        search_locations = [ &
+            "build/gcov/*.gcov      ",  & ! Issue #203 standard location
+            "./*.gcov               ",  & ! Current directory
+            "src/*.gcov             ",  & ! Source directory
+            "build/**/*.gcov        "   & ! Recursive build search
+        ]
+        
+        ! Search in priority order
+        do i = 1, size(search_locations)
+            gcov_files = find_files(trim(search_locations(i)))
+            if (size(gcov_files) > 0) exit
+        end do
+        
+        ! Apply discovery limits for performance
+        if (size(gcov_files) > MAX_FILES_TO_DISCOVER) then
+            gcov_files = gcov_files(1:MAX_FILES_TO_DISCOVER)
+        end if
+    end function
+    
+    function auto_discover_source_files() result(source_files)
+        character(len=:), allocatable :: source_files(:)
+        logical :: src_exists, has_fortran_files
+        
+        ! Check for standard project structure
+        inquire(file="src", exist=src_exists)
+        
+        if (src_exists) then
+            ! Prefer src/ directory if it exists
+            source_files = find_files("src/*.f90")
+            if (size(source_files) == 0) then
+                source_files = find_files("src/*.F90")
+            end if
+        else
+            ! Fall back to current directory
+            source_files = find_files("*.f90")
+            if (size(source_files) == 0) then
+                source_files = find_files("*.F90")
+            end if
+        end if
+    end function
+    
+    function get_discovery_report() result(report)
+        character(len=2048) :: report
+        character(len=1024) :: locations_searched(4)
+        
+        locations_searched = [ &
+            "build/gcov/ (recommended location from Issue #203)",  &
+            "Current directory (./)                          ",  &
+            "Source directory (src/)                         ",  &
+            "Build directory tree (build/**)                 "   &
+        ]
+        
+        write(report, '(A)') "Auto-discovery searched the following locations:"
+        do i = 1, size(locations_searched)
+            write(report, '(A,A,A)') trim(report), NEW_LINE('A'), &
+                "  - " // trim(locations_searched(i))
+        end do
+    end function
+end module
+```
+
+#### 3. Directory Structure Management
+
+**Automatic Output Directory Creation:**
+```fortran
+module directory_management
+    use file_utils
+    use error_handling
+    implicit none
+    private
+    
+    public :: ensure_output_directory_exists
+    public :: get_directory_from_path
+    
+contains
+    subroutine ensure_output_directory_exists(output_path, error_ctx)
+        character(len=*), intent(in) :: output_path
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=1024) :: directory
+        logical :: exists
+        integer :: status
+        
+        ! Extract directory from full path
+        directory = get_directory_from_path(output_path)
+        
+        ! Check if directory exists
+        inquire(file=trim(directory), exist=exists)
+        
+        if (.not. exists) then
+            ! Create directory structure
+            call execute_command_line("mkdir -p " // trim(directory), &
+                                     exitstat=status)
+            if (status /= 0) then
+                call error_ctx%set_error(ERROR_FILE_CREATION, &
+                    "Failed to create output directory: " // trim(directory))
+            end if
+        end if
+    end subroutine
+    
+    function get_directory_from_path(filepath) result(directory)
+        character(len=*), intent(in) :: filepath
+        character(len=1024) :: directory
+        integer :: last_slash
+        
+        last_slash = index(filepath, "/", back=.true.)
+        if (last_slash > 0) then
+            directory = filepath(1:last_slash-1)
+        else
+            directory = "."
+        end if
+    end function
+end module
+```
+
+#### 4. Enhanced User Guidance
+
+**Context-Aware Error Messages:**
+```fortran
+module user_guidance
+    use coverage_discovery
+    implicit none
+    private
+    
+    public :: show_no_coverage_guidance
+    public :: show_zero_config_help
+    
+contains
+    subroutine show_no_coverage_guidance()
+        print *, "=========================================="
+        print *, "No coverage files found"
+        print *, "=========================================="
+        print *, ""
+        print *, "To generate coverage data:"
+        print *, ""
+        print *, "1. Compile with coverage flags:"
+        print *, "   fpm test --flag '-fprofile-arcs -ftest-coverage'"
+        print *, ""
+        print *, "2. Generate gcov files (recommended location):"
+        print *, "   gcov -o build/gcov src/*.f90"
+        print *, ""
+        print *, "3. Run fortcov again:"
+        print *, "   fortcov"
+        print *, ""
+        print *, trim(get_discovery_report())
+        print *, ""
+        print *, "For manual configuration, use:"
+        print *, "   fortcov --source=<path> --output=<file>"
+    end subroutine
+    
+    subroutine show_zero_config_help()
+        print *, "fortcov - Fortran Code Coverage Analysis Tool"
+        print *, ""
+        print *, "ZERO-CONFIGURATION MODE (NEW):"
+        print *, "  fortcov"
+        print *, "    Automatically discovers coverage files and generates"
+        print *, "    report in build/coverage/coverage.md"
+        print *, ""
+        print *, "MANUAL CONFIGURATION MODE:"
+        print *, "  fortcov [options]"
+        print *, ""
+        print *, "OPTIONS:"
+        print *, "  --source=PATH      Source file locations"
+        print *, "  --exclude=PATTERN  Exclusion patterns"  
+        print *, "  --output=PATH      Output file (default: build/coverage/coverage.md)"
+        print *, "  --quiet            Suppress informational output"
+        print *, "  --verbose          Show detailed progress"
+        print *, "  --help             Show this help message"
+        print *, ""
+        print *, "EXAMPLES:"
+        print *, "  fortcov                                    # Zero-config mode"
+        print *, "  fortcov --source=src --output=report.md   # Manual mode"
+    end subroutine
+end module
+```
+
+### Implementation Integration Points
+
+#### 1. Main Program Enhancement
+```fortran
+program fortcov
+    use fortcov_config
+    use coverage_discovery
+    use coverage_engine
+    use user_guidance
+    
+    type(fortcov_config_t) :: config
+    type(error_context_t) :: error_ctx
+    
+    ! Initialize configuration with smart defaults
+    call config%initialize_defaults()
+    
+    if (command_argument_count() == 0) then
+        ! Zero-configuration mode
+        call execute_zero_config_mode(config, error_ctx)
+    else
+        ! Traditional explicit configuration mode
+        call parse_command_line(config)
+        call execute_coverage_analysis(config, error_ctx)
+    end if
+    
+contains
+    subroutine execute_zero_config_mode(config, error_ctx)
+        type(fortcov_config_t), intent(inout) :: config
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=:), allocatable :: gcov_files(:)
+        
+        ! Auto-discover coverage files
+        gcov_files = auto_discover_coverage_files()
+        
+        if (size(gcov_files) == 0) then
+            call show_no_coverage_guidance()
+            stop 1
+        end if
+        
+        ! Ensure output directory exists
+        call ensure_output_directory_exists(config%output_path, error_ctx)
+        
+        ! Execute analysis with discovered files
+        call execute_coverage_analysis(config, error_ctx)
+    end subroutine
+end program
+```
+
+### Testing Strategy
+
+#### Unit Tests for Auto-Discovery
+```fortran
+! test_coverage_discovery.f90
+subroutine test_auto_discover_standard_location()
+    ! Create test files in build/gcov/
+    ! Verify auto_discover_coverage_files finds them
+end subroutine
+
+subroutine test_auto_discover_fallback_locations()
+    ! Test discovery in current directory
+    ! Test recursive search in build/
+end subroutine
+
+subroutine test_discovery_performance_limits()
+    ! Create many files to test MAX_FILES_TO_DISCOVER
+    ! Verify performance bounds are respected
+end subroutine
+```
+
+#### Integration Tests for Zero-Configuration
+```fortran
+! test_zero_config_integration.f90
+subroutine test_zero_config_full_workflow()
+    ! Simulate complete zero-config workflow
+    ! Verify output in build/coverage/coverage.md
+end subroutine
+
+subroutine test_backward_compatibility()
+    ! Verify all existing command-line options work
+    ! Test that explicit args override defaults
+end subroutine
+```
+
+### Risk Assessment
+
+#### Technical Risks
+**Risk**: Auto-discovery performance impact on large projects
+**Mitigation**: 
+- Implement search depth limits (MAX_SEARCH_DEPTH)
+- Cap maximum files discovered (MAX_FILES_TO_DISCOVER)
+- Use efficient file system traversal patterns
+
+**Risk**: Wrong files discovered in complex projects
+**Mitigation**:
+- Clear priority order for search locations
+- Default exclusion patterns for common non-source directories
+- Allow manual override with explicit arguments
+
+#### Quality Risks
+**Risk**: Breaking existing user workflows
+**Mitigation**:
+- Extensive backward compatibility testing
+- Zero-configuration only activates with no arguments
+- All existing flags continue to work identically
+
+### Success Metrics
+
+#### User Experience Metrics
+- **First-Run Success Rate**: >95% of users succeed with zero-configuration
+- **Time to First Result**: <30 seconds from installation to coverage report
+- **Error Recovery**: 100% of error messages provide actionable next steps
+
+#### Technical Metrics
+- **Discovery Performance**: <1 second for typical projects
+- **Memory Overhead**: <10MB additional for auto-discovery
+- **Backward Compatibility**: 100% of existing workflows continue to function
+
+### Long-Term Benefits
+
+#### Strategic Advantages
+1. **Reduced Friction**: Lower barrier to entry for new users
+2. **Convention over Configuration**: Follows modern tool design patterns
+3. **Progressive Complexity**: Simple defaults with powerful overrides
+4. **Self-Documenting**: Behavior matches user expectations
+
+#### Ecosystem Integration
+1. **CI/CD Simplification**: Simpler integration in automated pipelines
+2. **IDE Integration**: Easier to integrate with development environments
+3. **Teaching Tool**: Simpler for educational use cases
+
+**EXPECTED OUTCOME**: Zero-configuration architecture transforms fortcov from a tool requiring detailed knowledge into an intuitive utility that "just works" for common cases while preserving all power and flexibility for advanced users, dramatically improving adoption and user satisfaction.
