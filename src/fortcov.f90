@@ -13,7 +13,6 @@ module fortcov
   use data_transformer
   use theme_manager
   use tui_main_loop
-  ! use syntax_highlighter
   use coverage_discovery
   use coverage_diff
   use report_engine
