@@ -300,8 +300,21 @@ contains
         type(coverage_data_t), intent(out) :: merged_coverage
         logical, intent(out) :: parse_error
         
-        ! Implementation would parse files and merge coverage data
-        parse_error = .false.
+        ! CRITICAL FIX: Initialize merged_coverage to prevent segfault
+        ! The previous stub left merged_coverage uninitialized, causing segfaults
+        ! in markdown_reporter when accessing coverage_data%files array
+        call merged_coverage%init()
+        
+        ! Set parse error flag based on file availability
+        parse_error = (size(files) == 0)
+        
+        if (.not. config%quiet .and. size(files) > 0) then
+            print *, "📄 Found ", size(files), " coverage file(s) to parse"
+        end if
+        
+        ! TODO: Implement actual gcov file parsing
+        ! For now, this prevents segfaults by ensuring merged_coverage%files
+        ! is properly allocated (as empty array) instead of uninitialized
         
     end subroutine parse_coverage_files
     

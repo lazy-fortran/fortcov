@@ -284,6 +284,10 @@ contains
         
         if (allocated(found_files)) then
             files = found_files
+        else
+            ! CRITICAL FIX: Ensure files is always allocated to prevent memory issues
+            ! If no files found and no files generated, allocate empty array
+            allocate(character(len=256) :: files(0))
         end if
         
     end subroutine discover_gcov_files
