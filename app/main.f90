@@ -42,10 +42,20 @@ program main
   ! Check for help/version/validate-config flags after successful parsing
   if (config%show_help) then
     call show_help()
-    call exit(EXIT_SUCCESS)
+    ! In quiet mode, help/version should exit with failure code
+    if (config%quiet) then
+      call exit(EXIT_FAILURE)
+    else
+      call exit(EXIT_SUCCESS)
+    end if
   else if (config%show_version) then
     call show_version()
-    call exit(EXIT_SUCCESS)
+    ! In quiet mode, help/version should exit with failure code
+    if (config%quiet) then
+      call exit(EXIT_FAILURE)
+    else
+      call exit(EXIT_SUCCESS)
+    end if
   else if (config%validate_config_only) then
     ! Only validate configuration, don't run analysis
     if (.not. validate_config(config)) then

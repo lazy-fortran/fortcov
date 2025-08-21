@@ -21,6 +21,7 @@ module config_parser
     public :: is_flag_argument
     public :: get_long_form_option
     public :: initialize_default_config
+    public :: has_input_related_arguments
     
     ! Configuration parsing types (moved from main config)
     type, public :: config_t
@@ -76,7 +77,7 @@ contains
         success = .true.
         error_message = ""
         
-        ! Check for zero-configuration mode (no arguments or all empty)
+        ! Check for zero-configuration mode (no arguments, all empty, or no input sources)
         is_zero_config = (size(args) == 0)
         if (.not. is_zero_config .and. size(args) > 0) then
             ! Check if all arguments are empty strings
@@ -87,6 +88,11 @@ contains
                     exit
                 end if
             end do
+            
+            ! If arguments exist but none are input-related, still use zero-config for inputs
+            if (.not. is_zero_config) then
+                is_zero_config = .not. has_input_related_arguments(args)
+            end if
         end if
         
         if (is_zero_config) then
@@ -715,5 +721,63 @@ contains
         end if
         
     end subroutine ensure_zero_config_output_directory
+    
+    function has_input_related_arguments(args) result(has_input_args)
+        !! Checks if any input-related arguments are provided
+        !! Input-related arguments are those that specify input sources
+        character(len=*), intent(in) :: args(:)
+        logical :: has_input_args
+        
+        integer :: i, equal_pos
+        character(len=256) :: arg, flag_part, long_form
+        logical :: is_value_for_prev_flag
+        
+        has_input_args = .false.
+        is_value_for_prev_flag = .false.
+        
+        do i = 1, size(args)
+            arg = trim(args(i))
+            
+            ! Skip empty arguments
+            if (len_trim(arg) == 0) cycle
+            
+            ! Skip if this argument is a value for the previous flag
+            if (is_value_for_prev_flag) then
+                is_value_for_prev_flag = .false.
+                cycle
+            end if
+            
+            ! Check if it's a flag
+            if (is_flag_argument(arg)) then
+                ! Extract flag part (before '=' if present)
+                equal_pos = index(arg, '=')
+                if (equal_pos > 0) then
+                    flag_part = arg(1:equal_pos-1)
+                else
+                    flag_part = arg
+                end if
+                
+                ! Convert to long form for consistent checking
+                long_form = get_long_form_option(flag_part)
+                
+                ! Check for input-related flags
+                select case (trim(long_form))
+                case ('--source', '--import', '--gcov-executable', '--gcov-args')
+                    has_input_args = .true.
+                    return
+                end select
+                
+                ! If flag requires value and doesn't have '=', next arg is value
+                if (equal_pos == 0 .and. flag_requires_value(flag_part)) then
+                    is_value_for_prev_flag = .true.
+                end if
+            else
+                ! Positional arguments are considered input-related (coverage files)
+                has_input_args = .true.
+                return
+            end if
+        end do
+        
+    end function has_input_related_arguments
     
 end module config_parser
