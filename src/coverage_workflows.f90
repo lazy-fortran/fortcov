@@ -47,8 +47,15 @@ contains
             
             ! Filter files by exclude patterns
             if (allocated(all_files)) then
-                filtered_files = filter_coverage_files_by_patterns(all_files, config)
-                files = filtered_files
+                ! Bypass filtering for empty arrays to avoid allocation issues
+                if (size(all_files) == 0) then
+                    allocate(character(len=256) :: files(0))
+                else
+                    filtered_files = filter_coverage_files_by_patterns(all_files, config)
+                    if (allocated(filtered_files)) then
+                        files = filtered_files
+                    end if
+                end if
             end if
         end if
         
@@ -256,29 +263,33 @@ contains
         logical :: dir_exists
         integer :: path_idx
         
-        ! First, check for .gcov files in the dedicated gcov output directory
-        inquire(file=GCOV_OUTPUT_DIR, exist=dir_exists)
-        if (dir_exists) then
-            found_files = find_files(GCOV_OUTPUT_DIR // "/*" // GCOV_EXTENSION)
-        end if
-        
-        ! If no .gcov files found in build/gcov, search in configured source paths
-        if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
-            allocated(config%source_paths)) then
+        ! If explicit source paths are provided, respect them exclusively
+        if (allocated(config%source_paths)) then
             search_paths = config%source_paths
-        else if (.not. allocated(found_files) .or. size(found_files) == 0) then
-            ! Default to current directory as last resort
-            allocate(character(len=1) :: search_paths(1))
-            search_paths(1) = "."
+        else
+            ! Only check build/gcov directory when no explicit source paths provided
+            inquire(file=GCOV_OUTPUT_DIR, exist=dir_exists)
+            if (dir_exists) then
+                found_files = find_files(GCOV_OUTPUT_DIR // "/*" // GCOV_EXTENSION)
+            end if
+            
+            ! If no .gcov files found in build/gcov, default to current directory
+            if (.not. allocated(found_files) .or. size(found_files) == 0) then
+                allocate(character(len=1) :: search_paths(1))
+                search_paths(1) = "."
+            end if
         end if
         
-        ! Search for existing .gcov files if not found in build/gcov
-        if (.not. allocated(found_files) .or. size(found_files) == 0) then
-            found_files = find_files("*" // GCOV_EXTENSION)
+        ! Search for existing .gcov files in configured search paths
+        if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
+            allocated(search_paths)) then
+            call search_gcov_files_in_paths(search_paths, found_files)
         end if
         
-        ! If no .gcov files found, attempt automatic generation
-        if (.not. allocated(found_files) .or. size(found_files) == 0) then
+        ! Attempt automatic generation only in auto-discovery mode
+        ! When explicit source paths are specified, respect user intent
+        if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
+            .not. allocated(config%source_paths)) then
             call auto_generate_gcov_files(generated_files)
             if (allocated(generated_files)) then
                 files = generated_files
@@ -473,5 +484,75 @@ contains
         success = .true.
         
     end subroutine start_tui_interface
+    
+    subroutine search_gcov_files_in_paths(search_paths, found_files)
+        !! Searches for .gcov files in specified search paths
+        character(len=*), intent(in) :: search_paths(:)
+        character(len=:), allocatable, intent(out) :: found_files(:)
+        
+        character(len=:), allocatable :: path_files(:)
+        character(len=:), allocatable :: all_files(:)
+        integer :: i, total_files, current_size
+        logical :: path_exists
+        
+        ! Initialize to empty
+        allocate(character(len=256) :: all_files(0))
+        total_files = 0
+        
+        ! Search each path for .gcov files
+        do i = 1, size(search_paths)
+            ! Check if path exists before searching
+            inquire(file=trim(search_paths(i)), exist=path_exists)
+            if (path_exists) then
+                ! Search for .gcov files in this path
+                path_files = find_files(trim(search_paths(i)) // "/*" // GCOV_EXTENSION)
+                
+                ! Merge with existing files
+                if (allocated(path_files) .and. size(path_files) > 0) then
+                    current_size = size(all_files)
+                    call expand_file_array(all_files, path_files)
+                    total_files = total_files + size(path_files)
+                end if
+            end if
+        end do
+        
+        ! Return the found files
+        if (total_files > 0) then
+            found_files = all_files
+        else
+            ! Return empty array
+            allocate(character(len=256) :: found_files(0))
+        end if
+        
+    end subroutine search_gcov_files_in_paths
+    
+    subroutine expand_file_array(all_files, new_files)
+        !! Expands file array to include new files
+        character(len=:), allocatable, intent(inout) :: all_files(:)
+        character(len=*), intent(in) :: new_files(:)
+        
+        character(len=:), allocatable :: temp_files(:)
+        integer :: old_size, new_size, i
+        
+        old_size = size(all_files)
+        new_size = old_size + size(new_files)
+        
+        ! Create temporary array with combined size
+        allocate(character(len=max(len(all_files), len(new_files))) :: temp_files(new_size))
+        
+        ! Copy existing files
+        do i = 1, old_size
+            temp_files(i) = all_files(i)
+        end do
+        
+        ! Copy new files
+        do i = 1, size(new_files)
+            temp_files(old_size + i) = new_files(i)
+        end do
+        
+        ! Replace all_files with expanded array
+        call move_alloc(temp_files, all_files)
+        
+    end subroutine expand_file_array
     
 end module coverage_workflows
