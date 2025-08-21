@@ -56,7 +56,7 @@ jobs:
     - name: Build fortcov
       run: |
         fpm build
-        fpm test test_format_converter  # Verify conversion works
+        fpm test check  # Verify conversion works
     
     - name: Run simplified system validation
       run: |
@@ -65,7 +65,7 @@ jobs:
     
     - name: Run format converter tests
       run: |
-        fpm test test_format_converter
+        fpm test check
         echo "Format conversion tests passed"
     
     - name: Test diff comparison framework
@@ -102,7 +102,6 @@ jobs:
           "test_integration/diff_comparator.py" 
           "test_integration/performance_benchmark.py"
           "src/system_diff_converter.f90"
-          "test/test_format_converter.f90"
         )
         
         missing_files=()
@@ -181,7 +180,6 @@ jobs:
           "test_integration/simple_system_test.sh:System test orchestrator"
           "test_integration/diff_comparator.py:Comparison validation engine"
           "test_integration/performance_benchmark.py:Performance benchmarking"
-          "test/test_format_converter.f90:Format conversion tests"
         )
         
         echo ""
