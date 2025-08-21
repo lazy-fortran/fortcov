@@ -11,6 +11,7 @@ module coverage_workflows
     use file_utils
     use string_utils
     use error_handling
+    use zero_configuration_manager, only: auto_discover_coverage_files_priority
     implicit none
     private
     
@@ -37,6 +38,9 @@ contains
         if (allocated(config%coverage_files)) then
             ! Use explicitly specified coverage files
             files = config%coverage_files
+        else if (config%zero_configuration_mode) then
+            ! Use zero-configuration auto-discovery
+            files = auto_discover_coverage_files_priority()
         else
             ! Discover coverage files in source paths
             call discover_gcov_files(config, all_files)
