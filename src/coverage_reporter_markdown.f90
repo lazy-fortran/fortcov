@@ -26,6 +26,8 @@ contains
     subroutine markdown_generate_report(this, coverage_data, output_path, &
                                       & success, error_message, &
                                       & diff_data, threshold)
+        use zero_configuration_manager, only: ensure_output_directory_structure
+        use error_handling, only: error_context_t
         class(markdown_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
@@ -36,8 +38,16 @@ contains
         
         type(markdown_report_options_t) :: options
         type(stats_t) :: stats
+        type(error_context_t) :: error_ctx
         
         success = .false.
+        
+        ! Ensure output directory exists (Issue #204 zero-configuration support)
+        call ensure_output_directory_structure(output_path, error_ctx)
+        if (error_ctx%error_code /= 0) then
+            error_message = trim(error_ctx%message)
+            return
+        end if
         
         ! Configure markdown options
         call options%init()
@@ -72,6 +82,8 @@ contains
             
             write(unit, '(A)') report_content
             close(unit)
+            
+            success = .true.
         end block
         
         ! Suppress unused parameter warnings

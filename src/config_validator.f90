@@ -127,6 +127,13 @@ contains
         has_coverage_files = allocated(config%coverage_files)
         has_import_file = allocated(config%import_file)
         
+        ! Skip validation for zero-configuration mode
+        ! Auto-discovery will handle finding sources
+        if (config%zero_configuration_mode) then
+            is_valid = .true.
+            return
+        end if
+        
         ! Validate that at least one input source is provided
         ! This is required for security validation tests
         if (.not. has_source_paths .and. .not. has_coverage_files .and. &
@@ -363,9 +370,13 @@ contains
         character(len=MEDIUM_STRING_LEN) :: directory_path
         integer :: last_slash
         logical :: dir_exists
+        logical :: is_zero_config_path
         
         is_valid = .true.
         error_message = ""
+        
+        ! Check if this is the zero-configuration default path
+        is_zero_config_path = (trim(output_path) == "build/coverage/coverage.md")
         
         ! Extract directory path
         last_slash = index(output_path, '/', back=.true.)
@@ -374,9 +385,12 @@ contains
             
             inquire(file=directory_path, exist=dir_exists)
             if (.not. dir_exists) then
-                is_valid = .false.
-                error_message = "Output directory does not exist: " // trim(directory_path)
-                return
+                ! For zero-configuration mode, allow missing directory (will be created)
+                if (.not. is_zero_config_path) then
+                    is_valid = .false.
+                    error_message = "Output directory does not exist: " // trim(directory_path)
+                    return
+                end if
             end if
         end if
         
@@ -419,11 +433,35 @@ contains
         !! Checks if coverage file has valid format
         character(len=*), intent(in) :: file_path
         logical :: is_valid
+        integer :: path_len
         
-        ! Check file extension
-        is_valid = (index(file_path, '.gcov') > 0) .or. &
-                   (index(file_path, '.json') > 0) .or. &
-                   (index(file_path, '.xml') > 0)
+        ! Check file extension - must end with valid extension
+        path_len = len_trim(file_path)
+        is_valid = .false.
+        
+        ! Check for .gcov extension
+        if (path_len >= 5) then
+            if (file_path(path_len-4:path_len) == '.gcov') then
+                is_valid = .true.
+                return
+            end if
+        end if
+        
+        ! Check for .json extension
+        if (path_len >= 5) then
+            if (file_path(path_len-4:path_len) == '.json') then
+                is_valid = .true.
+                return
+            end if
+        end if
+        
+        ! Check for .xml extension
+        if (path_len >= 4) then
+            if (file_path(path_len-3:path_len) == '.xml') then
+                is_valid = .true.
+                return
+            end if
+        end if
         
     end function is_valid_coverage_file_format
     

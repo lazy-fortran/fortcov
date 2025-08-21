@@ -7,7 +7,7 @@ module coverage_analysis
     use foundation_layer_utils
     use coverage_model
     use fortcov_config
-    use coverage_parser
+    use coverage_parser, only: coverage_parser_t, create_parser
     use coverage_statistics, only: calculate_line_coverage
     use coverage_reporter
     use json_coverage_io
@@ -276,24 +276,94 @@ contains
     
     subroutine find_and_filter_coverage_files(config, coverage_files, filtered_files)
         !! Finds and filters coverage files based on configuration
+        use coverage_workflows, only: discover_coverage_files
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: coverage_files(:)
         character(len=:), allocatable, intent(out) :: filtered_files(:)
         
-        ! This would delegate to coverage_workflows module
-        ! For now, implement basic functionality
+        ! Delegate to coverage_workflows module
+        coverage_files = discover_coverage_files(config)
+        
+        ! For now, use all discovered files without additional filtering
+        if (allocated(coverage_files)) then
+            filtered_files = coverage_files
+        else
+            allocate(character(len=256) :: filtered_files(0))
+        end if
         
     end subroutine find_and_filter_coverage_files
     
     subroutine parse_coverage_files(files, config, merged_coverage, parse_error)
         !! Parses coverage files and merges results
+        use coverage_model, only: merge_coverage
         character(len=*), intent(in) :: files(:)
         type(config_t), intent(in) :: config
         type(coverage_data_t), intent(out) :: merged_coverage
         logical, intent(out) :: parse_error
         
-        ! Implementation would parse files and merge coverage data
+        class(coverage_parser_t), allocatable :: parser
+        type(coverage_data_t) :: file_coverage, temp_merged
+        logical :: parser_error, file_error
+        integer :: i
+        logical :: first_file
+        
+        ! Initialize merged coverage
+        call merged_coverage%init()
         parse_error = .false.
+        first_file = .true.
+        
+        ! Check for empty file list
+        if (size(files) == 0) then
+            parse_error = .true.
+            return
+        end if
+        
+        if (.not. config%quiet) then
+            print *, "📄 Found ", size(files), " coverage file(s) to parse"
+        end if
+        
+        ! Parse each coverage file and merge results
+        do i = 1, size(files)
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "   Parsing: ", trim(files(i))
+            end if
+            
+            ! Create parser for this file
+            call create_parser(trim(files(i)), parser, parser_error)
+            if (parser_error) then
+                if (.not. config%quiet) then
+                    print *, "   ⚠️  Failed to create parser for: ", trim(files(i))
+                end if
+                cycle
+            end if
+            
+            ! Parse the file
+            file_coverage = parser%parse(trim(files(i)), file_error)
+            if (file_error) then
+                if (.not. config%quiet) then
+                    print *, "   ⚠️  Failed to parse: ", trim(files(i))
+                end if
+                cycle
+            end if
+            
+            ! Merge coverage data
+            if (first_file) then
+                merged_coverage = file_coverage
+                first_file = .false.
+            else
+                call merge_coverage(merged_coverage, file_coverage, temp_merged)
+                merged_coverage = temp_merged
+            end if
+        end do
+        
+        ! Check if we successfully parsed any files
+        if (.not. allocated(merged_coverage%files) .or. &
+            size(merged_coverage%files) == 0) then
+            parse_error = .true.
+            if (.not. config%quiet) then
+                print *, "❌ No coverage data could be parsed from the files"
+            end if
+        end if
         
     end subroutine parse_coverage_files
     
@@ -309,13 +379,16 @@ contains
     
     subroutine generate_coverage_reports(coverage_data, stats, config, report_error)
         !! Generates coverage reports in requested format
+        use zero_configuration_manager, only: ensure_output_directory_structure
         type(coverage_data_t), intent(in) :: coverage_data
         type(coverage_stats_t), intent(in) :: stats
         type(config_t), intent(in) :: config
         logical, intent(out) :: report_error
         
         class(coverage_reporter_t), allocatable :: reporter
-        logical :: creation_error
+        logical :: creation_error, generation_success
+        character(len=:), allocatable :: error_message
+        type(error_context_t) :: error_ctx
         
         ! Create appropriate reporter
         call create_reporter(config%output_format, reporter, creation_error)
@@ -324,23 +397,64 @@ contains
             return
         end if
         
-        ! Generate reports
-        ! call reporter%generate_report(coverage_data, stats, config)
-        report_error = .false.
+        ! Ensure output directory structure exists
+        if (allocated(config%output_path)) then
+            call ensure_output_directory_structure(config%output_path, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) then
+                if (.not. config%quiet) then
+                    print *, "❌ Failed to create output directory"
+                    print *, "   Error: " // trim(error_ctx%message)
+                    if (len_trim(error_ctx%suggestion) > 0) then
+                        print *, "   💡 " // trim(error_ctx%suggestion)
+                    end if
+                end if
+                report_error = .true.
+                return
+            end if
+        end if
+        
+        ! Generate reports with proper interface
+        call reporter%generate_report(coverage_data, config%output_path, &
+                                    generation_success, error_message)
+        
+        if (.not. generation_success) then
+            if (.not. config%quiet) then
+                print *, "❌ Failed to generate coverage report"
+                if (allocated(error_message)) then
+                    print *, "   Error: " // trim(error_message)
+                end if
+            end if
+            report_error = .true.
+        else
+            report_error = .false.
+            if (.not. config%quiet) then
+                print *, "✅ Coverage report generated successfully"
+                if (allocated(config%output_path)) then
+                    print *, "   Output: " // trim(config%output_path)
+                end if
+            end if
+        end if
         
     end subroutine generate_coverage_reports
     
     subroutine display_search_guidance(config)
         !! Displays guidance for finding coverage files
+        use zero_configuration_manager, only: show_zero_configuration_error_guidance
         type(config_t), intent(in) :: config
         
-        print *, "🔍 Coverage file search guidance:"
-        if (allocated(config%source_paths)) then
-            print *, "   Searched paths: ", config%source_paths
+        if (config%zero_configuration_mode) then
+            ! Show comprehensive zero-configuration error guidance
+            call show_zero_configuration_error_guidance()
+        else
+            ! Show standard search guidance for explicit arguments
+            print *, "Coverage file search guidance:"
+            if (allocated(config%source_paths)) then
+                print *, "   Searched paths: ", config%source_paths
+            end if
+            print *, "   Looking for: *.gcov files"
+            print *, "   Run your tests with coverage enabled first"
+            print *, "   Try: gfortran -fprofile-arcs -ftest-coverage ..."
         end if
-        print *, "   Looking for: *.gcov files"
-        print *, "   💡 Run your tests with coverage enabled first"
-        print *, "   💡 Try: gfortran -fprofile-arcs -ftest-coverage ..."
         
     end subroutine display_search_guidance
     

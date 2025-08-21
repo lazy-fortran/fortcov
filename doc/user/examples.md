@@ -45,32 +45,36 @@ end module calculator
 ```bash
 # Build and test with coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
 
-# Basic coverage report
+# Zero-configuration mode (recommended)
+gcov -o build/gcov src/*.f90
+fortcov  # That's it! Report in build/coverage/coverage.md
+
+# Traditional mode (for custom configurations)
+gcov src/*.f90
 fortcov --source=src --output=coverage.md
 
-# Enhanced with quality gate and performance optimization
-fortcov --source=src --include='*.f90' --fail-under=75 --threads=2 --output=coverage.md
+# Enhanced with quality gate
+fortcov --fail-under=75 --quiet
 ```
 
 ## Build System Integration
 
 ### FPM Integration
 
-**Recommended: Use the FPM bridge script**
+**Zero-Configuration Workflow (Recommended)**
 
 ```bash
-# Automatic handling of FPM build complexities
-scripts/fpm_coverage_bridge.sh src               # Simple pattern
-scripts/fpm_coverage_bridge.sh root              # Root pattern  
-scripts/fpm_coverage_bridge.sh custom lib        # Custom directory
+# Simplest possible FPM integration
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+gcov -o build/gcov src/*.f90  # Standard location
+fortcov                       # Auto-discovers everything!
 ```
 
-**Manual FPM workflow (for custom needs)**
+**Traditional FPM Workflow**
 
 ```bash
-# Standard workflow
+# For custom configurations
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 gcov src/*.f90
 fortcov --source=. --exclude=build/*,test/* --output=coverage.md
@@ -113,19 +117,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Validate Configuration
-      run: |
-        fortcov --source=src --validate-config
     - name: Generate Coverage
       run: |
         fpm test --flag "-fprofile-arcs -ftest-coverage"
-        gcov src/*.f90
-        fortcov --source=src --include='*.f90,*.F90' --fail-under=80 --threads=2 --quiet --output=coverage.md
+        gcov -o build/gcov src/*.f90
+        fortcov --fail-under=80 --quiet
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
-        path: coverage.md
+        path: build/coverage/coverage.md
 ```
 
 ### GitLab CI
@@ -133,10 +134,9 @@ jobs:
 ```yaml
 coverage:
   script:
-    - fortcov --source=src --validate-config
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - gcov src/*.f90
-    - fortcov --source=src --include='*.f90,*.F90' --output-format=html --output=coverage.html --threads=2
+    - gcov -o build/gcov src/*.f90
+    - fortcov --output-format=html --output=coverage.html --fail-under=80
   coverage: '/Total coverage: (\d+\.\d+)%/'
   artifacts:
     reports:
