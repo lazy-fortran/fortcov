@@ -82,6 +82,8 @@ contains
             
             write(unit, '(A)') report_content
             close(unit)
+            
+            success = .true.
         end block
         
         ! Suppress unused parameter warnings
