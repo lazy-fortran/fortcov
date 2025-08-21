@@ -6,6 +6,7 @@ module coverage_reporter_factory
     use coverage_reporter_base
     use coverage_reporter_markdown
     use coverage_reporter_json
+    use coverage_reporter_xml
     implicit none
     private
     
@@ -26,6 +27,8 @@ contains
             allocate(markdown_reporter_t :: reporter)
         case ("json")
             allocate(json_reporter_t :: reporter)
+        case ("xml")
+            allocate(xml_reporter_t :: reporter)
         case default
             error_flag = .true.
             ! Reporter remains unallocated to indicate error
