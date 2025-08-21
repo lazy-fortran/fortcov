@@ -25,6 +25,8 @@ contains
     subroutine json_generate_report(this, coverage_data, output_path, &
                                   & success, error_message, &
                                   & diff_data, threshold)
+        use zero_configuration_manager, only: ensure_output_directory_structure
+        use error_handling, only: error_context_t
         class(json_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
@@ -36,9 +38,20 @@ contains
         integer :: unit, stat
         logical :: use_stdout
         type(stats_t) :: line_stats, branch_stats, func_stats
+        type(error_context_t) :: error_ctx
         
         success = .true.
         use_stdout = (trim(output_path) == "-")
+        
+        ! Ensure output directory exists for file output (Issue #204 zero-configuration support)
+        if (.not. use_stdout) then
+            call ensure_output_directory_structure(output_path, error_ctx)
+            if (error_ctx%error_code /= 0) then
+                success = .false.
+                error_message = trim(error_ctx%message)
+                return
+            end if
+        end if
         
         ! Calculate coverage statistics
         call calculate_manual_line_stats(coverage_data, line_stats)

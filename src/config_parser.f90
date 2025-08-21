@@ -9,6 +9,7 @@ module config_parser
     use file_utils
     use error_handling
     use input_validation
+    use zero_configuration_manager
     implicit none
     private
     
@@ -64,7 +65,9 @@ contains
         
         character(len=:), allocatable :: flags(:)
         character(len=:), allocatable :: positionals(:)
+        character(len=:), allocatable :: temp_files(:), temp_paths(:)
         integer :: flag_count, positional_count
+        logical :: is_zero_config
         
         ! Initialize config with defaults
         call initialize_default_config(config)
@@ -72,6 +75,32 @@ contains
         success = .true.
         error_message = ""
         
+        ! Check for zero-configuration mode (no arguments)
+        is_zero_config = (size(args) == 0)
+        
+        if (is_zero_config) then
+            ! Apply zero-configuration defaults
+            call apply_zero_configuration_defaults(config%output_path, &
+                                                  config%output_format, &
+                                                  config%input_format, &
+                                                  config%exclude_patterns)
+            
+            ! Auto-discover coverage files
+            temp_files = auto_discover_coverage_files_priority()
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                config%coverage_files = temp_files
+            end if
+            
+            ! Auto-discover source paths
+            temp_paths = auto_discover_source_files_priority()
+            if (allocated(temp_paths) .and. size(temp_paths) > 0) then
+                config%source_paths = temp_paths
+            end if
+            
+            return
+        end if
+        
+        ! Normal argument parsing for non-zero-configuration mode
         ! Two-pass parsing: classify arguments first
         call classify_command_arguments(args, flags, flag_count, positionals, &
                                       positional_count)

@@ -16,3 +16,8 @@ implicit-typing = false
 implicit-external = false
 source-form = "free"
 
+
+[[test]]
+name = "test_issue_204"
+source-dir = "test"
+main = "test_issue_204_zero_configuration.f90"

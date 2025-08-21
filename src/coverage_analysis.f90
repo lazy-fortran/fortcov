@@ -276,12 +276,20 @@ contains
     
     subroutine find_and_filter_coverage_files(config, coverage_files, filtered_files)
         !! Finds and filters coverage files based on configuration
+        use coverage_workflows, only: discover_coverage_files
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: coverage_files(:)
         character(len=:), allocatable, intent(out) :: filtered_files(:)
         
-        ! This would delegate to coverage_workflows module
-        ! For now, implement basic functionality
+        ! Delegate to coverage_workflows module
+        coverage_files = discover_coverage_files(config)
+        
+        ! For now, use all discovered files without additional filtering
+        if (allocated(coverage_files)) then
+            filtered_files = coverage_files
+        else
+            allocate(character(len=256) :: filtered_files(0))
+        end if
         
     end subroutine find_and_filter_coverage_files
     
@@ -332,15 +340,27 @@ contains
     
     subroutine display_search_guidance(config)
         !! Displays guidance for finding coverage files
+        use zero_configuration_manager, only: is_zero_configuration_mode, &
+                                             show_zero_configuration_error_guidance
         type(config_t), intent(in) :: config
+        logical :: is_zero_config
         
-        print *, "🔍 Coverage file search guidance:"
-        if (allocated(config%source_paths)) then
-            print *, "   Searched paths: ", config%source_paths
+        ! Check if we're in zero-configuration mode
+        is_zero_config = is_zero_configuration_mode()
+        
+        if (is_zero_config) then
+            ! Show comprehensive zero-configuration error guidance
+            call show_zero_configuration_error_guidance()
+        else
+            ! Show standard search guidance for explicit arguments
+            print *, "🔍 Coverage file search guidance:"
+            if (allocated(config%source_paths)) then
+                print *, "   Searched paths: ", config%source_paths
+            end if
+            print *, "   Looking for: *.gcov files"
+            print *, "   💡 Run your tests with coverage enabled first"
+            print *, "   💡 Try: gfortran -fprofile-arcs -ftest-coverage ..."
         end if
-        print *, "   Looking for: *.gcov files"
-        print *, "   💡 Run your tests with coverage enabled first"
-        print *, "   💡 Try: gfortran -fprofile-arcs -ftest-coverage ..."
         
     end subroutine display_search_guidance
     

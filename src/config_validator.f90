@@ -363,9 +363,13 @@ contains
         character(len=MEDIUM_STRING_LEN) :: directory_path
         integer :: last_slash
         logical :: dir_exists
+        logical :: is_zero_config_path
         
         is_valid = .true.
         error_message = ""
+        
+        ! Check if this is the zero-configuration default path
+        is_zero_config_path = (trim(output_path) == "build/coverage/coverage.md")
         
         ! Extract directory path
         last_slash = index(output_path, '/', back=.true.)
@@ -374,9 +378,12 @@ contains
             
             inquire(file=directory_path, exist=dir_exists)
             if (.not. dir_exists) then
-                is_valid = .false.
-                error_message = "Output directory does not exist: " // trim(directory_path)
-                return
+                ! For zero-configuration mode, allow missing directory (will be created)
+                if (.not. is_zero_config_path) then
+                    is_valid = .false.
+                    error_message = "Output directory does not exist: " // trim(directory_path)
+                    return
+                end if
             end if
         end if
         
