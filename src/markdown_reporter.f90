@@ -156,7 +156,8 @@ contains
         
         ! Calculate statistics
         if (total_lines == 0) then
-            call stats%init(100.0, 0, 0, "")
+            ! Handle empty files properly - show 0% coverage, not 100%
+            call stats%init(0.0, 0, 0, "")
         else
             call stats%init(file%get_line_coverage(), &
                            covered_lines, total_lines, &
@@ -278,7 +279,8 @@ contains
         if (total_lines > 0) then
             percentage = real(covered_lines) / real(total_lines) * 100.0
         else
-            percentage = 100.0
+            ! Handle empty project properly - show 0% coverage, not 100%
+            percentage = 0.0
         end if
         
         ! Initialize stats

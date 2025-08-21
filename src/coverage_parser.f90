@@ -199,22 +199,16 @@ contains
             read(parts(2), *, iostat=iostat_val) line_num
             if (iostat_val /= 0) cycle ! Invalid line number, skip
             
-            ! Input validation: Check line number bounds using validation framework
-            block
-                type(validation_result_t) :: line_validation
-                call validate_coverage_data_bounds(line_num, exec_count, line_validation)
-                if (.not. line_validation%is_valid) then
-                    ! Attempt to clamp invalid line numbers for recovery
-                    line_num = clamp_line_number(line_num)
-                    exec_count = normalize_execution_count(exec_count)
-                    
-                    ! Re-validate after clamping
-                    call validate_coverage_data_bounds(line_num, exec_count, line_validation)
-                    if (.not. line_validation%is_valid) then
-                        cycle ! Skip if still invalid after recovery
-                    end if
-                end if
-            end block
+            ! Input validation: Check line number bounds but allow non-executable lines
+            ! Note: exec_count = -1 for non-executable lines is valid, don't validate it
+            if (line_num <= 0) then
+                cycle ! Skip invalid line numbers
+            end if
+            
+            ! Validate execution count only for executable lines  
+            if (is_executable .and. exec_count < 0) then
+                cycle ! Skip invalid executable lines
+            end if
             
             ! Skip line 0 (header lines)
             if (line_num == 0) cycle
@@ -228,6 +222,7 @@ contains
                 ! Resize array if needed
                 call resize_lines_array(lines_array)
             end if
+            
             
             call lines_array(lines_count)%init(source_filename, line_num, &
                                              exec_count, is_executable)
@@ -440,8 +435,9 @@ contains
             call resize_files_array(files_array)
         end if
         
-        ! Initialize the new file
-        call files_array(files_count)%init(filename)
+        ! Initialize the new file with lines and calculate coverage
+        call files_array(files_count)%init(filename, lines)
+        call files_array(files_count)%calculate_coverage()
     end subroutine add_file_to_array
     
     ! Helper subroutine to resize files array when needed
