@@ -127,6 +127,13 @@ contains
         has_coverage_files = allocated(config%coverage_files)
         has_import_file = allocated(config%import_file)
         
+        ! Skip validation for zero-configuration mode
+        ! Auto-discovery will handle finding sources
+        if (config%zero_configuration_mode) then
+            is_valid = .true.
+            return
+        end if
+        
         ! Validate that at least one input source is provided
         ! This is required for security validation tests
         if (.not. has_source_paths .and. .not. has_coverage_files .and. &

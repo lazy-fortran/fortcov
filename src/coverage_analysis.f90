@@ -7,7 +7,7 @@ module coverage_analysis
     use foundation_layer_utils
     use coverage_model
     use fortcov_config
-    use coverage_parser
+    use coverage_parser, only: coverage_parser_t, create_parser
     use coverage_statistics, only: calculate_line_coverage
     use coverage_reporter
     use json_coverage_io
@@ -295,26 +295,75 @@ contains
     
     subroutine parse_coverage_files(files, config, merged_coverage, parse_error)
         !! Parses coverage files and merges results
+        use coverage_model, only: merge_coverage
         character(len=*), intent(in) :: files(:)
         type(config_t), intent(in) :: config
         type(coverage_data_t), intent(out) :: merged_coverage
         logical, intent(out) :: parse_error
         
-        ! CRITICAL FIX: Initialize merged_coverage to prevent segfault
-        ! The previous stub left merged_coverage uninitialized, causing segfaults
-        ! in markdown_reporter when accessing coverage_data%files array
+        class(coverage_parser_t), allocatable :: parser
+        type(coverage_data_t) :: file_coverage, temp_merged
+        logical :: parser_error, file_error
+        integer :: i
+        logical :: first_file
+        
+        ! Initialize merged coverage
         call merged_coverage%init()
+        parse_error = .false.
+        first_file = .true.
         
-        ! Set parse error flag based on file availability
-        parse_error = (size(files) == 0)
+        ! Check for empty file list
+        if (size(files) == 0) then
+            parse_error = .true.
+            return
+        end if
         
-        if (.not. config%quiet .and. size(files) > 0) then
+        if (.not. config%quiet) then
             print *, "📄 Found ", size(files), " coverage file(s) to parse"
         end if
         
-        ! TODO: Implement actual gcov file parsing
-        ! For now, this prevents segfaults by ensuring merged_coverage%files
-        ! is properly allocated (as empty array) instead of uninitialized
+        ! Parse each coverage file and merge results
+        do i = 1, size(files)
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "   Parsing: ", trim(files(i))
+            end if
+            
+            ! Create parser for this file
+            call create_parser(trim(files(i)), parser, parser_error)
+            if (parser_error) then
+                if (.not. config%quiet) then
+                    print *, "   ⚠️  Failed to create parser for: ", trim(files(i))
+                end if
+                cycle
+            end if
+            
+            ! Parse the file
+            file_coverage = parser%parse(trim(files(i)), file_error)
+            if (file_error) then
+                if (.not. config%quiet) then
+                    print *, "   ⚠️  Failed to parse: ", trim(files(i))
+                end if
+                cycle
+            end if
+            
+            ! Merge coverage data
+            if (first_file) then
+                merged_coverage = file_coverage
+                first_file = .false.
+            else
+                call merge_coverage(merged_coverage, file_coverage, temp_merged)
+                merged_coverage = temp_merged
+            end if
+        end do
+        
+        ! Check if we successfully parsed any files
+        if (.not. allocated(merged_coverage%files) .or. &
+            size(merged_coverage%files) == 0) then
+            parse_error = .true.
+            if (.not. config%quiet) then
+                print *, "❌ No coverage data could be parsed from the files"
+            end if
+        end if
         
     end subroutine parse_coverage_files
     
@@ -390,26 +439,21 @@ contains
     
     subroutine display_search_guidance(config)
         !! Displays guidance for finding coverage files
-        use zero_configuration_manager, only: is_zero_configuration_mode, &
-                                             show_zero_configuration_error_guidance
+        use zero_configuration_manager, only: show_zero_configuration_error_guidance
         type(config_t), intent(in) :: config
-        logical :: is_zero_config
         
-        ! Check if we're in zero-configuration mode
-        is_zero_config = is_zero_configuration_mode()
-        
-        if (is_zero_config) then
+        if (config%zero_configuration_mode) then
             ! Show comprehensive zero-configuration error guidance
             call show_zero_configuration_error_guidance()
         else
             ! Show standard search guidance for explicit arguments
-            print *, "🔍 Coverage file search guidance:"
+            print *, "Coverage file search guidance:"
             if (allocated(config%source_paths)) then
                 print *, "   Searched paths: ", config%source_paths
             end if
             print *, "   Looking for: *.gcov files"
-            print *, "   💡 Run your tests with coverage enabled first"
-            print *, "   💡 Try: gfortran -fprofile-arcs -ftest-coverage ..."
+            print *, "   Run your tests with coverage enabled first"
+            print *, "   Try: gfortran -fprofile-arcs -ftest-coverage ..."
         end if
         
     end subroutine display_search_guidance

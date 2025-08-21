@@ -21,7 +21,7 @@ module zero_configuration_manager
     !! - file_utils: Directory creation for output paths
     !! - user_guidance: Error messages and recovery instructions
     use coverage_discovery, only: discover_coverage_files
-    use file_utils, only: find_files, ensure_directory
+    use file_utils, only: find_files, find_files_with_glob, ensure_directory
     use error_handling, only: error_context_t, ERROR_SUCCESS, ERROR_FILE_ACCESS
     implicit none
     private
@@ -77,7 +77,7 @@ contains
         ! Priority 1: Check build/gcov/*.gcov (Issue #203 standard location)
         inquire(file="build/gcov", exist=dir_exists)
         if (dir_exists) then
-            temp_files = find_files("build/gcov/*.gcov")
+            temp_files = find_files_with_glob("build/gcov", "*.gcov")
             if (allocated(temp_files) .and. size(temp_files) > 0) then
                 coverage_files = temp_files
                 return
@@ -85,7 +85,7 @@ contains
         end if
         
         ! Priority 2: Check current directory *.gcov
-        temp_files = find_files("*.gcov")
+        temp_files = find_files_with_glob(".", "*.gcov")
         if (allocated(temp_files) .and. size(temp_files) > 0) then
             coverage_files = temp_files
             return
@@ -94,7 +94,7 @@ contains
         ! Priority 3: Check build directory recursively (if exists)
         inquire(file="build", exist=dir_exists)
         if (dir_exists) then
-            temp_files = find_files("build/**/*.gcov")
+            temp_files = find_files_with_glob("build", "*.gcov")
             if (allocated(temp_files) .and. size(temp_files) > 0) then
                 coverage_files = temp_files
                 return
@@ -109,18 +109,29 @@ contains
     function auto_discover_source_files_priority() result(source_paths)
         !! Auto-discover source files using priority-ordered search
         character(len=:), allocatable :: source_paths(:)
+        character(len=:), allocatable :: temp_files(:)
         logical :: dir_exists
+        integer :: file_count
         
-        ! Priority 1: Check if src/ directory exists
+        ! Priority 1: Check if src/ directory exists and has Fortran files
         inquire(file="src", exist=dir_exists)
         if (dir_exists) then
-            allocate(character(len=256) :: source_paths(1))
-            source_paths(1) = "src"
-            return
+            temp_files = find_files_with_glob("src", "*.f90")
+            if (allocated(temp_files)) then
+                file_count = size(temp_files)
+            else
+                file_count = 0
+            end if
+            
+            if (file_count > 0) then
+                allocate(character(len=3) :: source_paths(1))
+                source_paths(1) = "src"
+                return
+            end if
         end if
         
         ! Priority 2: Use current directory as fallback
-        allocate(character(len=256) :: source_paths(1))
+        allocate(character(len=1) :: source_paths(1))
         source_paths(1) = "."
         
     end function auto_discover_source_files_priority
@@ -165,7 +176,7 @@ contains
         !! Show helpful error messages when zero-configuration fails
         
         print *, ""
-        print *, "❌ No coverage files found in standard locations"
+        print *, "No coverage files found in standard locations"
         print *, ""
         print *, "Fortcov searched for .gcov files in:"
         print *, "  1. build/gcov/  (Issue #203 standard location - RECOMMENDED)"

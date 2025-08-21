@@ -51,6 +51,7 @@ module config_parser
         character(len=:), allocatable :: gcov_args
         logical :: tui_mode
         logical :: strict_mode
+        logical :: zero_configuration_mode
     end type config_t
     
 contains
@@ -66,7 +67,7 @@ contains
         character(len=:), allocatable :: flags(:)
         character(len=:), allocatable :: positionals(:)
         character(len=:), allocatable :: temp_files(:), temp_paths(:)
-        integer :: flag_count, positional_count
+        integer :: flag_count, positional_count, i
         logical :: is_zero_config
         
         ! Initialize config with defaults
@@ -75,9 +76,23 @@ contains
         success = .true.
         error_message = ""
         
-        ! Check for zero-configuration mode (no arguments)
+        ! Check for zero-configuration mode (no arguments or all empty)
         is_zero_config = (size(args) == 0)
+        if (.not. is_zero_config .and. size(args) > 0) then
+            ! Check if all arguments are empty strings
+            is_zero_config = .true.
+            do i = 1, size(args)
+                if (len_trim(args(i)) > 0) then
+                    is_zero_config = .false.
+                    exit
+                end if
+            end do
+        end if
+        
         if (is_zero_config) then
+            ! Mark as zero-configuration mode
+            config%zero_configuration_mode = .true.
+            
             ! Apply zero-configuration defaults
             call apply_zero_configuration_defaults(config%output_path, &
                                                   config%output_format, &
@@ -95,6 +110,9 @@ contains
             if (allocated(temp_paths) .and. size(temp_paths) > 0) then
                 config%source_paths = temp_paths
             end if
+            
+            ! Ensure output directory structure exists
+            call ensure_zero_config_output_directory(config)
             
             return
         end if
@@ -388,6 +406,7 @@ contains
         config%keep_gcov_files = .false.
         config%tui_mode = .false.
         config%strict_mode = .false.
+        config%zero_configuration_mode = .false.
         
     end subroutine initialize_default_config
     
@@ -680,5 +699,21 @@ contains
         end if
         
     end subroutine parse_integer_value
+    
+    subroutine ensure_zero_config_output_directory(config)
+        !! Ensures output directory exists for zero-configuration mode
+        use zero_configuration_manager, only: ensure_output_directory_structure
+        use error_handling, only: error_context_t
+        type(config_t), intent(in) :: config
+        
+        type(error_context_t) :: error_ctx
+        
+        if (allocated(config%output_path)) then
+            call ensure_output_directory_structure(config%output_path, error_ctx)
+            ! Silently handle directory creation errors in zero-config mode
+            ! The error will be reported later during file writing if needed
+        end if
+        
+    end subroutine ensure_zero_config_output_directory
     
 end module config_parser
