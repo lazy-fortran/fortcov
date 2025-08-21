@@ -77,6 +77,25 @@ contains
         success = .true.
         error_message = ""
         
+        ! Check for help/version flags first - these override zero-configuration mode
+        ! But we don't exit early so other flags like --quiet can still be processed
+        do i = 1, size(args)
+            if (len_trim(args(i)) > 0) then
+                if (trim(args(i)) == '--help' .or. trim(args(i)) == '-h') then
+                    config%show_help = .true.
+                else if (trim(args(i)) == '--version' .or. trim(args(i)) == '-V') then
+                    config%show_version = .true.
+                else if (trim(args(i)) == '--quiet' .or. trim(args(i)) == '-q') then
+                    config%quiet = .true.
+                end if
+            end if
+        end do
+        
+        ! If help or version requested, skip zero-config mode and normal parsing
+        if (config%show_help .or. config%show_version) then
+            return
+        end if
+        
         ! Check for zero-configuration mode (no arguments, all empty, or no input sources)
         is_zero_config = (size(args) == 0)
         if (.not. is_zero_config .and. size(args) > 0) then
