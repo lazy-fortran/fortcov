@@ -67,8 +67,7 @@ contains
         
         character(len=:), allocatable :: flags(:)
         character(len=:), allocatable :: positionals(:)
-        character(len=:), allocatable :: temp_files(:), temp_paths(:)
-        integer :: flag_count, positional_count, i
+        integer :: flag_count, positional_count
         logical :: is_zero_config
         
         ! Initialize config with defaults
@@ -77,8 +76,34 @@ contains
         success = .true.
         error_message = ""
         
-        ! Check for help/version flags first - these override zero-configuration mode
-        ! But we don't exit early so other flags like --quiet can still be processed
+        ! Process help/version/quiet flags first
+        call process_special_flags(args, config)
+        
+        ! If help or version requested, skip zero-config mode and normal parsing
+        if (config%show_help .or. config%show_version) then
+            return
+        end if
+        
+        ! Check for zero-configuration mode
+        is_zero_config = should_use_zero_config(args)
+        
+        if (is_zero_config) then
+            call handle_zero_configuration_mode(config)
+            return
+        end if
+        
+        ! Normal argument parsing for non-zero-configuration mode
+        call handle_normal_configuration(args, config, success, error_message)
+        
+    end subroutine parse_command_line_config
+    
+    subroutine process_special_flags(args, config)
+        !! Process help, version, and quiet flags
+        character(len=*), intent(in) :: args(:)
+        type(config_t), intent(inout) :: config
+        integer :: i
+        
+        ! Check for help/version/quiet flags - these override zero-configuration mode
         do i = 1, size(args)
             if (len_trim(args(i)) > 0) then
                 if (trim(args(i)) == '--help' .or. trim(args(i)) == '-h') then
@@ -90,14 +115,16 @@ contains
                 end if
             end if
         end do
+    end subroutine process_special_flags
+    
+    logical function should_use_zero_config(args) result(is_zero_config)
+        !! Determine if zero-configuration mode should be used
+        character(len=*), intent(in) :: args(:)
+        integer :: i
         
-        ! If help or version requested, skip zero-config mode and normal parsing
-        if (config%show_help .or. config%show_version) then
-            return
-        end if
-        
-        ! Check for zero-configuration mode (no arguments, all empty, or no input sources)
+        ! No arguments means zero-config
         is_zero_config = (size(args) == 0)
+        
         if (.not. is_zero_config .and. size(args) > 0) then
             ! Check if all arguments are empty strings
             is_zero_config = .true.
@@ -108,41 +135,54 @@ contains
                 end if
             end do
             
-            ! If arguments exist but none are input-related, still use zero-config for inputs
+            ! If arguments exist but none are input-related, use zero-config
             if (.not. is_zero_config) then
                 is_zero_config = .not. has_input_related_arguments(args)
             end if
         end if
+    end function should_use_zero_config
+    
+    subroutine handle_zero_configuration_mode(config)
+        !! Handle zero-configuration mode setup
+        type(config_t), intent(inout) :: config
+        character(len=:), allocatable :: temp_files(:), temp_paths(:)
         
-        if (is_zero_config) then
-            ! Mark as zero-configuration mode
-            config%zero_configuration_mode = .true.
-            
-            ! Apply zero-configuration defaults
-            call apply_zero_configuration_defaults(config%output_path, &
-                                                  config%output_format, &
-                                                  config%input_format, &
-                                                  config%exclude_patterns)
-            
-            ! Auto-discover coverage files
-            temp_files = auto_discover_coverage_files_priority()
-            if (allocated(temp_files) .and. size(temp_files) > 0) then
-                config%coverage_files = temp_files
-            end if
-            
-            ! Auto-discover source paths
-            temp_paths = auto_discover_source_files_priority()
-            if (allocated(temp_paths) .and. size(temp_paths) > 0) then
-                config%source_paths = temp_paths
-            end if
-            
-            ! Ensure output directory structure exists
-            call ensure_zero_config_output_directory(config)
-            
-            return
+        ! Mark as zero-configuration mode
+        config%zero_configuration_mode = .true.
+        
+        ! Apply zero-configuration defaults
+        call apply_zero_configuration_defaults(config%output_path, &
+                                              config%output_format, &
+                                              config%input_format, &
+                                              config%exclude_patterns)
+        
+        ! Auto-discover coverage files
+        temp_files = auto_discover_coverage_files_priority()
+        if (allocated(temp_files) .and. size(temp_files) > 0) then
+            config%coverage_files = temp_files
         end if
         
-        ! Normal argument parsing for non-zero-configuration mode
+        ! Auto-discover source paths
+        temp_paths = auto_discover_source_files_priority()
+        if (allocated(temp_paths) .and. size(temp_paths) > 0) then
+            config%source_paths = temp_paths
+        end if
+        
+        ! Ensure output directory structure exists
+        call ensure_zero_config_output_directory(config)
+    end subroutine handle_zero_configuration_mode
+    
+    subroutine handle_normal_configuration(args, config, success, error_message)
+        !! Handle normal command-line configuration
+        character(len=*), intent(in) :: args(:)
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: flags(:)
+        character(len=:), allocatable :: positionals(:)
+        integer :: flag_count, positional_count
+        
         ! Two-pass parsing: classify arguments first
         call classify_command_arguments(args, flags, flag_count, positionals, &
                                       positional_count)
@@ -158,8 +198,7 @@ contains
         
         ! Pass 3: Apply HTML default filename logic
         call apply_html_default_filename(config)
-        
-    end subroutine parse_command_line_config
+    end subroutine handle_normal_configuration
     
     subroutine parse_config_file(config, success, error_message)
         !! Configuration file parsing implementation
