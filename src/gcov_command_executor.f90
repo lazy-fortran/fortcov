@@ -42,16 +42,20 @@ contains
         logical :: gcda_exists, source_exists, gcov_file_exists
         logical :: output_dir_exists
         integer :: i, line_count, stat
-        character(len=256) :: temp_files(10)
+        character(len=256), allocatable :: temp_files(:)
         type(error_context_t) :: cmd_error_ctx
         
         call clear_error_context(error_ctx)
+        
+        ! Allocate temporary files array on heap instead of stack
+        allocate(temp_files(10))
         
         ! Check if source file exists
         inquire(file=source_file, exist=source_exists)
         if (.not. source_exists) then
             call handle_missing_source(source_file, error_ctx)
             allocate(character(len=256) :: gcov_files(0))
+            if (allocated(temp_files)) deallocate(temp_files)
             return
         end if
         
@@ -62,6 +66,7 @@ contains
         if (.not. gcda_exists) then
             call handle_missing_source(gcda_file, error_ctx)
             allocate(character(len=256) :: gcov_files(0))
+            if (allocated(temp_files)) deallocate(temp_files)
             return
         end if
         
@@ -88,6 +93,7 @@ contains
             if (.not. cmd_error_ctx%recoverable) then
                 error_ctx = cmd_error_ctx
                 allocate(character(len=256) :: gcov_files(0))
+                if (allocated(temp_files)) deallocate(temp_files)
                 call cleanup_temp_file(temp_filename)
                 return
             end if
@@ -139,6 +145,9 @@ contains
         
         ! Clean up temp file
         call cleanup_temp_file(temp_filename)
+        
+        ! Clean up temporary array
+        if (allocated(temp_files)) deallocate(temp_files)
     end subroutine execute_gcov
 
     subroutine set_branch_coverage(this, enable)
