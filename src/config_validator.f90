@@ -426,11 +426,35 @@ contains
         !! Checks if coverage file has valid format
         character(len=*), intent(in) :: file_path
         logical :: is_valid
+        integer :: path_len
         
-        ! Check file extension
-        is_valid = (index(file_path, '.gcov') > 0) .or. &
-                   (index(file_path, '.json') > 0) .or. &
-                   (index(file_path, '.xml') > 0)
+        ! Check file extension - must end with valid extension
+        path_len = len_trim(file_path)
+        is_valid = .false.
+        
+        ! Check for .gcov extension
+        if (path_len >= 5) then
+            if (file_path(path_len-4:path_len) == '.gcov') then
+                is_valid = .true.
+                return
+            end if
+        end if
+        
+        ! Check for .json extension
+        if (path_len >= 5) then
+            if (file_path(path_len-4:path_len) == '.json') then
+                is_valid = .true.
+                return
+            end if
+        end if
+        
+        ! Check for .xml extension
+        if (path_len >= 4) then
+            if (file_path(path_len-3:path_len) == '.xml') then
+                is_valid = .true.
+                return
+            end if
+        end if
         
     end function is_valid_coverage_file_format
     
