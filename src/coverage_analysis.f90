@@ -317,13 +317,16 @@ contains
     
     subroutine generate_coverage_reports(coverage_data, stats, config, report_error)
         !! Generates coverage reports in requested format
+        use zero_configuration_manager, only: ensure_output_directory_structure
         type(coverage_data_t), intent(in) :: coverage_data
         type(coverage_stats_t), intent(in) :: stats
         type(config_t), intent(in) :: config
         logical, intent(out) :: report_error
         
         class(coverage_reporter_t), allocatable :: reporter
-        logical :: creation_error
+        logical :: creation_error, generation_success
+        character(len=:), allocatable :: error_message
+        type(error_context_t) :: error_ctx
         
         ! Create appropriate reporter
         call create_reporter(config%output_format, reporter, creation_error)
@@ -332,9 +335,43 @@ contains
             return
         end if
         
-        ! Generate reports
-        ! call reporter%generate_report(coverage_data, stats, config)
-        report_error = .false.
+        ! Ensure output directory structure exists
+        if (allocated(config%output_path)) then
+            call ensure_output_directory_structure(config%output_path, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) then
+                if (.not. config%quiet) then
+                    print *, "❌ Failed to create output directory"
+                    print *, "   Error: " // trim(error_ctx%message)
+                    if (len_trim(error_ctx%suggestion) > 0) then
+                        print *, "   💡 " // trim(error_ctx%suggestion)
+                    end if
+                end if
+                report_error = .true.
+                return
+            end if
+        end if
+        
+        ! Generate reports with proper interface
+        call reporter%generate_report(coverage_data, config%output_path, &
+                                    generation_success, error_message)
+        
+        if (.not. generation_success) then
+            if (.not. config%quiet) then
+                print *, "❌ Failed to generate coverage report"
+                if (allocated(error_message)) then
+                    print *, "   Error: " // trim(error_message)
+                end if
+            end if
+            report_error = .true.
+        else
+            report_error = .false.
+            if (.not. config%quiet) then
+                print *, "✅ Coverage report generated successfully"
+                if (allocated(config%output_path)) then
+                    print *, "   Output: " // trim(config%output_path)
+                end if
+            end if
+        end if
         
     end subroutine generate_coverage_reports
     
