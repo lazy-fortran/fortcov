@@ -18,6 +18,6 @@ source-form = "free"
 
 
 [[test]]
-name = "test_issue_204"
+name = "check"
 source-dir = "test"
-main = "test_issue_204_zero_configuration.f90"
+main = "check.f90"

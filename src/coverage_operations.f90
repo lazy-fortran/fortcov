@@ -79,6 +79,9 @@ contains
         integer :: total_files, current_count
         integer :: i
         
+        ! Explicitly deallocate before init to avoid allocation errors
+        if (allocated(merged_data%files)) deallocate(merged_data%files)
+        
         ! Initialize merged data
         call merged_data%init()
         merged_data%version = data1%version
