@@ -21,3 +21,8 @@ source-form = "free"
 name = "check"
 source-dir = "test"
 main = "check.f90"
+
+[[test]]
+name = "test_zero_config_override_bug"
+source-dir = "test"
+main = "test_zero_config_override_bug.f90"
