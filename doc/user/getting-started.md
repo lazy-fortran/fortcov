@@ -76,21 +76,27 @@ end program test_calculator
 
 ### Step 3: Generate Coverage
 
-**Option A: Automatic (Recommended)**
+**Zero-Configuration Mode (Recommended)**
 
-Use the FPM coverage bridge script for seamless integration:
+The simplest way to get coverage reports:
 
 ```bash
-# One command handles everything
-scripts/fpm_coverage_bridge.sh src
+# Build and test with coverage
+fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# View the report
-cat coverage.md
+# Generate coverage data in standard location
+gcov -o build/gcov src/*.f90
+
+# Analyze with zero configuration
+fortcov
+
+# View the report (auto-generated in build/coverage/)
+cat build/coverage/coverage.md
 ```
 
-**Option B: Manual Process**
+**Traditional Mode (Custom Workflows)**
 
-For understanding or custom workflows:
+For specific configurations or legacy workflows:
 
 ```bash
 # Build and test with coverage
@@ -99,7 +105,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate coverage data
 gcov src/*.f90
 
-# Create coverage report
+# Create coverage report with explicit options
 fortcov --source=src --output=coverage.md
 
 # View the report

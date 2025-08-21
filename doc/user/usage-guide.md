@@ -5,14 +5,51 @@ Comprehensive guide for using FortCov in different scenarios.
 ## Quick Reference
 
 ```bash
-# Simple usage
+# Zero-configuration (recommended)
+fortcov
+
+# Traditional usage with explicit options
 fortcov --source=src --output=coverage.md
 
 # CI/CD usage  
-fortcov --source=src --fail-under=80 --quiet
+fortcov --fail-under=80 --quiet
 
 # Configuration file
 fortcov --config=fortcov.nml
+```
+
+## Zero-Configuration Mode
+
+The fastest way to get coverage reports - just run `fortcov` without any arguments:
+
+```bash
+# Standard workflow
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+gcov -o build/gcov src/*.f90
+fortcov  # Auto-discovers everything!
+```
+
+### How Zero-Configuration Works
+
+**Auto-Discovery Priority Order:**
+1. **Coverage files**: `build/gcov/*.gcov` → `./*.gcov` → `build/**/*.gcov`
+2. **Source files**: `src/*.f90` → `./*.f90` (excludes `build/*`, `test/*`)
+3. **Output location**: `build/coverage/coverage.md` (creates directory if needed)
+
+### Zero-Configuration Examples
+
+```bash
+# Works in any project with standard structure
+fortcov
+
+# Override just the output location
+fortcov --output=my-report.md
+
+# Override coverage threshold while using auto-discovery
+fortcov --fail-under=90
+
+# Zero-config with quiet mode for CI
+fortcov --quiet --fail-under=80
 ```
 
 ## Command-Line Interface
@@ -42,21 +79,21 @@ fortcov --config=fortcov.nml
 #### Daily Development
 
 ```bash
-# Quick coverage check
-fortcov --source=src --quiet && echo "✓ Coverage good"
+# Quick coverage check with zero-config
+fortcov --quiet && echo "✓ Coverage good"
 
-# Detailed analysis
+# Detailed analysis with zero-config
+fortcov --verbose
+
+# Traditional approach (if needed)
 fortcov --source=src --verbose --output=coverage.md
 ```
 
 #### Pre-commit Workflow
 
 ```bash
-# Validate configuration first
-fortcov --source=src --validate-config || exit 1
-
-# Check coverage meets standards
-fortcov --source=src --fail-under=80 --quiet
+# Check coverage meets standards with zero-config
+fortcov --fail-under=80 --quiet
 if [ $? -eq 0 ]; then
     echo "✓ Ready to commit"
 else
@@ -73,8 +110,8 @@ fi
 - name: Generate Coverage
   run: |
     fpm test --flag "-fprofile-arcs -ftest-coverage"
-    gcov src/*.f90
-    fortcov --source=src --fail-under=80 --output=coverage.md
+    gcov -o build/gcov src/*.f90
+    fortcov --fail-under=80 --quiet
 ```
 
 **GitLab CI:**
@@ -82,21 +119,21 @@ fi
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - gcov src/*.f90
-    - fortcov --source=src --output-format=html --output=coverage.html
+    - gcov -o build/gcov src/*.f90
+    - fortcov --output-format=html --output=coverage.html
 ```
 
 #### Quality Gates
 
 ```bash
-# Critical components (95% required)
+# Standard quality gate with zero-config
+fortcov --fail-under=80 --quiet
+
+# High-bar for critical projects
+fortcov --fail-under=95 --quiet
+
+# Custom source patterns (overrides auto-discovery)
 fortcov --source=src/critical --fail-under=95 --quiet
-
-# Normal components (80% required)  
-fortcov --source=src --exclude=critical/* --fail-under=80 --quiet
-
-# Performance optimization for large codebases
-fortcov --source=src --threads=4 --include='*.f90,*.F90' --fail-under=80
 ```
 
 ### For Project Managers
@@ -104,8 +141,8 @@ fortcov --source=src --threads=4 --include='*.f90,*.F90' --fail-under=80
 #### Coverage Monitoring
 
 ```bash
-# Extract coverage percentage
-COVERAGE=$(fortcov --source=src --output-format=json --quiet | jq -r '.summary.line_coverage')
+# Extract coverage percentage with zero-config
+COVERAGE=$(fortcov --output-format=json --quiet | jq -r '.summary.line_coverage')
 echo "Current coverage: $COVERAGE%"
 
 # Trend tracking
