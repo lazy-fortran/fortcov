@@ -41,7 +41,7 @@ module foundation_constants
     real, parameter, public :: PRECISION_EPSILON = 1.0e-6
     
     ! Array size limits for safety
-    integer, parameter, public :: MAX_FILES = 10000
+    integer, parameter, public :: MAX_FILES = 10000  ! Default fallback, configurable via --max-files
     integer, parameter, public :: MAX_EXCLUDES = 1000
     integer, parameter, public :: MAX_DEPENDENCIES = 100
     integer, parameter, public :: MAX_PUBLIC_INTERFACES = 50

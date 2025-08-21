@@ -53,6 +53,7 @@ module config_parser
         logical :: tui_mode
         logical :: strict_mode
         logical :: zero_configuration_mode
+        integer :: max_files  ! Maximum number of files to process (default 10000)
     end type config_t
     
 contains
@@ -442,7 +443,7 @@ contains
         select case (trim(long_flag))
         case ('--output', '--format', '--output-format', '--threshold', '--source', '--exclude', &
               '--include', '--fail-under', '--threads', '--config', '--diff-baseline', &
-              '--diff-current', '--import', '--gcov-executable', '--gcov-args')
+              '--diff-current', '--import', '--gcov-executable', '--gcov-args', '--max-files')
             requires_value = .true.
         case default
             requires_value = .false.
@@ -471,6 +472,10 @@ contains
         config%tui_mode = .false.
         config%strict_mode = .false.
         config%zero_configuration_mode = .false.
+        config%max_files = 10000  ! Default maximum files
+        
+        ! Check for FORTCOV_MAX_FILES environment variable
+        call get_max_files_from_env(config%max_files)
         
     end subroutine initialize_default_config
     
@@ -548,6 +553,11 @@ contains
             call parse_integer_value(value, config%threads, success)
             if (.not. success) then
                 error_message = "Invalid threads value: " // trim(value)
+            end if
+        case ('--max-files')
+            call parse_integer_value(value, config%max_files, success)
+            if (.not. success) then
+                error_message = "Invalid max-files value: " // trim(value)
             end if
         case ('--validate-config')
             config%validate_config_only = .true.
@@ -837,5 +847,24 @@ contains
         end do
         
     end function has_input_related_arguments
+    
+    subroutine get_max_files_from_env(max_files)
+        !! Check for FORTCOV_MAX_FILES environment variable and update max_files
+        integer, intent(inout) :: max_files
+        
+        character(len=20) :: env_value
+        integer :: env_max_files, iostat_var
+        
+        ! Try to get environment variable
+        call get_environment_variable('FORTCOV_MAX_FILES', env_value)
+        
+        if (len_trim(env_value) > 0) then
+            ! Parse the environment variable value
+            read(env_value, *, iostat=iostat_var) env_max_files
+            if (iostat_var == 0 .and. env_max_files > 0) then
+                max_files = env_max_files
+            end if
+        end if
+    end subroutine get_max_files_from_env
     
 end module config_parser

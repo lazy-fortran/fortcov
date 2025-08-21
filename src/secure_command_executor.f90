@@ -113,10 +113,11 @@ contains
     end subroutine safe_execute_gcov
 
     ! Safe file finding with injection protection
-    subroutine safe_find_files(pattern, files, error_ctx)
+    subroutine safe_find_files(pattern, files, error_ctx, max_files)
         character(len=*), intent(in) :: pattern
         character(len=:), allocatable, intent(out) :: files(:)
         type(error_context_t), intent(out) :: error_ctx
+        integer, intent(in), optional :: max_files
         
         character(len=:), allocatable :: safe_pattern
         character(len=:), allocatable :: temp_filename
@@ -124,10 +125,17 @@ contains
         character(len=256) :: line
         character(len=256), allocatable :: temp_files(:)
         integer :: unit, stat, count, i
-        integer, parameter :: MAX_FILES = 10000
+        integer :: max_files_limit
         
         call clear_error_context(error_ctx)
         count = 0
+        
+        ! Set file limit (configurable with default of 10000)
+        if (present(max_files)) then
+            max_files_limit = max_files
+        else
+            max_files_limit = 10000  ! Default if not provided
+        end if
         
         ! Validate and sanitize the search pattern
         call validate_path_security(pattern, safe_pattern, error_ctx)
@@ -164,14 +172,14 @@ contains
         ! Execute safe command
         call execute_command_line(command, exitstat=stat)
         
-        ! Allocate temporary array with reasonable size
-        allocate(temp_files(MAX_FILES))
+        ! Allocate temporary array with configurable size
+        allocate(temp_files(max_files_limit))
         
         ! Read results from temp file
         open(newunit=unit, file=temp_filename, action='read', &
              status='old', iostat=stat)
         if (stat == 0) then
-            do i = 1, MAX_FILES
+            do i = 1, max_files_limit
                 read(unit, '(A)', iostat=stat) line
                 if (stat /= 0) exit
                 if (len_trim(line) > 0) then
