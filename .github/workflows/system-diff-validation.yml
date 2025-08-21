@@ -102,7 +102,6 @@ jobs:
           "test_integration/diff_comparator.py" 
           "test_integration/performance_benchmark.py"
           "src/system_diff_converter.f90"
-          "test/test_format_converter.f90"
         )
         
         missing_files=()
@@ -181,7 +180,6 @@ jobs:
           "test_integration/simple_system_test.sh:System test orchestrator"
           "test_integration/diff_comparator.py:Comparison validation engine"
           "test_integration/performance_benchmark.py:Performance benchmarking"
-          "test/test_format_converter.f90:Format conversion tests"
         )
         
         echo ""
