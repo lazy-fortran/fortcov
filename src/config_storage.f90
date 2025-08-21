@@ -48,6 +48,7 @@ contains
         print *, "    --config FILE           Configuration file path"
         print *, "    --validate-config       Validate configuration without running analysis"
         print *, "    --threads N             Number of processing threads (default: 1)"
+        print *, "    --max-files N           Maximum number of files to process (default: 10000)"
         print *, "    --tui                   Launch Terminal User Interface"
         print *, "    --strict                Enable strict mode validation"
         print *, "    --keep-gcov             Keep generated .gcov files"
