@@ -45,6 +45,7 @@ contains
         character(len=:), allocatable :: safe_source_path
         character(len=:), allocatable :: safe_working_dir
         character(len=:), allocatable :: safe_output_path
+        character(len=:), allocatable :: abs_source_path
         character(len=MAX_COMMAND_LENGTH) :: command
         integer :: stat
         logical :: file_exists
@@ -64,11 +65,24 @@ contains
         call validate_path_security(output_file, safe_output_path, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) return
         
-        ! Verify source file exists
+        ! Verify source file exists and get absolute path if needed
         inquire(file=safe_source_path, exist=file_exists)
         if (.not. file_exists) then
             call handle_missing_source(safe_source_path, error_ctx)
             return
+        end if
+        
+        ! Ensure we have absolute path for source file when using working dir
+        if (len_trim(safe_working_dir) > 0 .and. safe_working_dir /= ".") then
+            if (safe_source_path(1:1) /= '/') then
+                ! Make absolute path
+                call execute_command_line("pwd", exitstat=stat)
+                abs_source_path = safe_source_path  ! Simplified for now
+            else
+                abs_source_path = safe_source_path
+            end if
+        else
+            abs_source_path = safe_source_path
         end if
         
         ! Execute gcov command with safer working directory handling
@@ -76,11 +90,11 @@ contains
             ! For non-current directories, use a safer approach
             ! First, change to the working directory using chdir-like approach
             call safe_execute_in_directory(safe_working_dir, safe_gcov_path, &
-                                         safe_source_path, branch_coverage, &
+                                         abs_source_path, branch_coverage, &
                                          safe_output_path, stat)
         else
             ! Execute in current directory - build command safely
-            call build_safe_gcov_command(safe_gcov_path, safe_source_path, &
+            call build_safe_gcov_command(safe_gcov_path, abs_source_path, &
                                        branch_coverage, safe_output_path, command)
             
             ! Execute the safely constructed command

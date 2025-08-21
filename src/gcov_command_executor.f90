@@ -18,11 +18,13 @@ module gcov_command_executor
         logical :: branch_coverage = .false.
         character(len=256) :: working_directory = ""
         character(len=256) :: gcov_command = "gcov"
+        character(len=256) :: gcov_output_dir = "build/gcov"  ! Directory for .gcov files
     contains
         procedure :: execute_gcov
         procedure :: set_branch_coverage
         procedure :: set_working_directory
         procedure :: set_gcov_command
+        procedure :: set_gcov_output_directory
         procedure :: cleanup_gcov_files
     end type gcov_executor_t
     
@@ -35,9 +37,11 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         character(len=256) :: gcda_file, gcno_file, gcov_file
-        character(len=256) :: temp_filename
+        character(len=256) :: temp_filename, output_gcov_file
+        character(len=256) :: source_basename
         logical :: gcda_exists, source_exists, gcov_file_exists
-        integer :: i, line_count
+        logical :: output_dir_exists
+        integer :: i, line_count, stat
         character(len=256) :: temp_files(10)
         type(error_context_t) :: cmd_error_ctx
         
@@ -61,10 +65,18 @@ contains
             return
         end if
         
+        ! Ensure output directory exists
+        inquire(file=trim(this%gcov_output_dir), exist=output_dir_exists)
+        if (.not. output_dir_exists) then
+            call execute_command_line("mkdir -p " // trim(this%gcov_output_dir), &
+                                     exitstat=stat)
+        end if
+        
         ! Create unique temp filename for command output
         call create_temp_filename(temp_filename)
         
         ! Execute gcov command using secure command executor
+        ! This will generate .gcov files in the current directory
         call safe_execute_gcov(this%gcov_command, source_file, &
                              this%working_directory, this%branch_coverage, &
                              temp_filename, cmd_error_ctx)
@@ -85,24 +97,25 @@ contains
         line_count = 0
         temp_files = ""
         
+        ! Get basename of source file for .gcov file name
+        source_basename = get_base_name(source_file)
+        
         ! Look for .gcov file based on source file name
-        ! gcov creates files like "source_file.gcov" in working directory
-        if (len_trim(this%working_directory) > 0) then
-            gcov_file = trim(this%working_directory) // "/" // &
-                       trim(source_file) // ".gcov"
-        else
-            gcov_file = trim(source_file) // ".gcov"
-        end if
+        ! gcov creates files like "source_file.gcov" in current directory
+        gcov_file = trim(source_file) // ".gcov"
         
         inquire(file=gcov_file, exist=gcov_file_exists)
         if (gcov_file_exists) then
-            line_count = 1
-            temp_files(1) = gcov_file
-        else
-            ! Try without working directory prefix
-            gcov_file = trim(source_file) // ".gcov"
-            inquire(file=gcov_file, exist=gcov_file_exists)
-            if (gcov_file_exists) then
+            ! Move the .gcov file to the output directory
+            output_gcov_file = trim(this%gcov_output_dir) // "/" // &
+                              trim(source_basename) // ".f90.gcov"
+            call execute_command_line("mv " // trim(gcov_file) // " " // &
+                                     trim(output_gcov_file), exitstat=stat)
+            if (stat == 0) then
+                line_count = 1
+                temp_files(1) = output_gcov_file
+            else
+                ! If move fails, keep original location
                 line_count = 1
                 temp_files(1) = gcov_file
             end if
@@ -148,6 +161,13 @@ contains
         
         this%gcov_command = command
     end subroutine set_gcov_command
+    
+    subroutine set_gcov_output_directory(this, directory)
+        class(gcov_executor_t), intent(inout) :: this
+        character(len=*), intent(in) :: directory
+        
+        this%gcov_output_dir = directory
+    end subroutine set_gcov_output_directory
 
     subroutine cleanup_gcov_files(this, gcov_files)
         class(gcov_executor_t), intent(in) :: this

@@ -248,19 +248,30 @@ contains
         character(len=:), allocatable :: search_paths(:)
         character(len=:), allocatable :: found_files(:)
         character(len=:), allocatable :: generated_files(:)
+        character(len=256), parameter :: GCOV_OUTPUT_DIR = "build/gcov"
+        logical :: dir_exists
         integer :: path_idx
         
-        ! Use source paths for discovery
-        if (allocated(config%source_paths)) then
+        ! First, check for .gcov files in the dedicated gcov output directory
+        inquire(file=GCOV_OUTPUT_DIR, exist=dir_exists)
+        if (dir_exists) then
+            found_files = find_files(GCOV_OUTPUT_DIR // "/*" // GCOV_EXTENSION)
+        end if
+        
+        ! If no .gcov files found in build/gcov, search in configured source paths
+        if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
+            allocated(config%source_paths)) then
             search_paths = config%source_paths
-        else
-            ! Default to current directory
+        else if (.not. allocated(found_files) .or. size(found_files) == 0) then
+            ! Default to current directory as last resort
             allocate(character(len=1) :: search_paths(1))
             search_paths(1) = "."
         end if
         
-        ! First, search for existing .gcov files
-        found_files = find_files("*" // GCOV_EXTENSION)
+        ! Search for existing .gcov files if not found in build/gcov
+        if (.not. allocated(found_files) .or. size(found_files) == 0) then
+            found_files = find_files("*" // GCOV_EXTENSION)
+        end if
         
         ! If no .gcov files found, attempt automatic generation
         if (.not. allocated(found_files) .or. size(found_files) == 0) then
@@ -352,22 +363,31 @@ contains
     end subroutine find_coverage_build_directories
     
     subroutine collect_generated_gcov_files(build_dirs, gcov_files)
-        !! Collects generated .gcov files and copies them to project root
+        !! Collects generated .gcov files and copies them to build/gcov directory
         character(len=*), intent(in) :: build_dirs(:)
         character(len=:), allocatable, intent(out) :: gcov_files(:)
         
         character(len=:), allocatable :: found_gcov_files(:)
         character(len=300) :: command
-        integer :: i
+        character(len=256), parameter :: GCOV_OUTPUT_DIR = "build/gcov"
+        integer :: i, stat
+        logical :: dir_exists
         
-        ! Copy all .gcov files from build directories to project root
+        ! Ensure the gcov output directory exists
+        inquire(file=GCOV_OUTPUT_DIR, exist=dir_exists)
+        if (.not. dir_exists) then
+            call execute_command_line("mkdir -p " // GCOV_OUTPUT_DIR, exitstat=stat)
+        end if
+        
+        ! Copy all .gcov files from build directories to build/gcov
         do i = 1, size(build_dirs)
-            write(command, '(A)') 'find "' // trim(build_dirs(i)) // '" -name "*.gcov" -exec cp {} . \; 2>/dev/null'
+            write(command, '(A)') 'find "' // trim(build_dirs(i)) // &
+                '" -name "*.gcov" -exec cp {} ' // GCOV_OUTPUT_DIR // '/ \; 2>/dev/null'
             call execute_command_line(command)
         end do
         
-        ! Now find the copied .gcov files in project root
-        found_gcov_files = find_files("*.gcov")
+        ! Now find the .gcov files in the gcov output directory
+        found_gcov_files = find_files(GCOV_OUTPUT_DIR // "/*.gcov")
         
         if (allocated(found_gcov_files)) then
             gcov_files = found_gcov_files
