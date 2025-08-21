@@ -487,7 +487,6 @@ contains
         character(len=*), intent(out) :: error_message
         
         character(len=:), allocatable :: long_flag
-        real :: real_value
         
         success = .true.
         error_message = ""
@@ -508,12 +507,8 @@ contains
         case ('--format', '--output-format')
             config%output_format = value
         case ('--threshold')
-            call parse_real_value(value, real_value, success)
-            if (success) then
-                config%minimum_coverage = real_value
-            else
-                error_message = "Invalid threshold value: " // trim(value)
-            end if
+            call parse_real_with_error(value, config%minimum_coverage, &
+                                     "threshold", success, error_message)
         case ('--tui')
             config%tui_mode = .true.
         case ('--strict')
@@ -543,22 +538,14 @@ contains
         case ('--include')
             call add_include_pattern(value, config, success, error_message)
         case ('--fail-under')
-            call parse_real_value(value, real_value, success)
-            if (success) then
-                config%fail_under_threshold = real_value
-            else
-                error_message = "Invalid fail-under threshold value: " // trim(value)
-            end if
+            call parse_real_with_error(value, config%fail_under_threshold, &
+                                     "fail-under threshold", success, error_message)
         case ('--threads')
-            call parse_integer_value(value, config%threads, success)
-            if (.not. success) then
-                error_message = "Invalid threads value: " // trim(value)
-            end if
+            call parse_integer_with_error(value, config%threads, &
+                                        "threads", success, error_message)
         case ('--max-files')
-            call parse_integer_value(value, config%max_files, success)
-            if (.not. success) then
-                error_message = "Invalid max-files value: " // trim(value)
-            end if
+            call parse_integer_with_error(value, config%max_files, &
+                                        "max-files", success, error_message)
         case ('--validate-config')
             config%validate_config_only = .true.
         case default
@@ -613,6 +600,38 @@ contains
         
     end subroutine parse_real_value
     
+    subroutine parse_real_with_error(str, value, value_name, success, error_message)
+        !! Generic real parsing with error message generation - eliminates DRY violations
+        character(len=*), intent(in) :: str, value_name
+        real, intent(out) :: value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        call parse_real_value(str, value, success)
+        if (.not. success) then
+            error_message = "Invalid " // trim(value_name) // " value: " // trim(str)
+        else
+            error_message = ""
+        end if
+        
+    end subroutine parse_real_with_error
+    
+    subroutine parse_integer_with_error(str, value, value_name, success, error_message)
+        !! Generic integer parsing with error message generation - eliminates DRY violations
+        character(len=*), intent(in) :: str, value_name
+        integer, intent(out) :: value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        call parse_integer_value(str, value, success)
+        if (.not. success) then
+            error_message = "Invalid " // trim(value_name) // " value: " // trim(str)
+        else
+            error_message = ""
+        end if
+        
+    end subroutine parse_integer_with_error
+    
     subroutine apply_html_default_filename(config)
         !! Applies HTML default filename logic
         type(config_t), intent(inout) :: config
@@ -624,10 +643,12 @@ contains
         
     end subroutine apply_html_default_filename
     
-    subroutine add_source_path(path, config, success, error_message)
-        !! Adds a source path to the config
-        character(len=*), intent(in) :: path
-        type(config_t), intent(inout) :: config
+    subroutine add_string_to_array(item, array, max_size, item_type, success, error_message)
+        !! Generic subroutine to add string to allocatable array - eliminates DRY violations
+        character(len=*), intent(in) :: item
+        character(len=:), allocatable, intent(inout) :: array(:)
+        integer, intent(in) :: max_size
+        character(len=*), intent(in) :: item_type
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
@@ -637,34 +658,46 @@ contains
         success = .true.
         error_message = ""
         
-        if (len_trim(path) == 0) then
+        if (len_trim(item) == 0) then
             success = .false.
-            error_message = "Empty source path provided"
+            error_message = "Empty " // trim(item_type) // " provided"
             return
         end if
         
-        if (allocated(config%source_paths)) then
-            current_size = size(config%source_paths)
+        if (allocated(array)) then
+            current_size = size(array)
             
             ! Check size limits
-            if (current_size >= MAX_FILES) then
+            if (current_size >= max_size) then
                 success = .false.
-                write(error_message, '(A, I0, A)') &
-                    "Maximum source path count exceeded (", MAX_FILES, ")"
+                write(error_message, '(A, A, A, I0, A)') &
+                    "Maximum ", trim(item_type), " count exceeded (", max_size, ")"
                 return
             end if
             
             ! Reallocate with increased size
             new_size = current_size + 1
-            allocate(character(len=max(len(config%source_paths), len_trim(path))) :: temp_array(new_size))
-            temp_array(1:current_size) = config%source_paths
-            temp_array(new_size) = trim(path)
-            call move_alloc(temp_array, config%source_paths)
+            allocate(character(len=max(len(array), len_trim(item))) :: temp_array(new_size))
+            temp_array(1:current_size) = array
+            temp_array(new_size) = trim(item)
+            call move_alloc(temp_array, array)
         else
             ! Initial allocation
-            allocate(character(len=len_trim(path)) :: config%source_paths(1))
-            config%source_paths(1) = trim(path)
+            allocate(character(len=len_trim(item)) :: array(1))
+            array(1) = trim(item)
         end if
+        
+    end subroutine add_string_to_array
+    
+    subroutine add_source_path(path, config, success, error_message)
+        !! Adds a source path to the config
+        character(len=*), intent(in) :: path
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        call add_string_to_array(path, config%source_paths, MAX_FILES, &
+                               "source path", success, error_message)
         
     end subroutine add_source_path
     
@@ -675,40 +708,8 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        character(len=:), allocatable :: temp_array(:)
-        integer :: current_size, new_size
-        
-        success = .true.
-        error_message = ""
-        
-        if (len_trim(pattern) == 0) then
-            success = .false.
-            error_message = "Empty exclude pattern provided"
-            return
-        end if
-        
-        if (allocated(config%exclude_patterns)) then
-            current_size = size(config%exclude_patterns)
-            
-            ! Check size limits
-            if (current_size >= MAX_EXCLUDES) then
-                success = .false.
-                write(error_message, '(A, I0, A)') &
-                    "Maximum exclude pattern count exceeded (", MAX_EXCLUDES, ")"
-                return
-            end if
-            
-            ! Reallocate with increased size
-            new_size = current_size + 1
-            allocate(character(len=max(len(config%exclude_patterns), len_trim(pattern))) :: temp_array(new_size))
-            temp_array(1:current_size) = config%exclude_patterns
-            temp_array(new_size) = trim(pattern)
-            call move_alloc(temp_array, config%exclude_patterns)
-        else
-            ! Initial allocation
-            allocate(character(len=len_trim(pattern)) :: config%exclude_patterns(1))
-            config%exclude_patterns(1) = trim(pattern)
-        end if
+        call add_string_to_array(pattern, config%exclude_patterns, MAX_EXCLUDES, &
+                               "exclude pattern", success, error_message)
         
     end subroutine add_exclude_pattern
     
@@ -719,40 +720,8 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        character(len=:), allocatable :: temp_array(:)
-        integer :: current_size, new_size
-        
-        success = .true.
-        error_message = ""
-        
-        if (len_trim(pattern) == 0) then
-            success = .false.
-            error_message = "Empty include pattern provided"
-            return
-        end if
-        
-        if (allocated(config%include_patterns)) then
-            current_size = size(config%include_patterns)
-            
-            ! Check size limits
-            if (current_size >= MAX_EXCLUDES) then
-                success = .false.
-                write(error_message, '(A, I0, A)') &
-                    "Maximum include pattern count exceeded (", MAX_EXCLUDES, ")"
-                return
-            end if
-            
-            ! Reallocate with increased size
-            new_size = current_size + 1
-            allocate(character(len=max(len(config%include_patterns), len_trim(pattern))) :: temp_array(new_size))
-            temp_array(1:current_size) = config%include_patterns
-            temp_array(new_size) = trim(pattern)
-            call move_alloc(temp_array, config%include_patterns)
-        else
-            ! Initial allocation
-            allocate(character(len=len_trim(pattern)) :: config%include_patterns(1))
-            config%include_patterns(1) = trim(pattern)
-        end if
+        call add_string_to_array(pattern, config%include_patterns, MAX_EXCLUDES, &
+                               "include pattern", success, error_message)
         
     end subroutine add_include_pattern
     
