@@ -122,8 +122,9 @@ contains
         character(len=:), allocatable :: temp_filename
         character(len=MAX_COMMAND_LENGTH) :: command
         character(len=256) :: line
-        character(len=256) :: temp_files(100)
+        character(len=256), allocatable :: temp_files(:)
         integer :: unit, stat, count, i
+        integer, parameter :: MAX_FILES = 10000
         
         call clear_error_context(error_ctx)
         count = 0
@@ -163,11 +164,14 @@ contains
         ! Execute safe command
         call execute_command_line(command, exitstat=stat)
         
+        ! Allocate temporary array with reasonable size
+        allocate(temp_files(MAX_FILES))
+        
         ! Read results from temp file
         open(newunit=unit, file=temp_filename, action='read', &
              status='old', iostat=stat)
         if (stat == 0) then
-            do i = 1, 100
+            do i = 1, MAX_FILES
                 read(unit, '(A)', iostat=stat) line
                 if (stat /= 0) exit
                 if (len_trim(line) > 0) then
@@ -178,7 +182,7 @@ contains
             close(unit, status='delete')
         end if
         
-        ! Allocate result array
+        ! Allocate result array with exact size needed
         if (count > 0) then
             allocate(character(len=256) :: files(count))
             do i = 1, count
@@ -187,6 +191,9 @@ contains
         else
             allocate(character(len=256) :: files(0))
         end if
+        
+        ! Clean up temporary array
+        if (allocated(temp_files)) deallocate(temp_files)
     end subroutine safe_find_files
 
     ! Safe directory creation with injection protection
