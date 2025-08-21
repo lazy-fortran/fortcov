@@ -77,7 +77,6 @@ contains
         
         ! Check for zero-configuration mode (no arguments)
         is_zero_config = (size(args) == 0)
-        
         if (is_zero_config) then
             ! Apply zero-configuration defaults
             call apply_zero_configuration_defaults(config%output_path, &

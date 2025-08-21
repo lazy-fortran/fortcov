@@ -72,6 +72,7 @@ contains
         character(len=:), allocatable :: coverage_files(:)
         character(len=:), allocatable :: temp_files(:)
         logical :: dir_exists
+        integer :: i
         
         ! Priority 1: Check build/gcov/*.gcov (Issue #203 standard location)
         inquire(file="build/gcov", exist=dir_exists)
