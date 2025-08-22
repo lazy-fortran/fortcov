@@ -69,7 +69,9 @@ fortcov --threshold=75 --quiet
 ```bash
 # Simplest possible FPM integration
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find build -name "*.gcda" -exec dirname {} \; | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno; done  # FPM-aware coverage
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done  # FPM-aware coverage
 fortcov                       # Auto-discovers everything!
 ```
 
@@ -139,7 +141,7 @@ jobs:
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno; done
+    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --format=xml --output=coverage.xml --threshold=80
   coverage: '/Total coverage: (\d+\.\d+)%/'
   artifacts:
