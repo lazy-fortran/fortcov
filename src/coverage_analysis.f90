@@ -96,7 +96,7 @@ contains
         end if
         
         ! Apply threshold validation
-        if (config%strict_mode .and. config%minimum_coverage > 0.0) then
+        if (config%minimum_coverage > 0.0) then
             if (line_stats%percentage < config%minimum_coverage) then
                 if (.not. config%quiet) then
                     print *, "❌ Coverage threshold not met"
@@ -198,7 +198,7 @@ contains
         end if
         
         ! Apply threshold validation
-        if (config%strict_mode .and. config%minimum_coverage > 0.0) then
+        if (config%minimum_coverage > 0.0) then
             if (line_stats%percentage < config%minimum_coverage) then
                 if (.not. config%quiet) then
                     print *, "❌ Coverage threshold not met for imported data"
