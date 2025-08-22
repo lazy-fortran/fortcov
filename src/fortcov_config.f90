@@ -7,8 +7,7 @@ module fortcov_config
     !! Original module size: 1,128 lines → Now: <100 lines
     !! Decomposed into: config_parser + config_validator + config_storage
     use config_parser
-    use config_validator
-    use config_storage
+    use config_help
     use error_handling, only: error_context_t, ERROR_SUCCESS, ERROR_INVALID_CONFIG
     implicit none
     private
