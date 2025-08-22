@@ -14,6 +14,7 @@ module coverage_analysis
     use report_engine
     use input_validation
     use error_handling
+    use file_utils, only: read_file_content, file_exists
     implicit none
     private
     
@@ -163,7 +164,8 @@ contains
         
         type(coverage_data_t) :: imported_coverage
         type(coverage_stats_t) :: line_stats
-        logical :: import_success, reporter_error
+        logical :: import_success, reporter_error, file_error
+        character(len=:), allocatable :: json_content
         
         exit_code = EXIT_SUCCESS
         
@@ -172,13 +174,35 @@ contains
             print *, "   File: " // trim(config%import_file)
         end if
         
-        ! Import JSON coverage data (simplified for compilation)
-        ! TODO: Implement proper file reading and JSON import
-        import_success = .false.
-        
-        if (.not. import_success) then
+        ! Check if file exists first
+        if (.not. file_exists(config%import_file)) then
             if (.not. config%quiet) then
-                print *, "❌ Failed to import JSON coverage data"
+                print *, "❌ JSON file not found"
+                print *, "   File: " // trim(config%import_file)
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Read JSON file content
+        call read_file_content(config%import_file, json_content, file_error)
+        
+        if (file_error .or. .not. allocated(json_content)) then
+            if (.not. config%quiet) then
+                print *, "❌ Failed to read JSON file"
+                print *, "   File: " // trim(config%import_file)
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Import JSON coverage data
+        ! NOTE: import_json_coverage_safe sets error_caught=true on error
+        call import_json_coverage_safe(json_content, imported_coverage, import_success)
+        
+        if (import_success) then  ! true means error occurred
+            if (.not. config%quiet) then
+                print *, "❌ Failed to parse JSON coverage data"
                 print *, "   File: " // trim(config%import_file)
             end if
             exit_code = EXIT_FAILURE
@@ -204,6 +228,19 @@ contains
                     print *, "❌ Coverage threshold not met for imported data"
                     write(*, '(A, F5.1, A, F5.1, A)') &
                         "   Required: ", config%minimum_coverage, "%, Actual: ", &
+                        line_stats%percentage, "%"
+                end if
+                exit_code = EXIT_THRESHOLD_NOT_MET
+            end if
+        end if
+        
+        ! Apply fail-under threshold validation
+        if (config%fail_under_threshold > 0.0) then
+            if (line_stats%percentage < config%fail_under_threshold) then
+                if (.not. config%quiet) then
+                    print *, "❌ Coverage below fail-under threshold for imported data"
+                    write(*, '(A, F5.1, A, F5.1, A)') &
+                        "   Fail under: ", config%fail_under_threshold, "%, Actual: ", &
                         line_stats%percentage, "%"
                 end if
                 exit_code = EXIT_THRESHOLD_NOT_MET
