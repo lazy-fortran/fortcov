@@ -18,7 +18,7 @@ As a user, I want to configure fortcov behavior through command-line arguments s
 **Then**: config%input_format should be "gcov"
 
 ### Test 2: Parse output format argument
-**Given**: Command line "--output-format=markdown"
+**Given**: Command line "--format=markdown"
 **When**: Parsing arguments
 **Then**: config%output_format should be "markdown"
 

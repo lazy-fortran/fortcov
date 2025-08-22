@@ -46,10 +46,10 @@ fortcov
 fortcov --output=my-report.md
 
 # Override coverage threshold while using auto-discovery
-fortcov --fail-under=90
+fortcov --threshold=90
 
 # Zero-config with quiet mode for CI
-fortcov --quiet --fail-under=80
+fortcov --quiet --threshold=80
 ```
 
 ## Command-Line Interface
@@ -184,7 +184,7 @@ fortcov --threshold=80 --quiet
 fortcov --threshold=95 --quiet
 
 # Custom source patterns (overrides auto-discovery)
-fortcov --source=src/critical --fail-under=95 --quiet
+fortcov --source=src/critical --threshold=95 --quiet
 ```
 
 ### For Project Managers
@@ -249,13 +249,13 @@ Perfect for documentation and README files.
 
 ### HTML Report
 ```bash
-fortcov --source=src --output-format=html --output=coverage.html
+fortcov --source=src --format=html --output=coverage.html
 ```
 Interactive report with syntax highlighting.
 
 ### JSON Output
 ```bash
-fortcov --source=src --output-format=json --output=coverage.json
+fortcov --source=src --format=json --output=coverage.json
 ```
 Machine-readable format for tool integration.
 

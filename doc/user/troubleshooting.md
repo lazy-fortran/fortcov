@@ -45,7 +45,7 @@ fortcov --format=json --output=test.json *.gcov
 fortcov --format json --output test.json *.gcov  # Missing = for values
 ```
 
-### ❌ "Unsupported output format: 'html'"
+### ❌ "Unsupported output format: 'xyz'"
 
 **Solution:** Use supported formats:
 ```bash
@@ -53,9 +53,10 @@ fortcov --format json --output test.json *.gcov  # Missing = for values
 fortcov --format=markdown  # Default
 fortcov --format=json      # JSON output
 fortcov --format=xml       # Cobertura XML
+fortcov --format=html      # HTML report
 
-# ❌ Not yet supported
-fortcov --format=html      # HTML support planned
+# ❌ Invalid format
+fortcov --format=xyz       # Unknown format
 ```
 
 ## Quick Diagnosis

@@ -167,7 +167,7 @@ Test your configuration before running expensive analysis:
 fortcov --config=fortcov.nml --validate-config
 
 # Validate command-line configuration
-fortcov --source=src --fail-under=80 --include='*.f90' --validate-config
+fortcov --source=src --threshold=80 --include='*.f90' --validate-config
 
 # Check configuration in verbose mode
 fortcov --config=fortcov.nml --verbose
@@ -196,7 +196,7 @@ Example:
 ```bash
 # Config file sets minimum_coverage = 70.0
 # Command line overrides to 80.0
-fortcov --config=fortcov.nml --fail-under=80
+fortcov --config=fortcov.nml --threshold=80
 ```
 
 ## Best Practices
