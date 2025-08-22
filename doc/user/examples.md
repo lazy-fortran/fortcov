@@ -47,7 +47,9 @@ end module calculator
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Zero-configuration mode (recommended)
-gcov -o build/gcov src/*.f90
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
 fortcov  # That's it! Report in build/coverage/coverage.md
 
 # Traditional mode (for custom configurations)
@@ -67,7 +69,7 @@ fortcov --threshold=75 --quiet
 ```bash
 # Simplest possible FPM integration
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov -o build/gcov src/*.f90  # Standard location
+find build -name "*.gcda" -exec dirname {} \; | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno; done  # FPM-aware coverage
 fortcov                       # Auto-discovers everything!
 ```
 
@@ -120,7 +122,9 @@ jobs:
     - name: Generate Coverage
       run: |
         fpm test --flag "-fprofile-arcs -ftest-coverage"
-        gcov -o build/gcov src/*.f90
+        find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+          gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+        done
         fortcov --threshold=80 --quiet
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
@@ -135,7 +139,7 @@ jobs:
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - gcov -o build/gcov src/*.f90
+    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno; done
     - fortcov --format=xml --output=coverage.xml --threshold=80
   coverage: '/Total coverage: (\d+\.\d+)%/'
   artifacts:

@@ -165,8 +165,10 @@ rm -rf build/gcov *.gcov *.gcda *.gcno
 # Build and run tests with coverage flags
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# Generate .gcov files in standard location
-gcov -o build/gcov src/*.f90
+# Generate .gcov files from FPM build directories
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
 
 # Verify files exist in expected location
 ls -la build/gcov/*.gcov
@@ -245,7 +247,7 @@ ls -la src/*.f90 2>/dev/null || echo "No files in src/"
 ls -la *.f90 2>/dev/null || echo "No files in current directory"
 
 # Fix: Generate files in expected location
-gcov -o build/gcov src/*.f90  # Use build/gcov (preferred)
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno; done  # FPM-aware (preferred)
 fortcov  # Should now work
 ```
 
