@@ -59,7 +59,7 @@ contains
             end if
         end if
         
-        ! Validate file existence
+        ! Validate file existence and apply max_files limit
         if (allocated(files)) then
             file_count = 0
             do i = 1, size(files)
@@ -71,6 +71,13 @@ contains
             
             if (file_count == 0) then
                 deallocate(files)
+            else if (file_count > config%max_files) then
+                ! Limit to max_files
+                if (.not. config%quiet) then
+                    print *, "⚠️  Limiting coverage files from", file_count, "to", config%max_files
+                end if
+                ! Keep only the first max_files files
+                call resize_file_array(files, config%max_files)
             end if
         end if
         
@@ -290,7 +297,7 @@ contains
         ! When explicit source paths are specified, respect user intent
         if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
             .not. allocated(config%source_paths)) then
-            call auto_generate_gcov_files(generated_files)
+            call auto_generate_gcov_files(config, generated_files)
             if (allocated(generated_files)) then
                 files = generated_files
                 return
@@ -307,9 +314,10 @@ contains
         
     end subroutine discover_gcov_files
     
-    subroutine auto_generate_gcov_files(generated_files)
+    subroutine auto_generate_gcov_files(config, generated_files)
         !! Automatically discovers and generates .gcov files from build directories
         !! Implements the core "sane default mode" functionality for Issue #196
+        type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: generated_files(:)
         
         character(len=:), allocatable :: build_dirs(:)
@@ -317,6 +325,7 @@ contains
         character(len=:), allocatable :: all_gcov_files(:)
         character(len=300) :: command
         character(len=1000) :: build_path
+        character(len=:), allocatable :: gcov_exe
         integer :: i, exit_status
         logical :: success
         
@@ -329,12 +338,20 @@ contains
         
         success = .false.
         
+        ! Use custom gcov executable if specified, otherwise default to 'gcov'
+        if (allocated(config%gcov_executable)) then
+            gcov_exe = trim(config%gcov_executable)
+        else
+            gcov_exe = "gcov"
+        end if
+        
         ! Process each build directory
         do i = 1, size(build_dirs)
             build_path = trim(build_dirs(i))
             
             ! Generate gcov files for this directory (check if .gcno files exist)
-            write(command, '(A)') 'find "' // trim(build_path) // '" -name "src_*.f90.gcno" -execdir gcov {} \; 2>/dev/null'
+            write(command, '(A)') 'find "' // trim(build_path) // '" -name "src_*.f90.gcno" -execdir ' // &
+                                  trim(gcov_exe) // ' {} \; 2>/dev/null'
             call execute_command_line(command, exitstat=exit_status)
             
             if (exit_status == 0) then
@@ -554,5 +571,30 @@ contains
         call move_alloc(temp_files, all_files)
         
     end subroutine expand_file_array
+    
+    subroutine resize_file_array(files, new_size)
+        !! Resizes file array to specified size (truncates if necessary)
+        character(len=:), allocatable, intent(inout) :: files(:)
+        integer, intent(in) :: new_size
+        
+        character(len=:), allocatable :: temp_files(:)
+        integer :: i, copy_size
+        
+        if (.not. allocated(files)) return
+        if (new_size <= 0) then
+            deallocate(files)
+            return
+        end if
+        
+        copy_size = min(size(files), new_size)
+        allocate(character(len=len(files)) :: temp_files(new_size))
+        
+        do i = 1, copy_size
+            temp_files(i) = files(i)
+        end do
+        
+        call move_alloc(temp_files, files)
+        
+    end subroutine resize_file_array
     
 end module coverage_workflows

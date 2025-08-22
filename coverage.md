@@ -1,4 +1,4 @@
 | Filename | Stmts | Covered | Cover | Missing |
 |----------|-------|---------|-------|---------|
-| test.f90 | 8 | 6 | 75.00% | 16, 20 |
-| TOTAL | 8 | 6 | 75.00% |  |
+| src/demo_calculator.f90 | 8 | 3 | 37.50% | 12-16 |
+| TOTAL | 8 | 3 | 37.50% |  |

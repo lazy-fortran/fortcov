@@ -122,13 +122,10 @@ contains
     
     logical function should_use_zero_config(args) result(is_zero_config)
         !! Determine if zero-configuration mode should be used
-        !! Zero-config mode triggers when:
-        !! 1. NO arguments are provided, OR  
-        !! 2. Only output-related flags are provided (--output, --format, --threshold, etc.)
-        !!    without any input sources (coverage files, --source, --import)
+        !! Zero-config mode ONLY triggers when NO arguments are provided
+        !! Any arguments provided means normal configuration processing
         character(len=*), intent(in) :: args(:)
         integer :: i
-        logical :: has_input_sources, has_output_flags
         
         ! No arguments means zero-config
         is_zero_config = (size(args) == 0)
@@ -144,17 +141,8 @@ contains
             end do
         end if
         
-        ! NEW: Also trigger zero-config when only output-related flags provided
-        ! This enables: fortcov --output=my-report.md (zero-config with override)
-        if (.not. is_zero_config .and. size(args) > 0) then
-            has_input_sources = has_input_related_arguments(args)
-            has_output_flags = has_output_related_arguments(args)
-            
-            ! Zero-config with overrides: output flags but no input sources
-            if (has_output_flags .and. .not. has_input_sources) then
-                is_zero_config = .true.
-            end if
-        end if
+        ! Zero-config mode should ONLY trigger with NO arguments
+        ! Any provided arguments should use normal configuration
         
     end function should_use_zero_config
     
@@ -256,6 +244,7 @@ contains
         
         character(len=:), allocatable :: flags(:)
         character(len=:), allocatable :: positionals(:)
+        character(len=:), allocatable :: temp_files(:), temp_paths(:)
         integer :: flag_count, positional_count
         
         ! Two-pass parsing: classify arguments first
@@ -271,10 +260,32 @@ contains
                                         config, success, error_message)
         if (.not. success) return
         
-        ! Pass 3: Apply HTML default filename logic
+        ! Pass 2.5: Load config file if specified (after CLI parsing to allow override)
+        if (allocated(config%config_file)) then
+            call load_config_file_with_merge(config, success, error_message)
+            if (.not. success) return
+        end if
+        
+        ! Pass 3: Auto-discover files if no input sources provided
+        ! This allows flags like --tui, --verbose, etc. to work without explicit files
+        if (.not. allocated(config%coverage_files)) then
+            temp_files = auto_discover_coverage_files_priority()
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                config%coverage_files = temp_files
+            end if
+        end if
+        
+        if (.not. allocated(config%source_paths)) then
+            temp_paths = auto_discover_source_files_priority()
+            if (allocated(temp_paths) .and. size(temp_paths) > 0) then
+                config%source_paths = temp_paths
+            end if
+        end if
+        
+        ! Pass 4: Apply HTML default filename logic
         call apply_html_default_filename(config)
         
-        ! Pass 4: Apply default output path if coverage files provided but no output specified
+        ! Pass 5: Apply default output path if coverage files provided but no output specified
         call apply_default_output_path_for_coverage_files(config)
     end subroutine handle_normal_configuration
     
@@ -339,6 +350,57 @@ contains
         close(unit)
         
     end subroutine parse_config_file
+    
+    subroutine load_config_file_with_merge(config, success, error_message)
+        !! Load config file and merge with existing config (CLI takes precedence)
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        type(config_t) :: file_config
+        
+        ! Initialize file config with defaults
+        call initialize_default_config(file_config)
+        
+        ! Set the config file path
+        file_config%config_file = config%config_file
+        
+        ! Load settings from file
+        call parse_config_file(file_config, success, error_message)
+        if (.not. success) return
+        
+        ! Merge settings - CLI overrides file settings
+        call merge_config_with_cli_priority(config, file_config)
+        
+    end subroutine load_config_file_with_merge
+    
+    subroutine merge_config_with_cli_priority(cli_config, file_config)
+        !! Merge file config into CLI config, with CLI taking precedence
+        type(config_t), intent(inout) :: cli_config
+        type(config_t), intent(in) :: file_config
+        
+        ! Only apply file settings if CLI didn't set them
+        if (.not. allocated(cli_config%output_path) .and. &
+            allocated(file_config%output_path)) then
+            cli_config%output_path = file_config%output_path
+        end if
+        
+        if (.not. allocated(cli_config%output_format) .and. &
+            allocated(file_config%output_format)) then
+            cli_config%output_format = file_config%output_format
+        end if
+        
+        ! For numeric values, check if they're still at default
+        if (cli_config%minimum_coverage == 0.0 .and. &
+            file_config%minimum_coverage > 0.0) then
+            cli_config%minimum_coverage = file_config%minimum_coverage
+        end if
+        
+        ! For boolean flags, only apply if not already set by CLI
+        ! Note: This is tricky since we can't distinguish "not set" from "false"
+        ! For now, we'll assume CLI always takes precedence for booleans
+        
+    end subroutine merge_config_with_cli_priority
     
     subroutine classify_command_arguments(args, flags, flag_count, positionals, &
                                         positional_count)
@@ -639,6 +701,9 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
+        integer :: int_value
+        real :: real_value
+        
         ! Map config file keys to config fields
         select case (trim(key))
         case ('output_format')
@@ -655,6 +720,34 @@ contains
             config%verbose = (trim(value) == 'true')
         case ('quiet')
             config%quiet = (trim(value) == 'true')
+        case ('tui_mode')
+            config%tui_mode = (trim(value) == 'true')
+        case ('strict_mode')
+            config%strict_mode = (trim(value) == 'true')
+        case ('gcov_executable')
+            config%gcov_executable = trim(value)
+        case ('gcov_args')
+            config%gcov_args = trim(value)
+        case ('threads')
+            call parse_integer_value(value, config%threads, success)
+            if (.not. success) then
+                error_message = "Invalid threads value in config file: " // trim(value)
+                return
+            end if
+        case ('max_files')
+            call parse_integer_value(value, config%max_files, success)
+            if (.not. success) then
+                error_message = "Invalid max_files value in config file: " // trim(value)
+                return
+            end if
+        case ('diff_baseline_file')
+            config%diff_baseline_file = trim(value)
+        case ('enable_diff')
+            config%enable_diff = (trim(value) == 'true')
+        case ('exclude')
+            call add_exclude_pattern(trim(value), config, success, error_message)
+        case ('source')
+            call add_source_path(trim(value), config, success, error_message)
         case default
             ! Ignore unknown options in config file
         end select
