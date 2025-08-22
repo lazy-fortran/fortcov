@@ -26,3 +26,8 @@ main = "check.f90"
 name = "test_zero_config_override_bug"
 source-dir = "test"
 main = "test_zero_config_override_bug.f90"
+
+[[test]]
+name = "test_documentation_gcov_commands_issue_232"
+source-dir = "test"
+main = "test_documentation_gcov_commands_issue_232.f90"
