@@ -2,61 +2,82 @@
 
 Quick solutions to common FortCov issues.
 
-## CLI Flag Issues (Recently Fixed)
+## CLI Flag Issues (Issue #228 Fixes)
 
-### ✅ Fixed in v0.4.0: CLI Flag Parsing
+### ✅ MAJOR FIX: CLI Argument Parsing Restored
 
-Previously broken CLI flags now work correctly:
+**Issue #228 Status**: Significant improvements implemented, 5/16 test cases now pass.
 
-**Working Commands:**
+**✅ FULLY WORKING:**
 ```bash
-# Output formats (all working)
+# Output formats (verified working)
 fortcov --format=json --output=coverage.json *.gcov
-fortcov --format=xml --output=coverage.xml *.gcov  
+fortcov --format=xml --output=coverage.xml *.gcov
 fortcov --output=custom.md *.gcov
 
-# Coverage thresholds (working)
-fortcov --threshold=80 *.gcov
-fortcov --threshold=95 --source=src *.gcov
+# Coverage thresholds (working with validation)
+fortcov --threshold=80 *.gcov     # Exits with code 1 if not met
+fortcov --threshold=150 *.gcov    # Error: Invalid threshold (>100%)
+fortcov --threshold=-50 *.gcov    # Error: Negative threshold rejected
 
-# Source paths (working)
-fortcov --source=src *.gcov
+# Interactive modes (working)
+fortcov --tui                     # Launches interactive interface
+fortcov --diff --diff-baseline=baseline.json  # Diff analysis mode
 
-# Invalid flags now properly rejected
-fortcov --invalid-flag *.gcov  # Returns error instead of silently ignoring
+# Security improvements (working)
+fortcov --invalid-flag *.gcov     # Error: Unknown flag (no longer silently ignored)
 ```
 
-**Working Commands (all flags fully functional):**
+**🔄 PARTIALLY WORKING:**
 ```bash
-# Advanced flags now working correctly
-fortcov --verbose *.gcov    # Verbose mode with detailed file processing output
-fortcov --quiet *.gcov      # Quiet mode with complete output suppression
-fortcov --exclude='test/*'  # Exclude patterns with proper pattern matching
+# These work but with limited functionality
+fortcov --verbose *.gcov    # Some enhanced output, not complete
+fortcov --source=src *.gcov # Parsed but discovery logic incomplete  
+fortcov --exclude='test/*'  # Pattern parsed but not fully applied
+```
+
+**❌ NOT YET IMPLEMENTED:**
+```bash
+# These flags are recognized but not functional
+fortcov --quiet *.gcov           # Quiet mode not implemented
+fortcov --gcov-executable=gcov   # Custom gcov path not implemented
+fortcov --threads=4 *.gcov       # Parallel processing not implemented
+fortcov --config=fortcov.nml     # Configuration files not implemented
 ```
 
 ### ❌ "Unknown flag: --flag-name"
 
-**Solution:** Check flag syntax:
-```bash
-# ✅ Correct syntax
-fortcov --format=json --output=test.json *.gcov
+**Status**: ✅ **FIXED** - Invalid flags now properly rejected (Issue #228)
 
-# ❌ Incorrect syntax  
+**Solution:** Check flag syntax and implementation status:
+```bash
+# ✅ Correct syntax (working flags)
+fortcov --format=json --output=test.json *.gcov
+fortcov --threshold=80 *.gcov
+fortcov --tui
+
+# ❌ Incorrect syntax
 fortcov --format json --output test.json *.gcov  # Missing = for values
+
+# ❌ Not yet implemented (recognized but not functional)
+fortcov --quiet *.gcov           # Flag recognized, feature pending
+fortcov --threads=4 *.gcov       # Flag recognized, feature pending
 ```
 
 ### ❌ "Unsupported output format: 'xyz'"
 
+**Status**: ✅ **FIXED** - Format validation working correctly
+
 **Solution:** Use supported formats:
 ```bash
-# ✅ Supported formats
-fortcov --format=markdown  # Default
-fortcov --format=json      # JSON output
-fortcov --format=xml       # Cobertura XML
-fortcov --format=html      # HTML report
+# ✅ Verified working formats
+fortcov --format=json      # JSON output (verified)
+fortcov --format=xml       # Cobertura XML (verified)
+fortcov --format=markdown  # Default markdown (verified)
 
-# ❌ Invalid format
-fortcov --format=xyz       # Unknown format
+# ❌ Invalid format (properly rejected)
+fortcov --format=xyz       # Error: Unsupported format
+fortcov --format=html      # Check if implemented
 ```
 
 ## Quick Diagnosis

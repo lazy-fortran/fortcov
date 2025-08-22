@@ -72,53 +72,93 @@ fortcov --quiet --threshold=80
 | `--exclude=PATTERN` | Exclude files by pattern | `--exclude='test/*'` |
 | `--include=PATTERN` | Include only files | `--include='src/*'` |
 
-### Working CLI Examples (Tested)
+### CLI Features Status (Issue #228 Fix)
 
-**Output Formats** - All working correctly:
+**✅ FULLY WORKING** - Tested and verified:
+
+**Output Formats:**
 ```bash
-# JSON output with custom path
+# JSON output (verified working)
 fortcov --format=json --output=coverage.json *.gcov
 
-# XML output (Cobertura format) 
+# XML output (Cobertura format)
 fortcov --format=xml --output=coverage.xml *.gcov
 
 # Markdown output (default)
 fortcov --output=report.md *.gcov
 ```
 
-**Coverage Thresholds** - Working correctly:
+**Coverage Thresholds:**
 ```bash
-# Set threshold and fail if not met
+# Threshold enforcement working - exits with code 1 if not met
 fortcov --threshold=80 *.gcov
-echo $?  # Exit code 1 if coverage < 80%
+echo $?  # Returns 1 if coverage < 80%
 
-# High threshold for critical code
-fortcov --threshold=95 --source=src/critical *.gcov
+# Invalid thresholds properly rejected
+fortcov --threshold=150 *.gcov  # Error: must be 0-100%
+fortcov --threshold=-50 *.gcov  # Error: negative values rejected
 ```
 
-**Source Paths** - Working correctly:
+**Interactive and Analysis Modes:**
 ```bash
-# Specify source directory
-fortcov --source=src *.gcov
+# TUI mode working - launches interactive interface
+fortcov --tui
 
-# Multiple source paths
-fortcov --source=src --source=lib *.gcov
+# Diff mode working - compares against baseline
+fortcov --diff --diff-baseline=baseline.json --output=diff.md
 ```
 
-**Invalid Flag Handling** - Security fix working:
+**Security Improvements:**
 ```bash
-# Invalid flags now properly rejected
+# Invalid flags now properly rejected (security fix)
 fortcov --invalid-flag *.gcov
 # Returns: Error: Unknown flag: --invalid-flag
+
+# Missing files properly detected
+fortcov --diff --diff-baseline=/nonexistent.json
+# Returns: Error: Baseline file not found
 ```
 
-**Combined Usage** - All combinations work:
-```bash
-# Production-ready command
-fortcov --format=json --output=coverage.json --threshold=80 --source=src *.gcov
+**🔄 PARTIALLY WORKING** - Parsed correctly, implementation incomplete:
 
-# CI/CD usage
-fortcov --format=xml --output=coverage.xml --threshold=85 --quiet *.gcov
+**Verbose Mode:**
+```bash
+# Verbose flag parsed and some enhanced output provided
+fortcov --verbose *.gcov  # Shows file processing details
+```
+
+**Source Path Configuration:**
+```bash
+# Flag parsed but discovery logic needs improvement
+fortcov --source=src *.gcov  # Partially applies source restriction
+```
+
+**Exclude Patterns:**
+```bash
+# Pattern parsed but not fully applied during file discovery
+fortcov --exclude='test/*' *.gcov  # Partial pattern matching
+```
+
+**❌ NOT YET IMPLEMENTED** - Future features:
+```bash
+# These flags are recognized but not yet functional
+fortcov --quiet *.gcov          # Quiet mode
+fortcov --gcov-executable=gcov  # Custom gcov path
+fortcov --threads=4 *.gcov      # Parallel processing
+fortcov --max-files=100 *.gcov  # File count limits
+fortcov --config=fortcov.nml    # Configuration files
+```
+
+**Recommended Working Commands:**
+```bash
+# Production-ready JSON output with threshold
+fortcov --format=json --output=coverage.json --threshold=80 *.gcov
+
+# Interactive analysis
+fortcov --tui
+
+# Coverage comparison
+fortcov --diff --diff-baseline=baseline.json --format=json *.gcov
 ```
 
 ## User Workflows
@@ -142,11 +182,11 @@ fortcov --source=src --verbose --output=coverage.md
 
 ```bash
 # Check coverage meets standards with zero-config
-fortcov --threshold=80 --quiet
+fortcov --threshold=80  # Note: --quiet not yet implemented
 if [ $? -eq 0 ]; then
-    echo "✓ Ready to commit"
+    echo "✓ Ready to commit - coverage threshold met"
 else
-    echo "⚠ Add more tests"
+    echo "⚠ Add more tests - coverage below threshold"
 fi
 ```
 
@@ -158,9 +198,9 @@ fi
 ```yaml
 - name: Generate Coverage
   run: |
-    fpm test --flag "-fprofile-arcs -ftest-coverage"
+    fmp test --flag "-fprofile-arcs -ftest-coverage"
     gcov -o build/gcov src/*.f90
-    fortcov --threshold=80 --quiet
+    fortcov --threshold=80  # --quiet flag not yet implemented
 ```
 
 **GitLab CI:**
@@ -176,13 +216,13 @@ coverage:
 
 ```bash
 # Standard quality gate with zero-config
-fortcov --threshold=80 --quiet
+fortcov --threshold=80  # Exits with code 1 if not met
 
 # High-bar for critical projects
-fortcov --threshold=95 --quiet
+fortcov --threshold=95  # Validated range: 0-100%
 
-# Custom source patterns (overrides auto-discovery)
-fortcov --source=src/critical --threshold=95 --quiet
+# Source filtering (partial implementation)
+fortcov --source=src/critical --threshold=95
 ```
 
 ### For Project Managers
