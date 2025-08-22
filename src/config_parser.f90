@@ -120,6 +120,7 @@ contains
     
     logical function should_use_zero_config(args) result(is_zero_config)
         !! Determine if zero-configuration mode should be used
+        !! Zero-config mode is only triggered when NO arguments are provided
         character(len=*), intent(in) :: args(:)
         integer :: i
         
@@ -135,12 +136,12 @@ contains
                     exit
                 end if
             end do
-            
-            ! If arguments exist but none are input-related, use zero-config
-            if (.not. is_zero_config) then
-                is_zero_config = .not. has_input_related_arguments(args)
-            end if
         end if
+        
+        ! FIXED: Zero-config mode should ONLY trigger when no arguments provided
+        ! Previously this function incorrectly triggered zero-config when arguments
+        ! existed but were "not input-related", causing CLI flags to be overridden
+        ! by zero-configuration defaults (Issue #231)
     end function should_use_zero_config
     
     subroutine handle_zero_configuration_mode(config)
