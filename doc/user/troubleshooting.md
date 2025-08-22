@@ -26,12 +26,12 @@ fortcov --source=src *.gcov
 fortcov --invalid-flag *.gcov  # Returns error instead of silently ignoring
 ```
 
-**Partially Working (parsed but implementation incomplete):**
+**Working Commands (all flags fully functional):**
 ```bash
-# These flags are parsed correctly but behavior not fully implemented
-fortcov --verbose *.gcov    # Verbose mode parsed but limited output
-fortcov --quiet *.gcov      # Quiet mode parsed but suppression incomplete  
-fortcov --exclude='test/*'  # Exclude patterns parsed but matching incomplete
+# Advanced flags now working correctly
+fortcov --verbose *.gcov    # Verbose mode with detailed file processing output
+fortcov --quiet *.gcov      # Quiet mode with complete output suppression
+fortcov --exclude='test/*'  # Exclude patterns with proper pattern matching
 ```
 
 ### ❌ "Unknown flag: --flag-name"

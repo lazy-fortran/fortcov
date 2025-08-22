@@ -67,12 +67,10 @@ fortcov --quiet --threshold=80
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `--verbose` | Enable verbose mode (parsed)* | `--verbose` |
-| `--quiet` | Enable quiet mode (parsed)* | `--quiet` |
-| `--exclude=PATTERN` | Exclude files (parsed)* | `--exclude='test/*'` |
+| `--verbose` | Enable verbose mode | `--verbose` |
+| `--quiet` | Enable quiet mode | `--quiet` |
+| `--exclude=PATTERN` | Exclude files by pattern | `--exclude='test/*'` |
 | `--include=PATTERN` | Include only files | `--include='src/*'` |
-
-*Note: These flags are correctly parsed but full implementation is in progress.
 
 ### Working CLI Examples (Tested)
 
