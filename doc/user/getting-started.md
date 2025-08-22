@@ -84,8 +84,11 @@ The simplest way to get coverage reports:
 # Build and test with coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# Generate coverage data in standard location
-gcov -o build/gcov src/*.f90
+# Generate coverage data from FPM build directories
+# This discovers nested build/gfortran_*/fortcov/ directories automatically
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
 
 # Analyze with zero configuration
 fortcov

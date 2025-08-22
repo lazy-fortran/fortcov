@@ -25,7 +25,9 @@ The fastest way to get coverage reports - just run `fortcov` without any argumen
 ```bash
 # Standard workflow
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov -o build/gcov src/*.f90
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
 fortcov  # Auto-discovers everything!
 ```
 
@@ -210,8 +212,10 @@ fi
 ```yaml
 - name: Generate Coverage
   run: |
-    fmp test --flag "-fprofile-arcs -ftest-coverage"
-    gcov -o build/gcov src/*.f90
+    fpm test --flag "-fprofile-arcs -ftest-coverage"
+    find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+      gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+    done
     fortcov --threshold=80  # --quiet flag not yet implemented
 ```
 
@@ -220,7 +224,7 @@ fi
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - gcov -o build/gcov src/*.f90
+    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --format=xml --output=coverage.xml
 ```
 
