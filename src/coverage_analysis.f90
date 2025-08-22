@@ -326,6 +326,8 @@ contains
         do i = 1, size(files)
             if (config%verbose .and. .not. config%quiet) then
                 print *, "   Parsing: ", trim(files(i))
+                print *, "     → Processing file ", i, " of ", size(files)
+                print *, "     → File size check: analyzing gcov format..."
             end if
             
             ! Create parser for this file
@@ -344,6 +346,10 @@ contains
                     print *, "   ⚠️  Failed to parse: ", trim(files(i))
                 end if
                 cycle
+            end if
+            
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "     → Successfully parsed, merging data..."
             end if
             
             ! Merge coverage data
