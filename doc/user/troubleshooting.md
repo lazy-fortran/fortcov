@@ -319,9 +319,11 @@ head -5 *.gcov
 
 # If empty, regenerate
 rm *.gcov *.gcda *.gcno
-fmp clean
+fpm clean
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
 ```
 
 ## Security-Related Issues
