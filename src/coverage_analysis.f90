@@ -21,6 +21,8 @@ module coverage_analysis
     public :: perform_coverage_analysis
     public :: perform_safe_coverage_analysis
     public :: perform_imported_json_analysis
+    public :: perform_tui_analysis
+    public :: perform_diff_analysis
     public :: validate_analysis_configuration
     
 contains
@@ -42,10 +44,32 @@ contains
         
         exit_code = EXIT_SUCCESS
         
+        
+        ! Check for TUI mode first - completely different execution path
+        if (config%tui_mode) then
+            if (.not. config%quiet) then
+                print *, "🎯 TUI mode detected - switching to interactive interface"
+            end if
+            exit_code = perform_tui_analysis(config)
+            return
+        end if
+        
+        ! Check for diff mode - also a different execution path
+        if (config%enable_diff) then
+            if (.not. config%quiet) then
+                print *, "🔍 Diff mode detected - switching to diff analysis"
+            end if
+            exit_code = perform_diff_analysis(config)
+            return
+        end if
+        
         ! Display analysis startup message
         if (.not. config%quiet) then
             if (config%verbose) then
                 print *, "🚀 Starting coverage analysis with verbose output..."
+                print *, "   TUI mode: ", config%tui_mode
+                print *, "   Diff mode: ", config%enable_diff
+                print *, "   Strict mode: ", config%strict_mode
             else
                 print *, "📊 Analyzing coverage..."
             end if
@@ -500,5 +524,181 @@ contains
         end if
         
     end subroutine display_search_guidance
+    
+    function perform_tui_analysis(config) result(exit_code)
+        !! TUI mode analysis implementation
+        !! Provides interactive coverage analysis interface
+        use tui_main_loop
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        type(tui_engine_t) :: tui_engine
+        type(tui_config_t) :: tui_config
+        
+        if (.not. config%quiet) then
+            print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
+            print *, "   Press 'q' to quit, 'h' for help"
+        end if
+        
+        ! Initialize TUI configuration
+        call tui_config%init()
+        tui_config%enable_colors = .not. config%quiet
+        tui_config%debug_mode = config%verbose
+        
+        ! Create and start TUI engine
+        tui_engine%config = tui_config
+        
+        ! Start interactive session
+        call tui_engine%run_main_loop(.true., 30.0d0)  ! Interactive, 30 second max
+        
+        if (.not. config%quiet) then
+            print *, "✅ TUI session completed"
+        end if
+        
+        exit_code = EXIT_SUCCESS
+        
+    end function perform_tui_analysis
+    
+    function perform_diff_analysis(config) result(exit_code)
+        !! Diff mode analysis implementation
+        !! Performs coverage comparison analysis
+        use coverage_diff
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        type(coverage_data_t) :: baseline_coverage, current_coverage
+        logical :: baseline_error, current_error
+        
+        if (.not. config%quiet) then
+            print *, "🔍 Starting diff analysis mode"
+            if (allocated(config%diff_baseline_file)) then
+                print *, "   Baseline: " // trim(config%diff_baseline_file)
+            end if
+        end if
+        
+        ! Validate baseline file exists
+        if (.not. allocated(config%diff_baseline_file)) then
+            if (.not. config%quiet) then
+                print *, "❌ Diff mode requires baseline file (--diff-baseline)"
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        if (.not. file_exists(config%diff_baseline_file)) then
+            if (.not. config%quiet) then
+                print *, "❌ Baseline file not found: " // trim(config%diff_baseline_file)
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Load baseline coverage data
+        call load_baseline_coverage(config%diff_baseline_file, baseline_coverage, baseline_error)
+        if (baseline_error) then
+            if (.not. config%quiet) then
+                print *, "❌ Failed to load baseline coverage data"
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Generate current coverage data by running normal analysis
+        call generate_current_coverage(config, current_coverage, current_error)
+        if (current_error) then
+            if (.not. config%quiet) then
+                print *, "❌ Failed to generate current coverage data"
+            end if
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Perform diff analysis and generate diff report
+        call generate_diff_report(baseline_coverage, current_coverage, config)
+        
+        if (.not. config%quiet) then
+            print *, "✅ Diff analysis completed"
+        end if
+        
+        exit_code = EXIT_SUCCESS
+        
+    end function perform_diff_analysis
+    
+    subroutine load_baseline_coverage(baseline_file, coverage_data, load_error)
+        !! Loads baseline coverage data from JSON file
+        character(len=*), intent(in) :: baseline_file
+        type(coverage_data_t), intent(out) :: coverage_data
+        logical, intent(out) :: load_error
+        
+        character(len=:), allocatable :: json_content
+        logical :: file_error
+        
+        ! Read JSON file
+        call read_file_content(baseline_file, json_content, file_error)
+        if (file_error) then
+            load_error = .true.
+            return
+        end if
+        
+        ! Parse JSON to coverage data
+        call import_json_coverage_safe(json_content, coverage_data, load_error)
+        
+    end subroutine load_baseline_coverage
+    
+    subroutine generate_current_coverage(config, coverage_data, generation_error)
+        !! Generates current coverage data by running normal analysis
+        type(config_t), intent(in) :: config
+        type(coverage_data_t), intent(out) :: coverage_data
+        logical, intent(out) :: generation_error
+        
+        type(config_t) :: temp_config
+        character(len=:), allocatable :: coverage_files(:)
+        character(len=:), allocatable :: filtered_files(:)
+        logical :: parse_error
+        
+        ! Create temporary config without diff mode for normal analysis
+        temp_config = config
+        temp_config%enable_diff = .false.
+        temp_config%tui_mode = .false.
+        
+        ! Find and filter coverage files
+        call find_and_filter_coverage_files(temp_config, coverage_files, filtered_files)
+        
+        if (.not. allocated(filtered_files) .or. size(filtered_files) == 0) then
+            generation_error = .true.
+            return
+        end if
+        
+        ! Parse coverage files
+        call parse_coverage_files(filtered_files, temp_config, coverage_data, parse_error)
+        generation_error = parse_error
+        
+    end subroutine generate_current_coverage
+    
+    subroutine generate_diff_report(baseline_coverage, current_coverage, config)
+        !! Generates diff report comparing baseline and current coverage
+        use coverage_diff
+        type(coverage_data_t), intent(in) :: baseline_coverage, current_coverage
+        type(config_t), intent(in) :: config
+        
+        type(coverage_diff_t) :: diff_result
+        class(coverage_reporter_t), allocatable :: reporter
+        logical :: creation_error, generation_success
+        character(len=:), allocatable :: error_message
+        
+        ! Calculate diff
+        diff_result = compute_coverage_diff(baseline_coverage, current_coverage)
+        
+        ! Create reporter for diff output
+        call create_reporter(config%output_format, reporter, creation_error)
+        if (creation_error) then
+            return
+        end if
+        
+        ! Generate diff report with diff data
+        call reporter%generate_report(current_coverage, config%output_path, &
+                                    generation_success, error_message, diff_result)
+        
+    end subroutine generate_diff_report
     
 end module coverage_analysis

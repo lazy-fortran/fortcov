@@ -688,6 +688,16 @@ contains
         if (.not. success) then
             error_message = "Invalid " // trim(value_name) // " value: " // trim(str)
         else
+            ! Validate threshold ranges if this is a threshold value
+            if (index(value_name, 'threshold') > 0) then
+                if (value < 0.0 .or. value > 100.0) then
+                    success = .false.
+                    write(error_message, '(A, A, A, F6.2, A)') &
+                        "Invalid ", trim(value_name), " value: ", value, &
+                        "% (must be between 0-100%)"
+                    return
+                end if
+            end if
             error_message = ""
         end if
         
@@ -899,7 +909,8 @@ contains
                 
                 ! Check for input-related flags
                 select case (trim(long_form))
-                case ('--source', '--import', '--gcov-executable', '--gcov-args')
+                case ('--source', '--import', '--gcov-executable', '--gcov-args', '--tui', '--diff', &
+                      '--diff-baseline', '--diff-current', '--include-unchanged')
                     has_input_args = .true.
                     return
                 end select
@@ -958,8 +969,7 @@ contains
                 ! Check for output-related flags
                 select case (trim(long_form))
                 case ('--output', '--format', '--output-format', '--threshold', '--verbose', '--quiet', &
-                      '--fail-under', '--threads', '--tui', '--strict', '--keep-gcov', '--config', &
-                      '--diff', '--diff-baseline', '--diff-current', '--include-unchanged', &
+                      '--fail-under', '--threads', '--strict', '--keep-gcov', '--config', &
                       '--include', '--exclude', '--max-files', '--validate-config')
                     has_output_args = .true.
                     return
