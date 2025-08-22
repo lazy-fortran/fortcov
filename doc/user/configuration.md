@@ -6,7 +6,7 @@ Complete guide to FortCov configuration options.
 
 ```bash
 # Command line usage
-fortcov --source=src --output=coverage.md --fail-under=80
+fortcov --source=src --output=coverage.md --threshold=80
 
 # Configuration file usage
 fortcov --config=fortcov.nml
@@ -20,8 +20,8 @@ fortcov --config=fortcov.nml
 |--------|-------------|---------|
 | `--source=PATH` | Source directory | `--source=src` |
 | `--output=FILE` | Output file | `--output=coverage.md` |
-| `--output-format=FORMAT` | Output format | `--output-format=html` |
-| `--fail-under=N` | Coverage threshold | `--fail-under=80` |
+| `--format=FORMAT` | Output format | `--format=json` |
+| `--threshold=N` | Coverage threshold | `--threshold=80` |
 
 ### Behavior Options
 

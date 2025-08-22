@@ -2,6 +2,62 @@
 
 Quick solutions to common FortCov issues.
 
+## CLI Flag Issues (Recently Fixed)
+
+### ✅ Fixed in v0.4.0: CLI Flag Parsing
+
+Previously broken CLI flags now work correctly:
+
+**Working Commands:**
+```bash
+# Output formats (all working)
+fortcov --format=json --output=coverage.json *.gcov
+fortcov --format=xml --output=coverage.xml *.gcov  
+fortcov --output=custom.md *.gcov
+
+# Coverage thresholds (working)
+fortcov --threshold=80 *.gcov
+fortcov --threshold=95 --source=src *.gcov
+
+# Source paths (working)
+fortcov --source=src *.gcov
+
+# Invalid flags now properly rejected
+fortcov --invalid-flag *.gcov  # Returns error instead of silently ignoring
+```
+
+**Partially Working (parsed but implementation incomplete):**
+```bash
+# These flags are parsed correctly but behavior not fully implemented
+fortcov --verbose *.gcov    # Verbose mode parsed but limited output
+fortcov --quiet *.gcov      # Quiet mode parsed but suppression incomplete  
+fortcov --exclude='test/*'  # Exclude patterns parsed but matching incomplete
+```
+
+### ❌ "Unknown flag: --flag-name"
+
+**Solution:** Check flag syntax:
+```bash
+# ✅ Correct syntax
+fortcov --format=json --output=test.json *.gcov
+
+# ❌ Incorrect syntax  
+fortcov --format json --output test.json *.gcov  # Missing = for values
+```
+
+### ❌ "Unsupported output format: 'html'"
+
+**Solution:** Use supported formats:
+```bash
+# ✅ Supported formats
+fortcov --format=markdown  # Default
+fortcov --format=json      # JSON output
+fortcov --format=xml       # Cobertura XML
+
+# ❌ Not yet supported
+fortcov --format=html      # HTML support planned
+```
+
 ## Quick Diagnosis
 
 ```bash

@@ -55,7 +55,7 @@ gcov src/*.f90
 fortcov --source=src --output=coverage.md
 
 # Enhanced with quality gate
-fortcov --fail-under=75 --quiet
+fortcov --threshold=75 --quiet
 ```
 
 ## Build System Integration
@@ -121,7 +121,7 @@ jobs:
       run: |
         fpm test --flag "-fprofile-arcs -ftest-coverage"
         gcov -o build/gcov src/*.f90
-        fortcov --fail-under=80 --quiet
+        fortcov --threshold=80 --quiet
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:
@@ -136,7 +136,7 @@ coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - gcov -o build/gcov src/*.f90
-    - fortcov --output-format=html --output=coverage.html --fail-under=80
+    - fortcov --format=xml --output=coverage.xml --threshold=80
   coverage: '/Total coverage: (\d+\.\d+)%/'
   artifacts:
     reports:

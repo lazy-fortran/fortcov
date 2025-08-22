@@ -2431,3 +2431,180 @@ end subroutine
 3. **Teaching Tool**: Simpler for educational use cases
 
 **EXPECTED OUTCOME**: Zero-configuration architecture transforms fortcov from a tool requiring detailed knowledge into an intuitive utility that "just works" for common cases while preserving all power and flexibility for advanced users, dramatically improving adoption and user satisfaction.
+
+## CLI Flag Parsing Fix Architecture (Issue #231)
+
+### Critical Bug Analysis: All CLI Flags Silently Ignored
+
+**Issue Classification**: [CRITICAL BUG] - Complete failure of documented CLI interface affecting 90% of documented functionality
+
+**Root Cause Analysis:**
+The CLI flag parsing system correctly parses and stores configuration values but the downstream configuration flow fails to apply these parsed values to the actual coverage analysis execution.
+
+#### Current Architecture Flow Analysis
+
+**Current Working Flow:**
+```fortran
+main.f90 → fortcov_config.parse_config() → config_parser.parse_command_line_config()
+  ↓
+config_parser.handle_normal_configuration()
+  ↓  
+config_parser.process_flag_arguments() → config_parser.process_single_flag()
+  ↓
+Correctly parses and stores: config%output_path, config%output_format, config%verbose, etc.
+```
+
+**Issue Hypothesis:**
+- Configuration parsing works correctly
+- Parsed configuration not applied during coverage analysis execution
+- Coverage engine may be using default configuration instead of parsed configuration
+
+#### Architecture Investigation Strategy
+
+**Phase 1: Configuration Flow Validation**
+```fortran
+! Verify configuration flows correctly through system
+! Add logging at key points to trace configuration usage
+
+subroutine trace_config_usage(config, operation)
+    type(config_t), intent(in) :: config
+    character(len=*), intent(in) :: operation
+    
+    print *, "CONFIG TRACE [", trim(operation), "]:"
+    print *, "  output_path: ", config%output_path
+    print *, "  output_format: ", config%output_format  
+    print *, "  verbose: ", config%verbose
+    print *, "  quiet: ", config%quiet
+end subroutine
+```
+
+**Key Investigation Points:**
+1. **main.f90 Line 29**: Does parsed config contain correct values after parse_config()?
+2. **main.f90 Line 89**: Does run_coverage_analysis() receive and use the parsed config?
+3. **Coverage Engine**: Does coverage analysis respect the configuration parameters?
+
+#### Expected Architecture Fix Strategy
+
+**Most Likely Fix Location: Coverage Engine Configuration Integration**
+
+**Issue Pattern Analysis:**
+Based on symptoms (all flags ignored, always runs same default analysis), the issue is likely in the coverage engine not using the parsed configuration object.
+
+**Targeted Fix Approach:**
+
+**1. Configuration Validation Fix**
+```fortran
+! In coverage_engine.f90 or similar
+subroutine execute_coverage_analysis(config, error_ctx)
+    type(config_t), intent(in) :: config  ! Ensure config is used
+    type(error_context_t), intent(inout) :: error_ctx
+    
+    ! CRITICAL: Verify config is actually used for decisions
+    if (config%verbose) then
+        print *, "Running in verbose mode"
+        print *, "Output path: ", config%output_path
+        print *, "Output format: ", config%output_format
+    end if
+    
+    ! Apply configuration to coverage processing
+    ! NOT: Use hardcoded defaults
+end subroutine
+```
+
+**2. Output Path Integration Fix**
+```fortran
+! Ensure output path from CLI is used
+if (allocated(config%output_path)) then
+    output_file = config%output_path
+else
+    output_file = "build/coverage/coverage.md"  ! Default
+end if
+```
+
+**3. Format Integration Fix**
+```fortran
+! Ensure output format from CLI is used
+if (allocated(config%output_format)) then
+    output_format = config%output_format
+else
+    output_format = "markdown"  ! Default
+end if
+```
+
+#### Risk Assessment
+
+**Technical Risks:**
+- **Risk**: Configuration integration fix breaks existing zero-config mode
+- **Mitigation**: Extensive testing of both explicit CLI flags and zero-config mode
+- **Risk**: Performance impact from configuration checking
+- **Mitigation**: Configuration checks are O(1) operations
+
+**Quality Risks:**
+- **Risk**: Incomplete configuration integration leaves some flags still ignored
+- **Mitigation**: Systematic testing of all documented CLI flags
+- **Risk**: Regression in working functionality during fix
+- **Mitigation**: Comprehensive regression test suite before deployment
+
+#### Success Metrics
+
+**Functional Success Criteria:**
+- `fortcov --output=test.json --format=json` creates test.json with JSON content
+- `fortcov --verbose` shows detailed progress output
+- `fortcov --threshold=95` fails when coverage is below 95%
+- `fortcov --invalid-flag` shows error message instead of silent ignore
+
+**Testing Strategy:**
+```fortran
+! test_cli_flag_integration.f90
+subroutine test_output_flag_integration()
+    ! Test that --output flag creates file at specified location
+end subroutine
+
+subroutine test_format_flag_integration()
+    ! Test that --format flag produces correct output format
+end subroutine
+
+subroutine test_verbose_flag_integration()
+    ! Test that --verbose flag enables verbose output
+end subroutine
+
+subroutine test_threshold_flag_integration()
+    ! Test that --threshold flag affects pass/fail behavior
+end subroutine
+```
+
+#### Implementation Timeline
+
+**Day 1: Investigation and Root Cause Identification**
+- Add configuration tracing to identify exact failure point
+- Verify configuration parsing works correctly
+- Identify where configuration application fails
+
+**Day 2: Configuration Integration Fix**
+- Fix configuration application in coverage engine
+- Ensure all parsed flags are respected during analysis
+- Test individual flag functionality
+
+**Day 3: Comprehensive Testing and Validation**
+- Test all documented CLI flag combinations
+- Verify backward compatibility with zero-config mode
+- Ensure error handling for invalid flags
+
+#### Long-Term Architecture Benefits
+
+**Reliability Foundation:**
+- Systematic configuration integration ensures all future CLI flags work correctly
+- Configuration tracing enables debugging of complex flag interactions
+- Robust error handling provides clear user guidance
+
+**User Experience Improvement:**
+- Documented CLI interface works as advertised
+- Predictable behavior builds user confidence
+- Clear error messages enable rapid problem resolution
+
+**Development Process Enhancement:**
+- Configuration integration pattern enables rapid addition of new CLI features
+- Systematic testing prevents regression of CLI functionality
+- Clear architecture boundaries enable confident refactoring
+
+**EXPECTED OUTCOME**: CLI flag parsing fix restores complete documented functionality, ensuring all command-line options work as advertised while establishing robust configuration integration patterns that prevent similar failures in future feature development.
