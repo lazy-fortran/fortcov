@@ -12,7 +12,7 @@ fortcov
 fortcov --source=src --output=coverage.md
 
 # CI/CD usage  
-fortcov --fail-under=80 --quiet
+fortcov --threshold=80 --quiet
 
 # Configuration file
 fortcov --config=fortcov.nml
@@ -46,10 +46,10 @@ fortcov
 fortcov --output=my-report.md
 
 # Override coverage threshold while using auto-discovery
-fortcov --fail-under=90
+fortcov --threshold=90
 
 # Zero-config with quiet mode for CI
-fortcov --quiet --fail-under=80
+fortcov --quiet --threshold=80
 ```
 
 ## Command-Line Interface
@@ -60,17 +60,66 @@ fortcov --quiet --fail-under=80
 |--------|-------------|---------|
 | `--source=PATH` | Source directory | `--source=src` |
 | `--output=FILE` | Output file | `--output=coverage.md` |
-| `--output-format=FORMAT` | Format (markdown/html/json) | `--output-format=html` |
-| `--fail-under=N` | Coverage threshold | `--fail-under=80` |
+| `--format=FORMAT` | Format (markdown/json/xml) | `--format=json` |
+| `--threshold=N` | Coverage threshold percentage | `--threshold=80` |
 
 ### Behavior Options
 
 | Option | Description | Example |
 |--------|-------------|---------|
-| `--verbose` | Detailed output | `--verbose` |
-| `--quiet` | Suppress output | `--quiet` |
-| `--exclude=PATTERN` | Exclude files | `--exclude='test/*'` |
+| `--verbose` | Enable verbose mode | `--verbose` |
+| `--quiet` | Enable quiet mode | `--quiet` |
+| `--exclude=PATTERN` | Exclude files by pattern | `--exclude='test/*'` |
 | `--include=PATTERN` | Include only files | `--include='src/*'` |
+
+### Working CLI Examples (Tested)
+
+**Output Formats** - All working correctly:
+```bash
+# JSON output with custom path
+fortcov --format=json --output=coverage.json *.gcov
+
+# XML output (Cobertura format) 
+fortcov --format=xml --output=coverage.xml *.gcov
+
+# Markdown output (default)
+fortcov --output=report.md *.gcov
+```
+
+**Coverage Thresholds** - Working correctly:
+```bash
+# Set threshold and fail if not met
+fortcov --threshold=80 *.gcov
+echo $?  # Exit code 1 if coverage < 80%
+
+# High threshold for critical code
+fortcov --threshold=95 --source=src/critical *.gcov
+```
+
+**Source Paths** - Working correctly:
+```bash
+# Specify source directory
+fortcov --source=src *.gcov
+
+# Multiple source paths
+fortcov --source=src --source=lib *.gcov
+```
+
+**Invalid Flag Handling** - Security fix working:
+```bash
+# Invalid flags now properly rejected
+fortcov --invalid-flag *.gcov
+# Returns: Error: Unknown flag: --invalid-flag
+```
+
+**Combined Usage** - All combinations work:
+```bash
+# Production-ready command
+fortcov --format=json --output=coverage.json --threshold=80 --source=src *.gcov
+
+# CI/CD usage
+fortcov --format=xml --output=coverage.xml --threshold=85 --quiet *.gcov
+```
 
 ## User Workflows
 
@@ -93,7 +142,7 @@ fortcov --source=src --verbose --output=coverage.md
 
 ```bash
 # Check coverage meets standards with zero-config
-fortcov --fail-under=80 --quiet
+fortcov --threshold=80 --quiet
 if [ $? -eq 0 ]; then
     echo "✓ Ready to commit"
 else
@@ -111,7 +160,7 @@ fi
   run: |
     fpm test --flag "-fprofile-arcs -ftest-coverage"
     gcov -o build/gcov src/*.f90
-    fortcov --fail-under=80 --quiet
+    fortcov --threshold=80 --quiet
 ```
 
 **GitLab CI:**
@@ -120,20 +169,20 @@ coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - gcov -o build/gcov src/*.f90
-    - fortcov --output-format=html --output=coverage.html
+    - fortcov --format=xml --output=coverage.xml
 ```
 
 #### Quality Gates
 
 ```bash
 # Standard quality gate with zero-config
-fortcov --fail-under=80 --quiet
+fortcov --threshold=80 --quiet
 
 # High-bar for critical projects
-fortcov --fail-under=95 --quiet
+fortcov --threshold=95 --quiet
 
 # Custom source patterns (overrides auto-discovery)
-fortcov --source=src/critical --fail-under=95 --quiet
+fortcov --source=src/critical --threshold=95 --quiet
 ```
 
 ### For Project Managers
@@ -142,7 +191,7 @@ fortcov --source=src/critical --fail-under=95 --quiet
 
 ```bash
 # Extract coverage percentage with zero-config
-COVERAGE=$(fortcov --output-format=json --quiet | jq -r '.summary.line_coverage')
+COVERAGE=$(fortcov --format=json --quiet | jq -r '.summary.line_coverage')
 echo "Current coverage: $COVERAGE%"
 
 # Trend tracking
@@ -198,13 +247,13 @@ Perfect for documentation and README files.
 
 ### HTML Report
 ```bash
-fortcov --source=src --output-format=html --output=coverage.html
+fortcov --source=src --format=html --output=coverage.html
 ```
 Interactive report with syntax highlighting.
 
 ### JSON Output
 ```bash
-fortcov --source=src --output-format=json --output=coverage.json
+fortcov --source=src --format=json --output=coverage.json
 ```
 Machine-readable format for tool integration.
 

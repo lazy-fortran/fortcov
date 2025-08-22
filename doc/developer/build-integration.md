@@ -178,8 +178,8 @@ coverage: test
 coverage-all: test
 	gcov $(SOURCES)
 	fortcov --source=$(SRC_DIRS) --output=coverage.md
-	fortcov --source=$(SRC_DIRS) --output-format=html --output=coverage.html
-	fortcov --source=$(SRC_DIRS) --output-format=json --output=coverage.json
+	fortcov --source=$(SRC_DIRS) --format=html --output=coverage.html
+	fortcov --source=$(SRC_DIRS) --format=json --output=coverage.json
 ```
 
 ## Meson Integration
@@ -342,7 +342,7 @@ gcov src/*.f90 2>/dev/null || true
 
 # Generate reports
 fortcov --source=src --output=coverage.md
-fortcov --source=src --output-format=html --output=coverage.html
+fortcov --source=src --format=html --output=coverage.html
 
 echo "Coverage reports generated:"
 echo "  - coverage.md (Markdown)"

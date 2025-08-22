@@ -22,6 +22,7 @@ module config_parser
     public :: get_long_form_option
     public :: initialize_default_config
     public :: has_input_related_arguments
+    public :: has_output_related_arguments
     
     ! Configuration parsing types (moved from main config)
     type, public :: config_t
@@ -80,7 +81,7 @@ contains
         ! Process help/version/quiet flags first
         call process_special_flags(args, config)
         
-        ! If help or version requested, skip zero-config mode and normal parsing
+        ! If help or version requested, skip all other parsing
         if (config%show_help .or. config%show_version) then
             return
         end if
@@ -89,7 +90,8 @@ contains
         is_zero_config = should_use_zero_config(args)
         
         if (is_zero_config) then
-            call handle_zero_configuration_mode(config)
+            ! Process CLI flags FIRST, then apply zero-config defaults for unset values
+            call handle_zero_configuration_with_overrides(args, config, success, error_message)
             return
         end if
         
@@ -120,8 +122,13 @@ contains
     
     logical function should_use_zero_config(args) result(is_zero_config)
         !! Determine if zero-configuration mode should be used
+        !! Zero-config mode triggers when:
+        !! 1. NO arguments are provided, OR  
+        !! 2. Only output-related flags are provided (--output, --format, --threshold, etc.)
+        !!    without any input sources (coverage files, --source, --import)
         character(len=*), intent(in) :: args(:)
         integer :: i
+        logical :: has_input_sources, has_output_flags
         
         ! No arguments means zero-config
         is_zero_config = (size(args) == 0)
@@ -135,38 +142,105 @@ contains
                     exit
                 end if
             end do
+        end if
+        
+        ! NEW: Also trigger zero-config when only output-related flags provided
+        ! This enables: fortcov --output=my-report.md (zero-config with override)
+        if (.not. is_zero_config .and. size(args) > 0) then
+            has_input_sources = has_input_related_arguments(args)
+            has_output_flags = has_output_related_arguments(args)
             
-            ! If arguments exist but none are input-related, use zero-config
-            if (.not. is_zero_config) then
-                is_zero_config = .not. has_input_related_arguments(args)
+            ! Zero-config with overrides: output flags but no input sources
+            if (has_output_flags .and. .not. has_input_sources) then
+                is_zero_config = .true.
             end if
         end if
+        
     end function should_use_zero_config
+    
+    subroutine handle_zero_configuration_with_overrides(args, config, success, error_message)
+        !! Handle zero-configuration mode with CLI flag overrides
+        !! First process CLI flags, then apply zero-config defaults for unset values
+        character(len=*), intent(in) :: args(:)
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: flags(:)
+        character(len=:), allocatable :: positionals(:)
+        integer :: flag_count, positional_count
+        
+        ! Mark as zero-configuration mode
+        config%zero_configuration_mode = .true.
+        
+        ! Process CLI flags first (same as normal configuration)
+        call classify_command_arguments(args, flags, flag_count, positionals, &
+                                      positional_count)
+        
+        ! Process flag arguments to preserve CLI overrides
+        call process_flag_arguments(flags, flag_count, config, success, error_message)
+        if (.not. success) return
+        
+        ! Process positional arguments as coverage files if provided
+        call process_positional_arguments(positionals, positional_count, &
+                                        config, success, error_message)
+        if (.not. success) return
+        
+        ! Now apply zero-configuration defaults for unset values
+        call handle_zero_configuration_mode(config)
+        
+    end subroutine handle_zero_configuration_with_overrides
     
     subroutine handle_zero_configuration_mode(config)
         !! Handle zero-configuration mode setup
         type(config_t), intent(inout) :: config
         character(len=:), allocatable :: temp_files(:), temp_paths(:)
+        character(len=:), allocatable :: default_output_path, default_output_format
+        character(len=:), allocatable :: default_input_format, default_exclude_patterns(:)
         
         ! Mark as zero-configuration mode
         config%zero_configuration_mode = .true.
         
-        ! Apply zero-configuration defaults
-        call apply_zero_configuration_defaults(config%output_path, &
-                                              config%output_format, &
-                                              config%input_format, &
-                                              config%exclude_patterns)
+        ! Get zero-configuration defaults
+        call apply_zero_configuration_defaults(default_output_path, &
+                                              default_output_format, &
+                                              default_input_format, &
+                                              default_exclude_patterns)
         
-        ! Auto-discover coverage files
-        temp_files = auto_discover_coverage_files_priority()
-        if (allocated(temp_files) .and. size(temp_files) > 0) then
-            config%coverage_files = temp_files
+        ! Apply defaults only for unset values (preserves CLI flag overrides)
+        if (.not. allocated(config%output_path)) then
+            config%output_path = default_output_path
         end if
         
-        ! Auto-discover source paths
-        temp_paths = auto_discover_source_files_priority()
-        if (allocated(temp_paths) .and. size(temp_paths) > 0) then
-            config%source_paths = temp_paths
+        if (.not. allocated(config%output_format) .or. &
+            trim(config%output_format) == "markdown") then
+            ! Keep default format from initialization unless explicitly overridden
+            ! markdown is the default, so only override if it was explicitly set to something else
+        end if
+        
+        if (.not. allocated(config%input_format) .or. &
+            trim(config%input_format) == "gcov") then
+            ! Keep default input format from initialization
+        end if
+        
+        if (.not. allocated(config%exclude_patterns)) then
+            config%exclude_patterns = default_exclude_patterns
+        end if
+        
+        ! Auto-discover coverage files only if not provided via CLI
+        if (.not. allocated(config%coverage_files)) then
+            temp_files = auto_discover_coverage_files_priority()
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                config%coverage_files = temp_files
+            end if
+        end if
+        
+        ! Auto-discover source paths only if not provided via CLI
+        if (.not. allocated(config%source_paths)) then
+            temp_paths = auto_discover_source_files_priority()
+            if (allocated(temp_paths) .and. size(temp_paths) > 0) then
+                config%source_paths = temp_paths
+            end if
         end if
         
         ! Ensure output directory structure exists
@@ -199,6 +273,9 @@ contains
         
         ! Pass 3: Apply HTML default filename logic
         call apply_html_default_filename(config)
+        
+        ! Pass 4: Apply default output path if coverage files provided but no output specified
+        call apply_default_output_path_for_coverage_files(config)
     end subroutine handle_normal_configuration
     
     subroutine parse_config_file(config, success, error_message)
@@ -643,6 +720,29 @@ contains
         
     end subroutine apply_html_default_filename
     
+    subroutine apply_default_output_path_for_coverage_files(config)
+        !! Apply default output path when coverage files are provided but no output specified
+        type(config_t), intent(inout) :: config
+        
+        ! If coverage files are provided but no output path specified, set default
+        if (allocated(config%coverage_files) .and. &
+            .not. allocated(config%output_path)) then
+            
+            ! Set default based on output format
+            select case (trim(config%output_format))
+            case ('json')
+                config%output_path = 'coverage.json'
+            case ('xml')
+                config%output_path = 'coverage.xml'
+            case ('html')
+                config%output_path = 'coverage.html'
+            case default  ! markdown, md
+                config%output_path = 'coverage.md'
+            end select
+        end if
+        
+    end subroutine apply_default_output_path_for_coverage_files
+    
     subroutine add_string_to_array(item, array, max_size, item_type, success, error_message)
         !! Generic subroutine to add string to allocatable array - eliminates DRY violations
         character(len=*), intent(in) :: item
@@ -816,6 +916,63 @@ contains
         end do
         
     end function has_input_related_arguments
+    
+    function has_output_related_arguments(args) result(has_output_args)
+        !! Checks if any output-related arguments are provided
+        !! Output-related arguments control how output is generated but don't specify input sources
+        character(len=*), intent(in) :: args(:)
+        logical :: has_output_args
+        
+        integer :: i, equal_pos
+        character(len=256) :: arg, flag_part, long_form
+        logical :: is_value_for_prev_flag
+        
+        has_output_args = .false.
+        is_value_for_prev_flag = .false.
+        
+        do i = 1, size(args)
+            arg = trim(args(i))
+            
+            ! Skip empty arguments
+            if (len_trim(arg) == 0) cycle
+            
+            ! Skip if this argument is a value for the previous flag
+            if (is_value_for_prev_flag) then
+                is_value_for_prev_flag = .false.
+                cycle
+            end if
+            
+            ! Check if it's a flag
+            if (is_flag_argument(arg)) then
+                ! Extract flag part (before '=' if present)
+                equal_pos = index(arg, '=')
+                if (equal_pos > 0) then
+                    flag_part = arg(1:equal_pos-1)
+                else
+                    flag_part = arg
+                end if
+                
+                ! Convert to long form for consistent checking
+                long_form = get_long_form_option(flag_part)
+                
+                ! Check for output-related flags
+                select case (trim(long_form))
+                case ('--output', '--format', '--output-format', '--threshold', '--verbose', '--quiet', &
+                      '--fail-under', '--threads', '--tui', '--strict', '--keep-gcov', '--config', &
+                      '--diff', '--diff-baseline', '--diff-current', '--include-unchanged', &
+                      '--include', '--exclude', '--max-files', '--validate-config')
+                    has_output_args = .true.
+                    return
+                end select
+                
+                ! If flag requires value and doesn't have '=', next arg is value
+                if (equal_pos == 0 .and. flag_requires_value(flag_part)) then
+                    is_value_for_prev_flag = .true.
+                end if
+            end if
+        end do
+        
+    end function has_output_related_arguments
     
     subroutine get_max_files_from_env(max_files)
         !! Check for FORTCOV_MAX_FILES environment variable and update max_files

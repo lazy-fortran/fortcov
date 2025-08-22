@@ -154,7 +154,8 @@ contains
         
         ! Simple logging for decomposition tracking
         ! In production, this would integrate with proper logging infrastructure
-        write(*, '(A, ": ", A, " - ", A)') trim(event_type), trim(context), trim(message)
+        ! Note: Disabled to respect quiet flag - only enable for debugging
+        ! write(*, '(A, ": ", A, " - ", A)') trim(event_type), trim(context), trim(message)
         
     end subroutine log_decomposition_event
     
