@@ -719,25 +719,125 @@ contains
 
     end function flag_requires_value
 
+    subroutine classify_positional_argument(arg, is_valid_coverage_file, &
+                                          is_executable, is_directory)
+        !! Classify positional argument to determine if it's a valid coverage file,
+        !! executable path, or directory that should be filtered out (Issue #227 fix)
+        character(len=*), intent(in) :: arg
+        logical, intent(out) :: is_valid_coverage_file
+        logical, intent(out) :: is_executable
+        logical, intent(out) :: is_directory
+        
+        logical :: file_exists, is_dir
+        integer :: len_arg, ext_pos
+        character(len=10) :: extension
+        
+        ! Initialize outputs
+        is_valid_coverage_file = .false.
+        is_executable = .false.
+        is_directory = .false.
+        
+        len_arg = len_trim(arg)
+        
+        ! Check if file exists
+        inquire(file=arg, exist=file_exists)
+        
+        ! Directory detection heuristics
+        if (len_arg > 0 .and. arg(len_arg:len_arg) == '/') then
+            is_directory = .true.
+            return
+        end if
+        
+        ! Known directory names
+        if (trim(arg) == "./src" .or. trim(arg) == "./build" .or. &
+            trim(arg) == "src" .or. trim(arg) == "build" .or. &
+            trim(arg) == "test" .or. trim(arg) == "./test") then
+            is_directory = .true.
+            return
+        end if
+        
+        ! Check for executable patterns (common build paths) - regardless of file existence
+        if (index(arg, '/app/') > 0 .or. &
+            index(arg, '/test/') > 0 .or. &
+            index(arg, '/bin/') > 0 .or. &
+            index(arg, 'build/gfortran_') > 0 .or. &
+            index(arg, 'fortcov') > 0) then
+            is_executable = .true.
+            return
+        end if
+        
+        ! Check for executable by looking for missing extension or common extensions
+        ext_pos = index(arg, '.', back=.true.)
+        if (ext_pos == 0) then
+            ! No extension - likely executable if file exists
+            if (file_exists) then
+                is_executable = .true.
+                return
+            end if
+        else
+            extension = arg(ext_pos+1:len_arg)
+            if (trim(extension) == "exe" .or. trim(extension) == "out") then
+                is_executable = .true.
+                return
+            end if
+        end if
+        
+        ! Check for valid coverage file extensions
+        if (ext_pos > 0) then
+            extension = arg(ext_pos+1:len_arg)
+            if (trim(extension) == "gcov" .or. &
+                trim(extension) == "json" .or. &
+                trim(extension) == "xml") then
+                is_valid_coverage_file = .true.
+                return
+            end if
+        end if
+        
+    end subroutine classify_positional_argument
+
     subroutine process_positional_arguments(positionals, positional_count, &
                                           config, success, error_message)
-        !! Processes positional arguments as coverage files
+        !! Processes positional arguments as coverage files with intelligent classification
         character(len=*), intent(in) :: positionals(:)
         integer, intent(in) :: positional_count
         type(config_t), intent(inout) :: config
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
-        integer :: i
+        integer :: i, valid_file_count
+        character(len=MEDIUM_STRING_LEN) :: valid_files(positional_count)
+        logical :: is_valid_coverage_file, is_executable, is_directory
 
         success = .true.
         error_message = ""
+        valid_file_count = 0
 
         if (positional_count > 0) then
-            allocate(character(len=MEDIUM_STRING_LEN) :: config%coverage_files(positional_count))
             do i = 1, positional_count
-                config%coverage_files(i) = positionals(i)
+                call classify_positional_argument(positionals(i), &
+                                                is_valid_coverage_file, &
+                                                is_executable, &
+                                                is_directory)
+                
+                if (is_executable .or. is_directory) then
+                    ! Skip executable paths and directories
+                    cycle
+                else if (is_valid_coverage_file) then
+                    valid_file_count = valid_file_count + 1
+                    valid_files(valid_file_count) = positionals(i)
+                else
+                    ! Invalid file - report error
+                    success = .false.
+                    write(error_message, '(A)') "Invalid coverage file format: " // trim(positionals(i))
+                    return
+                end if
             end do
+            
+            ! Only allocate for valid coverage files
+            if (valid_file_count > 0) then
+                allocate(character(len=MEDIUM_STRING_LEN) :: config%coverage_files(valid_file_count))
+                config%coverage_files(1:valid_file_count) = valid_files(1:valid_file_count)
+            end if
         end if
 
     end subroutine process_positional_arguments
