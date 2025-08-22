@@ -117,6 +117,18 @@ fortcov --invalid-flag *.gcov
 # Missing files properly detected
 fortcov --diff --diff-baseline=/nonexistent.json
 # Returns: Error: Baseline file not found
+
+# Enhanced security validation protects against malicious inputs
+fortcov --source="path;rm -rf /" *.gcov
+# Returns: Error: Path contains dangerous characters
+
+# Directory traversal attacks prevented
+fortcov --source="../../../etc/" *.gcov  
+# Returns: Error: Path contains dangerous characters
+
+# System directory access blocked for security
+fortcov --source="/proc/" *.gcov
+# Returns: Error: Suspicious system path access
 ```
 
 **🔄 PARTIALLY WORKING** - Parsed correctly, implementation incomplete:
@@ -298,6 +310,27 @@ fortcov --source=src --format=json --output=coverage.json
 Machine-readable format for tool integration.
 
 ## Best Practices
+
+### Security Best Practices
+
+```bash
+# ✅ Good: Use clean, simple paths
+fortcov --source=src --output=coverage.md
+
+# ✅ Good: Standard project structure
+fortcov --source=src --source=lib --output=reports/coverage.html
+
+# ❌ Avoid: Special shell characters in paths
+# fortcov --source="src;malicious_command"
+# fortcov --output="report.md|dangerous"
+
+# ❌ Avoid: Directory traversal patterns
+# fortcov --source="../../../etc"
+# fortcov --output="../../../../tmp/bad.md"
+
+# ❌ Avoid: System directories (automatically blocked)
+# fortcov --source=/proc --source=/sys --source=/etc
+```
 
 ### File Organization
 ```bash

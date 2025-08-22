@@ -114,9 +114,15 @@ cat coverage.md
 
 **Success!** You've generated your first coverage report.
 
+### Security Notice
+
+FortCov includes comprehensive security protections against command injection and path traversal attacks. These features work transparently during normal usage but will block potentially malicious inputs for security.
+
+If you encounter "Path contains dangerous characters" or similar security messages, use standard project directory structures and avoid special shell characters in file paths.
+
 ## Next Steps
 
 - **Read the [Usage Guide](usage-guide.md)** for advanced options
 - **Check [Examples](examples.md)** for real-world scenarios
 - **Set up [Configuration](configuration.md)** for your project
-- **Explore [Troubleshooting](troubleshooting.md)** for common issues
+- **Explore [Troubleshooting](troubleshooting.md)** for common issues and security features

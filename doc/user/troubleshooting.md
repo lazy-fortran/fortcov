@@ -80,6 +80,27 @@ fortcov --format=xyz       # Error: Unsupported format
 fortcov --format=html      # Check if implemented
 ```
 
+## Security Enhancements (Issue #235 - FIXED) ✅
+
+**Security Improvements Applied**: FortCov has been hardened against command injection vulnerabilities.
+
+### ✅ Enhanced Security Features
+
+**Command Execution Security**:
+- All shell commands now use proper argument escaping
+- Directory creation uses `safe_mkdir()` with input validation
+- File operations use `escape_shell_argument()` protection
+- Executable validation uses secure temporary files instead of shell redirection
+
+**Path Security Validation**:
+- Shell metacharacter detection (`;`, `&`, `|`, `` ` ``, `$`, `>`, `<`, `"`, `'`)
+- Directory traversal protection (`../`, `/..`, URL-encoded variants)
+- System file access prevention (`/etc/`, `/proc/`, `/sys/`, `/dev/`)
+- Windows device name blocking (CON, PRN, NUL, COM, LPT, AUX)
+- NULL byte injection detection
+
+**User Impact**: These security improvements are transparent to normal usage but provide robust protection against malicious inputs.
+
 ## Quick Diagnosis
 
 ```bash
@@ -290,10 +311,61 @@ head -5 *.gcov
 
 # If empty, regenerate
 rm *.gcov *.gcda *.gcno
-fpm clean
+fmp clean
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 gcov src/*.f90
 ```
+
+## Security-Related Issues
+
+### ❌ "Path contains dangerous characters"
+
+**Problem**: Enhanced security validation detects potentially malicious path inputs
+
+**Solution:**
+```bash
+# Use clean, simple paths without special characters
+fortcov --source=src --output=coverage.md
+
+# Avoid paths with shell metacharacters
+# ❌ Bad: fortcov --source="src;rm -rf /" 
+# ❌ Bad: fortcov --output="report.md|malicious"
+# ✅ Good: fortcov --source=src --output=report.md
+```
+
+### ❌ "Suspicious system path access"
+
+**Problem**: Security validation blocks access to system directories
+
+**Solution:**
+```bash
+# Avoid system directories (this is intentional security protection)
+# ❌ Blocked: fortcov --source=/etc/
+# ❌ Blocked: fortcov --source=/proc/
+# ❌ Blocked: fortcov --source=/sys/
+
+# Use project directories instead
+# ✅ Allowed: fortcov --source=src/
+# ✅ Allowed: fortcov --source=./lib/
+```
+
+### ❌ Windows device name errors
+
+**Problem**: Security validation blocks Windows device names that could be exploited
+
+**Solution:**
+```bash
+# Avoid reserved device names on all platforms
+# ❌ Blocked: fortcov --output=CON
+# ❌ Blocked: fortcov --output=PRN.md
+# ❌ Blocked: fortcov --output=NUL.txt
+
+# Use normal filenames
+# ✅ Allowed: fortcov --output=coverage.md
+# ✅ Allowed: fortcov --output=report.html
+```
+
+**Note**: These security features protect against command injection and path traversal attacks. They may occasionally block legitimate but unusual path patterns. Use standard project directory structures for best compatibility.
 
 ## Build System Issues
 
