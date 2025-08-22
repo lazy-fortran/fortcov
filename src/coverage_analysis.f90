@@ -15,67 +15,31 @@ module coverage_analysis
     use input_validation
     use error_handling
     use file_utils, only: read_file_content, file_exists
+    use coverage_tui_handler
+    use coverage_diff_handler
     implicit none
     private
     
     public :: perform_coverage_analysis
     public :: perform_safe_coverage_analysis
     public :: perform_imported_json_analysis
-    public :: perform_tui_analysis
-    public :: perform_diff_analysis
     public :: validate_analysis_configuration
+    public :: find_and_filter_coverage_files
+    public :: parse_coverage_files
     
 contains
     
     function perform_coverage_analysis(config) result(exit_code)
-        !! Core coverage analysis implementation
-        !! Extracted from original analyze_coverage function
+        !! Core coverage analysis implementation (refactored for size limits)
         type(config_t), intent(in) :: config
         integer :: exit_code
         
-        character(len=:), allocatable :: coverage_files(:)
-        character(len=:), allocatable :: filtered_files(:)
-        type(coverage_data_t) :: merged_coverage
-        type(coverage_stats_t) :: line_stats
-        class(coverage_parser_t), allocatable :: parser
-        class(coverage_reporter_t), allocatable :: reporter
-        logical :: parser_error, reporter_error
-        integer :: i, file_count
+        ! Check for special modes first
+        exit_code = check_special_modes(config)
+        if (exit_code /= EXIT_SUCCESS) return
         
-        exit_code = EXIT_SUCCESS
-        
-        
-        ! Check for TUI mode first - completely different execution path
-        if (config%tui_mode) then
-            if (.not. config%quiet) then
-                print *, "🎯 TUI mode detected - switching to interactive interface"
-            end if
-            exit_code = perform_tui_analysis(config)
-            return
-        end if
-        
-        ! Check for diff mode - also a different execution path
-        if (config%enable_diff) then
-            if (.not. config%quiet) then
-                print *, "🔍 Diff mode detected - switching to diff analysis"
-            end if
-            exit_code = perform_diff_analysis(config)
-            return
-        end if
-        
-        ! Display analysis startup message
-        if (.not. config%quiet) then
-            if (config%verbose) then
-                print *, "🚀 Starting coverage analysis with verbose output..."
-                print *, "   TUI mode: ", config%tui_mode
-                print *, "   Diff mode: ", config%enable_diff
-                print *, "   Strict mode: ", config%strict_mode
-            else
-                print *, "📊 Analyzing coverage..."
-            end if
-        end if
-        
-        ! Validate configuration
+        ! Display startup message and validate config
+        call display_analysis_startup(config)
         if (.not. validate_analysis_configuration(config)) then
             exit_code = EXIT_FAILURE
             return
@@ -87,31 +51,121 @@ contains
             return
         end if
         
+        ! Perform standard coverage analysis
+        exit_code = perform_standard_analysis(config)
+        
+    end function perform_coverage_analysis
+    
+    function check_special_modes(config) result(exit_code)
+        !! Checks for TUI or diff modes and handles them
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        exit_code = EXIT_SUCCESS
+        
+        ! Check for TUI mode first
+        if (config%tui_mode) then
+            if (.not. config%quiet) then
+                print *, "🎯 TUI mode detected - switching to interactive interface"
+            end if
+            exit_code = perform_tui_analysis(config)
+            return
+        end if
+        
+        ! Check for diff mode
+        if (config%enable_diff) then
+            if (.not. config%quiet) then
+                print *, "🔍 Diff mode detected - switching to diff analysis"
+            end if
+            exit_code = perform_diff_analysis(config)
+            return
+        end if
+        
+    end function check_special_modes
+    
+    subroutine display_analysis_startup(config)
+        !! Displays analysis startup messages
+        type(config_t), intent(in) :: config
+        
+        if (.not. config%quiet) then
+            if (config%verbose) then
+                print *, "🚀 Starting coverage analysis with verbose output..."
+                print *, "   TUI mode: ", config%tui_mode
+                print *, "   Diff mode: ", config%enable_diff
+                print *, "   Strict mode: ", config%strict_mode
+            else
+                print *, "📊 Analyzing coverage..."
+            end if
+        end if
+        
+    end subroutine display_analysis_startup
+    
+    function perform_standard_analysis(config) result(exit_code)
+        !! Performs standard coverage analysis workflow
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        character(len=:), allocatable :: coverage_files(:)
+        character(len=:), allocatable :: filtered_files(:)
+        type(coverage_data_t) :: merged_coverage
+        type(coverage_stats_t) :: line_stats
+        logical :: parser_error, reporter_error
+        
+        exit_code = EXIT_SUCCESS
+        
         ! Find and filter coverage files
         call find_and_filter_coverage_files(config, coverage_files, filtered_files)
         
         if (.not. allocated(filtered_files) .or. size(filtered_files) == 0) then
-            if (.not. config%quiet) then
-                print *, "❌ No coverage files found matching criteria."
-                call display_search_guidance(config)
-            end if
-            exit_code = EXIT_NO_COVERAGE_DATA
+            exit_code = handle_no_coverage_files(config)
             return
         end if
         
-        ! Parse coverage files
-        call parse_coverage_files(filtered_files, config, merged_coverage, &
-                                parser_error)
-        
+        ! Parse and analyze coverage files
+        call parse_coverage_files(filtered_files, config, merged_coverage, parser_error)
         if (parser_error) then
             exit_code = EXIT_FAILURE
             return
         end if
         
-        ! Calculate statistics
+        ! Calculate and display statistics
+        call calculate_and_display_statistics(merged_coverage, config, line_stats)
+        
+        ! Generate reports
+        call generate_coverage_reports(merged_coverage, line_stats, config, reporter_error)
+        if (reporter_error) then
+            exit_code = EXIT_FAILURE
+            return
+        end if
+        
+        ! Apply threshold validation
+        exit_code = apply_threshold_validation(line_stats, config)
+        
+    end function perform_standard_analysis
+    
+    function handle_no_coverage_files(config) result(exit_code)
+        !! Handles case when no coverage files are found
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        if (.not. config%quiet) then
+            print *, "❌ No coverage files found matching criteria."
+            call display_search_guidance(config)
+        end if
+        exit_code = EXIT_NO_COVERAGE_DATA
+        
+    end function handle_no_coverage_files
+    
+    subroutine calculate_and_display_statistics(merged_coverage, config, line_stats)
+        !! Calculates and displays coverage statistics
+        type(coverage_data_t), intent(in) :: merged_coverage
+        type(config_t), intent(in) :: config
+        type(coverage_stats_t), intent(out) :: line_stats
+        
         if (config%verbose .and. .not. config%quiet) then
             print *, "📋 Calculating coverage statistics..."
         end if
+        
         line_stats = calculate_line_coverage(merged_coverage)
         
         if (config%verbose .and. .not. config%quiet) then
@@ -121,16 +175,17 @@ contains
             write(*, '(A, F6.2, A)') "   Line coverage: ", line_stats%percentage, "%"
         end if
         
-        ! Generate and output reports
-        call generate_coverage_reports(merged_coverage, line_stats, config, &
-                                     reporter_error)
+    end subroutine calculate_and_display_statistics
+    
+    function apply_threshold_validation(line_stats, config) result(exit_code)
+        !! Applies threshold validation and returns appropriate exit code
+        type(coverage_stats_t), intent(in) :: line_stats
+        type(config_t), intent(in) :: config
+        integer :: exit_code
         
-        if (reporter_error) then
-            exit_code = EXIT_FAILURE
-            return
-        end if
+        exit_code = EXIT_SUCCESS
         
-        ! Apply threshold validation
+        ! Apply minimum coverage threshold
         if (config%minimum_coverage > 0.0) then
             if (line_stats%percentage < config%minimum_coverage) then
                 if (.not. config%quiet) then
@@ -140,10 +195,11 @@ contains
                         line_stats%percentage, "%"
                 end if
                 exit_code = EXIT_THRESHOLD_NOT_MET
+                return
             end if
         end if
         
-        ! Apply fail-under threshold validation
+        ! Apply fail-under threshold
         if (config%fail_under_threshold > 0.0) then
             if (line_stats%percentage < config%fail_under_threshold) then
                 if (.not. config%quiet) then
@@ -153,10 +209,11 @@ contains
                         line_stats%percentage, "%"
                 end if
                 exit_code = EXIT_THRESHOLD_NOT_MET
+                return
             end if
         end if
         
-    end function perform_coverage_analysis
+    end function apply_threshold_validation
     
     function perform_safe_coverage_analysis(config, error_ctx) result(exit_code)
         !! Safe coverage analysis with comprehensive error handling
@@ -609,368 +666,8 @@ contains
         
     end subroutine display_search_guidance
     
-    function perform_tui_analysis(config) result(exit_code)
-        !! TUI mode analysis implementation
-        !! Provides interactive coverage analysis interface
-        use tui_main_loop
-        type(config_t), intent(in) :: config
-        integer :: exit_code
-        
-        type(tui_engine_t) :: tui_engine
-        type(tui_config_t) :: tui_config
-        character(len=256) :: user_input
-        integer :: iostat
-        logical :: continue_tui
-        
-        if (.not. config%quiet) then
-            print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
-            print *, "   Commands: [h]elp, [r]efresh, [f]ilter, [e]xport, [q]uit"
-            print *, ""
-        end if
-        
-        ! Initialize TUI configuration
-        call tui_config%init()
-        tui_config%enable_colors = .not. config%quiet
-        tui_config%debug_mode = config%verbose
-        
-        ! Create and start TUI engine
-        tui_engine%config = tui_config
-        
-        ! Interactive TUI loop with actual menu
-        continue_tui = .true.
-        do while (continue_tui)
-            if (.not. config%quiet) then
-                print *, "---------------------------------------------"
-                print *, "Coverage Analysis TUI - Main Menu"
-                print *, "---------------------------------------------"
-                print *, "[h] Help - Show available commands"
-                print *, "[a] Analyze - Run coverage analysis"
-                print *, "[r] Refresh - Refresh coverage data"
-                print *, "[f] Filter - Apply file filters"
-                print *, "[s] Stats - Show coverage statistics"
-                print *, "[e] Export - Export coverage report"
-                print *, "[q] Quit - Exit TUI mode"
-                print *, "---------------------------------------------"
-                write(*, '(A)', advance='no') "Enter command: "
-            end if
-            
-            read(*, '(A)', iostat=iostat) user_input
-            if (iostat /= 0) then
-                continue_tui = .false.
-                exit
-            end if
-            
-            ! Process user command
-            select case(trim(adjustl(user_input)))
-            case('h', 'H', 'help')
-                if (.not. config%quiet) then
-                    print *, ""
-                    print *, "TUI Help:"
-                    print *, "  h/help    - Show this help message"
-                    print *, "  a/analyze - Run full coverage analysis"
-                    print *, "  r/refresh - Refresh coverage file discovery"
-                    print *, "  f/filter  - Configure include/exclude filters"
-                    print *, "  s/stats   - Display coverage statistics"
-                    print *, "  e/export  - Export coverage to file"
-                    print *, "  q/quit    - Exit TUI mode"
-                    print *, ""
-                end if
-                
-            case('a', 'A', 'analyze')
-                if (.not. config%quiet) then
-                    print *, "Running coverage analysis..."
-                    call perform_tui_coverage_analysis(config)
-                end if
-                
-            case('r', 'R', 'refresh')
-                if (.not. config%quiet) then
-                    print *, "Refreshing coverage data..."
-                    print *, "✓ Coverage files refreshed"
-                end if
-                
-            case('f', 'F', 'filter')
-                if (.not. config%quiet) then
-                    print *, "Filter configuration (not yet implemented)"
-                end if
-                
-            case('s', 'S', 'stats')
-                if (.not. config%quiet) then
-                    call display_tui_statistics(config)
-                end if
-                
-            case('e', 'E', 'export')
-                if (.not. config%quiet) then
-                    print *, "Exporting coverage report..."
-                    print *, "✓ Report exported to: ", trim(config%output_path)
-                end if
-                
-            case('q', 'Q', 'quit', 'exit')
-                continue_tui = .false.
-                if (.not. config%quiet) then
-                    print *, "Exiting TUI mode..."
-                end if
-                
-            case default
-                if (len_trim(user_input) > 0) then
-                    print *, "Unknown command: '", trim(user_input), "'. Type 'h' for help."
-                end if
-            end select
-        end do
-        
-        if (.not. config%quiet) then
-            print *, "✅ TUI session completed"
-        end if
-        
-        exit_code = EXIT_SUCCESS
-        
-    end function perform_tui_analysis
     
-    function perform_diff_analysis(config) result(exit_code)
-        !! Diff mode analysis implementation
-        !! Performs coverage comparison analysis
-        use coverage_diff
-        use coverage_statistics, only: calculate_line_coverage
-        type(config_t), intent(in) :: config
-        integer :: exit_code
-        
-        type(coverage_data_t) :: baseline_coverage, current_coverage
-        type(coverage_stats_t) :: baseline_stats, current_stats
-        type(coverage_diff_t) :: diff_result
-        logical :: baseline_error, current_error
-        real :: coverage_delta
-        integer :: lines_added
-        
-        if (.not. config%quiet) then
-            print *, "🔍 Starting diff analysis mode"
-            if (allocated(config%diff_baseline_file)) then
-                print *, "   Baseline: " // trim(config%diff_baseline_file)
-            end if
-        end if
-        
-        ! Validate baseline file exists
-        if (.not. allocated(config%diff_baseline_file)) then
-            if (.not. config%quiet) then
-                print *, "❌ Diff mode requires baseline file (--diff-baseline)"
-            end if
-            exit_code = EXIT_FAILURE
-            return
-        end if
-        
-        if (.not. file_exists(config%diff_baseline_file)) then
-            if (.not. config%quiet) then
-                print *, "❌ Baseline file not found: " // trim(config%diff_baseline_file)
-            end if
-            exit_code = EXIT_FAILURE
-            return
-        end if
-        
-        ! Load baseline coverage data
-        call load_baseline_coverage(config%diff_baseline_file, baseline_coverage, baseline_error)
-        if (baseline_error) then
-            if (.not. config%quiet) then
-                print *, "❌ Failed to load baseline coverage data"
-            end if
-            exit_code = EXIT_FAILURE
-            return
-        end if
-        
-        ! Generate current coverage data by running normal analysis
-        call generate_current_coverage(config, current_coverage, current_error)
-        if (current_error) then
-            if (.not. config%quiet) then
-                print *, "❌ Failed to generate current coverage data"
-            end if
-            exit_code = EXIT_FAILURE
-            return
-        end if
-        
-        ! Calculate statistics for comparison
-        baseline_stats = calculate_line_coverage(baseline_coverage)
-        current_stats = calculate_line_coverage(current_coverage)
-        
-        ! Compute diff
-        diff_result = compute_coverage_diff(baseline_coverage, current_coverage)
-        
-        ! Display diff summary
-        if (.not. config%quiet) then
-            print *, "=============================================="
-            print *, "Coverage Diff Summary"
-            print *, "=============================================="
-            print *, ""
-            
-            ! Coverage metrics comparison
-            write(*, '(A,F6.2,A)') "Baseline coverage: ", baseline_stats%percentage, "%"
-            write(*, '(A,F6.2,A)') "Current coverage:  ", current_stats%percentage, "%"
-            
-            coverage_delta = current_stats%percentage - baseline_stats%percentage
-            if (coverage_delta > 0.0) then
-                write(*, '(A,F6.2,A)') "Coverage change:   +", coverage_delta, "% 🚀"
-            else if (coverage_delta < 0.0) then
-                write(*, '(A,F6.2,A)') "Coverage change:   ", coverage_delta, "% ⚠️"
-            else
-                print *, "Coverage change:   No change"
-            end if
-            
-            print *, ""
-            print *, "Line Statistics:"
-            print *, "----------------"
-            write(*, '(A,I0,A,I0)') "Baseline: ", baseline_stats%covered_count, &
-                                     " / ", baseline_stats%total_count
-            write(*, '(A,I0,A,I0)') "Current:  ", current_stats%covered_count, &
-                                     " / ", current_stats%total_count
-            
-            lines_added = current_stats%covered_count - baseline_stats%covered_count
-            if (lines_added > 0) then
-                write(*, '(A,I0,A)') "New lines covered: +", lines_added, " ✓"
-            else if (lines_added < 0) then
-                write(*, '(A,I0,A)') "Lines lost: ", lines_added, " ❌"
-            end if
-            
-            print *, "=============================================="
-        end if
-        
-        ! Perform diff analysis and generate diff report
-        call generate_diff_report(baseline_coverage, current_coverage, config)
-        
-        if (.not. config%quiet) then
-            print *, "✅ Diff analysis completed"
-            print *, "   Report saved to: ", trim(config%output_path)
-        end if
-        
-        ! Check if coverage decreased (fail in strict mode)
-        if (config%strict_mode .and. coverage_delta < 0.0) then
-            if (.not. config%quiet) then
-                print *, "❌ Coverage decreased in strict mode - failing"
-            end if
-            exit_code = EXIT_THRESHOLD_NOT_MET
-        else
-            exit_code = EXIT_SUCCESS
-        end if
-        
-    end function perform_diff_analysis
     
-    subroutine load_baseline_coverage(baseline_file, coverage_data, load_error)
-        !! Loads baseline coverage data from JSON file
-        character(len=*), intent(in) :: baseline_file
-        type(coverage_data_t), intent(out) :: coverage_data
-        logical, intent(out) :: load_error
-        
-        character(len=:), allocatable :: json_content
-        logical :: file_error
-        
-        ! Read JSON file
-        call read_file_content(baseline_file, json_content, file_error)
-        if (file_error) then
-            load_error = .true.
-            return
-        end if
-        
-        ! Parse JSON to coverage data
-        call import_json_coverage_safe(json_content, coverage_data, load_error)
-        
-    end subroutine load_baseline_coverage
-    
-    subroutine generate_current_coverage(config, coverage_data, generation_error)
-        !! Generates current coverage data by running normal analysis
-        type(config_t), intent(in) :: config
-        type(coverage_data_t), intent(out) :: coverage_data
-        logical, intent(out) :: generation_error
-        
-        type(config_t) :: temp_config
-        character(len=:), allocatable :: coverage_files(:)
-        character(len=:), allocatable :: filtered_files(:)
-        logical :: parse_error
-        
-        ! Create temporary config without diff mode for normal analysis
-        temp_config = config
-        temp_config%enable_diff = .false.
-        temp_config%tui_mode = .false.
-        
-        ! Find and filter coverage files
-        call find_and_filter_coverage_files(temp_config, coverage_files, filtered_files)
-        
-        if (.not. allocated(filtered_files) .or. size(filtered_files) == 0) then
-            generation_error = .true.
-            return
-        end if
-        
-        ! Parse coverage files
-        call parse_coverage_files(filtered_files, temp_config, coverage_data, parse_error)
-        generation_error = parse_error
-        
-    end subroutine generate_current_coverage
-    
-    subroutine generate_diff_report(baseline_coverage, current_coverage, config)
-        !! Generates diff report comparing baseline and current coverage
-        use coverage_diff
-        type(coverage_data_t), intent(in) :: baseline_coverage, current_coverage
-        type(config_t), intent(in) :: config
-        
-        type(coverage_diff_t) :: diff_result
-        class(coverage_reporter_t), allocatable :: reporter
-        logical :: creation_error, generation_success
-        character(len=:), allocatable :: error_message
-        
-        ! Calculate diff
-        diff_result = compute_coverage_diff(baseline_coverage, current_coverage)
-        
-        ! Create reporter for diff output
-        call create_reporter(config%output_format, reporter, creation_error)
-        if (creation_error) then
-            return
-        end if
-        
-        ! Generate diff report with diff data
-        call reporter%generate_report(current_coverage, config%output_path, &
-                                    generation_success, error_message, diff_result)
-        
-    end subroutine generate_diff_report
-    
-    subroutine perform_tui_coverage_analysis(config)
-        !! Performs coverage analysis within TUI mode
-        type(config_t), intent(in) :: config
-        
-        character(len=:), allocatable :: coverage_files(:)
-        character(len=:), allocatable :: filtered_files(:)
-        
-        ! Find coverage files
-        call find_and_filter_coverage_files(config, coverage_files, filtered_files)
-        
-        if (allocated(filtered_files) .and. size(filtered_files) > 0) then
-            print *, "Found", size(filtered_files), "coverage file(s)"
-            print *, "Processing..."
-            ! Could add actual processing here
-            print *, "✓ Analysis complete"
-        else
-            print *, "No coverage files found"
-        end if
-        
-    end subroutine perform_tui_coverage_analysis
-    
-    subroutine display_tui_statistics(config)
-        !! Displays coverage statistics in TUI mode
-        type(config_t), intent(in) :: config
-        
-        print *, ""
-        print *, "Coverage Statistics:"
-        print *, "-------------------"
-        print *, "Output format: ", trim(config%output_format)
-        print *, "Output path: ", trim(config%output_path)
-        if (config%minimum_coverage > 0.0) then
-            print *, "Coverage threshold: ", config%minimum_coverage, "%"
-        end if
-        if (allocated(config%exclude_patterns)) then
-            print *, "Exclude patterns: ", size(config%exclude_patterns), " configured"
-        end if
-        if (allocated(config%source_paths)) then
-            print *, "Source paths: ", size(config%source_paths), " configured"
-        end if
-        if (config%threads > 1) then
-            print *, "Parallel threads: ", config%threads
-        end if
-        print *, ""
-        
-    end subroutine display_tui_statistics
     
     subroutine validate_exclude_patterns_strict(config, is_valid)
         !! Validates exclude patterns in strict mode
