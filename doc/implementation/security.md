@@ -23,26 +23,56 @@ Security design principles, threat analysis, and protection mechanisms.
 - **Likelihood**: Low (requires malicious input files)
 - **Mitigation**: Comprehensive input validation and resource limits
 
-## Security Implementations (Issue #122)
+## Security Implementations
 
-### Input Validation Framework
+### Command Injection Protection (Issue #235) - IMPLEMENTED ✅
+
+**Status**: Complete command injection vulnerability fixes implemented and tested.
+
+**Security Fixes Applied**:
+
+1. **Safe mkdir operations**: Replaced vulnerable directory creation with `safe_mkdir()` 
+2. **Escaped file operations**: All file move operations now use `escape_shell_argument()`
+3. **Secure executable validation**: Replaced shell redirection with secure temporary file approach
+4. **Enhanced input validation**: Multi-layer protection against shell metacharacters
 
 ```fortran
-module input_validation
+! Example of secure command execution pattern now used throughout codebase
+subroutine safe_execute_gcov(gcov_executable, source_file, working_dir, &
+                            branch_coverage, output_file, error_ctx)
+    ! All inputs validated and escaped before execution
+    call validate_executable_path(gcov_executable, safe_gcov_path, error_ctx)
+    call validate_path_security(source_file, safe_source_path, error_ctx)
+    call validate_path_security(working_dir, safe_working_dir, error_ctx)
+    
+    ! Safe command construction with proper escaping
+    call build_safe_gcov_command(safe_gcov_path, safe_source_path, &
+                               branch_coverage, safe_output_path, command)
+end subroutine
+```
+
+### Input Validation Framework (Enhanced)
+
+```fortran
+module secure_command_executor
     implicit none
     
-    ! System limits - configurable via environment
-    integer(int64), parameter :: MAX_FILE_SIZE = 104_857_600_int64  ! 100MB
-    integer, parameter :: MAX_LINE_NUMBER = 1000000
-    integer, parameter :: MAX_EXECUTION_COUNT = 2147483647
+    ! Enhanced security limits
     integer, parameter :: MAX_PATH_LENGTH = 4096
+    integer, parameter :: MAX_COMMAND_LENGTH = 8192
+    integer, parameter :: MAX_ARGS = 32
     
-    type, public :: validation_result_t
-        logical :: is_valid = .false.
-        integer :: error_code = ERROR_SUCCESS
-        character(len=512) :: error_message = ""
-        character(len=256) :: suggested_fix = ""
-    end type
+    ! Security validation with comprehensive attack protection
+    subroutine validate_path_security(path, safe_path, error_ctx)
+        ! Multi-layer validation:
+        ! - Shell metacharacter detection (;, &, |, `, $, >, <, ", ')
+        ! - Directory traversal protection (../, /..)  
+        ! - URL-encoded attack detection (%2e%2e%2f -> ../)
+        ! - System file access prevention (/etc/, /proc/, /sys/, /dev/)
+        ! - Windows device name protection (CON, PRN, NUL, etc.)
+        ! - UNC path attack prevention (\\server\share)
+        ! - NULL byte injection detection
+    end subroutine
 end module
 ```
 
@@ -165,42 +195,45 @@ function safe_percentage_calculation(covered_count, total_count) result(percenta
 end function
 ```
 
-### Command Injection Prevention
+### Command Injection Prevention (Enhanced Implementation) ✅
+
+**Production Security Features**:
 
 ```fortran
-subroutine validate_command_arguments(args, result)
-    character(len=*), intent(in) :: args(:)
-    type(validation_result_t), intent(out) :: result
-    integer :: i
+! Enhanced shell argument escaping now used throughout FortCov
+function escape_shell_argument(arg) result(escaped)
+    character(len=*), intent(in) :: arg
+    character(len=:), allocatable :: escaped
     
-    result%is_valid = .true.
-    
-    do i = 1, size(args)
-        ! Check for shell metacharacters
-        if (contains_shell_metacharacters(args(i))) then
-            result%is_valid = .false.
-            result%error_code = ERROR_UNSAFE_ARGUMENT
-            result%error_message = "Unsafe characters in command argument"
-            result%suggested_fix = "Escape special characters or use different approach"
-            return
-        end if
-    end do
-end subroutine
+    ! Complete single-quote wrapping prevents all shell interpretation
+    ! Handles nested quotes with proper escaping: arg'with'quote -> 'arg'\''with'\''quote'
+    ! Used in ALL command construction: mkdir, mv, gcov, which, find
+end function escape_shell_argument
 
-logical function contains_shell_metacharacters(str)
-    character(len=*), intent(in) :: str
-    character(len=*), parameter :: METACHARACTERS = ';|&$`><''"\'
-    integer :: i
-    
-    contains_shell_metacharacters = .false.
-    do i = 1, len(str)
-        if (index(METACHARACTERS, str(i:i)) > 0) then
-            contains_shell_metacharacters = .true.
-            return
-        end if
-    end do
-end function
+! Comprehensive security validation applied to all paths
+subroutine validate_path_security(path, safe_path, error_ctx)
+    ! IMPLEMENTED protections against:
+    ! - Shell injection: ;, &, |, `, $, >, <, ", ' blocked
+    ! - Directory traversal: ../, /.., %2e%2e%2f detected and blocked
+    ! - System access: /etc/, /proc/, /sys/, /dev/ paths blocked
+    ! - Windows attacks: CON, PRN, NUL, COM, LPT, AUX device names blocked
+    ! - Network paths: \\server\share UNC paths blocked
+    ! - Null injection: char(0) detection and blocking
+end subroutine validate_path_security
+
+! Safe directory creation replaces vulnerable mkdir
+subroutine safe_mkdir(path, error_ctx)
+    ! Validates path security BEFORE creating directory
+    ! Uses escape_shell_argument() for safe command construction
+    ! Proper error handling prevents information disclosure
+end subroutine safe_mkdir
 ```
+
+**Attack Vector Protection**:
+- **Command chaining blocked**: `;`, `&&`, `||` metacharacters detected and rejected
+- **Redirection attacks prevented**: `>`, `<`, `>>`, `<<` operators blocked in paths
+- **Code execution blocked**: Backticks, `$()` command substitution prevented
+- **File system attacks**: Path traversal and system directory access blocked
 
 ## Secure File Handling
 

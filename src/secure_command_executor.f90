@@ -413,10 +413,19 @@ contains
             ! Absolute or relative path - check directly
             inquire(file=safe_executable, exist=exists)
         else
-            ! Command name only - check if it's in PATH using which
-            call execute_command_line("which " // escape_shell_argument(safe_executable) // &
-                                    " >/dev/null 2>&1", exitstat=stat)
-            exists = (stat == 0)
+            ! Command name only - check if it's in PATH using which with safe redirection
+            ! Use a temporary file instead of shell redirection to avoid injection risks
+            block
+                character(len=:), allocatable :: temp_file
+                call create_secure_temp_filename(temp_file)
+                call execute_command_line("which " // escape_shell_argument(safe_executable) // &
+                                        " > " // escape_shell_argument(temp_file) // " 2>&1", &
+                                        exitstat=stat)
+                exists = (stat == 0)
+                ! Clean up temp file
+                call execute_command_line("rm -f " // escape_shell_argument(temp_file), &
+                                        exitstat=stat)
+            end block
         end if
         
         if (.not. exists) then

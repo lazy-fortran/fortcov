@@ -117,7 +117,7 @@ contains
         call find_and_filter_coverage_files(config, coverage_files, filtered_files)
         
         if (.not. allocated(filtered_files) .or. size(filtered_files) == 0) then
-            exit_code = handle_no_coverage_files(config)
+            exit_code = handle_missing_coverage_files(config)
             return
         end if
         
@@ -143,7 +143,7 @@ contains
         
     end function perform_standard_analysis
     
-    function handle_no_coverage_files(config) result(exit_code)
+    function handle_missing_coverage_files(config) result(exit_code)
         !! Handles case when no coverage files are found
         type(config_t), intent(in) :: config
         integer :: exit_code
@@ -154,7 +154,7 @@ contains
         end if
         exit_code = EXIT_NO_COVERAGE_DATA
         
-    end function handle_no_coverage_files
+    end function handle_missing_coverage_files
     
     subroutine calculate_and_display_statistics(merged_coverage, config, line_stats)
         !! Calculates and displays coverage statistics

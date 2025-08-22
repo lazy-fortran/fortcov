@@ -70,11 +70,16 @@ contains
             return
         end if
         
-        ! Ensure output directory exists
+        ! Ensure output directory exists using secure mkdir
         inquire(file=trim(this%gcov_output_dir), exist=output_dir_exists)
         if (.not. output_dir_exists) then
-            call execute_command_line("mkdir -p " // trim(this%gcov_output_dir), &
-                                     exitstat=stat)
+            call safe_mkdir(this%gcov_output_dir, cmd_error_ctx)
+            if (cmd_error_ctx%error_code /= ERROR_SUCCESS) then
+                error_ctx = cmd_error_ctx
+                allocate(character(len=256) :: gcov_files(0))
+                if (allocated(temp_files)) deallocate(temp_files)
+                return
+            end if
         end if
         
         ! Create unique temp filename for command output
@@ -112,11 +117,11 @@ contains
         
         inquire(file=gcov_file, exist=gcov_file_exists)
         if (gcov_file_exists) then
-            ! Move the .gcov file to the output directory
+            ! Move the .gcov file to the output directory using secure command execution
             output_gcov_file = trim(this%gcov_output_dir) // "/" // &
                               trim(source_basename) // ".f90.gcov"
-            call execute_command_line("mv " // trim(gcov_file) // " " // &
-                                     trim(output_gcov_file), exitstat=stat)
+            call execute_command_line("mv " // escape_shell_argument(gcov_file) // " " // &
+                                     escape_shell_argument(output_gcov_file), exitstat=stat)
             if (stat == 0) then
                 line_count = 1
                 temp_files(1) = output_gcov_file
