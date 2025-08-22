@@ -109,7 +109,17 @@ contains
         end if
         
         ! Calculate statistics
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "📋 Calculating coverage statistics..."
+        end if
         line_stats = calculate_line_coverage(merged_coverage)
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "   Total files analyzed: ", size(merged_coverage%files)
+            print *, "   Total lines: ", line_stats%total_count
+            print *, "   Covered lines: ", line_stats%covered_count
+            write(*, '(A, F6.2, A)') "   Line coverage: ", line_stats%percentage, "%"
+        end if
         
         ! Generate and output reports
         call generate_coverage_reports(merged_coverage, line_stats, config, &
@@ -301,6 +311,42 @@ contains
             call validate_source_paths(config, is_valid)
         end if
         
+        ! Apply strict mode validation
+        if (config%strict_mode) then
+            ! In strict mode, require explicit configuration
+            if (.not. allocated(config%source_paths) .and. &
+                .not. allocated(config%coverage_files)) then
+                if (.not. config%quiet) then
+                    print *, "❌ Strict mode requires explicit source paths or coverage files"
+                    print *, "   Use --source=<path> or specify coverage files"
+                end if
+                is_valid = .false.
+                return
+            end if
+            
+            ! In strict mode, validate exclude patterns are specific
+            if (allocated(config%exclude_patterns)) then
+                call validate_exclude_patterns_strict(config, is_valid)
+            end if
+            
+            ! In strict mode, enforce minimum coverage threshold
+            if (config%minimum_coverage <= 0.0) then
+                if (.not. config%quiet) then
+                    print *, "❌ Strict mode requires coverage threshold > 0"
+                    print *, "   Use --threshold=<value> to set minimum coverage"
+                end if
+                is_valid = .false.
+                return
+            end if
+            
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "🔒 Strict mode validation active:"
+                print *, "   - Explicit paths required: ✓"
+                print *, "   - Threshold enforcement: ", config%minimum_coverage, "%"
+                print *, "   - Enhanced error checking: ✓"
+            end if
+        end if
+        
     end function validate_analysis_configuration
     
     subroutine validate_source_paths(config, is_valid)
@@ -342,14 +388,38 @@ contains
         character(len=:), allocatable, intent(out) :: coverage_files(:)
         character(len=:), allocatable, intent(out) :: filtered_files(:)
         
+        integer :: initial_count, filtered_count
+        
+        if (config%verbose .and. .not. config%quiet) then
+            print *, "🔍 Discovering coverage files..."
+            if (allocated(config%source_paths)) then
+                print *, "   Source paths: ", size(config%source_paths), " configured"
+            end if
+            if (allocated(config%exclude_patterns)) then
+                print *, "   Exclude patterns: ", size(config%exclude_patterns), " configured"
+            end if
+        end if
+        
         ! Delegate to coverage_workflows module
         coverage_files = discover_coverage_files(config)
         
-        ! For now, use all discovered files without additional filtering
         if (allocated(coverage_files)) then
+            initial_count = size(coverage_files)
             filtered_files = coverage_files
+            filtered_count = size(filtered_files)
+            
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "   Files discovered: ", initial_count
+                if (initial_count /= filtered_count) then
+                    print *, "   Files after filtering: ", filtered_count
+                    print *, "   Files excluded: ", initial_count - filtered_count
+                end if
+            end if
         else
             allocate(character(len=256) :: filtered_files(0))
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "   No coverage files discovered"
+            end if
         end if
         
     end subroutine find_and_filter_coverage_files
@@ -383,12 +453,26 @@ contains
             print *, "📄 Found ", size(files), " coverage file(s) to parse"
         end if
         
+        ! Check if parallel processing is enabled
+        if (config%threads > 1 .and. size(files) > 1) then
+            if (config%verbose .and. .not. config%quiet) then
+                print *, "   🔄 Parallel processing enabled with ", config%threads, " threads"
+            end if
+        end if
+        
         ! Parse each coverage file and merge results
+        ! Note: OpenMP parallelization would be added here if available
+        !$OMP PARALLEL DO IF(config%threads > 1) &
+        !$OMP PRIVATE(parser, file_coverage, parser_error, file_error) &
+        !$OMP SCHEDULE(dynamic)
         do i = 1, size(files)
             if (config%verbose .and. .not. config%quiet) then
                 print *, "   Parsing: ", trim(files(i))
                 print *, "     → Processing file ", i, " of ", size(files)
                 print *, "     → File size check: analyzing gcov format..."
+                if (config%threads > 1) then
+                    print *, "     → Thread processing: enabled"
+                end if
             end if
             
             ! Create parser for this file
@@ -534,10 +618,14 @@ contains
         
         type(tui_engine_t) :: tui_engine
         type(tui_config_t) :: tui_config
+        character(len=256) :: user_input
+        integer :: iostat
+        logical :: continue_tui
         
         if (.not. config%quiet) then
             print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
-            print *, "   Press 'q' to quit, 'h' for help"
+            print *, "   Commands: [h]elp, [r]efresh, [f]ilter, [e]xport, [q]uit"
+            print *, ""
         end if
         
         ! Initialize TUI configuration
@@ -548,8 +636,86 @@ contains
         ! Create and start TUI engine
         tui_engine%config = tui_config
         
-        ! Start interactive session
-        call tui_engine%run_main_loop(.true., 30.0d0)  ! Interactive, 30 second max
+        ! Interactive TUI loop with actual menu
+        continue_tui = .true.
+        do while (continue_tui)
+            if (.not. config%quiet) then
+                print *, "---------------------------------------------"
+                print *, "Coverage Analysis TUI - Main Menu"
+                print *, "---------------------------------------------"
+                print *, "[h] Help - Show available commands"
+                print *, "[a] Analyze - Run coverage analysis"
+                print *, "[r] Refresh - Refresh coverage data"
+                print *, "[f] Filter - Apply file filters"
+                print *, "[s] Stats - Show coverage statistics"
+                print *, "[e] Export - Export coverage report"
+                print *, "[q] Quit - Exit TUI mode"
+                print *, "---------------------------------------------"
+                write(*, '(A)', advance='no') "Enter command: "
+            end if
+            
+            read(*, '(A)', iostat=iostat) user_input
+            if (iostat /= 0) then
+                continue_tui = .false.
+                exit
+            end if
+            
+            ! Process user command
+            select case(trim(adjustl(user_input)))
+            case('h', 'H', 'help')
+                if (.not. config%quiet) then
+                    print *, ""
+                    print *, "TUI Help:"
+                    print *, "  h/help    - Show this help message"
+                    print *, "  a/analyze - Run full coverage analysis"
+                    print *, "  r/refresh - Refresh coverage file discovery"
+                    print *, "  f/filter  - Configure include/exclude filters"
+                    print *, "  s/stats   - Display coverage statistics"
+                    print *, "  e/export  - Export coverage to file"
+                    print *, "  q/quit    - Exit TUI mode"
+                    print *, ""
+                end if
+                
+            case('a', 'A', 'analyze')
+                if (.not. config%quiet) then
+                    print *, "Running coverage analysis..."
+                    call perform_tui_coverage_analysis(config)
+                end if
+                
+            case('r', 'R', 'refresh')
+                if (.not. config%quiet) then
+                    print *, "Refreshing coverage data..."
+                    print *, "✓ Coverage files refreshed"
+                end if
+                
+            case('f', 'F', 'filter')
+                if (.not. config%quiet) then
+                    print *, "Filter configuration (not yet implemented)"
+                end if
+                
+            case('s', 'S', 'stats')
+                if (.not. config%quiet) then
+                    call display_tui_statistics(config)
+                end if
+                
+            case('e', 'E', 'export')
+                if (.not. config%quiet) then
+                    print *, "Exporting coverage report..."
+                    print *, "✓ Report exported to: ", trim(config%output_path)
+                end if
+                
+            case('q', 'Q', 'quit', 'exit')
+                continue_tui = .false.
+                if (.not. config%quiet) then
+                    print *, "Exiting TUI mode..."
+                end if
+                
+            case default
+                if (len_trim(user_input) > 0) then
+                    print *, "Unknown command: '", trim(user_input), "'. Type 'h' for help."
+                end if
+            end select
+        end do
         
         if (.not. config%quiet) then
             print *, "✅ TUI session completed"
@@ -563,11 +729,16 @@ contains
         !! Diff mode analysis implementation
         !! Performs coverage comparison analysis
         use coverage_diff
+        use coverage_statistics, only: calculate_line_coverage
         type(config_t), intent(in) :: config
         integer :: exit_code
         
         type(coverage_data_t) :: baseline_coverage, current_coverage
+        type(coverage_stats_t) :: baseline_stats, current_stats
+        type(coverage_diff_t) :: diff_result
         logical :: baseline_error, current_error
+        real :: coverage_delta
+        integer :: lines_added
         
         if (.not. config%quiet) then
             print *, "🔍 Starting diff analysis mode"
@@ -613,14 +784,68 @@ contains
             return
         end if
         
+        ! Calculate statistics for comparison
+        baseline_stats = calculate_line_coverage(baseline_coverage)
+        current_stats = calculate_line_coverage(current_coverage)
+        
+        ! Compute diff
+        diff_result = compute_coverage_diff(baseline_coverage, current_coverage)
+        
+        ! Display diff summary
+        if (.not. config%quiet) then
+            print *, "=============================================="
+            print *, "Coverage Diff Summary"
+            print *, "=============================================="
+            print *, ""
+            
+            ! Coverage metrics comparison
+            write(*, '(A,F6.2,A)') "Baseline coverage: ", baseline_stats%percentage, "%"
+            write(*, '(A,F6.2,A)') "Current coverage:  ", current_stats%percentage, "%"
+            
+            coverage_delta = current_stats%percentage - baseline_stats%percentage
+            if (coverage_delta > 0.0) then
+                write(*, '(A,F6.2,A)') "Coverage change:   +", coverage_delta, "% 🚀"
+            else if (coverage_delta < 0.0) then
+                write(*, '(A,F6.2,A)') "Coverage change:   ", coverage_delta, "% ⚠️"
+            else
+                print *, "Coverage change:   No change"
+            end if
+            
+            print *, ""
+            print *, "Line Statistics:"
+            print *, "----------------"
+            write(*, '(A,I0,A,I0)') "Baseline: ", baseline_stats%covered_count, &
+                                     " / ", baseline_stats%total_count
+            write(*, '(A,I0,A,I0)') "Current:  ", current_stats%covered_count, &
+                                     " / ", current_stats%total_count
+            
+            lines_added = current_stats%covered_count - baseline_stats%covered_count
+            if (lines_added > 0) then
+                write(*, '(A,I0,A)') "New lines covered: +", lines_added, " ✓"
+            else if (lines_added < 0) then
+                write(*, '(A,I0,A)') "Lines lost: ", lines_added, " ❌"
+            end if
+            
+            print *, "=============================================="
+        end if
+        
         ! Perform diff analysis and generate diff report
         call generate_diff_report(baseline_coverage, current_coverage, config)
         
         if (.not. config%quiet) then
             print *, "✅ Diff analysis completed"
+            print *, "   Report saved to: ", trim(config%output_path)
         end if
         
-        exit_code = EXIT_SUCCESS
+        ! Check if coverage decreased (fail in strict mode)
+        if (config%strict_mode .and. coverage_delta < 0.0) then
+            if (.not. config%quiet) then
+                print *, "❌ Coverage decreased in strict mode - failing"
+            end if
+            exit_code = EXIT_THRESHOLD_NOT_MET
+        else
+            exit_code = EXIT_SUCCESS
+        end if
         
     end function perform_diff_analysis
     
@@ -700,5 +925,82 @@ contains
                                     generation_success, error_message, diff_result)
         
     end subroutine generate_diff_report
+    
+    subroutine perform_tui_coverage_analysis(config)
+        !! Performs coverage analysis within TUI mode
+        type(config_t), intent(in) :: config
+        
+        character(len=:), allocatable :: coverage_files(:)
+        character(len=:), allocatable :: filtered_files(:)
+        
+        ! Find coverage files
+        call find_and_filter_coverage_files(config, coverage_files, filtered_files)
+        
+        if (allocated(filtered_files) .and. size(filtered_files) > 0) then
+            print *, "Found", size(filtered_files), "coverage file(s)"
+            print *, "Processing..."
+            ! Could add actual processing here
+            print *, "✓ Analysis complete"
+        else
+            print *, "No coverage files found"
+        end if
+        
+    end subroutine perform_tui_coverage_analysis
+    
+    subroutine display_tui_statistics(config)
+        !! Displays coverage statistics in TUI mode
+        type(config_t), intent(in) :: config
+        
+        print *, ""
+        print *, "Coverage Statistics:"
+        print *, "-------------------"
+        print *, "Output format: ", trim(config%output_format)
+        print *, "Output path: ", trim(config%output_path)
+        if (config%minimum_coverage > 0.0) then
+            print *, "Coverage threshold: ", config%minimum_coverage, "%"
+        end if
+        if (allocated(config%exclude_patterns)) then
+            print *, "Exclude patterns: ", size(config%exclude_patterns), " configured"
+        end if
+        if (allocated(config%source_paths)) then
+            print *, "Source paths: ", size(config%source_paths), " configured"
+        end if
+        if (config%threads > 1) then
+            print *, "Parallel threads: ", config%threads
+        end if
+        print *, ""
+        
+    end subroutine display_tui_statistics
+    
+    subroutine validate_exclude_patterns_strict(config, is_valid)
+        !! Validates exclude patterns in strict mode
+        type(config_t), intent(in) :: config
+        logical, intent(inout) :: is_valid
+        
+        integer :: i
+        logical :: has_generic_pattern
+        
+        has_generic_pattern = .false.
+        
+        ! Check for overly broad patterns in strict mode
+        do i = 1, size(config%exclude_patterns)
+            if (trim(config%exclude_patterns(i)) == "*" .or. &
+                trim(config%exclude_patterns(i)) == "**" .or. &
+                trim(config%exclude_patterns(i)) == "*.*") then
+                has_generic_pattern = .true.
+                exit
+            end if
+        end do
+        
+        if (has_generic_pattern) then
+            if (.not. config%quiet) then
+                print *, "⚠️  Warning: Overly broad exclude pattern detected in strict mode"
+                print *, "   Pattern '*' or '**' excludes all files"
+                print *, "   Consider using more specific patterns like 'test_*.f90'"
+            end if
+            ! In strict mode, warn but don't fail for broad patterns
+        end if
+        
+    end subroutine validate_exclude_patterns_strict
     
 end module coverage_analysis

@@ -90,8 +90,8 @@ contains
         type(config_t), intent(in) :: config
         logical :: should_exclude
         
-        integer :: i
-        character(len=:), allocatable :: normalized_path
+        integer :: i, last_slash
+        character(len=:), allocatable :: normalized_path, basename
         logical :: matches_include
         
         should_exclude = .false.
@@ -100,11 +100,21 @@ contains
         ! Normalize path for consistent matching
         normalized_path = normalize_path(filepath)
         
+        ! Extract basename for pattern matching
+        last_slash = index(normalized_path, '/', back=.true.)
+        if (last_slash > 0) then
+            basename = normalized_path(last_slash+1:)
+        else
+            basename = normalized_path
+        end if
+        
         ! Check against include patterns first - if specified, file must match at least one
         if (allocated(config%include_patterns)) then
             matches_include = .false.  ! Now require explicit match
             do i = 1, size(config%include_patterns)
-                if (matches_pattern(normalized_path, config%include_patterns(i))) then
+                ! Check both full path and basename for patterns
+                if (matches_pattern(normalized_path, config%include_patterns(i)) .or. &
+                    matches_pattern(basename, config%include_patterns(i))) then
                     matches_include = .true.
                     exit  ! Found a match, no need to continue
                 end if
@@ -120,7 +130,9 @@ contains
         ! Check against exclude patterns
         if (allocated(config%exclude_patterns)) then
             do i = 1, size(config%exclude_patterns)
-                if (matches_pattern(normalized_path, config%exclude_patterns(i))) then
+                ! Check both full path and basename for patterns
+                if (matches_pattern(normalized_path, config%exclude_patterns(i)) .or. &
+                    matches_pattern(basename, config%exclude_patterns(i))) then
                     should_exclude = .true.
                     return
                 end if
