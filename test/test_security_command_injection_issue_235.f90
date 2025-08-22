@@ -89,7 +89,7 @@ program test_security_command_injection_issue_235
         print *, "• gcov_command_executor.f90:118-119 - Unescaped mv command"  
         print *, "• secure_command_executor.f90:417 - Partial escaping in which command"
         print *, "• Direct string concatenation enables shell injection attacks"
-        print *, "• Attack vectors: ; & | ` $ > < \" path traversal system files"
+        print *, "• Attack vectors: ; & | ` $ > < "" path traversal system files"
         print *, ""
         print *, "IMMEDIATE ACTION REQUIRED: Implement security fixes"
     else
@@ -714,7 +714,7 @@ contains
         
         ! Check if error message contains sensitive information
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            if (allocated(error_ctx%message)) then
+            if (len_trim(error_ctx%message) > 0) then
                 if (index(error_ctx%message, "/home/user/.ssh") > 0) then
                     call fail_test("VULNERABILITY: Error message leaks sensitive path information")
                 else
@@ -749,7 +749,7 @@ contains
         
         ! Check if full command is leaked in error messages
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            if (allocated(error_ctx%message)) then
+            if (len_trim(error_ctx%message) > 0) then
                 if (index(error_ctx%message, "mkdir -p") > 0) then
                     call fail_test("VULNERABILITY: Full command leaked in error message")
                 else
