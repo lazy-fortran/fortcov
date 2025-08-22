@@ -137,8 +137,7 @@ contains
         ! Process missing line numbers for range compression
         if (missing_count > 0) then
             call stats%init(percentage, covered_lines, total_lines, &
-                           compress_ranges(missing_line_numbers( &
-                               1:missing_count)))
+                           compress_ranges(missing_line_numbers(1:missing_count)))
         else
             call stats%init(percentage, covered_lines, total_lines, "")
         end if
