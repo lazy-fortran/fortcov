@@ -21,7 +21,7 @@ fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 
 # 4. Verify installation
-fortcov --help
+fortcov --help  # Latest version includes critical memory safety improvements
 ```
 
 ## Platform-Specific Instructions

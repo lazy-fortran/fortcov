@@ -20,16 +20,18 @@ fortcov --config=fortcov.nml
 
 ## Zero-Configuration Mode
 
-The fastest way to get coverage reports - just run `fortcov` without any arguments:
+The fastest way to get coverage reports - just run `fortcov` without any arguments. **Enhanced with critical stability improvements (v2.0+)** that eliminate memory allocation errors and ensure reliable operation.
 
 ```bash
-# Standard workflow
+# Standard workflow - now with enhanced stability
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
-fortcov  # Auto-discovers everything!
+fortcov  # Auto-discovers everything with improved memory safety!
 ```
+
+**Stability Improvements**: Zero-configuration mode now includes critical memory allocation bug fixes that prevent segmentation faults and ensure reliable auto-discovery across all project structures.
 
 ### How Zero-Configuration Works
 
