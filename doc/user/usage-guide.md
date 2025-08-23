@@ -18,40 +18,58 @@ fortcov --threshold=80 --quiet
 fortcov --config=fortcov.nml
 ```
 
-## Zero-Configuration Mode
+## Enhanced Zero-Configuration Mode (Issue #227 Fixed)
 
-The fastest way to get coverage reports - just run `fortcov` without any arguments:
+The fastest way to get coverage reports with comprehensive auto-discovery and automatic gcov generation:
 
 ```bash
-# Standard workflow
+# Enhanced workflow with Issue #227 fixes
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-done
-fortcov  # Auto-discovers everything!
+fortcov  # That's it! Auto-discovery + auto-generation now works
 ```
 
-### How Zero-Configuration Works
+### How Enhanced Zero-Configuration Works
 
-**Auto-Discovery Priority Order:**
-1. **Coverage files**: `build/gcov/*.gcov` → `./*.gcov` → `build/**/*.gcov`
-2. **Source files**: `src/*.f90` → `./*.f90` (excludes `build/*`, `test/*`)
-3. **Output location**: `build/coverage/coverage.md` (creates directory if needed)
+**3-Phase Auto-Discovery Process:**
 
-### Zero-Configuration Examples
+**Phase 1: Existing .gcov Files (Fast Path)**
+- `build/gcov/*.gcov` (preferred location)
+- `*.gcov` (current directory) 
+- `build/**/*.gcov` (recursive search)
+
+**Phase 2: Automatic gcov Generation (New in Issue #227)**
+- Auto-discovers `.gcda/.gcno` files across build systems:
+  - **FPM**: `build/gfortran_*/app/` and `build/gfortran_*/test/`
+  - **CMake**: `build/` and `_build/` directories
+  - **Generic**: `*build*/`, `obj/`, `objects/` directories
+- Securely executes gcov with proper argument validation
+- Generates `.gcov` files in `build/gcov/` directory
+
+**Phase 3: Smart Defaults Applied**
+- **Source files**: `src/*.f90` → `./*.f90` (excludes `build/*`, `test/*`)
+- **Output location**: `build/coverage/coverage.md` (creates directory if needed)
+- **Intelligent filtering**: Executable paths no longer treated as coverage files
+
+### Enhanced Zero-Configuration Examples
 
 ```bash
-# Works in any project with standard structure
+# Works with any build system - automatically discovers and generates coverage
 fortcov
 
-# Override just the output location
+# Override output location while keeping auto-discovery
 fortcov --output=my-report.md
 
-# Override coverage threshold while using auto-discovery
+# Set coverage threshold with zero-config auto-generation  
 fortcov --threshold=90
 
-# Zero-config with quiet mode for CI
-fortcov --quiet --threshold=80
+# Zero-config in CI (--quiet flag implementation pending)
+fortcov --threshold=80
+
+# Zero-config handles complex build structures automatically:
+# - FPM projects: Discovers build/gfortran_*/app/ and build/gfortran_*/test/
+# - CMake projects: Handles build/ and _build/ directories
+# - Generic builds: Finds *build*/, obj/, objects/ directories
+# - Mixed projects: Works across multiple build systems
 ```
 
 ## Command-Line Interface
@@ -208,37 +226,33 @@ fi
 
 #### CI/CD Integration
 
-**GitHub Actions:**
+**GitHub Actions (Enhanced with Issue #227 fixes):**
 ```yaml
 - name: Generate Coverage
   run: |
     fpm test --flag "-fprofile-arcs -ftest-coverage"
-    find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-      gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-    done
-    fortcov --threshold=80  # --quiet flag not yet implemented
+    fortcov --threshold=80  # Enhanced zero-config handles gcov generation automatically
 ```
 
-**GitLab CI:**
+**GitLab CI (Simplified with Issue #227 fixes):**
 ```yaml
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
-    - fortcov --format=xml --output=coverage.xml
+    - fortcov --format=xml --output=coverage.xml --threshold=80
 ```
 
-#### Quality Gates
+#### Enhanced Quality Gates (Issue #227 Fixed)
 
 ```bash
-# Standard quality gate with zero-config
-fortcov --threshold=80  # Exits with code 1 if not met
+# Enhanced zero-config quality gate - now works with any build system
+fortcov --threshold=80  # Auto-discovers coverage, generates gcov, exits with code 1 if not met
 
-# High-bar for critical projects
-fortcov --threshold=95  # Validated range: 0-100%
+# High-bar for critical projects with auto-discovery
+fortcov --threshold=95  # Validated range: 0-100%, works across FPM/CMake/Generic builds
 
-# Source filtering (partial implementation)
-fortcov --source=src/critical --threshold=95
+# Source filtering with zero-config coverage generation
+fortcov --source=src/critical --threshold=95  # Auto-generates coverage, applies source filter
 ```
 
 ### For Project Managers

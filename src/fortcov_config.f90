@@ -230,12 +230,15 @@ contains
         is_zero_config = (size(args) == 0)
 
         if (.not. is_zero_config .and. size(args) > 0) then
-            ! Check if all arguments are empty strings
+            ! Check if all arguments are empty strings OR filtered executable paths
             is_zero_config = .true.
             do i = 1, size(args)
                 if (len_trim(args(i)) > 0) then
-                    is_zero_config = .false.
-                    exit
+                    ! Check if this argument would be filtered as executable path
+                    if (.not. is_filtered_executable_path(args(i))) then
+                        is_zero_config = .false.
+                        exit
+                    end if
                 end if
             end do
         end if
@@ -252,6 +255,32 @@ contains
         end if
 
     end function should_use_zero_config
+
+    logical function is_filtered_executable_path(arg) result(is_filtered)
+        !! Check if argument would be filtered as executable path in zero-config mode
+        character(len=*), intent(in) :: arg
+        
+        ! Use same filtering logic as classify_positional_argument
+        is_filtered = .false.
+        
+        ! Check for executable patterns (common build paths)
+        if (index(arg, '/app/') > 0 .or. &
+            index(arg, '/test/') > 0 .or. &
+            index(arg, '/bin/') > 0 .or. &
+            index(arg, 'build/gfortran_') > 0 .or. &
+            index(arg, 'fortcov') > 0) then
+            is_filtered = .true.
+            return
+        end if
+        
+        ! Check for executable by looking for missing extension
+        if (index(arg, '.', back=.true.) == 0) then
+            ! No extension - likely executable
+            is_filtered = .true.
+            return
+        end if
+        
+    end function is_filtered_executable_path
 
     subroutine handle_zero_configuration_with_overrides(args, config, success, error_message)
         !! Handle zero-configuration mode with CLI flag overrides

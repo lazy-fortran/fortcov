@@ -83,7 +83,9 @@ contains
         ! Phase 2: Auto-generate .gcov files from .gcda/.gcno (zero-config enhancement)
         call check_gcov_availability(gcov_available)
         if (.not. gcov_available) then
-            allocate(character(len=256) :: coverage_files(0))
+            if (.not. allocated(coverage_files)) then
+                allocate(character(len=256) :: coverage_files(0))
+            end if
             return
         end if
         
@@ -96,7 +98,9 @@ contains
         end if
         
         ! Phase 3: No coverage data found
-        allocate(character(len=256) :: coverage_files(0))
+        if (.not. allocated(coverage_files)) then
+            allocate(character(len=256) :: coverage_files(0))
+        end if
         
     end function auto_discover_coverage_files_priority
     
@@ -238,7 +242,9 @@ contains
         end if
         
         ! No existing .gcov files found
-        allocate(character(len=256) :: coverage_files(0))
+        if (.not. allocated(coverage_files)) then
+            allocate(character(len=256) :: coverage_files(0))
+        end if
     end function discover_existing_gcov_files
     
     subroutine check_gcov_availability(gcov_available)

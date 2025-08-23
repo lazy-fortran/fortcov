@@ -232,54 +232,81 @@ fpm test --flag "-fprofile-arcs -ftest-coverage" --verbose
 find . -name "*.gcda" -ls
 ```
 
-## Zero-Configuration Mode Issues
+## Enhanced Zero-Configuration Mode Issues (Issue #227 Fixed)
 
-### ❌ "Auto-discovery found no files in expected locations"
+### ✅ "Enhanced zero-config mode with automatic gcov generation"
 
-**Problem:** Zero-config mode searched but found no coverage or source files
+**Status:** **SIGNIFICANTLY IMPROVED** - Issue #227 fixes now provide comprehensive auto-discovery and generation
 
-**Solution:**
+**Current capabilities:**
 ```bash
-# Check what zero-config is looking for
-echo "=== Coverage file search locations ==="
-ls -la build/gcov/*.gcov 2>/dev/null || echo "No files in build/gcov/"
+# Enhanced workflow - no manual gcov generation needed
+fpm test --flag "-fprofile-arcs -ftest-coverage" 
+fortcov  # Handles everything automatically:
+         # 1. Discovers existing .gcov files (fast path)
+         # 2. Auto-generates from .gcda/.gcno files when needed
+         # 3. Handles FPM/CMake/Generic build structures
+         # 4. Creates build/coverage/coverage.md automatically
+```
+
+### ❌ "Enhanced auto-discovery still finds no coverage data"
+
+**Problem:** Even enhanced zero-config mode found no coverage files or couldn't generate them
+
+**Enhanced Diagnostics:**
+```bash
+# Check enhanced zero-config discovery phases
+echo "=== Phase 1: Existing .gcov files ==="
+ls -la build/gcov/*.gcov 2>/dev/null || echo "No files in build/gcov/ (preferred)"
 ls -la *.gcov 2>/dev/null || echo "No files in current directory"
-find build -name "*.gcov" 2>/dev/null || echo "No gcov files in build/"
+find build -name "*.gcov" 2>/dev/null || echo "No gcov files in build/ (recursive)"
 
-echo "=== Source file search locations ==="
-ls -la src/*.f90 2>/dev/null || echo "No files in src/"
-ls -la *.f90 2>/dev/null || echo "No files in current directory"
+echo "=== Phase 2: .gcda/.gcno files for auto-generation ==="
+echo "FPM build structure:"
+find build -name "gfortran_*/app/*.gcda" -o -name "gfortran_*/test/*.gcda" 2>/dev/null
+echo "CMake build structure:"  
+find build -name "*.gcda" -o -name "_build" -name "*.gcda" 2>/dev/null
+echo "Generic build structure:"
+find . -name "*build*/*.gcda" -o -name "obj/*.gcda" -o -name "objects/*.gcda" 2>/dev/null
 
-# Fix: Generate files in expected location
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-done  # FPM-aware (preferred)
+echo "=== Phase 3: gcov executable availability ==="
+which gcov && gcov --version || echo "gcov not found in PATH"
+
+# Enhanced fix with Issue #227 improvements
+fpm test --flag "-fprofile-arcs -ftest-coverage"  # Ensure .gcda files exist
+fortcov  # Should now auto-generate and process
+```
+
+### ✅ "Output directory creation now automatic"
+
+**Status:** **FIXED in Issue #227** - Enhanced zero-config automatically creates output directories
+
+**Current behavior:**
+```bash
+# Enhanced zero-config now handles directory creation automatically
+fortcov  # Creates build/coverage/ directory if needed, with proper permissions
+
+# If still encountering issues, check permissions on parent directory:
+ls -ld build/  # Should be writable by user
+chmod 755 build/  # Fix if needed
 fortcov  # Should now work
 ```
 
-### ❌ "Output directory doesn't exist"
+### ✅ "Intelligent file filtering now prevents wrong files"
 
-**Problem:** Zero-config tries to write to `build/coverage/` but directory missing
+**Status:** **IMPROVED in Issue #227** - Enhanced argument classification and filtering
 
-**Solution:**
+**Current behavior:**
 ```bash
-# Zero-config automatically creates directories, but if permissions issue:
-mkdir -p build/coverage
-chmod 755 build/coverage
-fortcov
-```
+# Enhanced zero-config now includes intelligent filtering:
+# - Executable paths no longer treated as coverage files 
+# - Build directories automatically excluded from source discovery
+# - Test directories excluded by default
+fortcov  # Smart filtering applied automatically
 
-### ❌ "Zero-config finds wrong files"
-
-**Problem:** Auto-discovery picks up unwanted files
-
-**Solution:**
-```bash
-# Clean up unwanted files first
-rm -f test/*.gcov build/test/*.gcov
-
-# Or override with specific source
-fortcov --source=src  # Still uses auto-discovery for coverage files
+# Manual override still available if needed:
+fortcov --source=src  # Explicit source filter with auto-coverage discovery
+rm -f unwanted.gcov   # Remove specific unwanted files if necessary
 ```
 
 ## Runtime Issues
@@ -451,15 +478,26 @@ fortcov --version 2>/dev/null || echo "fortcov not in PATH"
 echo "=== Project Structure ==="
 find . -name "*.f90" | head -10
 
-echo "=== Zero-Configuration Diagnostics ==="
-echo "Coverage files in build/gcov/:"
-ls -la build/gcov/*.gcov 2>/dev/null || echo "None found"
-echo "Coverage files in current directory:"
-ls -la *.gcov 2>/dev/null || echo "None found"
-echo "Source files in src/:"
-ls -la src/*.f90 2>/dev/null || echo "None found"
-echo "Source files in current directory:"
-ls -la *.f90 2>/dev/null || echo "None found"
+echo "=== Enhanced Zero-Configuration Diagnostics (Issue #227) ==="
+echo "Phase 1 - Existing .gcov files:"
+ls -la build/gcov/*.gcov 2>/dev/null || echo "None in build/gcov/"
+ls -la *.gcov 2>/dev/null || echo "None in current directory" 
+find build -name "*.gcov" 2>/dev/null || echo "None in build/ (recursive)"
+
+echo "Phase 2 - .gcda/.gcno files for auto-generation:"
+echo "FPM structure:"
+find build -path "*/gfortran_*/app/*.gcda" -o -path "*/gfortran_*/test/*.gcda" 2>/dev/null || echo "None"
+echo "CMake structure:"
+find build -name "*.gcda" -o -path "_build/*.gcda" 2>/dev/null || echo "None"
+echo "Generic structure:"
+find . -path "*build*/*.gcda" -o -path "obj/*.gcda" -o -path "objects/*.gcda" 2>/dev/null || echo "None"
+
+echo "Phase 3 - gcov availability:"
+which gcov && gcov --version | head -1 || echo "gcov not available"
+
+echo "Source file discovery:"
+ls -la src/*.f90 2>/dev/null || echo "None in src/"
+ls -la *.f90 2>/dev/null || echo "None in current directory"
 
 echo "=== Coverage Files ==="
 find . -name "*.gcov" -o -name "*.gcda" -o -name "*.gcno"
@@ -467,8 +505,11 @@ find . -name "*.gcov" -o -name "*.gcda" -o -name "*.gcno"
 echo "=== Recent Build ==="
 fpm test --flag "-fprofile-arcs -ftest-coverage" --verbose 2>&1 | tail -10
 
-echo "=== Zero-Config Test ==="
+echo "=== Enhanced Zero-Config Test (Issue #227) ==="
+echo "Testing enhanced zero-config capabilities:"
 fortcov --help 2>/dev/null | head -5 || echo "fortcov command failed"
+echo "Testing enhanced auto-discovery (dry run):"
+fortcov --verbose 2>/dev/null | head -10 || echo "Enhanced zero-config test failed"
 ```
 
 ## Getting Help

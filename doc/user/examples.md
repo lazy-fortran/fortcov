@@ -40,39 +40,46 @@ contains
 end module calculator
 ```
 
-**Generate coverage:**
+**Generate coverage with Issue #227 enhancements:**
 
 ```bash
 # Build and test with coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# Zero-configuration mode (recommended)
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-done
-fortcov  # That's it! Report in build/coverage/coverage.md
+# Enhanced zero-configuration mode (recommended - Issue #227 fixed)
+fortcov  # That's it! Auto-discovery + auto-generation now works seamlessly
+
+# The enhanced zero-config mode now:
+# 1. Discovers existing .gcov files in priority locations
+# 2. Auto-generates .gcov files from .gcda/.gcno when needed  
+# 3. Handles FPM, CMake, and generic build structures
+# 4. Creates build/coverage/coverage.md automatically
+# 5. Intelligent filtering prevents executable paths being treated as coverage files
 
 # Traditional mode (for custom configurations)
 gcov src/*.f90
 fortcov --source=src --output=coverage.md
 
-# Enhanced with quality gate
-fortcov --threshold=75 --quiet
+# Enhanced with quality gate and auto-generation
+fortcov --threshold=75  # --quiet flag implementation pending
 ```
 
 ## Build System Integration
 
-### FPM Integration
+### FPM Integration (Enhanced - Issue #227)
 
-**Zero-Configuration Workflow (Recommended)**
+**Enhanced Zero-Configuration Workflow (Recommended)**
 
 ```bash
-# Simplest possible FPM integration
+# Ultra-simple FPM integration with Issue #227 fixes
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-done  # FPM-aware coverage
-fortcov                       # Auto-discovers everything!
+fortcov  # Automatically handles FPM build structure discovery and gcov generation!
+
+# Behind the scenes, enhanced zero-config now:
+# - Discovers .gcda files in build/gfortran_*/app/ and build/gfortran_*/test/
+# - Automatically generates .gcov files using secure gcov execution
+# - Handles multiple FPM compiler targets (gfortran_*, ifort_*, etc.)
+# - Creates output in build/coverage/coverage.md
 ```
 
 **Traditional FPM Workflow**
@@ -110,7 +117,7 @@ coverage: test
 
 ## CI/CD Examples
 
-### GitHub Actions
+### GitHub Actions (Enhanced with Issue #227)
 
 ```yaml
 name: Coverage
@@ -121,13 +128,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-    - name: Generate Coverage
+    - name: Generate Coverage with Enhanced Zero-Config
       run: |
         fpm test --flag "-fprofile-arcs -ftest-coverage"
-        find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-          gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-        done
-        fortcov --threshold=80 --quiet
+        fortcov --threshold=80  # Enhanced zero-config handles all discovery and generation
     - name: Upload Coverage Report
       uses: actions/upload-artifact@v4
       with:
@@ -135,14 +139,13 @@ jobs:
         path: build/coverage/coverage.md
 ```
 
-### GitLab CI
+### GitLab CI (Enhanced with Issue #227)
 
 ```yaml
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
-    - fortcov --format=xml --output=coverage.xml --threshold=80
+    - fortcov --format=xml --output=coverage.xml --threshold=80  # Enhanced zero-config simplifies workflow
   coverage: '/Total coverage: (\d+\.\d+)%/'
   artifacts:
     reports:

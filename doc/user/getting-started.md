@@ -76,24 +76,30 @@ end program test_calculator
 
 ### Step 3: Generate Coverage
 
-**Zero-Configuration Mode (Recommended)**
+**Enhanced Zero-Configuration Mode (Recommended)**
 
-The simplest way to get coverage reports:
+The simplest way to get coverage reports with Issue #227 fixes:
 
 ```bash
 # Build and test with coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# Generate coverage data from FPM build directories
-# This discovers nested build/gfortran_*/fortcov/ directories automatically
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-done
-
-# Analyze with zero configuration
+# NEW: Zero-configuration mode with automatic gcov generation
 fortcov
 
-# View the report (auto-generated in build/coverage/)
+# That's it! The enhanced zero-config mode now:
+# 1. Auto-discovers coverage files in priority locations:
+#    - build/gcov/*.gcov (preferred location)
+#    - *.gcov (current directory)
+#    - build/**/*.gcov (recursive search)
+# 2. Auto-generates .gcov files from .gcda/.gcno when needed:
+#    - FPM: build/gfortran_*/app/ and build/gfortran_*/test/
+#    - CMake: build/ and _build/ directories  
+#    - Generic: *build*/, obj/, objects/ directories
+# 3. Intelligent argument filtering (no longer treats executable paths as coverage files)
+# 4. Smart output directory creation (build/coverage/coverage.md)
+
+# View the auto-generated report
 cat build/coverage/coverage.md
 ```
 
@@ -119,7 +125,14 @@ cat coverage.md
 
 ### Security Notice
 
-FortCov includes comprehensive security protections against command injection and path traversal attacks. These features work transparently during normal usage but will block potentially malicious inputs for security.
+FortCov includes comprehensive security protections against command injection and path traversal attacks. The Issue #227 fixes enhance these protections with:
+
+- **Secure gcov execution**: All gcov commands use validated arguments and secure temporary files
+- **Path sanitization**: Enhanced validation for coverage file paths and output directories  
+- **Argument filtering**: Intelligent classification prevents executable paths from being treated as coverage files
+- **Command injection protection**: Shell metacharacter detection and safe command execution
+
+These features work transparently during normal usage but will block potentially malicious inputs for security.
 
 If you encounter "Path contains dangerous characters" or similar security messages, use standard project directory structures and avoid special shell characters in file paths.
 
