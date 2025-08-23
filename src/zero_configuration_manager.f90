@@ -68,40 +68,34 @@ contains
     end subroutine apply_zero_configuration_defaults
     
     function auto_discover_coverage_files_priority() result(coverage_files)
-        !! Auto-discover coverage files using priority-ordered search
+        !! Auto-discover coverage files using priority-ordered search with automatic gcov generation
         character(len=:), allocatable :: coverage_files(:)
-        character(len=:), allocatable :: temp_files(:)
-        logical :: dir_exists
+        character(len=:), allocatable :: temp_files(:), gcda_files(:)
+        logical :: dir_exists, gcov_available
         integer :: i
         
-        ! Priority 1: Check build/gcov/*.gcov (Issue #203 standard location)
-        inquire(file="build/gcov", exist=dir_exists)
-        if (dir_exists) then
-            temp_files = find_files_with_glob("build/gcov", "*.gcov")
-            if (allocated(temp_files) .and. size(temp_files) > 0) then
-                coverage_files = temp_files
-                return
-            end if
-        end if
-        
-        ! Priority 2: Check current directory *.gcov
-        temp_files = find_files_with_glob(".", "*.gcov")
-        if (allocated(temp_files) .and. size(temp_files) > 0) then
-            coverage_files = temp_files
+        ! Phase 1: Check for existing .gcov files (fast path)
+        coverage_files = discover_existing_gcov_files()
+        if (allocated(coverage_files) .and. size(coverage_files) > 0) then
             return
         end if
         
-        ! Priority 3: Check build directory recursively (if exists)
-        inquire(file="build", exist=dir_exists)
-        if (dir_exists) then
-            temp_files = find_files_with_glob("build", "*.gcov")
-            if (allocated(temp_files) .and. size(temp_files) > 0) then
-                coverage_files = temp_files
-                return
-            end if
+        ! Phase 2: Auto-generate .gcov files from .gcda/.gcno (zero-config enhancement)
+        call check_gcov_availability(gcov_available)
+        if (.not. gcov_available) then
+            allocate(character(len=256) :: coverage_files(0))
+            return
         end if
         
-        ! No coverage files found
+        ! Discover .gcda files in build directories
+        gcda_files = discover_gcda_files_priority()
+        
+        if (allocated(gcda_files) .and. size(gcda_files) > 0) then
+            call generate_gcov_files_from_gcda(gcda_files, coverage_files)
+            return
+        end if
+        
+        ! Phase 3: No coverage data found
         allocate(character(len=256) :: coverage_files(0))
         
     end function auto_discover_coverage_files_priority
@@ -209,5 +203,250 @@ contains
         print *, ""
         
     end subroutine show_zero_configuration_error_guidance
+    
+    function discover_existing_gcov_files() result(coverage_files)
+        !! Phase 1: Discover existing .gcov files in priority locations
+        character(len=:), allocatable :: coverage_files(:)
+        character(len=:), allocatable :: temp_files(:)
+        logical :: dir_exists
+        
+        ! Priority 1: Check build/gcov/*.gcov (Issue #203 standard location)
+        inquire(file="build/gcov", exist=dir_exists)
+        if (dir_exists) then
+            temp_files = find_files_with_glob("build/gcov", "*.gcov")
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                coverage_files = temp_files
+                return
+            end if
+        end if
+        
+        ! Priority 2: Check current directory *.gcov
+        temp_files = find_files_with_glob(".", "*.gcov")
+        if (allocated(temp_files) .and. size(temp_files) > 0) then
+            coverage_files = temp_files
+            return
+        end if
+        
+        ! Priority 3: Check build directory recursively (if exists)
+        inquire(file="build", exist=dir_exists)
+        if (dir_exists) then
+            temp_files = find_files_with_glob("build", "*.gcov")
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                coverage_files = temp_files
+                return
+            end if
+        end if
+        
+        ! No existing .gcov files found
+        allocate(character(len=256) :: coverage_files(0))
+    end function discover_existing_gcov_files
+    
+    subroutine check_gcov_availability(gcov_available)
+        !! Check if gcov executable is available in PATH
+        use secure_command_executor, only: validate_executable_path
+        logical, intent(out) :: gcov_available
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_gcov
+        
+        ! Try to validate gcov executable path - if it passes, gcov is available
+        call validate_executable_path("gcov", safe_gcov, error_ctx)
+        gcov_available = (error_ctx%error_code == ERROR_SUCCESS)
+    end subroutine check_gcov_availability
+    
+    function discover_gcda_files_priority() result(gcda_files)
+        !! Systematically discover .gcda/.gcno files across different build system patterns
+        character(len=:), allocatable :: gcda_files(:)
+        character(len=:), allocatable :: temp_files(:)
+        
+        ! Priority 1: FPM build structure
+        temp_files = discover_fmp_gcda_files()
+        if (allocated(temp_files) .and. size(temp_files) > 0) then
+            gcda_files = temp_files
+            return
+        end if
+        
+        ! Priority 2: CMake/Make build structure  
+        temp_files = discover_cmake_gcda_files()
+        if (allocated(temp_files) .and. size(temp_files) > 0) then
+            gcda_files = temp_files  
+            return
+        end if
+        
+        ! Priority 3: Generic build directory search
+        temp_files = discover_generic_gcda_files()
+        gcda_files = temp_files
+    end function discover_gcda_files_priority
+    
+    function discover_fmp_gcda_files() result(gcda_files)
+        !! Discover .gcda files in FPM build structure
+        character(len=:), allocatable :: gcda_files(:)
+        character(len=:), allocatable :: temp_files(:), app_files(:), test_files(:)
+        logical :: dir_exists
+        integer :: total_files, app_count, test_count
+        
+        total_files = 0
+        
+        ! Check FPM app directory pattern: build/gfortran_*/app/*.gcda
+        inquire(file="build", exist=dir_exists)
+        if (dir_exists) then
+            app_files = find_files_with_glob("build", "gfortran_*/app/*.gcda")
+            if (allocated(app_files)) then
+                total_files = total_files + size(app_files)
+            end if
+            
+            ! Check FPM test directory pattern: build/gfortran_*/test/*.gcda
+            test_files = find_files_with_glob("build", "gfortran_*/test/*.gcda")
+            if (allocated(test_files)) then
+                total_files = total_files + size(test_files)
+            end if
+        end if
+        
+        if (total_files > 0) then
+            allocate(character(len=256) :: gcda_files(total_files))
+            app_count = 0
+            test_count = 0
+            
+            if (allocated(app_files) .and. size(app_files) > 0) then
+                app_count = size(app_files)
+                gcda_files(1:app_count) = app_files
+            end if
+            
+            if (allocated(test_files) .and. size(test_files) > 0) then
+                test_count = size(test_files)
+                gcda_files(app_count+1:app_count+test_count) = test_files
+            end if
+        else
+            allocate(character(len=256) :: gcda_files(0))
+        end if
+    end function discover_fmp_gcda_files
+    
+    function discover_cmake_gcda_files() result(gcda_files)
+        !! Discover .gcda files in CMake build structure  
+        character(len=:), allocatable :: gcda_files(:)
+        character(len=:), allocatable :: temp_files(:)
+        logical :: dir_exists
+        
+        ! Check CMake patterns: build/**/*.gcda, _build/**/*.gcda
+        inquire(file="build", exist=dir_exists)
+        if (dir_exists) then
+            temp_files = find_files_with_glob("build", "**/*.gcda")
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                gcda_files = temp_files
+                return
+            end if
+        end if
+        
+        inquire(file="_build", exist=dir_exists)
+        if (dir_exists) then
+            temp_files = find_files_with_glob("_build", "**/*.gcda")
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                gcda_files = temp_files
+                return
+            end if
+        end if
+        
+        allocate(character(len=256) :: gcda_files(0))
+    end function discover_cmake_gcda_files
+    
+    function discover_generic_gcda_files() result(gcda_files)
+        !! Discover .gcda files in generic build directory patterns
+        character(len=:), allocatable :: gcda_files(:)
+        character(len=:), allocatable :: temp_files(:)
+        logical :: dir_exists
+        
+        ! Generic patterns: any directory containing "build" in name
+        temp_files = find_files_with_glob(".", "*build*/**/*.gcda")
+        if (allocated(temp_files) .and. size(temp_files) > 0) then
+            gcda_files = temp_files
+            return
+        end if
+        
+        ! Check obj/objects directories
+        inquire(file="obj", exist=dir_exists)
+        if (dir_exists) then
+            temp_files = find_files_with_glob("obj", "**/*.gcda")
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                gcda_files = temp_files
+                return
+            end if
+        end if
+        
+        inquire(file="objects", exist=dir_exists)
+        if (dir_exists) then
+            temp_files = find_files_with_glob("objects", "**/*.gcda")
+            if (allocated(temp_files) .and. size(temp_files) > 0) then
+                gcda_files = temp_files
+                return
+            end if
+        end if
+        
+        allocate(character(len=256) :: gcda_files(0))
+    end function discover_generic_gcda_files
+    
+    subroutine generate_gcov_files_from_gcda(gcda_files, generated_gcov_files)
+        !! Safely execute gcov commands to generate .gcov files from .gcda files
+        use gcov_command_executor, only: gcov_executor_t
+        character(len=*), intent(in) :: gcda_files(:)
+        character(len=:), allocatable, intent(out) :: generated_gcov_files(:)
+        
+        type(gcov_executor_t) :: executor
+        type(error_context_t) :: error_ctx
+        integer :: i, success_count
+        character(len=256), allocatable :: temp_generated_files(:)
+        character(len=:), allocatable :: temp_files(:)
+        character(len=256) :: source_file
+        logical :: dir_created
+        
+        ! Configure gcov executor for zero-config mode
+        call executor%set_gcov_output_directory("build/gcov")
+        call executor%set_working_directory(".")
+        
+        ! Ensure output directory exists
+        call ensure_directory("build/gcov", dir_created)
+        
+        success_count = 0
+        allocate(character(len=256) :: temp_generated_files(size(gcda_files) * 10))  ! Estimate
+        
+        do i = 1, size(gcda_files)
+            source_file = extract_source_from_gcda(gcda_files(i))
+            call executor%execute_gcov(source_file, temp_files, error_ctx)
+            
+            if (error_ctx%error_code == ERROR_SUCCESS .and. &
+                allocated(temp_files) .and. size(temp_files) > 0) then
+                temp_generated_files(success_count+1:success_count+size(temp_files)) = temp_files
+                success_count = success_count + size(temp_files)
+            end if
+        end do
+        
+        ! Return successfully generated .gcov files
+        if (success_count > 0) then
+            allocate(character(len=256) :: generated_gcov_files(success_count))
+            generated_gcov_files(1:success_count) = temp_generated_files(1:success_count)
+        else
+            allocate(character(len=256) :: generated_gcov_files(0))
+        end if
+    end subroutine generate_gcov_files_from_gcda
+    
+    function extract_source_from_gcda(gcda_file) result(source_file)
+        !! Extract source file path from .gcda file path
+        character(len=*), intent(in) :: gcda_file
+        character(len=256) :: source_file
+        integer :: gcda_pos
+        logical :: file_exists
+        
+        ! Simple extraction: replace .gcda with .f90/.F90 (most common case)
+        gcda_pos = index(gcda_file, '.gcda', back=.true.)
+        if (gcda_pos > 0) then
+            source_file = gcda_file(1:gcda_pos-1) // ".f90"
+            ! Check if .f90 exists, otherwise try .F90
+            inquire(file=source_file, exist=file_exists)
+            if (.not. file_exists) then
+                source_file = gcda_file(1:gcda_pos-1) // ".F90"
+            end if
+        else
+            ! Fallback
+            source_file = gcda_file
+        end if
+    end function extract_source_from_gcda
     
 end module zero_configuration_manager

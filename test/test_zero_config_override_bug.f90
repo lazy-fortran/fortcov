@@ -10,7 +10,7 @@ program test_zero_config_override_bug
     !! Zero-configuration defaults override correctly parsed CLI flag values
     !! for output-related flags like --output, --format, --verbose, --threshold
     !!
-    use config_parser
+    use fortcov_config
     implicit none
     
     type(config_t) :: config
