@@ -83,6 +83,7 @@ contains
         ! Phase 2: Auto-generate .gcov files from .gcda/.gcno (zero-config enhancement)
         call check_gcov_availability(gcov_available)
         if (.not. gcov_available) then
+            if (allocated(coverage_files)) deallocate(coverage_files)
             allocate(character(len=256) :: coverage_files(0))
             return
         end if
