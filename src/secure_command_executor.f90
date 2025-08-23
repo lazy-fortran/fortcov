@@ -186,6 +186,10 @@ contains
                 dir_part = extract_dir_from_pattern(safe_pattern)
                 file_part = extract_filename_from_pattern(safe_pattern)
                 
+                ! Ensure parts are allocated
+                if (.not. allocated(dir_part)) dir_part = "."
+                if (.not. allocated(file_part)) file_part = "*"
+                
                 ! Use find for glob patterns to avoid shell expansion issues
                 command = "find " // escape_shell_argument(dir_part) // &
                          " -maxdepth 1 -name " // escape_shell_argument(file_part) // &
@@ -197,7 +201,7 @@ contains
         call register_temp_file_for_cleanup(temp_filename)
         
         ! Execute safe command
-        call execute_command_line(command, exitstat=stat)
+        call execute_command_line(command, wait=.true., exitstat=stat)
         
         ! Allocate temporary array with configurable size
         allocate(temp_files(max_files_limit))
@@ -654,7 +658,14 @@ contains
         end if
         
         ! Step 2: Try standard close with delete
-        close(unit, status='delete', iostat=iostat)
+        ! First ensure the file still exists before attempting deletion
+        inquire(file=filename, exist=file_exists)
+        if (.not. file_exists) then
+            ! File already deleted or never existed, just close the unit
+            close(unit, iostat=iostat)
+        else
+            close(unit, status='delete', iostat=iostat)
+        end if
         
         if (iostat /= 0) then
             deletion_failed = .true.
@@ -738,21 +749,21 @@ contains
         
         ! Try rm command as fallback
         call execute_command_line("rm -f " // escape_shell_argument(filename), &
-                                 exitstat=stat)
+                                 wait=.true., exitstat=stat)
         
         if (stat /= 0) then
             ! Try unlink system call through a C-style approach
             ! This is more robust on Unix-like systems
             call execute_command_line("unlink " // escape_shell_argument(filename) // &
-                                     " 2>/dev/null", exitstat=stat)
+                                     " 2>/dev/null", wait=.true., exitstat=stat)
             
             if (stat /= 0) then
                 ! Try to change permissions first then delete
                 call execute_command_line("chmod 600 " // escape_shell_argument(filename) // &
-                                        " 2>/dev/null", exitstat=stat)
+                                        " 2>/dev/null", wait=.true., exitstat=stat)
                 if (stat == 0) then
                     call execute_command_line("rm -f " // escape_shell_argument(filename), &
-                                            exitstat=stat)
+                                            wait=.true., exitstat=stat)
                 end if
             end if
         end if

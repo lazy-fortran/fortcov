@@ -187,7 +187,7 @@ contains
         class(gcov_executor_t), intent(in) :: this
         character(len=*), intent(in) :: gcov_files(:)
         
-        integer :: i, unit, stat
+        integer :: i, unit, stat, close_stat
         logical :: exists
         
         do i = 1, size(gcov_files)
@@ -195,7 +195,12 @@ contains
             if (exists) then
                 open(newunit=unit, file=gcov_files(i), status='old', iostat=stat)
                 if (stat == 0) then
-                    close(unit, status='delete')
+                    close(unit, status='delete', iostat=close_stat)
+                    ! If deletion failed, try alternative method
+                    if (close_stat /= 0) then
+                        call execute_command_line("rm -f " // trim(gcov_files(i)), &
+                                                 exitstat=stat)
+                    end if
                 end if
             end if
         end do
@@ -214,11 +219,16 @@ contains
 
     subroutine cleanup_temp_file(temp_filename)
         character(len=*), intent(in) :: temp_filename
-        integer :: unit, stat
+        integer :: unit, stat, close_stat
         
         open(newunit=unit, file=temp_filename, status='old', iostat=stat)
         if (stat == 0) then
-            close(unit, status='delete')
+            close(unit, status='delete', iostat=close_stat)
+            ! If deletion failed, try alternative method
+            if (close_stat /= 0) then
+                call execute_command_line("rm -f " // trim(temp_filename), &
+                                         exitstat=stat)
+            end if
         end if
     end subroutine cleanup_temp_file
 
