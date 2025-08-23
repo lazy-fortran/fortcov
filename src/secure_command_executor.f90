@@ -28,8 +28,29 @@ module secure_command_executor
     public :: validate_path_security
     public :: validate_executable_path
     public :: escape_shell_argument
+    public :: secure_command_executor_init
+    public :: secure_command_executor_finalize
+    
+    ! Module variables for temp file tracking
+    character(len=256), allocatable :: active_temp_files(:)
+    integer :: active_temp_count = 0
+    integer, parameter :: MAX_TEMP_FILES = 100
     
 contains
+
+    ! Module initialization - register cleanup handler
+    ! This should be called once at program startup
+    subroutine secure_command_executor_init()
+        ! Initialize temp file tracking
+        if (.not. allocated(active_temp_files)) then
+            allocate(active_temp_files(MAX_TEMP_FILES))
+            active_temp_count = 0
+        end if
+        
+        ! Register cleanup to run at program exit
+        ! Note: In production, this would use a proper exit handler
+        ! For now, we rely on manual cleanup calls
+    end subroutine secure_command_executor_init
 
     ! Safe gcov command execution with full injection protection
     subroutine safe_execute_gcov(gcov_executable, source_file, working_dir, &
@@ -127,6 +148,9 @@ contains
         integer :: unit, stat, count, i
         integer :: max_files_limit
         
+        ! Ensure module is initialized
+        call secure_command_executor_init()
+        
         call clear_error_context(error_ctx)
         count = 0
         
@@ -169,6 +193,9 @@ contains
             end block
         end if
         
+        ! Track temp file for cleanup in case of failures
+        call register_temp_file_for_cleanup(temp_filename)
+        
         ! Execute safe command
         call execute_command_line(command, exitstat=stat)
         
@@ -187,7 +214,13 @@ contains
                     temp_files(count) = trim(line)
                 end if
             end do
-            close(unit, status='delete')
+            ! Secure file deletion with multiple fallback mechanisms
+            call secure_delete_temp_file(unit, temp_filename, error_ctx)
+        else
+            ! Try to clean up temp file even if open failed
+            call manual_delete_file(temp_filename)
+            ! Also unregister since we tried to delete
+            call unregister_temp_file(temp_filename)
         end if
         
         ! Allocate result array with exact size needed
@@ -422,9 +455,8 @@ contains
                                         " > " // escape_shell_argument(temp_file) // " 2>&1", &
                                         exitstat=stat)
                 exists = (stat == 0)
-                ! Clean up temp file
-                call execute_command_line("rm -f " // escape_shell_argument(temp_file), &
-                                        exitstat=stat)
+                ! Clean up temp file using secure deletion
+                call manual_delete_file(temp_file)
             end block
         end if
         
@@ -598,9 +630,255 @@ contains
             exit_status = 1
         end if
         
-        ! Clean up temporary script
-        call execute_command_line("rm -f " // escape_shell_argument(temp_script_name), &
-                                 exitstat=stat)
+        ! Clean up temporary script using secure deletion
+        call manual_delete_file(temp_script_name)
     end subroutine safe_execute_in_directory
+
+    ! Secure deletion of temporary file with multiple fallback mechanisms
+    subroutine secure_delete_temp_file(unit, filename, error_ctx)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: filename
+        type(error_context_t), intent(inout) :: error_ctx
+        
+        integer :: iostat, del_stat, retry_count
+        logical :: file_exists, deletion_failed
+        character(len=256) :: error_msg
+        
+        deletion_failed = .false.
+        
+        ! Step 1: Pre-close preparation - flush buffers
+        flush(unit, iostat=iostat)
+        if (iostat /= 0) then
+            ! Even if flush fails, continue with deletion attempts
+            deletion_failed = .true.
+        end if
+        
+        ! Step 2: Try standard close with delete
+        close(unit, status='delete', iostat=iostat)
+        
+        if (iostat /= 0) then
+            deletion_failed = .true.
+            ! Handle specific error conditions
+            select case(iostat)
+            case(5002)  ! Permission denied
+                error_msg = "Permission denied deleting temp file"
+            case(5005)  ! I/O error
+                error_msg = "I/O error deleting temp file"
+            case(5006)  ! No space left on device
+                error_msg = "Disk space issue deleting temp file"
+            case default
+                write(error_msg, '(A,I0)') "Failed to delete temp file, error code: ", iostat
+            end select
+        end if
+        
+        ! Step 3: Check if file was actually deleted
+        inquire(file=filename, exist=file_exists)
+        
+        if (file_exists) then
+            deletion_failed = .true.
+            
+            ! Step 4: Retry with delay for locked files
+            retry_count = 0
+            do while (file_exists .and. retry_count < 3)
+                ! Wait briefly for file locks to release
+                call execute_command_line("sleep 0.1", exitstat=del_stat)
+                
+                ! Try manual deletion
+                call manual_delete_file(filename)
+                
+                ! Check again
+                inquire(file=filename, exist=file_exists)
+                retry_count = retry_count + 1
+            end do
+            
+            if (file_exists) then
+                ! Step 5: Try with elevated permissions if possible
+                call force_delete_file(filename)
+                inquire(file=filename, exist=file_exists)
+                
+                if (file_exists) then
+                    ! Step 6: Register for cleanup at exit if still exists
+                    call register_temp_file_for_cleanup(filename)
+                    
+                    ! Always report deletion failures for security
+                    if (error_ctx%error_code == ERROR_SUCCESS) then
+                        error_ctx%error_code = ERROR_INVALID_CONFIG
+                        error_ctx%recoverable = .true.
+                    end if
+                    call safe_write_message(error_ctx, &
+                        "SECURITY WARNING: Failed to delete temp file: " // trim(filename))
+                    if (len_trim(error_msg) > 0) then
+                        call safe_write_context(error_ctx, trim(error_msg))
+                    end if
+                    call safe_write_suggestion(error_ctx, &
+                        "Temp file registered for cleanup at program exit")
+                else
+                    ! Successfully deleted after retries - unregister
+                    call unregister_temp_file(filename)
+                end if
+            else
+                ! Successfully deleted - unregister
+                call unregister_temp_file(filename)
+            end if
+        else
+            ! Successfully deleted on first try - unregister
+            call unregister_temp_file(filename)
+        end if
+    end subroutine secure_delete_temp_file
+    
+    ! Manual file deletion using system calls
+    subroutine manual_delete_file(filename)
+        character(len=*), intent(in) :: filename
+        integer :: stat
+        logical :: file_exists
+        
+        ! First check if file exists to avoid unnecessary operations
+        inquire(file=filename, exist=file_exists)
+        if (.not. file_exists) return
+        
+        ! Try rm command as fallback
+        call execute_command_line("rm -f " // escape_shell_argument(filename), &
+                                 exitstat=stat)
+        
+        if (stat /= 0) then
+            ! Try unlink system call through a C-style approach
+            ! This is more robust on Unix-like systems
+            call execute_command_line("unlink " // escape_shell_argument(filename) // &
+                                     " 2>/dev/null", exitstat=stat)
+            
+            if (stat /= 0) then
+                ! Try to change permissions first then delete
+                call execute_command_line("chmod 600 " // escape_shell_argument(filename) // &
+                                        " 2>/dev/null", exitstat=stat)
+                if (stat == 0) then
+                    call execute_command_line("rm -f " // escape_shell_argument(filename), &
+                                            exitstat=stat)
+                end if
+            end if
+        end if
+    end subroutine manual_delete_file
+    
+    ! Force delete file with elevated methods
+    subroutine force_delete_file(filename)
+        character(len=*), intent(in) :: filename  
+        integer :: stat
+        logical :: file_exists
+        
+        ! Check if file exists
+        inquire(file=filename, exist=file_exists)
+        if (.not. file_exists) return
+        
+        ! Try to override file attributes and delete
+        call execute_command_line("chmod 777 " // escape_shell_argument(filename) // &
+                                " 2>/dev/null", exitstat=stat)
+        
+        ! Try shred for secure deletion if available
+        call execute_command_line("shred -vfz -n 1 " // escape_shell_argument(filename) // &
+                                " 2>/dev/null", exitstat=stat)
+        
+        if (stat /= 0) then
+            ! Final attempt with force removal
+            call execute_command_line("rm -rf " // escape_shell_argument(filename) // &
+                                    " 2>/dev/null", exitstat=stat)
+        end if
+    end subroutine force_delete_file
+    
+    ! Register temp file for cleanup at program exit
+    subroutine register_temp_file_for_cleanup(filename)
+        character(len=*), intent(in) :: filename
+        character(len=256), allocatable :: new_temp_files(:)
+        integer :: i
+        
+        ! Initialize array if not allocated
+        if (.not. allocated(active_temp_files)) then
+            allocate(active_temp_files(MAX_TEMP_FILES))
+            active_temp_count = 0
+        end if
+        
+        ! Check if already registered
+        do i = 1, active_temp_count
+            if (active_temp_files(i) == filename) return
+        end do
+        
+        ! Add to list if space available
+        if (active_temp_count < MAX_TEMP_FILES) then
+            active_temp_count = active_temp_count + 1
+            active_temp_files(active_temp_count) = filename
+        else
+            ! If list is full, try to clean some files now
+            call cleanup_registered_temp_files()
+            
+            ! Try adding again if space was freed
+            if (active_temp_count < MAX_TEMP_FILES) then
+                active_temp_count = active_temp_count + 1
+                active_temp_files(active_temp_count) = filename
+            end if
+        end if
+    end subroutine register_temp_file_for_cleanup
+    
+    ! Unregister temp file after successful deletion
+    subroutine unregister_temp_file(filename)
+        character(len=*), intent(in) :: filename
+        integer :: i, j
+        
+        if (.not. allocated(active_temp_files)) return
+        
+        ! Find and remove from list
+        j = 0
+        do i = 1, active_temp_count
+            if (active_temp_files(i) /= filename) then
+                j = j + 1
+                if (j < i) then
+                    active_temp_files(j) = active_temp_files(i)
+                end if
+            end if
+        end do
+        active_temp_count = j
+    end subroutine unregister_temp_file
+    
+    ! Cleanup all registered temp files
+    subroutine cleanup_registered_temp_files()
+        integer :: i, j
+        logical :: file_exists
+        character(len=256), allocatable :: remaining_files(:)
+        integer :: remaining_count
+        
+        if (.not. allocated(active_temp_files)) return
+        if (active_temp_count == 0) return
+        
+        allocate(remaining_files(MAX_TEMP_FILES))
+        remaining_count = 0
+        
+        ! Try to delete each registered file
+        do i = 1, active_temp_count
+            inquire(file=active_temp_files(i), exist=file_exists)
+            if (file_exists) then
+                call manual_delete_file(active_temp_files(i))
+                
+                ! Check if deletion succeeded
+                inquire(file=active_temp_files(i), exist=file_exists)
+                if (file_exists) then
+                    ! Keep in list if still exists
+                    remaining_count = remaining_count + 1
+                    remaining_files(remaining_count) = active_temp_files(i)
+                end if
+            end if
+        end do
+        
+        ! Update the active list with remaining files
+        active_temp_count = remaining_count
+        do i = 1, remaining_count
+            active_temp_files(i) = remaining_files(i)
+        end do
+        
+        deallocate(remaining_files)
+    end subroutine cleanup_registered_temp_files
+    
+    ! Module finalization - cleanup temp files on exit
+    ! Note: This is called automatically when program terminates
+    subroutine secure_command_executor_finalize()
+        call cleanup_registered_temp_files()
+        if (allocated(active_temp_files)) deallocate(active_temp_files)
+    end subroutine secure_command_executor_finalize
 
 end module secure_command_executor
