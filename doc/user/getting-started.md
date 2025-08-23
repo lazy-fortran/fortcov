@@ -117,9 +117,11 @@ cat coverage.md
 
 **Success!** You've generated your first coverage report.
 
-### Security Notice
+### Enhanced Stability and Security
 
-FortCov includes comprehensive security protections against command injection and path traversal attacks. These features work transparently during normal usage but will block potentially malicious inputs for security.
+**Memory Safety Improvements (v2.0+)**: FortCov includes critical memory allocation bug fixes that eliminate segmentation faults and test suite failures. These improvements ensure reliable operation across all usage scenarios.
+
+**Security Protections**: FortCov includes comprehensive security protections against command injection and path traversal attacks. These features work transparently during normal usage but will block potentially malicious inputs for security.
 
 If you encounter "Path contains dangerous characters" or similar security messages, use standard project directory structures and avoid special shell characters in file paths.
 
