@@ -96,6 +96,7 @@ contains
         end if
         
         ! Phase 3: No coverage data found
+        if (allocated(coverage_files)) deallocate(coverage_files)
         allocate(character(len=256) :: coverage_files(0))
         
     end function auto_discover_coverage_files_priority
