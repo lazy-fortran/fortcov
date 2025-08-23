@@ -41,3 +41,8 @@ main = "test_zero_configuration_issue_227.f90"
 name = "test_memory_allocation_bug_issue_243"
 source-dir = "test"
 main = "test_memory_allocation_bug_issue_243.f90"
+
+[[test]]
+name = "test_secure_file_deletion_issue_244"
+source-dir = "test"
+main = "test_secure_file_deletion_issue_244.f90"
