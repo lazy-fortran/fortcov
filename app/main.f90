@@ -2,13 +2,14 @@ program main
   use fortcov
   use fortcov_config, only: validate_config
   use error_handling
+  use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery
   implicit none
   
   type(config_t) :: config
   character(len=:), allocatable :: args(:)
-  character(len=256) :: error_message
+  character(len=256) :: error_message, enhancement_error
   type(error_context_t) :: error_ctx
-  logical :: success
+  logical :: success, enhancement_success
   integer :: exit_code, argc, i
   
   ! Get command line arguments (excluding argv(0) which contains executable path)
@@ -37,6 +38,15 @@ program main
     print *, "   * Check if .gcov files are present: find . -name '*.gcov'"
     print *, "   * Try: fortcov --source=src --output=coverage.md"
     call exit(EXIT_FAILURE)
+  end if
+
+  ! Apply enhanced auto-discovery integration for zero-configuration mode (Issue #281)
+  if (config%zero_configuration_mode) then
+    call enhance_zero_config_with_auto_discovery(config, enhancement_success, enhancement_error)
+    if (.not. enhancement_success .and. .not. config%quiet) then
+      print *, "⚠️  Auto-discovery enhancement failed: " // trim(enhancement_error)
+      print *, "   Continuing with basic zero-configuration mode"
+    end if
   end if
   
   ! Check for help/version/validate-config flags after successful parsing

@@ -8,6 +8,7 @@ module config_defaults
     use foundation_constants
     use foundation_layer_utils
     use zero_configuration_manager
+    use secure_command_executor, only: escape_shell_argument
     
     implicit none
     private
@@ -18,6 +19,7 @@ module config_defaults
     public :: ensure_zero_config_output_directory
     public :: get_max_files_from_env
     public :: handle_zero_configuration_mode
+    public :: apply_legacy_zero_config_defaults
 
 contains
 
@@ -95,12 +97,24 @@ contains
         type(config_t), intent(inout) :: config
 
         logical :: dir_exists
+        character(len=512) :: command
+        integer :: exit_status
 
         if (config%zero_configuration_mode .and. &
             len_trim(config%output_path) > 0) then
             inquire(file=trim(config%output_path), exist=dir_exists)
             if (.not. dir_exists) then
-                call execute_command_line("mkdir -p " // trim(config%output_path))
+                ! Use secure shell argument escaping to prevent command injection
+                command = "mkdir -p " // escape_shell_argument(config%output_path)
+                call execute_command_line(command, exitstat=exit_status)
+                
+                ! Handle directory creation failure
+                if (exit_status /= 0) then
+                    write(*,'(A)') "Warning: Failed to create output directory: " // &
+                                   trim(config%output_path)
+                    write(*,'(A)') "Please ensure the directory is writable or " // &
+                                   "create it manually"
+                end if
             end if
         end if
 
@@ -131,13 +145,28 @@ contains
     end subroutine get_max_files_from_env
 
     subroutine handle_zero_configuration_mode(config)
-        !! Apply zero-configuration defaults for unset fields
+        !! Apply zero-configuration defaults (basic mode)
+        !! Enhanced auto-discovery integration is applied separately to avoid 
+        !! circular dependencies (Issue #281)
         type(config_t), intent(inout) :: config
-
-        logical :: has_source_paths
 
         ! Mark as zero-configuration mode
         config%zero_configuration_mode = .true.
+
+        ! Apply zero-config defaults
+        call apply_legacy_zero_config_defaults(config)
+
+        ! NOTE: Enhanced auto-discovery integration (Issue #281) is now 
+        ! applied separately from the main application entry point to 
+        ! avoid circular module dependencies
+
+    end subroutine handle_zero_configuration_mode
+
+    subroutine apply_legacy_zero_config_defaults(config)
+        !! Apply legacy zero-configuration defaults (preserved for compatibility)
+        type(config_t), intent(inout) :: config
+        
+        logical :: has_source_paths
 
         ! Check if source paths are already set
         has_source_paths = allocated(config%source_paths) .and. &
@@ -172,6 +201,6 @@ contains
             config%gcov_executable = "gcov"
         end if
 
-    end subroutine handle_zero_configuration_mode
+    end subroutine apply_legacy_zero_config_defaults
 
 end module config_defaults
