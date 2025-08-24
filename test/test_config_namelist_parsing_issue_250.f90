@@ -207,6 +207,9 @@ contains
             return
         end if
         
+        ! Clean up the namelist file before creating the next test file
+        call delete_file(temp_file)
+        
         ! Test 2: Create key=value format file
         temp_file = "test_format.cfg"
         open(newunit=unit, file=temp_file, status='replace')

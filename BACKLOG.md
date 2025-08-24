@@ -30,6 +30,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [x] #300: cleanup: rescue test_format.nml from main branch (branch: cleanup-untracked-files-main)
 
 ## DONE (Completed Work)
 - [x] #257: Integration validation script failures and missing patterns (completed in PR #276)
