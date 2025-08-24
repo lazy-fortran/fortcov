@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (Security Vulnerabilities - Immediate Priority)
-- [ ] #310: Security: complete error message path leakage sanitization
 - [ ] #309: Security: refine Windows device names validation in path security
 
 ### HIGH (Documentation & Testing Stability)
@@ -21,6 +20,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [x] #310: Security: complete error message path leakage sanitization (branch: security-310)
 
 ## DONE (Completed Work)
 - [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
