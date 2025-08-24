@@ -6,7 +6,6 @@
 ### HIGH (Architecture & Security)
 
 ### MEDIUM (Dead Code Cleanup)
-- [ ] #284: Remove dead code: orphaned test reference in fpm.toml
 - [ ] #286: Remove dead code: build artifacts in repository (CONSOLIDATED)
 - [ ] #288: Remove dead code: typo in test performance script
 - [ ] #289: Remove dead code: potentially unused error handling functions
@@ -21,9 +20,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #284: Remove dead code: orphaned test reference in fpm.toml
 
 ## DONE (Completed Work)
+- [x] #284: Remove dead code: orphaned test reference in fpm.toml (completed in PR #318)
 - [x] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
 - [x] #246: CLI flag parsing completely broken - all options silently ignored (completed in PR #316)
 - [x] #245: Multiple test suite segmentation faults indicate memory safety issues (fixed with allocation guards)
