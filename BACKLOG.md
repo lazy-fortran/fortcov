@@ -17,9 +17,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #289: Remove dead code: potentially unused error handling functions
 
 ## DONE (Completed Work)
+- [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
 - [x] #288: Remove dead code: typo in test performance script (completed in PR #320)
 - [x] #286: Remove dead code: build artifacts in repository (completed in PR #319)
 - [x] #284: Remove dead code: orphaned test reference in fpm.toml (completed in PR #318)
