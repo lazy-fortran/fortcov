@@ -5,7 +5,6 @@
 ### CRITICAL (Core Functionality Broken)
 
 ### HIGH (Build System Issues)
-- [ ] #258: Makefile syntax error in make basic example
 - [ ] #257: Integration validation script failures and missing patterns
 
 ### MEDIUM (Documentation Errors)
@@ -26,6 +25,7 @@
 - [ ] #271: Improve iostat error handling granularity
 
 ## DOING (Current Work)
+- [ ] #258: Makefile syntax error in make basic example
 
 ## DONE (Completed)
 - [x] #259: Meson example configuration errors - reserved target name and deprecated API
