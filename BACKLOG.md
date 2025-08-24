@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
-- [ ] #304: Test: improve test coverage simulation accuracy
 
 ### MEDIUM (Dead Code Cleanup)
 - [ ] #292: Dead code audit summary: multiple categories of obsolete code found
@@ -16,6 +15,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [ ] #304: Test: improve test coverage simulation accuracy (branch: test-304)
 
 ## DONE (Completed Work)
 - [x] #305: Docs: update test documentation for infinite loop prevention (completed in PR #328)
