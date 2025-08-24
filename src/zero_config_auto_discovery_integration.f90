@@ -18,13 +18,15 @@ module zero_config_auto_discovery_integration
     !! a seamless zero-configuration experience for new users.
     
     use config_types, only: config_t
-    use build_system_detector, only: build_system_info_t, detect_build_system, &
-                                     validate_build_tool_available
+    use build_system_detector, only: build_system_info_t, detect_build_system
     use coverage_workflows, only: execute_auto_test_workflow
+    use test_build_gcov_auto_discovery, only: execute_complete_auto_workflow, &
+                                              complete_workflow_result_t
     use zero_configuration_manager, only: apply_zero_configuration_defaults, &
                                          ensure_output_directory_structure, &
                                          show_zero_configuration_error_guidance
     use error_handling, only: error_context_t, ERROR_SUCCESS, clear_error_context
+    use foundation_constants, only: EXIT_SUCCESS, EXIT_FAILURE
     implicit none
     private
     
@@ -34,6 +36,7 @@ module zero_config_auto_discovery_integration
     public :: integrate_build_system_detection
     public :: setup_auto_test_execution
     public :: provide_zero_config_user_feedback
+    public :: execute_zero_config_complete_workflow
     
     ! Constants for default configuration
     integer, parameter :: DEFAULT_TEST_TIMEOUT = 300  ! 5 minutes
@@ -402,5 +405,101 @@ contains
         write(*, '(A,I0)') "   Max files: ", config%max_files
         
     end subroutine report_output_configuration
+
+    function execute_zero_config_complete_workflow(config) result(exit_code)
+        !! Execute complete auto-discovery workflow in zero-configuration mode
+        !!
+        !! Integrates the complete auto-discovery workflow (Issue #277) with
+        !! zero-configuration mode. This provides the seamless experience of
+        !! running `fortcov` with no arguments and getting complete coverage
+        !! analysis with auto-detected build system, auto-test execution,
+        !! and auto-gcov processing.
+        !!
+        !! This is the main integration point that ties together:
+        !! - Zero-configuration setup and defaults
+        !! - Complete auto-discovery workflow
+        !! - User feedback and error reporting
+        !!
+        !! Args:
+        !!   config: Configuration object (enhanced with zero-config)
+        !!
+        !! Returns:
+        !!   exit_code: 0 for success, non-zero for various failure conditions
+        
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+
+        type(complete_workflow_result_t) :: workflow_result
+
+        exit_code = EXIT_SUCCESS
+
+        ! Execute the complete auto-discovery workflow
+        call execute_complete_auto_workflow(config, workflow_result)
+
+        ! Report workflow results to user
+        call report_workflow_results(config, workflow_result)
+
+        ! Set exit code based on workflow success
+        if (.not. workflow_result%success) then
+            if (workflow_result%timed_out) then
+                exit_code = 124  ! Standard timeout exit code
+            else
+                exit_code = EXIT_FAILURE
+            end if
+        end if
+
+    end function execute_zero_config_complete_workflow
+
+    subroutine report_workflow_results(config, result)
+        !! Report complete workflow results to user
+        type(config_t), intent(in) :: config
+        type(complete_workflow_result_t), intent(in) :: result
+
+        if (config%quiet) return
+
+        print *, "📊 Auto-discovery workflow results:"
+
+        ! Report test execution results
+        if (result%test_executed) then
+            if (result%tests_passed) then
+                print *, "   ✅ Tests: Passed"
+            else if (result%timed_out) then
+                print *, "   ⏱️  Tests: Timed out"
+            else
+                print *, "   ❌ Tests: Failed"
+            end if
+        else
+            print *, "   ⏭️  Tests: Skipped (no build system or disabled)"
+        end if
+
+        ! Report gcov processing results
+        if (result%used_manual_files) then
+            print *, "   📁 Coverage files: Using manual specification"
+        else if (result%gcov_processed) then
+            print *, "   ✅ Coverage processing: Auto-discovered and processed"
+        else
+            print *, "   ❌ Coverage processing: No coverage data found"
+        end if
+
+        ! Report coverage generation
+        if (result%coverage_generated) then
+            print *, "   📈 Coverage report: Generated"
+        else
+            print *, "   ❌ Coverage report: Failed to generate"
+        end if
+
+        ! Report overall status
+        if (result%success) then
+            print *, "   🎉 Overall: Success"
+        else
+            print *, "   ❌ Overall: Failed"
+            if (len_trim(result%error_message) > 0) then
+                print *, "   💡 Error: " // trim(result%error_message)
+            end if
+        end if
+
+        print *, ""
+
+    end subroutine report_workflow_results
 
 end module zero_config_auto_discovery_integration

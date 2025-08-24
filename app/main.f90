@@ -2,7 +2,8 @@ program main
   use fortcov
   use fortcov_config, only: validate_config
   use error_handling
-  use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery
+  use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery, &
+                                                   execute_zero_config_complete_workflow
   implicit none
   
   type(config_t) :: config
@@ -95,8 +96,12 @@ program main
     call exit(EXIT_FAILURE)
   end if
   
-  ! Run coverage analysis
-  exit_code = run_coverage_analysis(config)
+  ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
+  if (config%zero_configuration_mode) then
+    exit_code = execute_zero_config_complete_workflow(config)
+  else
+    exit_code = run_coverage_analysis(config)
+  end if
   
   call exit(exit_code)
 end program main
