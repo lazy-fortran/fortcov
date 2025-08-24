@@ -121,7 +121,7 @@ contains
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 1  ! Very short timeout
         
-        call create_mock_fmp_project()
+        call create_mock_fpm_project()
         call create_mock_slow_tests()
         
         call execute_complete_auto_workflow(config, result)
@@ -136,9 +136,9 @@ contains
 
     ! Mock creation and cleanup subroutines
     
-    subroutine create_mock_fmp_project()
+    subroutine create_mock_fpm_project()
         call execute_command_line('touch fpm.toml')
-    end subroutine create_mock_fmp_project
+    end subroutine create_mock_fpm_project
 
     subroutine create_mock_complete_project()
         call create_mock_fpm_project()
