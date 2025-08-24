@@ -26,9 +26,9 @@
 - [ ] #271: Improve iostat error handling granularity
 
 ## DOING (Current Work)
-- [ ] #259: Meson example configuration errors - reserved target name and deprecated API
 
 ## DONE (Completed)
+- [x] #259: Meson example configuration errors - reserved target name and deprecated API
 - [x] #251: Diff mode incorrectly requires --source parameter
 - [x] #250: Configuration file parsing fails with iostat=5010
 - [x] #249: Zero-configuration mode not working as documented
