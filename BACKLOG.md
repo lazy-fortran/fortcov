@@ -4,7 +4,6 @@
 ### CRITICAL (Test Suite Blockers)
 
 ### HIGH (Architecture & Security)
-- [ ] #246: CLI flag parsing completely broken - all options silently ignored
 
 ### MEDIUM (Dead Code Cleanup)
 - [ ] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
@@ -23,6 +22,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [x] #246: CLI flag parsing completely broken - all options silently ignored (branch: fix-cli-246)
 
 ## DONE (Completed Work)
 - [x] #245: Multiple test suite segmentation faults indicate memory safety issues (fixed with allocation guards)
