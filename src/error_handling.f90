@@ -22,6 +22,7 @@ module error_handling
     integer, parameter, public :: ERROR_INVALID_DATA = 1024
     integer, parameter, public :: ERROR_INVALID_PATH = 1025
     integer, parameter, public :: ERROR_MEMORY_EXHAUSTION = 1026
+    integer, parameter, public :: ERROR_FILE_OPERATION_FAILED = 1027
     
     integer, parameter, public :: ERROR_FATAL = 1999
     
