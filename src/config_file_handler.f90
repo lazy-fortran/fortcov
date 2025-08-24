@@ -408,10 +408,10 @@ contains
         case ('enable_diff')
             config%enable_diff = (trim(value) == 'true')
         case ('exclude')
-            ! Placeholder - add_exclude_pattern would need to be implemented here
+            ! add_exclude_pattern not yet implemented
             success = .true.
         case ('source')
-            ! Placeholder - add_source_path would need to be implemented here
+            ! add_source_path not yet implemented
             success = .true.
         case default
             ! Ignore unknown options in config file

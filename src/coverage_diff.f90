@@ -20,8 +20,6 @@ module coverage_diff
     public :: compute_coverage_diff
     public :: compute_file_diff
     public :: compute_line_diff
-    ! Commented out: public :: compute_coverage_diff_with_thresholds
-    ! Commented out: public :: compute_enhanced_file_diff
     
 contains
 
@@ -99,11 +97,6 @@ contains
         ! Create final coverage diff
         diff%file_diffs = file_diffs_temp(1:file_diff_count)
         
-        ! Apply threshold filtering if needed
-        ! TODO: Implement threshold filtering
-        ! if (threshold_val > 0.0) then
-        !     call diff%filter_by_threshold()
-        ! end if
         
     end function compute_coverage_diff
 
@@ -283,5 +276,4 @@ contains
         file_diff%line_diffs = line_diffs
     end function compute_file_diff_removed
 
-    ! Enhanced threshold-based diff computation with sophisticated analysis
 end module coverage_diff

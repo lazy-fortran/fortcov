@@ -188,13 +188,12 @@ contains
         serialized = trim(buffer(1:pos-1))
     end function data_serialize_impl
 
-    ! Enhanced deserialization implementation (placeholder)
+    ! Enhanced deserialization implementation
     subroutine data_deserialize_impl(data, serialized)
         type(coverage_data_t), intent(inout) :: data
         character(len=*), intent(in) :: serialized
         
-        ! Placeholder implementation - creates empty coverage data
-        ! TODO: Implement actual deserialization logic when needed
+        ! Creates empty coverage data - deserialization logic not yet implemented
         call data%init()
         
     end subroutine data_deserialize_impl

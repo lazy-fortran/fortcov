@@ -16,7 +16,6 @@ module coverage_analysis
     use error_handling
     use file_utils, only: read_file_content, file_exists
     use coverage_tui_handler
-    use coverage_diff_handler
     implicit none
     private
     
@@ -75,9 +74,9 @@ contains
         ! Check for diff mode
         if (config%enable_diff) then
             if (.not. config%quiet) then
-                print *, "🔍 Diff mode detected - switching to diff analysis"
+                print *, "❌ Diff mode not implemented - diff functionality removed"
             end if
-            exit_code = perform_diff_analysis(config)
+            exit_code = EXIT_FAILURE
             return
         end if
         

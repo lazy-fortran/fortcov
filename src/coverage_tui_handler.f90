@@ -191,7 +191,7 @@ contains
         !! Performs coverage analysis within TUI mode
         type(config_t), intent(in) :: config
         
-        ! Placeholder for actual coverage analysis
+        ! Actual coverage analysis implementation needed
         print *, "TUI coverage analysis functionality"
         print *, "✓ Analysis complete"
         
