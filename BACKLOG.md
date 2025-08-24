@@ -16,9 +16,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #305: Docs: update test documentation for infinite loop prevention (branch: docs-305)
 
 ## DONE (Completed Work)
+- [x] #305: Docs: update test documentation for infinite loop prevention (completed in PR #328)
 - [x] #327: Cleanup: analyze and optimize test suite for CI performance (tests cleaned up, CI fixed)
 - [x] #309: Security: refine Windows device names validation in path security (completed in PR #326)
 - [x] #310: Security: complete error message path leakage sanitization (completed in PR #322)
