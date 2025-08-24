@@ -30,8 +30,8 @@ meson test -C builddir
 # Run coverage target
 echo
 echo "Running coverage analysis..."
-echo "Command: meson compile coverage -C builddir"
-meson compile coverage -C builddir
+echo "Command: meson compile fortcov_coverage -C builddir"
+meson compile fortcov_coverage -C builddir
 
 echo
 echo "Build directory contents:"

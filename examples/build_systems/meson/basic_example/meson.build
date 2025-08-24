@@ -58,10 +58,10 @@ fortcov = find_program('fortcov', required: false)
 
 if fortcov.found() and coverage_option
   # Custom target for coverage analysis
-  run_target('coverage',
+  run_target('fortcov_coverage',
     command: [
       find_program('bash'), '-c',
-      'gcov @0@/*.f90 && echo "Running fortcov analysis..." && echo "fortcov --source=@0@ --output=coverage.html"'.format(meson.source_root())
+      'cd @0@ && find . -name "*.gcno" -exec gcov {} + && echo "Running fortcov analysis..." && echo "fortcov --source=@1@ --output=coverage.html"'.format(meson.project_build_root(), meson.project_source_root())
     ],
     depends: [demo_exe, test_exe]
   )
@@ -71,14 +71,14 @@ if fortcov.found() and coverage_option
     input: 'scripts/generate_coverage.sh.in',
     output: 'generate_coverage.sh',
     configuration: {
-      'SOURCE_ROOT': meson.source_root(),
-      'BUILD_ROOT': meson.build_root()
+      'SOURCE_ROOT': meson.project_source_root(),
+      'BUILD_ROOT': meson.project_build_root()
     }
   )
   
 else
   # Fallback coverage target for demonstration
-  run_target('coverage',
+  run_target('fortcov_coverage',
     command: [
       find_program('bash'), '-c',
       'echo "Coverage analysis (demo mode)"; echo "Note: Install fortcov for full coverage analysis"'

@@ -5,7 +5,6 @@
 ### CRITICAL (Core Functionality Broken)
 
 ### HIGH (Build System Issues)
-- [ ] #259: Meson example configuration errors - reserved target name and deprecated API
 - [ ] #258: Makefile syntax error in make basic example
 - [ ] #257: Integration validation script failures and missing patterns
 
@@ -27,6 +26,7 @@
 - [ ] #271: Improve iostat error handling granularity
 
 ## DOING (Current Work)
+- [ ] #259: Meson example configuration errors - reserved target name and deprecated API
 
 ## DONE (Completed)
 - [x] #251: Diff mode incorrectly requires --source parameter
