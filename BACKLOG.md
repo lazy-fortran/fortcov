@@ -23,6 +23,7 @@
 ### LOW (Code Quality Improvements)
 - [ ] #270: Refactor hardcoded array size in namelist parsing
 - [ ] #271: Improve iostat error handling granularity
+- [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 
 ## DOING (Current Work)
 - [ ] #258: Makefile syntax error in make basic example
