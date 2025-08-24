@@ -8,6 +8,7 @@ module config_defaults
     use foundation_constants
     use foundation_layer_utils
     use zero_configuration_manager
+    use secure_command_executor, only: escape_shell_argument
     
     implicit none
     private
@@ -96,12 +97,24 @@ contains
         type(config_t), intent(inout) :: config
 
         logical :: dir_exists
+        character(len=512) :: command
+        integer :: exit_status
 
         if (config%zero_configuration_mode .and. &
             len_trim(config%output_path) > 0) then
             inquire(file=trim(config%output_path), exist=dir_exists)
             if (.not. dir_exists) then
-                call execute_command_line("mkdir -p " // trim(config%output_path))
+                ! Use secure shell argument escaping to prevent command injection
+                command = "mkdir -p " // escape_shell_argument(config%output_path)
+                call execute_command_line(command, exitstat=exit_status)
+                
+                ! Handle directory creation failure
+                if (exit_status /= 0) then
+                    write(*,'(A)') "Warning: Failed to create output directory: " // &
+                                   trim(config%output_path)
+                    write(*,'(A)') "Please ensure the directory is writable or " // &
+                                   "create it manually"
+                end if
             end if
         end if
 
