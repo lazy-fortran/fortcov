@@ -490,7 +490,7 @@ contains
         call start_test("Readonly Filesystem Deletion")
 
         ! Try operation in potentially readonly area
-        call safe_find_files("/usr/**/*.f90", files, error_ctx, max_files=5)
+        call safe_find_files("/usr/**/*.f90", files, error_ctx)
         
         readonly_handled = .false.
         if (error_ctx%error_code /= ERROR_SUCCESS) then
