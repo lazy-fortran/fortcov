@@ -14,9 +14,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #292: Dead code audit summary: multiple categories of obsolete code found (branch: cleanup-292)
 
 ## DONE (Completed Work)
+- [x] #292: Dead code audit summary: multiple categories of obsolete code found (cleanup completed)
 - [x] #304: Test: improve test coverage simulation accuracy (completed in PR #329)
 - [x] #305: Docs: update test documentation for infinite loop prevention (completed in PR #328)
 - [x] #327: Cleanup: analyze and optimize test suite for CI performance (tests cleaned up, CI fixed)
