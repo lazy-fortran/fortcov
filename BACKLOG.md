@@ -21,9 +21,10 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [x] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
+- [ ] #284: Remove dead code: orphaned test reference in fpm.toml
 
 ## DONE (Completed Work)
+- [x] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
 - [x] #246: CLI flag parsing completely broken - all options silently ignored (completed in PR #316)
 - [x] #245: Multiple test suite segmentation faults indicate memory safety issues (fixed with allocation guards)
 - [x] #297: Security: File deletion vulnerabilities allow temp file persistence (completed in PR #311)
