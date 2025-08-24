@@ -425,7 +425,7 @@ contains
         case ("--format", "-f")
             config%output_format = value
 
-        case ("--minimum", "-m")
+        case ("--minimum", "-m", "--threshold")
             call parse_real_with_error(value, config%minimum_coverage, &
                                        "minimum coverage", success, error_message)
 

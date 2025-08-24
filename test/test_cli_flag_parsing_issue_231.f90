@@ -7,8 +7,8 @@ program test_cli_flag_parsing_issue_231
     !! THEN: The flags should be applied and affect the actual behavior
     !! 
     !! This test suite demonstrates Issue #231: ALL CLI flags are silently ignored
-    !! Current status: ALL tests should FAIL showing flags are ignored
-    !! Expected post-fix: ALL tests should PASS showing flags work correctly
+    !! Status: RESOLVED - All CLI flags now work correctly
+    !! All tests should PASS showing flags work correctly
     !!
     use fortcov
     use fortcov_config
@@ -24,8 +24,8 @@ program test_cli_flag_parsing_issue_231
     print *, "CLI Flag Parsing Issue #231 Test Suite"
     print *, "=========================================="
     print *, ""
-    print *, "Testing CLI flag functionality that should work but currently fails."
-    print *, "Issue: All CLI flags are silently ignored by fortcov"
+    print *, "Testing CLI flag functionality - all flags now work correctly."
+    print *, "Issue #231 has been resolved - CLI flags are properly handled"
     print *, ""
     
     ! Setup test environment
@@ -50,21 +50,26 @@ program test_cli_flag_parsing_issue_231
     print *, "Test Results Summary"
     print *, "=========================================="
     write(*, '(A, I0, A, I0, A)') "Tests run: ", test_count, ", Failed: ", failed_count, &
-        " (expected to fail until issue is fixed)"
+        " (all should pass now)"
     
-    if (failed_count == test_count) then
+    if (failed_count == 0) then
         print *, ""
-        print *, "✅ All tests failed as expected - Issue #231 confirmed"
-        print *, "   CLI flags are being ignored by the coverage engine"
+        print *, "✅ All tests passed - Issue #231 has been resolved"
+        print *, "   CLI flags are working correctly throughout the system"
         print *, ""
-        print *, "Root cause analysis:"
-        print *, "• Configuration parsing works correctly (stores values)"
-        print *, "• Configuration application in coverage engine fails"
-        print *, "• Parsed config values not used during analysis execution"
+        print *, "Verified functionality:"
+        print *, "• --output flag: Creates output files at specified paths"
+        print *, "• --format flag: Generates output in requested format (JSON, etc.)"
+        print *, "• --verbose flag: Shows detailed analysis progress"
+        print *, "• --quiet flag: Suppresses informational output"
+        print *, "• --threshold flag: Enforces coverage thresholds with correct exit codes"
+        print *, "• --exclude flag: Excludes files matching specified patterns"
+        print *, "• --source flag: Discovers coverage files in specified directories"
+        print *, "• Invalid flag handling: Properly rejects unknown flags with error messages"
     else
         print *, ""
-        print *, "❓ Unexpected test results - some flags may be working"
-        print *, "   This indicates partial fix or different issue"
+        print *, "❌ Some tests failed - CLI flag issues may remain"
+        print *, "   Check individual test output above for details"
     end if
     
 contains
@@ -341,10 +346,11 @@ contains
         call start_test("Threshold Flag (--threshold)")
         
         ! Parse configuration with high threshold
-        allocate(character(len=256) :: args(3))
+        allocate(character(len=256) :: args(4))
         args(1) = "--threshold=99.9"
         args(2) = "--strict"
-        args(3) = "--output=test_threshold.md"
+        args(3) = "--source=."
+        args(4) = "--output=test_threshold.md"
         
         call parse_config(args, config, success, error_message)
         
@@ -551,7 +557,14 @@ contains
         write(unit, '(A)') "        -:    1:program test_sample"
         write(unit, '(A)') "        1:    2:    print *, 'Hello, World!'"
         write(unit, '(A)') "    #####:    3:    print *, 'Not executed'"
-        write(unit, '(A)') "        1:    4:end program test_sample"
+        write(unit, '(A)') "    #####:    4:    print *, 'Another uncovered line'"
+        write(unit, '(A)') "    #####:    5:    print *, 'Yet another uncovered line'"
+        write(unit, '(A)') "    #####:    6:    print *, 'More uncovered code'"
+        write(unit, '(A)') "    #####:    7:    print *, 'Even more uncovered'"
+        write(unit, '(A)') "    #####:    8:    print *, 'Many uncovered lines'"
+        write(unit, '(A)') "    #####:    9:    print *, 'To make coverage low'"
+        write(unit, '(A)') "   #####:   10:    print *, 'Far below 99.9 percent'"
+        write(unit, '(A)') "        1:   11:end program test_sample"
         close(unit)
     end subroutine create_test_gcov_file
     
@@ -562,6 +575,14 @@ contains
         open(newunit=unit, file=filename, status='replace', action='write')
         write(unit, '(A)') "program test_sample"
         write(unit, '(A)') "    print *, 'Hello, World!'"
+        write(unit, '(A)') "    print *, 'Not executed'"
+        write(unit, '(A)') "    print *, 'Another uncovered line'"
+        write(unit, '(A)') "    print *, 'Yet another uncovered line'"
+        write(unit, '(A)') "    print *, 'More uncovered code'"
+        write(unit, '(A)') "    print *, 'Even more uncovered'"
+        write(unit, '(A)') "    print *, 'Many uncovered lines'"
+        write(unit, '(A)') "    print *, 'To make coverage low'"
+        write(unit, '(A)') "    print *, 'Far below 99.9 percent'"
         write(unit, '(A)') "end program test_sample"
         close(unit)
     end subroutine create_test_source_file

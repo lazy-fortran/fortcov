@@ -356,7 +356,7 @@ contains
             if (.not. config%quiet) then
                 print *, "❌ Unsupported output format: '" // &
                         trim(config%output_format) // "'"
-                print *, "📊 Supported formats: markdown, md, json, xml, html"
+                print *, "📊 Supported formats: markdown, md, json, xml, html, terminal"
                 print *, "💡 Try: --output-format=markdown"
             end if
             is_valid = .false.
