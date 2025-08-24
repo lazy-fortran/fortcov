@@ -6,9 +6,14 @@
 - [ ] #279: Add auto-test execution to coverage workflows
 - [ ] #280: Add auto-discovery configuration options
 - [ ] #281: Enhance zero-configuration mode with auto-discovery integration
+- [ ] #246: CLI flag parsing completely broken - all options silently ignored
+- [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
 
 ## DOING (Current Work)
-- [ ] #257: Integration validation script failures and missing patterns
+- [ ] Circular dependency compilation error: coverage_model.mod corrupted at line 1573 column 24
+
+## DONE (Completed Work)
+- [x] #257: Integration validation script failures and missing patterns (completed in PR #276)
 
 ## FUTURE SPRINTS (High-level Planning)
 
