@@ -1,7 +1,8 @@
 # Development Backlog
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
-### CRITICAL (Security Vulnerabilities - Immediate Priority)
+### CRITICAL (CI Performance & Testing Stability - Immediate Priority)
+- [ ] #327: Cleanup: analyze and optimize test suite for CI performance
 
 ### HIGH (Documentation & Testing Stability)
 - [ ] #305: Docs: update test documentation for infinite loop prevention
@@ -19,9 +20,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #309: Security: refine Windows device names validation in path security (branch: security-309)
 
 ## DONE (Completed Work)
+- [x] #309: Security: refine Windows device names validation in path security (completed in PR #326)
 - [x] #310: Security: complete error message path leakage sanitization (completed in PR #322)
 - [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
 - [x] #288: Remove dead code: typo in test performance script (completed in PR #320)
@@ -71,12 +72,12 @@
 - [ ] #268: Consolidate redundant issue #249 test files
 
 ### LOW (Code Quality Improvements)
+- [ ] #324: Fix: address line length violations in secure_command_executor
+- [ ] #325: Refactor: reduce file size in secure_command_executor
+- [ ] #323: Refactor: reduce safe_close_and_delete function size
 - [ ] #270: Refactor hardcoded array size in namelist parsing
 - [ ] #271: Improve iostat error handling granularity
 - [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
-- [ ] #323: Refactor: reduce safe_close_and_delete function size
-- [ ] #324: Fix: address line length violations in secure_command_executor
-- [ ] #325: Refactor: reduce file size in secure_command_executor
