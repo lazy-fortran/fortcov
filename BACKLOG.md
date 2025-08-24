@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (Test Suite Blockers)
-- [ ] #293: Bug: Find command syntax error causes test suite hangs and failures
 - [ ] #294: Bug: Test suite hangs with infinite loops causing 3+ minute timeouts
 - [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
 
@@ -30,9 +29,10 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [x] #300: cleanup: rescue test_format.nml from main branch (branch: cleanup-untracked-files-main)
+- [ ] #293: Bug: Find command syntax error causes test suite hangs and failures (branch: fix-find-command-syntax-293)
 
 ## DONE (Completed Work)
+- [x] #300: cleanup: rescue test_format.nml from main branch (completed in PR #301)
 - [x] #257: Integration validation script failures and missing patterns (completed in PR #276)
 - [x] Circular dependency compilation error: coverage_model.mod corrupted at line 1573 column 24 (completed in PR #282)
 - [x] #285: TODO comments consolidated into #283
