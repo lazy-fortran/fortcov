@@ -302,7 +302,7 @@ contains
         do i = 1, path_len
             ch = path(i:i)
             select case (ch)
-            case (';', '|', '&', '$', '`', '(', ')', '{', '}', '[', ']', '<', '>')
+            case (';', '|', '&', '$', '`', '(', ')', '{', '}', '[', ']', '<', '>', '"', "'")
                 call result%init(.false., ERROR_INVALID_PATH, &
                                "Unsafe character in path: '" // ch // "'", &
                                "Remove special characters from file path")
