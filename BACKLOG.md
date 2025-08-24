@@ -3,7 +3,6 @@
 ## TODO (Ordered by Priority)
 
 ### CRITICAL (Core Functionality Broken)
-- [ ] #250: Configuration file parsing fails with iostat=5010
 - [ ] #251: Diff mode incorrectly requires --source parameter
 
 ### HIGH (Build System Issues)
@@ -24,7 +23,12 @@
 - [ ] #267: Potential command injection in test shell commands
 - [ ] #268: Consolidate redundant issue #249 test files
 
+### LOW (Code Quality Improvements)
+- [ ] #270: Refactor hardcoded array size in namelist parsing
+- [ ] #271: Improve iostat error handling granularity
+
 ## DOING (Current Work)
+- [ ] #250: Configuration file parsing fails with iostat=5010 (branch: fix-config-parsing-issue-250)
 
 ## DONE (Completed)
 - [x] #249: Zero-configuration mode not working as documented

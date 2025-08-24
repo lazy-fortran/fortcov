@@ -13,19 +13,18 @@ module config_file_handler
     public :: load_config_file_with_merge
     public :: merge_config_with_cli_priority
     public :: process_config_file_option
+    public :: parse_namelist_config_file
+    public :: detect_config_format
     
 contains
     
     subroutine parse_config_file(config, success, error_message)
-        !! Configuration file parsing implementation
+        !! Configuration file parsing implementation with format detection
         type(config_t), intent(inout) :: config
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        character(len=1024) :: line
-        character(len=256) :: key, value
-        integer :: iostat, equal_pos
-        integer :: unit
+        logical :: is_namelist
         logical :: file_exists
         
         success = .true.
@@ -42,6 +41,206 @@ contains
             error_message = "Config file not found: " // config%config_file
             return
         end if
+        
+        ! Detect config file format
+        call detect_config_format(config%config_file, is_namelist, success, error_message)
+        if (.not. success) return
+        
+        ! Parse based on detected format
+        if (is_namelist) then
+            call parse_namelist_config_file(config, success, error_message)
+        else
+            call parse_keyvalue_config_file(config, success, error_message)
+        end if
+        
+    end subroutine parse_config_file
+    
+    subroutine detect_config_format(filename, is_namelist, success, error_message)
+        !! Detect whether config file is namelist or key=value format
+        character(len=*), intent(in) :: filename
+        logical, intent(out) :: is_namelist
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: unit, iostat
+        character(len=1024) :: line
+        
+        success = .true.
+        error_message = ""
+        is_namelist = .false.
+        
+        open(newunit=unit, file=filename, status='old', action='read', iostat=iostat)
+        if (iostat /= 0) then
+            success = .false.
+            error_message = "Failed to open config file for format detection"
+            return
+        end if
+        
+        ! Read through file looking for namelist markers
+        do
+            read(unit, '(A)', iostat=iostat) line
+            if (iostat /= 0) exit
+            
+            line = adjustl(line)
+            
+            ! Skip empty lines and comments
+            if (len_trim(line) == 0) cycle
+            if (line(1:1) == '!' .or. line(1:1) == '#') cycle
+            
+            ! Check for namelist start marker
+            if (line(1:1) == '&') then
+                is_namelist = .true.
+                exit
+            end if
+            
+            ! If we find a key=value line without namelist marker, it's key=value format
+            if (index(line, '=') > 0) then
+                is_namelist = .false.
+                exit
+            end if
+        end do
+        
+        close(unit)
+        
+    end subroutine detect_config_format
+    
+    subroutine parse_namelist_config_file(config, success, error_message)
+        !! Parse configuration file in Fortran namelist format
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: unit, iostat
+        character(len=256) :: iomsg
+        
+        ! Namelist variables (must match config_t fields)
+        character(len=256) :: input_format
+        character(len=256) :: output_format
+        character(len=256) :: output_path
+        character(len=256), dimension(100) :: source_paths
+        character(len=256), dimension(100) :: exclude_patterns
+        character(len=256), dimension(100) :: include_patterns
+        character(len=256) :: gcov_executable
+        character(len=256) :: gcov_args
+        real :: minimum_coverage
+        real :: fail_under_threshold
+        integer :: threads
+        logical :: verbose
+        logical :: quiet
+        logical :: tui_mode
+        logical :: strict_mode
+        logical :: enable_diff
+        character(len=256) :: diff_baseline_file
+        logical :: include_unchanged
+        real :: diff_threshold
+        logical :: keep_gcov_files
+        integer :: max_files
+        
+        namelist /fortcov_config/ input_format, output_format, &
+                                  output_path, source_paths, exclude_patterns, &
+                                  include_patterns, gcov_executable, gcov_args, &
+                                  minimum_coverage, fail_under_threshold, threads, &
+                                  verbose, quiet, tui_mode, strict_mode, enable_diff, &
+                                  diff_baseline_file, include_unchanged, diff_threshold, &
+                                  keep_gcov_files, max_files
+        
+        success = .true.
+        error_message = ""
+        
+        ! Initialize with defaults
+        input_format = ""
+        output_format = ""
+        output_path = ""
+        source_paths = ""
+        exclude_patterns = ""
+        include_patterns = ""
+        gcov_executable = ""
+        gcov_args = ""
+        minimum_coverage = -1.0
+        fail_under_threshold = -1.0
+        threads = -1
+        verbose = .false.
+        quiet = .false.
+        tui_mode = .false.
+        strict_mode = .false.
+        enable_diff = .false.
+        diff_baseline_file = ""
+        include_unchanged = .false.
+        diff_threshold = -1.0
+        keep_gcov_files = .false.
+        max_files = -1
+        
+        ! Open config file
+        open(newunit=unit, file=config%config_file, status='old', &
+             action='read', iostat=iostat, iomsg=iomsg)
+        if (iostat /= 0) then
+            success = .false.
+            error_message = "Failed to open config file: " // trim(iomsg)
+            return
+        end if
+        
+        ! Read namelist
+        read(unit, nml=fortcov_config, iostat=iostat, iomsg=iomsg)
+        close(unit)
+        
+        ! Handle specific iostat codes
+        if (iostat /= 0) then
+            success = .false.
+            if (iostat == 5010) then
+                ! End-of-record error - likely array continuation issue
+                error_message = "Invalid namelist format (end-of-record error). " // &
+                               "Check array continuations and formatting."
+            else
+                write(error_message, '(A,I0,A,A)') &
+                    "Failed to parse namelist (iostat=", iostat, "): ", trim(iomsg)
+            end if
+            return
+        end if
+        
+        ! Transfer values to config structure
+        if (len_trim(input_format) > 0) config%input_format = trim(input_format)
+        if (len_trim(output_format) > 0) config%output_format = trim(output_format)
+        if (len_trim(output_path) > 0) config%output_path = trim(output_path)
+        if (len_trim(gcov_executable) > 0) config%gcov_executable = trim(gcov_executable)
+        if (len_trim(gcov_args) > 0) config%gcov_args = trim(gcov_args)
+        if (len_trim(diff_baseline_file) > 0) config%diff_baseline_file = trim(diff_baseline_file)
+        
+        ! Transfer numeric values (only if set)
+        if (minimum_coverage >= 0.0) config%minimum_coverage = minimum_coverage
+        if (fail_under_threshold >= 0.0) config%fail_under_threshold = fail_under_threshold
+        if (threads > 0) config%threads = threads
+        if (max_files > 0) config%max_files = max_files
+        if (diff_threshold >= 0.0) config%diff_threshold = diff_threshold
+        
+        ! Transfer logical values
+        config%verbose = verbose
+        config%quiet = quiet
+        config%tui_mode = tui_mode
+        config%strict_mode = strict_mode
+        config%enable_diff = enable_diff
+        config%include_unchanged = include_unchanged
+        config%keep_gcov_files = keep_gcov_files
+        
+        ! Transfer arrays
+        call transfer_string_array(source_paths, config%source_paths)
+        call transfer_string_array(exclude_patterns, config%exclude_patterns)
+        call transfer_string_array(include_patterns, config%include_patterns)
+        
+    end subroutine parse_namelist_config_file
+    
+    subroutine parse_keyvalue_config_file(config, success, error_message)
+        !! Parse configuration file in simple key=value format
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=1024) :: line
+        character(len=256) :: key, value
+        integer :: iostat, equal_pos
+        integer :: unit
+        
+        success = .true.
+        error_message = ""
         
         ! Open and read config file
         open(newunit=unit, file=config%config_file, status='old', &
@@ -75,7 +274,40 @@ contains
         
         close(unit)
         
-    end subroutine parse_config_file
+    end subroutine parse_keyvalue_config_file
+    
+    subroutine transfer_string_array(input_array, output_array)
+        !! Transfer non-empty strings from fixed array to allocatable array
+        character(len=*), dimension(:), intent(in) :: input_array
+        character(len=:), allocatable, dimension(:), intent(out) :: output_array
+        
+        integer :: i, count, max_len
+        
+        ! Count non-empty elements and find max length
+        count = 0
+        max_len = 0
+        do i = 1, size(input_array)
+            if (len_trim(input_array(i)) > 0) then
+                count = count + 1
+                max_len = max(max_len, len_trim(input_array(i)))
+            end if
+        end do
+        
+        if (count == 0) return
+        
+        ! Allocate output array
+        allocate(character(len=max_len) :: output_array(count))
+        
+        ! Copy non-empty strings
+        count = 0
+        do i = 1, size(input_array)
+            if (len_trim(input_array(i)) > 0) then
+                count = count + 1
+                output_array(count) = trim(input_array(i))
+            end if
+        end do
+        
+    end subroutine transfer_string_array
     
     subroutine load_config_file_with_merge(config, success, error_message)
         !! Load config file and merge with existing config (CLI takes precedence)
