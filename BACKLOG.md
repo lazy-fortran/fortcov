@@ -15,9 +15,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #304: Test: improve test coverage simulation accuracy (branch: test-304)
 
 ## DONE (Completed Work)
+- [x] #304: Test: improve test coverage simulation accuracy (completed in PR #329)
 - [x] #305: Docs: update test documentation for infinite loop prevention (completed in PR #328)
 - [x] #327: Cleanup: analyze and optimize test suite for CI performance (tests cleaned up, CI fixed)
 - [x] #309: Security: refine Windows device names validation in path security (completed in PR #326)
