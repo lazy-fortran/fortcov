@@ -29,7 +29,7 @@ contains
 
         ! Set default values for all configuration fields
         config%input_format = "auto"
-        config%output_format = "terminal"
+        config%output_format = "markdown"
         config%output_path = ""
         config%gcov_executable = "gcov"
         config%minimum_coverage = 0.0
