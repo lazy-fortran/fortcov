@@ -739,11 +739,17 @@ contains
         
         len_arg = len_trim(arg)
         
+        ! Handle empty arguments gracefully
+        if (len_arg == 0) then
+            ! Empty string is neither directory, executable, nor valid coverage file
+            return
+        end if
+        
         ! Check if file exists
         inquire(file=arg, exist=file_exists)
         
         ! Directory detection heuristics
-        if (len_arg > 0 .and. arg(len_arg:len_arg) == '/') then
+        if (arg(len_arg:len_arg) == '/') then
             is_directory = .true.
             return
         end if
