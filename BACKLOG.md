@@ -1,10 +1,28 @@
 # Development Backlog
 
-## TODO (Ordered by Priority)
+## CURRENT SPRINT (Auto-Discovery Feature)
+- [ ] #277: Add auto-discovery of test build and gcov processing
+- [ ] #278: Implement build system detection for auto-discovery
+- [ ] #279: Add auto-test execution to coverage workflows
+- [ ] #280: Add auto-discovery configuration options
+- [ ] #281: Enhance zero-configuration mode with auto-discovery integration
 
-### CRITICAL (Core Functionality Broken)
+## DOING (Current Work)
+- [ ] #257: Integration validation script failures and missing patterns
 
-### HIGH (Build System Issues)
+## FUTURE SPRINTS (High-level Planning)
+
+### Sprint 2: Documentation and Quality Improvements
+- Goal: Resolve documentation inconsistencies and improve code quality
+- Approach: Systematic review and cleanup of documentation, refactor problematic code patterns
+- Key decisions: Standardize terminology (fpm not fmp), improve error handling granularity
+
+### Sprint 3: Security and Testing Enhancements
+- Goal: Strengthen security validation and expand test coverage
+- Approach: Review command injection vulnerabilities, consolidate test files
+- Key decisions: Enhanced input validation, unified security patterns
+
+## TODO (Future Work - Ordered by Priority)
 
 ### MEDIUM (Documentation Errors)
 - [ ] #256: Documentation shows incorrect --format flag instead of --output-format
@@ -23,14 +41,3 @@
 - [ ] #270: Refactor hardcoded array size in namelist parsing
 - [ ] #271: Improve iostat error handling granularity
 - [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
-
-## DOING (Current Work)
-- [ ] #257: Integration validation script failures and missing patterns
-
-## DONE (Completed)
-- [x] #258: Makefile syntax error in make basic example
-- [x] #259: Meson example configuration errors - reserved target name and deprecated API
-- [x] #251: Diff mode incorrectly requires --source parameter
-- [x] #250: Configuration file parsing fails with iostat=5010
-- [x] #249: Zero-configuration mode not working as documented
-- [x] #260: Multiple README documentation inconsistencies and workflow failures
