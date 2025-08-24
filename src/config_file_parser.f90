@@ -179,6 +179,16 @@ contains
             call parse_integer_with_error(value, config%max_files, &
                                           "max files", success, error_message)
 
+        case ("auto_discovery", "auto-discovery")
+            config%auto_discovery = parse_boolean_value(value)
+
+        case ("auto_test_execution", "auto-test-execution", "auto-test")
+            config%auto_test_execution = parse_boolean_value(value)
+
+        case ("test_timeout_seconds", "test-timeout-seconds", "test-timeout")
+            call parse_integer_with_error(value, config%test_timeout_seconds, &
+                                          "test timeout", success, error_message)
+
         case default
             ! Unknown option - warn but don't fail
             if (config%verbose) then

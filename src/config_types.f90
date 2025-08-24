@@ -46,6 +46,9 @@ module config_types
         logical :: strict_mode
         logical :: zero_configuration_mode
         integer :: max_files  ! Maximum number of files to process
+        logical :: auto_discovery  ! Enable auto-discovery of source files/tests
+        logical :: auto_test_execution  ! Enable automatic test execution
+        integer :: test_timeout_seconds  ! Timeout for test execution in seconds
     end type config_t
 
 end module config_types

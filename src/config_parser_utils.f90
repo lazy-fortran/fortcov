@@ -231,7 +231,9 @@ contains
         select case (trim(flag))
         case ("--help", "-h", "--version", "-V", "--verbose", "-v", &
               "--quiet", "-q", "--validate", "--keep-gcov-files", &
-              "--tui", "--strict", "--include-unchanged")
+              "--tui", "--strict", "--include-unchanged", &
+              "--auto-discovery", "--no-auto-discovery", &
+              "--auto-test", "--no-auto-test")
             requires_value = .false.
         case default
             requires_value = .true.
