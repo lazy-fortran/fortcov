@@ -5,7 +5,7 @@
 ## Prerequisites Check
 
 ```bash
-which gfortran gcov fmp fortcov  # All must be installed
+which gfortran gcov fpm fortcov  # All must be installed
 ```
 
 ## Quick Tutorial
@@ -39,7 +39,7 @@ end program
 EOF
 
 # 4. Generate coverage
-fmp test --flag "-fprofile-arcs -ftest-coverage"
+fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done

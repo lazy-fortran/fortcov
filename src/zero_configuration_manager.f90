@@ -261,7 +261,7 @@ contains
         character(len=:), allocatable :: temp_files(:)
         
         ! Priority 1: FPM build structure
-        temp_files = discover_fmp_gcda_files()
+        temp_files = discover_fpm_gcda_files()
         if (allocated(temp_files) .and. size(temp_files) > 0) then
             gcda_files = temp_files
             return
@@ -279,7 +279,7 @@ contains
         gcda_files = temp_files
     end function discover_gcda_files_priority
     
-    function discover_fmp_gcda_files() result(gcda_files)
+    function discover_fpm_gcda_files() result(gcda_files)
         !! Discover .gcda files in FPM build structure
         character(len=:), allocatable :: gcda_files(:)
         character(len=:), allocatable :: temp_files(:), app_files(:), test_files(:)
@@ -320,7 +320,7 @@ contains
         else
             allocate(character(len=256) :: gcda_files(0))
         end if
-    end function discover_fmp_gcda_files
+    end function discover_fpm_gcda_files
     
     function discover_cmake_gcda_files() result(gcda_files)
         !! Discover .gcda files in CMake build structure  

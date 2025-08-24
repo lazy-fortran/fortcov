@@ -52,10 +52,10 @@ fpm test
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Clean build artifacts (preserving necessary files)
-fmp clean --skip
+fpm clean --skip
 
 # Run the main application
-fmp run
+fpm run
 ```
 
 ## CRITICAL: Fork Bomb Prevention
@@ -63,7 +63,7 @@ fmp run
 **🚨 MANDATORY SAFETY RULES - NEVER VIOLATE:**
 
 1. **NO TEST-WITHIN-TEST CALLS**:
-   - Tests MUST NEVER call `fpm test` or `fmp test` (causes infinite recursion)
+   - Tests MUST NEVER call `fpm test` (causes infinite recursion)
    - Shell scripts in test/ MUST NOT execute the test runner
    - Any test calling the test runner creates a fork bomb
 

@@ -15,7 +15,7 @@ program test_build_discovery
     write(output_unit, '(A)') 'Running test build discovery tests...'
     write(output_unit, '(A)') ''
 
-    call test_auto_discover_test_build_with_fmp()
+    call test_auto_discover_test_build_with_fpm()
     call test_auto_discover_test_build_with_cmake()
     call test_auto_discover_test_build_with_make()
     call test_auto_discover_test_build_with_meson()
@@ -32,7 +32,7 @@ program test_build_discovery
 
 contains
 
-    subroutine test_auto_discover_test_build_with_fmp()
+    subroutine test_auto_discover_test_build_with_fpm()
         !! Given an FPM project structure
         !! When auto_discover_test_build is called
         !! Then it should detect FPM and configure test command
@@ -54,7 +54,7 @@ contains
         call assert_true(len_trim(result%test_command) > 0, 'Test command configured')
         
         call cleanup_mock_project()
-    end subroutine test_auto_discover_test_build_with_fmp
+    end subroutine test_auto_discover_test_build_with_fpm
 
     subroutine test_auto_discover_test_build_with_cmake()
         !! Given a CMake project structure

@@ -147,7 +147,7 @@ mkdir -p "$TEST_DIR"
 cd "$TEST_DIR"
 
 # Setup test project
-cat > fmp.toml << 'EOF'  
+cat > fpm.toml << 'EOF'  
 name = "test_project"
 version = "0.1.0"
 EOF
@@ -223,7 +223,7 @@ mv test/problematic_test.sh test/problematic_test.sh.FORK_BOMB_DISABLED
 # DISABLED: This test causes infinite recursion by calling "fpm test"
 # TODO: Rewrite to test functionality directly without recursive calls
 #
-# Original problem: Line 45 calls "fmp test" which re-runs this script
+# Original problem: Line 45 calls "fpm test" which re-runs this script
 # Fix needed: Replace fpm test with direct binary execution
 ```
 
@@ -282,7 +282,7 @@ If you encounter an infinite loop:
 Before adding new tests, verify:
 
 - [ ] Test does not call `fpm test` 
-- [ ] Test does not call `fmp run fortcov` in a way that triggers test execution
+- [ ] Test does not call `fpm run fortcov` in a way that triggers test execution
 - [ ] Shell scripts test binaries directly
 - [ ] Fortran tests focus on module functionality  
 - [ ] Integration tests use isolated environments
