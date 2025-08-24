@@ -12,8 +12,7 @@ module test_build_auto_discovery
 
     use config_types, only: config_t
     use build_system_detector, only: build_system_info_t, detect_build_system, &
-                                     get_coverage_test_command, &
-                                     validate_build_tool_available
+                                     get_coverage_test_command
     use error_handling, only: error_context_t, ERROR_SUCCESS, &
                               ERROR_INVALID_CONFIG, clear_error_context
     use file_utils, only: file_exists
@@ -86,6 +85,7 @@ contains
         type(test_build_result_t), intent(inout) :: result
 
         type(build_system_info_t) :: build_info
+        type(error_context_t) :: error_ctx
         logical :: path_valid
 
         ! Validate project path
@@ -93,7 +93,11 @@ contains
         if (.not. path_valid) return
 
         ! Detect and process build system
-        call detect_build_system(project_path, build_info)
+        call detect_build_system(project_path, build_info, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            result%error_message = trim(error_ctx%message)
+            return
+        end if
         result%build_system = trim(build_info%system_type)
 
         if (trim(build_info%system_type) /= 'unknown') then
@@ -108,8 +112,8 @@ contains
         type(build_system_info_t), intent(in) :: build_info
         type(test_build_result_t), intent(inout) :: result
 
-        ! Validate build tool is available
-        call validate_build_tool_available(build_info, result%tool_available)
+        ! Use already validated build tool availability from detection
+        result%tool_available = build_info%tool_available
         
         if (result%tool_available) then
             call configure_test_command(build_info, result)

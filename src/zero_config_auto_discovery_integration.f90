@@ -18,8 +18,7 @@ module zero_config_auto_discovery_integration
     !! a seamless zero-configuration experience for new users.
     
     use config_types, only: config_t
-    use build_system_detector, only: build_system_info_t, detect_build_system, &
-                                     validate_build_tool_available
+    use build_system_detector, only: build_system_info_t, detect_build_system
     use coverage_workflows, only: execute_auto_test_workflow
     use test_build_gcov_auto_discovery, only: execute_complete_auto_workflow, &
                                               complete_workflow_result_t

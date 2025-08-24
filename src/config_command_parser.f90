@@ -151,8 +151,8 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
-        character(len=:), allocatable :: flags(:)
-        character(len=:), allocatable :: positionals(:)
+        character(len=1024), allocatable :: flags(:)
+        character(len=1024), allocatable :: positionals(:)
         integer :: flag_count, positional_count
 
         success = .true.
@@ -198,8 +198,8 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
-        character(len=:), allocatable :: flags(:)
-        character(len=:), allocatable :: positionals(:)
+        character(len=1024), allocatable :: flags(:)
+        character(len=1024), allocatable :: positionals(:)
         integer :: flag_count, positional_count
 
         success = .true.
@@ -239,9 +239,9 @@ contains
                                            positional_count, success, error_message)
         !! Classify arguments into flags and positionals
         character(len=*), intent(in) :: args(:)
-        character(len=:), allocatable, intent(out) :: flags(:)
+        character(len=1024), allocatable, intent(out) :: flags(:)
         integer, intent(out) :: flag_count
-        character(len=:), allocatable, intent(out) :: positionals(:)
+        character(len=1024), allocatable, intent(out) :: positionals(:)
         integer, intent(out) :: positional_count
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
