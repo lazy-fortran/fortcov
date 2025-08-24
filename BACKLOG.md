@@ -5,13 +5,14 @@
 
 ### MEDIUM (Dead Code Cleanup)
 
-### Sprint 1 Features (Deferred - Focus on Defects First)
-- [ ] #299: Architecture: Sprint 1 auto-discovery features not yet implemented
+### Sprint 1 Features (COMPLETED)
+*All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #277: Add auto-discovery of test build and gcov processing
+*No active work - Sprint 1 completed*
 
 ## DONE (Completed Work)
+- [x] #277: Add auto-discovery of test build and gcov processing (completed in PR #334)
 - [x] #281: Enhance zero-configuration mode with auto-discovery integration (completed in PR #333)
 - [x] #279: Add auto-test execution to coverage workflows (completed in PR #332)
 - [x] #280: Add auto-discovery configuration options (completed in PR #331)
