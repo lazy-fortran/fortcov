@@ -445,7 +445,10 @@ contains
     
     subroutine run_test(test_name, test_func, passed, total)
         character(len=*), intent(in) :: test_name
-        logical, external :: test_func
+        interface
+            logical function test_func()
+            end function test_func
+        end interface
         integer, intent(inout) :: passed, total
         logical :: result
         
