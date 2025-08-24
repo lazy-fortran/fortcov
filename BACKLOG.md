@@ -3,7 +3,6 @@
 ## TODO (Ordered by Priority)
 
 ### CRITICAL (Core Functionality Broken)
-- [ ] #250: Configuration file parsing fails with iostat=5010
 - [ ] #251: Diff mode incorrectly requires --source parameter
 
 ### HIGH (Build System Issues)
@@ -25,6 +24,7 @@
 - [ ] #268: Consolidate redundant issue #249 test files
 
 ## DOING (Current Work)
+- [ ] #250: Configuration file parsing fails with iostat=5010 (branch: fix-config-parsing-issue-250)
 
 ## DONE (Completed)
 - [x] #249: Zero-configuration mode not working as documented
