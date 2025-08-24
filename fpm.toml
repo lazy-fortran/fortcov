@@ -28,11 +28,6 @@ source-dir = "test"
 main = "test_zero_config_override_bug.f90"
 
 [[test]]
-name = "test_documentation_gcov_commands_issue_232"
-source-dir = "test"
-main = "test_documentation_gcov_commands_issue_232.f90"
-
-[[test]]
 name = "test_zero_configuration_issue_227"
 source-dir = "test"
 main = "test_zero_configuration_issue_227.f90"
