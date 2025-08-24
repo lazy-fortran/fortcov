@@ -128,9 +128,10 @@ contains
         success = .false.
         
         ! Change to test directory
+        ! Skip fpm test to avoid infinite recursion
+        ! Only test gcov generation from existing coverage data
         cmd = "cd " // trim(dir) // " && " // &
-              "fpm test --flag '-fprofile-arcs -ftest-coverage' && " // &
-              "find build -name '*.gcda' | while read gcda_file; do " // &
+              "ls build/**/*.gcda 2>/dev/null | while read gcda_file; do " // &
               "gcov -b ""$gcda_file"" 2>/dev/null || true; done && " // &
               "ls *.gcov > /dev/null 2>&1"
         
@@ -146,8 +147,8 @@ contains
         
         success = .false.
         
-        ! Find fortcov executable
-        cmd = "find build -name fortcov -type f -executable | head -1"
+        ! Find fortcov executable using ls instead of find
+        cmd = "ls -1 build/*/app/fortcov 2>/dev/null | head -1"
         call execute_command_line(cmd, exitstat=stat)
         
         ! Assume fortcov is in PATH for this test

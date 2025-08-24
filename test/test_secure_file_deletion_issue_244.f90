@@ -535,8 +535,9 @@ contains
         
         count = 0
         
-        ! Use find to count temp files and read from temp file
-        call execute_command_line("find /tmp -name 'fortcov_secure_*' 2>/dev/null | wc -l > /tmp/count_temp.txt", exitstat=stat)
+        ! Count temp files directly using ls and wc instead of find
+        ! This avoids find command syntax issues
+        call execute_command_line("ls -1 /tmp/fortcov_secure_* 2>/dev/null | wc -l > /tmp/count_temp.txt 2>&1", exitstat=stat)
         
         if (stat == 0) then
             open(newunit=unit, file="/tmp/count_temp.txt", action='read', iostat=stat)
