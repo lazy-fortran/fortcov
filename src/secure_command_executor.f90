@@ -606,28 +606,52 @@ contains
         character(len=:), allocatable :: escaped_arg
         
         integer :: i, new_len, pos
-        character(len=len(arg)*2) :: temp_arg
+        ! Use allocatable for dynamic sizing
+        character(len=:), allocatable :: temp_arg
+        integer :: buffer_size
+        
+        ! Calculate required buffer size: worst case is all single quotes
+        ! Each ' becomes '\'' (4 chars), plus 2 for surrounding quotes
+        buffer_size = len(arg)*4 + 2
+        
+        ! Allocate buffer with calculated size
+        allocate(character(len=buffer_size) :: temp_arg)
+        
+        ! Initialize the entire buffer with spaces first
+        temp_arg = repeat(' ', buffer_size)
         
         ! Simple shell escaping by surrounding with single quotes
         ! and escaping any single quotes in the argument
-        temp_arg = "'"
+        temp_arg(1:1) = "'"
         pos = 2
         
         do i = 1, len_trim(arg)
             if (arg(i:i) == "'") then
-                ! Replace ' with '\''
-                temp_arg(pos:pos+3) = "'\'''"
-                pos = pos + 4
+                ! Replace ' with '\'' - requires 4 characters
+                ! Add bounds check for safety
+                if (pos + 3 <= buffer_size) then
+                    temp_arg(pos:pos+3) = "'\'''"
+                    pos = pos + 4
+                end if
             else
-                temp_arg(pos:pos) = arg(i:i)
-                pos = pos + 1
+                ! Add bounds check for safety
+                if (pos <= buffer_size) then
+                    temp_arg(pos:pos) = arg(i:i)
+                    pos = pos + 1
+                end if
             end if
         end do
         
-        temp_arg(pos:pos) = "'"
-        new_len = pos
+        ! Add final quote with bounds check
+        if (pos <= buffer_size) then
+            temp_arg(pos:pos) = "'"
+            new_len = pos
+        else
+            new_len = buffer_size
+        end if
         
         escaped_arg = temp_arg(1:new_len)
+        deallocate(temp_arg)
     end function escape_shell_argument
 
     ! Helper subroutines (simplified versions)
