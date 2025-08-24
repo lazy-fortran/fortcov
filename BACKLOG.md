@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (Security Vulnerabilities - Immediate Priority)
-- [ ] #309: Security: refine Windows device names validation in path security
 
 ### HIGH (Documentation & Testing Stability)
 - [ ] #305: Docs: update test documentation for infinite loop prevention
@@ -20,9 +19,10 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [x] #310: Security: complete error message path leakage sanitization (branch: security-310)
+- [ ] #309: Security: refine Windows device names validation in path security (branch: security-309)
 
 ## DONE (Completed Work)
+- [x] #310: Security: complete error message path leakage sanitization (completed in PR #322)
 - [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
 - [x] #288: Remove dead code: typo in test performance script (completed in PR #320)
 - [x] #286: Remove dead code: build artifacts in repository (completed in PR #319)
