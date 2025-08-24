@@ -71,10 +71,10 @@ program test_readme_workflow_issue_260
     end if
     print *, "PASS: --fail-under flag works correctly"
     
-    ! Test 3: Verify --threshold flag still works (backward compatibility)
+    ! Test 3: Verify --fail-under flag works as threshold replacement
     test_passed = test_threshold_flag(test_dir)
     if (.not. test_passed) then
-        write(error_unit, '(A)') "WARNING: --threshold flag test failed"
+        write(error_unit, '(A)') "WARNING: --fail-under flag test failed"
         call cleanup(test_dir)
         if (ci_mode) then
             print *, "NOTE: Test may require fortcov in PATH or specific environment"
@@ -83,7 +83,7 @@ program test_readme_workflow_issue_260
             stop 1  ! Fail in local mode
         end if
     end if
-    print *, "PASS: --threshold flag works for backward compatibility"
+    print *, "PASS: --fail-under flag works as threshold replacement"
     
     ! Cleanup
     call cleanup(test_dir)
@@ -230,7 +230,7 @@ contains
         call execute_command_line("which fortcov > /dev/null 2>&1", exitstat=fortcov_exists)
         if (fortcov_exists /= 0) then
             ! fortcov not in PATH, skip test
-            print *, "INFO: fortcov not found in PATH, skipping --threshold test"
+            print *, "INFO: fortcov not found in PATH, skipping --fail-under test"
             success = .true.  ! Consider it a success to not break CI
             return
         end if
@@ -251,9 +251,9 @@ contains
             close(unit)
         end if
         
-        ! Test --threshold flag (should work but not fail the process)
+        ! Test --fail-under flag as --threshold replacement  
         cmd = "cd " // trim(dir) // " && " // &
-              fortcov_path // " test.gcov --source=. --threshold=80 --output=coverage_threshold.md"
+              fortcov_path // " test.gcov --source=. --fail-under=80 --output=coverage_threshold.md"
         call execute_command_line(cmd, exitstat=stat)
         
         success = (stat == 0)
