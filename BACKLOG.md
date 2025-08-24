@@ -2,8 +2,19 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
+- [ ] #252: Typo in installation instructions - fmp vs fpm
+- [ ] #253: Typo in GitLab CI documentation - fmp vs fpm
+- [ ] #254: Typo in troubleshooting section - fmp vs fpm
+- [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
+- [ ] #256: Documentation shows incorrect --format flag instead of --output-format
+- [ ] #267: Potential command injection in test shell commands
 
 ### MEDIUM (Dead Code Cleanup)
+- [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
+- [ ] #268: Consolidate redundant issue #249 test files
+- [ ] #324: Fix: address line length violations in secure_command_executor
+- [ ] #325: Refactor: reduce file size in secure_command_executor
+- [ ] #323: Refactor: reduce safe_close_and_delete function size
 
 ### Sprint 1 Features (COMPLETED)
 *All Sprint 1 auto-discovery features implemented and merged*
@@ -58,25 +69,14 @@
 ## TODO (Future Work - Ordered by Priority)
 
 ### MEDIUM (Documentation Errors)
-- [ ] #256: Documentation shows incorrect --format flag instead of --output-format
 - [ ] #255: find command syntax error in secure file deletion test
-- [ ] #254: Typo in troubleshooting section - fmp vs fpm
-- [ ] #253: Typo in GitLab CI documentation - fmp vs fpm
-- [ ] #252: Typo in installation instructions - fmp vs fpm
-- [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
 - [ ] #263: Remove excessively long test filename in examples
 - [ ] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
 - [ ] #266: Fix ineffective directory change in test_zero_configuration_issue_249
-- [ ] #267: Potential command injection in test shell commands
-- [ ] #268: Consolidate redundant issue #249 test files
 
 ### LOW (Code Quality Improvements)
-- [ ] #324: Fix: address line length violations in secure_command_executor
-- [ ] #325: Refactor: reduce file size in secure_command_executor
-- [ ] #323: Refactor: reduce safe_close_and_delete function size
 - [ ] #270: Refactor hardcoded array size in namelist parsing
 - [ ] #271: Improve iostat error handling granularity
-- [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
