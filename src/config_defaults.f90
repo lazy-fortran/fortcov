@@ -155,7 +155,7 @@ contains
 
         ! Set default output path if not set
         if (len_trim(config%output_path) == 0) then
-            config%output_path = "coverage-report"
+            config%output_path = "build/coverage/coverage.md"
         end if
 
         ! Use auto-discovery for input format
