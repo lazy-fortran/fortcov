@@ -63,7 +63,7 @@ contains
         
         ! Result should be 0 (skip due to no FPM tool) or test execution result
         call assert_result_acceptable(result_code, &
-                                     'FMP project auto-test handling')
+                                     'FPM project auto-test handling')
         
         ! Cleanup
         call chdir(current_dir)

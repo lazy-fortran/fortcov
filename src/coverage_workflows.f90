@@ -514,6 +514,13 @@ contains
         exit_code = detect_and_validate_build_system(config, build_info, error_ctx)
         if (exit_code /= EXIT_SUCCESS) return
         
+        ! Check if build system is usable (tool available and not unknown)
+        if (build_info%system_type == 'unknown' .or. &
+            .not. build_info%tool_available) then
+            ! Already reported by detect_and_validate_build_system, exit gracefully
+            return
+        end if
+        
         ! Execute tests with proper timeout handling
         call execute_tests_with_timeout(build_info%test_command, config, &
                                        test_exit_code, execution_success)
