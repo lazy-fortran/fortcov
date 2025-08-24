@@ -19,9 +19,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [x] #252: Typo in installation instructions - fmp vs fpm (branch: fix-installation-typo-252)
+*No current work - ready for next item*
 
 ## DONE (Completed Work)
+- [x] #252: Typo in installation instructions - fmp vs fpm (completed in PR #335)
 - [x] #277: Add auto-discovery of test build and gcov processing (completed in PR #334)
 - [x] #281: Enhance zero-configuration mode with auto-discovery integration (completed in PR #333)
 - [x] #279: Add auto-test execution to coverage workflows (completed in PR #332)
