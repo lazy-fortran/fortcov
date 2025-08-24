@@ -6,7 +6,6 @@
 ### HIGH (Architecture & Security)
 
 ### MEDIUM (Dead Code Cleanup)
-- [ ] #289: Remove dead code: potentially unused error handling functions
 - [ ] #292: Dead code audit summary: multiple categories of obsolete code found
 
 ### Sprint 1 Features (Deferred - Focus on Defects First)
@@ -18,9 +17,10 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [x] #288: Remove dead code: typo in test performance script
+- [ ] #289: Remove dead code: potentially unused error handling functions
 
 ## DONE (Completed Work)
+- [x] #288: Remove dead code: typo in test performance script (completed in PR #320)
 - [x] #286: Remove dead code: build artifacts in repository (completed in PR #319)
 - [x] #284: Remove dead code: orphaned test reference in fpm.toml (completed in PR #318)
 - [x] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
