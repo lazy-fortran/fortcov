@@ -20,6 +20,9 @@
 - [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
 - [ ] #263: Remove excessively long test filename in examples
 - [ ] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
+- [ ] #266: Fix ineffective directory change in test_zero_configuration_issue_249
+- [ ] #267: Potential command injection in test shell commands
+- [ ] #268: Consolidate redundant issue #249 test files
 
 ## DOING (Current Work)
 - [x] #249: Zero-configuration mode not working as documented (branch: fix-zero-config-issue-249)
