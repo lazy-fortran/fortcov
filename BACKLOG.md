@@ -77,3 +77,6 @@
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
+- [ ] #323: Refactor: reduce safe_close_and_delete function size
+- [ ] #324: Fix: address line length violations in secure_command_executor
+- [ ] #325: Refactor: reduce file size in secure_command_executor
