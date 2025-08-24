@@ -23,9 +23,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
 
 ## DONE (Completed Work)
+- [x] #245: Multiple test suite segmentation faults indicate memory safety issues (fixed with allocation guards)
 - [x] #297: Security: File deletion vulnerabilities allow temp file persistence (completed in PR #311)
 - [x] #296: Security: Multiple input validation vulnerabilities remain unpatched (completed in PR #308)
 - [x] #298: Architecture: fortcov_config.f90 violates 1000-line module size limit (completed in PR #306)
