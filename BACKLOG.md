@@ -27,9 +27,9 @@
 - [ ] #271: Improve iostat error handling granularity
 
 ## DOING (Current Work)
-- [ ] #251: Diff mode incorrectly requires --source parameter (branch: fix-diff-mode-source-requirement-251)
 
 ## DONE (Completed)
+- [x] #251: Diff mode incorrectly requires --source parameter
 - [x] #250: Configuration file parsing fails with iostat=5010
 - [x] #249: Zero-configuration mode not working as documented
 - [x] #260: Multiple README documentation inconsistencies and workflow failures
