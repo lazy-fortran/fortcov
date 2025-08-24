@@ -5,7 +5,6 @@
 - [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
 
 ### HIGH (Architecture & Security)
-- [ ] #298: Architecture: fortcov_config.f90 violates 1000-line module size limit
 - [ ] #246: CLI flag parsing completely broken - all options silently ignored
 - [ ] #295: Bug: CLI flag parsing inconsistent - some flags work, others fail
 - [ ] #296: Security: Multiple input validation vulnerabilities remain unpatched
@@ -28,9 +27,10 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #294: Bug: Test suite hangs with infinite loops causing 3+ minute timeouts
+- [ ] #298: Architecture: fortcov_config.f90 violates 1000-line module size limit
 
 ## DONE (Completed Work)
+- [x] #294: Bug: Test suite hangs with infinite loops causing 3+ minute timeouts (completed in PR #303)
 - [x] #293: Bug: Find command syntax error causes test suite hangs and failures (completed in PR #302)
 - [x] #300: cleanup: rescue test_format.nml from main branch (completed in PR #301)
 - [x] #257: Integration validation script failures and missing patterns (completed in PR #276)
