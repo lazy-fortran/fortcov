@@ -26,9 +26,9 @@
 - [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 
 ## DOING (Current Work)
-- [ ] #258: Makefile syntax error in make basic example
 
 ## DONE (Completed)
+- [x] #258: Makefile syntax error in make basic example
 - [x] #259: Meson example configuration errors - reserved target name and deprecated API
 - [x] #251: Diff mode incorrectly requires --source parameter
 - [x] #250: Configuration file parsing fails with iostat=5010
