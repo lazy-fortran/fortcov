@@ -1,9 +1,6 @@
 # Development Backlog
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
-### CRITICAL (CI Performance & Testing Stability - Immediate Priority)
-- [ ] #327: Cleanup: analyze and optimize test suite for CI performance
-
 ### HIGH (Documentation & Testing Stability)
 - [ ] #305: Docs: update test documentation for infinite loop prevention
 - [ ] #304: Test: improve test coverage simulation accuracy
@@ -22,6 +19,7 @@
 ## DOING (Current Work)
 
 ## DONE (Completed Work)
+- [x] #327: Cleanup: analyze and optimize test suite for CI performance (tests cleaned up, CI fixed)
 - [x] #309: Security: refine Windows device names validation in path security (completed in PR #326)
 - [x] #310: Security: complete error message path leakage sanitization (completed in PR #322)
 - [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
