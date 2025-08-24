@@ -91,7 +91,7 @@ check_pattern "Makefile coverage target" \
 
 check_pattern "Makefile gcov command" \
     "$EXAMPLES_DIR/make/basic_example/Makefile" \
-    "gcov $(SOURCES)"
+    "gcov \$\$(SOURCES)"
 
 # Georg's Test 6: Meson Integration Patterns
 echo

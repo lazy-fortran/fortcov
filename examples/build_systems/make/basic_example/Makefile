@@ -62,7 +62,7 @@ coverage: clean-coverage
 	@echo "Building with coverage instrumentation..."
 	$(MAKE) test FCFLAGS="$(FORTRAN_FLAGS_COVERAGE)"
 	@echo "Generating coverage data..."
-	gcov $(SOURCES)
+	gcov $$(SOURCES)
 	@echo "Analyzing with fortcov..."
 	@echo "fortcov --source=. --exclude=*.o,*.mod --output=coverage.html"
 	@echo "Coverage analysis complete. Report: coverage.html"
