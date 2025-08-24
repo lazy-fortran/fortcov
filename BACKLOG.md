@@ -7,12 +7,12 @@
 
 ### Sprint 1 Features (Deferred - Focus on Defects First)
 - [ ] #299: Architecture: Sprint 1 auto-discovery features not yet implemented
-- [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #281: Enhance zero-configuration mode with auto-discovery integration
+- [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DONE (Completed Work)
+- [x] #281: Enhance zero-configuration mode with auto-discovery integration (completed in PR #333)
 - [x] #279: Add auto-test execution to coverage workflows (completed in PR #332)
 - [x] #280: Add auto-discovery configuration options (completed in PR #331)
 - [x] #278: Implement build system detection for auto-discovery (completed in PR #330)
