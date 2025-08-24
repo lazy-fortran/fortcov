@@ -1098,7 +1098,7 @@ contains
         ! Skip validation for diff mode - diff mode works with JSON files
         ! and does not require source paths for .gcov generation
         if (config%enable_diff) then
-            if (allocated(config%diff_baseline_file) .or. &
+            if (allocated(config%diff_baseline_file) .and. &
                 allocated(config%diff_current_file)) then
                 is_valid = .true.
                 return
@@ -1790,6 +1790,8 @@ contains
 
         integer :: comma_pos
         character(len=MEDIUM_STRING_LEN) :: baseline_file, current_file
+        logical :: baseline_exists, current_exists
+        integer :: baseline_len, current_len
 
         success = .true.
         error_message = ""
@@ -1819,7 +1821,36 @@ contains
             return
         end if
 
-        ! Set the configuration
+        ! Validate file path lengths to prevent buffer overflow
+        baseline_len = len_trim(baseline_file)
+        current_len = len_trim(current_file)
+        if (baseline_len > MEDIUM_STRING_LEN) then
+            success = .false.
+            error_message = "Baseline file path too long (max 512 characters)"
+            return
+        end if
+        if (current_len > MEDIUM_STRING_LEN) then
+            success = .false.
+            error_message = "Current file path too long (max 512 characters)"
+            return
+        end if
+
+        ! Validate file existence
+        inquire(file=baseline_file, exist=baseline_exists)
+        if (.not. baseline_exists) then
+            success = .false.
+            error_message = "Baseline file not found: " // trim(baseline_file)
+            return
+        end if
+
+        inquire(file=current_file, exist=current_exists)
+        if (.not. current_exists) then
+            success = .false.
+            error_message = "Current file not found: " // trim(current_file)
+            return
+        end if
+
+        ! Set the configuration - safe assignment after validation
         config%diff_baseline_file = baseline_file
         config%diff_current_file = current_file
 
