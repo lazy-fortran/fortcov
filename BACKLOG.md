@@ -4,7 +4,6 @@
 ### HIGH (Documentation & Testing Stability)
 
 ### MEDIUM (Dead Code Cleanup)
-- [ ] #292: Dead code audit summary: multiple categories of obsolete code found
 
 ### Sprint 1 Features (Deferred - Focus on Defects First)
 - [ ] #299: Architecture: Sprint 1 auto-discovery features not yet implemented
@@ -15,6 +14,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [ ] #292: Dead code audit summary: multiple categories of obsolete code found (branch: cleanup-292)
 
 ## DONE (Completed Work)
 - [x] #304: Test: improve test coverage simulation accuracy (completed in PR #329)
