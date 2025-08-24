@@ -71,3 +71,6 @@
 - [ ] #270: Refactor hardcoded array size in namelist parsing
 - [ ] #271: Improve iostat error handling granularity
 - [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
+- [ ] #312: Optimize pattern matching performance in security assessment
+- [ ] #313: Enhance security assessment documentation and risk prioritization
+- [ ] #314: Fix remaining 2 security test pattern matching issues
