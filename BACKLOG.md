@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (Security Vulnerabilities - Immediate Priority)
-- [ ] #310: Security: complete error message path leakage sanitization
 - [ ] #309: Security: refine Windows device names validation in path security
 
 ### HIGH (Documentation & Testing Stability)
@@ -21,6 +20,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [x] #310: Security: complete error message path leakage sanitization (branch: security-310)
 
 ## DONE (Completed Work)
 - [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
@@ -77,3 +77,6 @@
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
+- [ ] #323: Refactor: reduce safe_close_and_delete function size
+- [ ] #324: Fix: address line length violations in secure_command_executor
+- [ ] #325: Refactor: reduce file size in secure_command_executor

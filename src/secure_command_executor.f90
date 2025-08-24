@@ -237,14 +237,12 @@ contains
             if (close_iostat /= 0) then
                 call safe_write_message(error_ctx, &
                     "Critical: Temp file deletion failed - security risk. " // &
-                    "File: " // trim(filename) // &
-                    ", Close iostat: " // format_integer(close_iostat) // &
+                    "Close iostat: " // format_integer(close_iostat) // &
                     ", Delete attempts: " // format_integer(max_attempts))
             else
                 call safe_write_message(error_ctx, &
-                    "Critical: Temp file persists after deletion attempts. " // &
-                    "File: " // trim(filename) // &
-                    " - potential security data exposure")
+                    "Critical: Temp file persists after deletion attempts " // &
+                    "- potential security data exposure")
             end if
         else if (close_iostat /= 0 .and. deletion_successful) then
             ! Even if deletion ultimately succeeded, report close failures
@@ -253,8 +251,7 @@ contains
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
                 "Security audit: Temp file deletion required fallback. " // &
-                "File: " // trim(filename) // &
-                ", Primary close iostat: " // format_integer(close_iostat))
+                "Primary close iostat: " // format_integer(close_iostat))
         else if (potential_security_issues) then
             ! Report security concerns even if deletion appeared successful
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
@@ -461,7 +458,7 @@ contains
             error_ctx%error_code = ERROR_PERMISSION_DENIED
             error_ctx%recoverable = .false.
             call safe_write_message(error_ctx, &
-                "Failed to create directory: " // safe_dir_path)
+                "Failed to create directory - permission denied or invalid path")
             call safe_write_suggestion(error_ctx, &
                 "Check directory permissions and path validity")
             call safe_write_context(error_ctx, "directory creation")
@@ -552,9 +549,9 @@ contains
         if (.not. exec_exists) then
             error_ctx%error_code = ERROR_MISSING_FILE
             call safe_write_message(error_ctx, &
-                "Executable not found: " // safe_executable)
+                "Executable not found - check installation and PATH")
             call safe_write_suggestion(error_ctx, &
-                "Check if the executable is installed and in PATH")
+                "Verify the executable is installed and accessible")
             return
         end if
     end subroutine validate_executable_path
