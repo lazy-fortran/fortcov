@@ -1,9 +1,13 @@
 # Development Backlog
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
-### CRITICAL (Test Suite Blockers)
+### CRITICAL (Security Vulnerabilities - Immediate Priority)
+- [ ] #310: Security: complete error message path leakage sanitization
+- [ ] #309: Security: refine Windows device names validation in path security
 
-### HIGH (Architecture & Security)
+### HIGH (Documentation & Testing Stability)
+- [ ] #305: Docs: update test documentation for infinite loop prevention
+- [ ] #304: Test: improve test coverage simulation accuracy
 
 ### MEDIUM (Dead Code Cleanup)
 - [ ] #292: Dead code audit summary: multiple categories of obsolete code found
