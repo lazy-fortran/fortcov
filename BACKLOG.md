@@ -5,7 +5,6 @@
 ### CRITICAL (Core Functionality Broken)
 
 ### HIGH (Build System Issues)
-- [ ] #257: Integration validation script failures and missing patterns
 
 ### MEDIUM (Documentation Errors)
 - [ ] #256: Documentation shows incorrect --format flag instead of --output-format
@@ -26,6 +25,7 @@
 - [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 
 ## DOING (Current Work)
+- [ ] #257: Integration validation script failures and missing patterns
 
 ## DONE (Completed)
 - [x] #258: Makefile syntax error in make basic example
