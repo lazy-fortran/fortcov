@@ -264,8 +264,8 @@ contains
         end do
 
         ! Allocate arrays
-        allocate(character(len=max_len) :: flags(MAX_ARRAY_SIZE))
-        allocate(character(len=max_len) :: positionals(MAX_ARRAY_SIZE))
+        allocate(character(len=1024) :: flags(MAX_ARRAY_SIZE))
+        allocate(character(len=1024) :: positionals(MAX_ARRAY_SIZE))
 
         ! Process each argument
         do i = 1, size(args)
