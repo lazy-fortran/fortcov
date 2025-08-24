@@ -106,6 +106,8 @@ contains
         integer :: unit, stat, iostat, num_files
         logical :: file_exists, has_security_assessment
         character(len=512) :: security_message
+        character(len=256) :: filename_pattern, base_dir
+        integer :: star_pos
         
         call clear_error_context(error_ctx)
         
@@ -126,8 +128,45 @@ contains
         end if
         
         ! Build safe find command - use shell-safe patterns
-        command = "find . -name " // escape_shell_argument(safe_pattern) // &
-                 " -type f 2>/dev/null > " // escape_shell_argument(temp_filename)
+        ! Handle recursive patterns (**/) differently
+        if (index(safe_pattern, '**/') > 0) then
+            ! Extract the filename pattern after **/
+            star_pos = index(safe_pattern, '**/')
+            if (star_pos > 0) then
+                filename_pattern = safe_pattern(star_pos+3:)
+            else
+                filename_pattern = safe_pattern
+            end if
+            
+            ! Extract the base directory from the pattern if it exists
+            if (star_pos > 1) then
+                base_dir = safe_pattern(1:star_pos-1)
+                ! Remove trailing slash if present
+                if (base_dir(len_trim(base_dir):len_trim(base_dir)) == '/') then
+                    base_dir = base_dir(1:len_trim(base_dir)-1)
+                end if
+            else
+                base_dir = '.'
+            end if
+            
+            ! Use find with recursive search
+            command = "find " // escape_shell_argument(trim(base_dir)) // " -name " // &
+                     escape_shell_argument(trim(filename_pattern)) // &
+                     " -type f 2>/dev/null > " // escape_shell_argument(temp_filename)
+        else if (index(safe_pattern, '/') > 0) then
+            ! Pattern contains directory - split it
+            star_pos = index(safe_pattern, '/', back=.true.)
+            base_dir = safe_pattern(1:star_pos-1)
+            filename_pattern = safe_pattern(star_pos+1:)
+            
+            command = "find " // escape_shell_argument(trim(base_dir)) // " -name " // &
+                     escape_shell_argument(trim(filename_pattern)) // &
+                     " -type f 2>/dev/null > " // escape_shell_argument(temp_filename)
+        else
+            ! Simple pattern without directory
+            command = "find . -name " // escape_shell_argument(safe_pattern) // &
+                     " -type f 2>/dev/null > " // escape_shell_argument(temp_filename)
+        end if
         
         ! Execute command
         call execute_command_line(command, exitstat=stat)
@@ -335,9 +374,14 @@ contains
                                 index(filename, 'fortcov') > 0)
         
         ! Check for disk space issues (simplified heuristic)
-        call execute_command_line("df " // trim(filename) // " | grep -q ' 9[0-9]% '", &
-                                 exitstat=stat)
-        disk_space_risk = (stat == 0)  ! High disk usage detected
+        ! Only check if file exists to avoid df errors
+        if (file_existed) then
+            call execute_command_line("df " // trim(filename) // " 2>/dev/null | grep -q ' 9[0-9]% '", &
+                                     exitstat=stat)
+            disk_space_risk = (stat == 0)  ! High disk usage detected
+        else
+            disk_space_risk = .false.
+        end if
         
         ! Proactive security compliance checks - always assess risk
         if (file_in_temp_directory) then
@@ -383,7 +427,7 @@ contains
         readonly_risk = (index(pattern, '/usr/') > 0 .or. index(pattern, '/proc/') > 0)
         
         ! Check for disk space issues
-        call execute_command_line("df . | grep -q ' 9[0-9]% '", exitstat=stat)
+        call execute_command_line("df . 2>/dev/null | grep -q ' 9[0-9]% '", exitstat=stat)
         disk_space_risk = (stat == 0)
         
         ! Detect sensitive data patterns
