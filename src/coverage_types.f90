@@ -320,7 +320,6 @@ contains
         
     end function line_is_covered
 
-    ! Placeholder implementations - full implementations moved to coverage_constructors
     subroutine branch_init(this, filename, line_number, branch_id, taken_count, not_taken_count)
         class(coverage_branch_t), intent(out) :: this
         character(len=*), intent(in) :: filename
@@ -465,10 +464,34 @@ contains
         
     end subroutine file_init_with_lines
 
-    ! Placeholder implementations - full implementations in coverage_constructors
     subroutine file_calculate_coverage(this)
         class(coverage_file_t), intent(inout) :: this
-        ! Implementation moved to coverage_constructors module
+        
+        integer :: i, total_executable, covered_count
+        
+        if (.not. allocated(this%lines)) return
+        
+        total_executable = 0
+        covered_count = 0
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable) then
+                total_executable = total_executable + 1
+                if (this%lines(i)%is_covered()) then
+                    covered_count = covered_count + 1
+                end if
+            end if
+        end do
+        
+        this%total_lines = total_executable
+        this%covered_lines = covered_count
+        
+        if (total_executable > 0) then
+            this%line_coverage = real(covered_count) / real(total_executable) * 100.0
+        else
+            this%line_coverage = 0.0
+        end if
+        
     end subroutine file_calculate_coverage
 
     function file_get_line_coverage(this) result(coverage)
@@ -480,31 +503,122 @@ contains
     function file_get_branch_coverage(this) result(coverage)
         class(coverage_file_t), intent(in) :: this
         real :: coverage
-        coverage = 0.0  ! Placeholder - full implementation in constructors module
+        
+        integer :: i, total_branches, covered_branches
+        
+        if (.not. allocated(this%branches)) then
+            coverage = 0.0
+            return
+        end if
+        
+        total_branches = size(this%branches)
+        covered_branches = 0
+        
+        do i = 1, total_branches
+            if (this%branches(i)%is_fully_covered()) then
+                covered_branches = covered_branches + 1
+            end if
+        end do
+        
+        if (total_branches > 0) then
+            coverage = real(covered_branches) / real(total_branches) * 100.0
+        else
+            coverage = 0.0
+        end if
+        
     end function file_get_branch_coverage
 
     function file_get_function_coverage(this) result(coverage)
         class(coverage_file_t), intent(in) :: this
         real :: coverage
-        coverage = 0.0  ! Placeholder - full implementation in constructors module
+        
+        integer :: i, total_functions, covered_functions
+        
+        if (.not. allocated(this%functions)) then
+            coverage = 0.0
+            return
+        end if
+        
+        total_functions = size(this%functions)
+        covered_functions = 0
+        
+        do i = 1, total_functions
+            if (this%functions(i)%is_covered()) then
+                covered_functions = covered_functions + 1
+            end if
+        end do
+        
+        if (total_functions > 0) then
+            coverage = real(covered_functions) / real(total_functions) * 100.0
+        else
+            coverage = 0.0
+        end if
+        
     end function file_get_function_coverage
 
     function file_get_line_coverage_percentage(this) result(percentage)
         class(coverage_file_t), intent(in) :: this
         real :: percentage
-        percentage = this%line_coverage  ! Simplified - full implementation in constructors
+        
+        integer :: i, executable_count, covered_count
+        
+        if (.not. allocated(this%lines)) then
+            percentage = 0.0
+            return
+        end if
+        
+        executable_count = 0
+        covered_count = 0
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable) then
+                executable_count = executable_count + 1
+                if (this%lines(i)%execution_count > 0) then
+                    covered_count = covered_count + 1
+                end if
+            end if
+        end do
+        
+        if (executable_count > 0) then
+            percentage = real(covered_count) / real(executable_count) * 100.0
+        else
+            percentage = 0.0
+        end if
+        
     end function file_get_line_coverage_percentage
 
     function file_get_executable_line_count(this) result(count)
         class(coverage_file_t), intent(in) :: this
         integer :: count
-        count = this%total_lines  ! Simplified - full implementation in constructors
+        
+        integer :: i
+        
+        count = 0
+        if (.not. allocated(this%lines)) return
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable) then
+                count = count + 1
+            end if
+        end do
+        
     end function file_get_executable_line_count
 
     function file_get_covered_line_count(this) result(count)
         class(coverage_file_t), intent(in) :: this
         integer :: count
-        count = this%covered_lines  ! Simplified - full implementation in constructors
+        
+        integer :: i
+        
+        count = 0
+        if (.not. allocated(this%lines)) return
+        
+        do i = 1, size(this%lines)
+            if (this%lines(i)%is_executable .and. this%lines(i)%execution_count > 0) then
+                count = count + 1
+            end if
+        end do
+        
     end function file_get_covered_line_count
 
     ! Data type minimal implementations
@@ -537,10 +651,32 @@ contains
         
     end subroutine data_init_with_files
 
-    ! Placeholder implementations - full implementations in coverage_constructors
     subroutine data_calculate_overall_coverage(this)
         class(coverage_data_t), intent(inout) :: this
-        ! Implementation moved to coverage_constructors module
+        
+        integer :: i, total_lines, covered_lines
+        
+        if (.not. allocated(this%files)) return
+        
+        total_lines = 0
+        covered_lines = 0
+        
+        do i = 1, size(this%files)
+            call this%files(i)%calculate_coverage()
+            total_lines = total_lines + this%files(i)%total_lines
+            covered_lines = covered_lines + this%files(i)%covered_lines
+        end do
+        
+        this%total_files = size(this%files)
+        this%total_lines = total_lines
+        this%covered_lines = covered_lines
+        
+        if (total_lines > 0) then
+            this%overall_coverage = real(covered_lines) / real(total_lines) * 100.0
+        else
+            this%overall_coverage = 0.0
+        end if
+        
     end subroutine data_calculate_overall_coverage
 
     function data_get_file_count(this) result(count)
@@ -564,13 +700,31 @@ contains
     function data_serialize(this) result(serialized)
         class(coverage_data_t), intent(in) :: this
         character(len=:), allocatable :: serialized
-        serialized = ""  ! Placeholder - full implementation in constructors
+        
+        ! Simplified implementation for basic serialization
+        character(len=1000) :: temp_string
+        
+        if (.not. allocated(this%files) .or. size(this%files) == 0) then
+            serialized = ""
+            return
+        end if
+        
+        write(temp_string, '(A,I0,A,I0,A,F6.2)') &
+            "files=", size(this%files), &
+            ";lines=", this%total_lines, &
+            ";coverage=", this%overall_coverage
+        
+        serialized = trim(adjustl(temp_string))
+        
     end function data_serialize
 
     subroutine data_deserialize(this, serialized)
         class(coverage_data_t), intent(inout) :: this
         character(len=*), intent(in) :: serialized
-        call this%init()  ! Placeholder - full implementation in constructors
+        
+        ! Basic implementation - creates empty coverage data
+        call this%init()
+        
     end subroutine data_deserialize
 
     ! Diff type minimal implementations
