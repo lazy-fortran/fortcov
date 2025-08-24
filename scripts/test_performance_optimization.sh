@@ -13,7 +13,7 @@ echo "Running tests with performance optimizations..."
 # Option 1: Run tests with output suppressed for performance
 if [ "$1" == "quiet" ]; then
     echo "Running in quiet mode (maximum performance)..."
-    fmp test > /dev/null 2>&1
+    fpm test > /dev/null 2>&1
     TEST_RESULT=$?
     
     if [ $TEST_RESULT -eq 0 ]; then

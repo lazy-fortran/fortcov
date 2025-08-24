@@ -228,7 +228,7 @@ test_troubleshooting_examples() {
     if fpm run -- --source=src --output=coverage.md >/dev/null 2>&1; then
         test_pass "Troubleshooting Examples" "fpm run workaround works"
     else
-        test_fail "Troubleshooting Examples" "fmp run workaround failed"
+        test_fail "Troubleshooting Examples" "fpm run workaround failed"
     fi
     
     # Test build path example: ./build/gfortran_*/app/fortcov --source=src

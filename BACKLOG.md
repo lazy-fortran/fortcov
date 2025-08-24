@@ -21,7 +21,7 @@
 - [x] #288: Remove dead code: typo in test performance script
 
 ## DONE (Completed Work)
-- [x] #286: Remove dead code: build artifacts in repository (CONSOLIDATED - manual PR required)
+- [x] #286: Remove dead code: build artifacts in repository (completed in PR #319)
 - [x] #284: Remove dead code: orphaned test reference in fpm.toml (completed in PR #318)
 - [x] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
 - [x] #246: CLI flag parsing completely broken - all options silently ignored (completed in PR #316)
