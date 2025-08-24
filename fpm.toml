@@ -4,6 +4,9 @@ license = "license"
 author = "Christopher Albert"
 maintainer = "albert@tugraz.at"
 copyright = "Copyright 2025, Christopher Albert"
+
+# FORK BOMB PREVENTION: Tests that call "fpm test" are DISABLED
+# to prevent infinite recursion. See .FORK_BOMB_DISABLED files.
 [build]
 auto-executables = true
 auto-tests = true

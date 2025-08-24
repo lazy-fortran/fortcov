@@ -52,11 +52,39 @@ fpm test
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Clean build artifacts (preserving necessary files)
-fpm clean --skip
+fmp clean --skip
 
 # Run the main application
-fpm run
+fmp run
 ```
+
+## CRITICAL: Fork Bomb Prevention
+
+**🚨 MANDATORY SAFETY RULES - NEVER VIOLATE:**
+
+1. **NO TEST-WITHIN-TEST CALLS**:
+   - Tests MUST NEVER call `fpm test` or `fmp test` (causes infinite recursion)
+   - Shell scripts in test/ MUST NOT execute the test runner
+   - Any test calling the test runner creates a fork bomb
+
+2. **FORK BOMB DETECTION**:
+   - Any file containing `execute_command_line` + `fpm test` is a fork bomb
+   - Shell scripts calling `fpm test --flag` are fork bombs
+   - Tests running full test suite within test suite are fork bombs
+
+3. **PREVENTION MEASURES**:
+   - Fork bomb files are disabled by .FORK_BOMB_DISABLED suffix
+   - Test runners must NOT invoke themselves recursively
+   - Integration tests should test individual components, not full suite
+
+4. **SAFETY VALIDATION**:
+   - Before any `fpm test` run, scan for fork bomb patterns
+   - Disabled files: test_readme_gcov_workflow.sh.FORK_BOMB_DISABLED
+   - Disabled files: test_documentation_commands_issue_232.sh.FORK_BOMB_DISABLED
+   - Disabled files: test_readme_executable_validation.sh.FORK_BOMB_DISABLED
+   - Disabled files: test_issue_260_comprehensive.sh.FORK_BOMB_DISABLED
+
+**VIOLATION OF THESE RULES = SYSTEM CRASH**
 
 ## Architecture and Structure
 
