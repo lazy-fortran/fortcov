@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (CI Performance & Testing Stability - Immediate Priority)
-- [ ] #327: Cleanup: analyze and optimize test suite for CI performance
 
 ### HIGH (Documentation & Testing Stability)
 - [ ] #305: Docs: update test documentation for infinite loop prevention
@@ -20,6 +19,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [ ] #327: Cleanup: analyze and optimize test suite for CI performance (branch: cleanup-327)
 
 ## DONE (Completed Work)
 - [x] #309: Security: refine Windows device names validation in path security (completed in PR #326)
