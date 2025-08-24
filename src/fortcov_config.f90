@@ -641,6 +641,11 @@ contains
             config%gcov_args = value
         case ('--diff')
             config%enable_diff = .true.
+            ! Handle --diff=baseline.json,current.json format
+            if (len_trim(value) > 0) then
+                call parse_diff_files(value, config, success, error_message)
+                if (.not. success) return
+            end if
         case ('--diff-baseline')
             config%diff_baseline_file = value
         case ('--diff-current')
@@ -713,6 +718,9 @@ contains
               '--include', '--fail-under', '--threads', '--config', '--diff-baseline', &
               '--diff-current', '--import', '--gcov-executable', '--gcov-args', '--max-files')
             requires_value = .true.
+        case ('--diff')
+            ! --diff can optionally take a value (--diff=baseline.json,current.json)
+            requires_value = .false.
         case default
             requires_value = .false.
         end select
@@ -1087,6 +1095,16 @@ contains
             return
         end if
 
+        ! Skip validation for diff mode - diff mode works with JSON files
+        ! and does not require source paths for .gcov generation
+        if (config%enable_diff) then
+            if (allocated(config%diff_baseline_file) .and. &
+                allocated(config%diff_current_file)) then
+                is_valid = .true.
+                return
+            end if
+        end if
+
         ! Validate that at least one input source is provided
         if (.not. has_source_paths .and. .not. has_coverage_files .and. &
             .not. has_import_file) then
@@ -1323,7 +1341,8 @@ contains
         print *, "    --strict                Enable strict mode validation"
         print *, "    --keep-gcov             Keep generated .gcov files"
         print *, ""
-        print *, "DIFF ANALYSIS:"
+        print *, "DIFFERENTIAL ANALYSIS:"
+        print *, "    --diff=BASE,CURRENT     Compare two coverage datasets"
         print *, "    --diff                  Enable coverage diff analysis"
         print *, "    --diff-baseline FILE    Baseline coverage file for diff"
         print *, "    --diff-current FILE     Current coverage file for diff"
@@ -1340,6 +1359,7 @@ contains
         print *, "    fortcov *.gcov                    # Analyze all .gcov files"
         print *, "    fortcov --format=json --output=coverage.json"
         print *, "    fortcov --threshold=80 --source=src/"
+        print *, "    fortcov --diff=baseline.json,current.json --output=diff.md"
         print *, "    fortcov --diff --diff-baseline=old.json --diff-current=new.json"
         print *, "    fortcov --import=coverage.json --format=html"
         print *, "    fortcov --tui                     # Launch interactive mode"
@@ -1760,5 +1780,80 @@ contains
         end if
 
     end subroutine validate_gcov_executable
+
+    subroutine parse_diff_files(value, config, success, error_message)
+        !! Parses --diff=baseline.json,current.json format
+        character(len=*), intent(in) :: value
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+
+        integer :: comma_pos
+        character(len=MEDIUM_STRING_LEN) :: baseline_file, current_file
+        logical :: baseline_exists, current_exists
+        integer :: baseline_len, current_len
+
+        success = .true.
+        error_message = ""
+
+        ! Find comma separator
+        comma_pos = index(value, ',')
+        if (comma_pos == 0) then
+            success = .false.
+            error_message = "Invalid --diff format. Expected: --diff=baseline.json,current.json"
+            return
+        end if
+
+        ! Extract baseline and current files
+        baseline_file = trim(adjustl(value(1:comma_pos-1)))
+        current_file = trim(adjustl(value(comma_pos+1:)))
+
+        ! Validate that both files are specified
+        if (len_trim(baseline_file) == 0) then
+            success = .false.
+            error_message = "Baseline file not specified in --diff format"
+            return
+        end if
+
+        if (len_trim(current_file) == 0) then
+            success = .false.
+            error_message = "Current file not specified in --diff format"
+            return
+        end if
+
+        ! Validate file path lengths to prevent buffer overflow
+        baseline_len = len_trim(baseline_file)
+        current_len = len_trim(current_file)
+        if (baseline_len > MEDIUM_STRING_LEN) then
+            success = .false.
+            error_message = "Baseline file path too long (max 512 characters)"
+            return
+        end if
+        if (current_len > MEDIUM_STRING_LEN) then
+            success = .false.
+            error_message = "Current file path too long (max 512 characters)"
+            return
+        end if
+
+        ! Validate file existence
+        inquire(file=baseline_file, exist=baseline_exists)
+        if (.not. baseline_exists) then
+            success = .false.
+            error_message = "Baseline file not found: " // trim(baseline_file)
+            return
+        end if
+
+        inquire(file=current_file, exist=current_exists)
+        if (.not. current_exists) then
+            success = .false.
+            error_message = "Current file not found: " // trim(current_file)
+            return
+        end if
+
+        ! Set the configuration - safe assignment after validation
+        config%diff_baseline_file = baseline_file
+        config%diff_current_file = current_file
+
+    end subroutine parse_diff_files
 
 end module fortcov_config
