@@ -12,40 +12,11 @@ auto-executables = true
 auto-tests = true
 auto-examples = true
 module-naming = false
+
 [install]
 library = false
+
 [fortran]
 implicit-typing = false
 implicit-external = false
 source-form = "free"
-
-
-[[test]]
-name = "check"
-source-dir = "test"
-main = "check.f90"
-
-[[test]]
-name = "test_zero_config_override_bug"
-source-dir = "test"
-main = "test_zero_config_override_bug.f90"
-
-[[test]]
-name = "test_zero_configuration_issue_227"
-source-dir = "test"
-main = "test_zero_configuration_issue_227.f90"
-
-[[test]]
-name = "test_memory_allocation_bug_issue_243"
-source-dir = "test"
-main = "test_memory_allocation_bug_issue_243.f90"
-
-[[test]]
-name = "test_secure_file_deletion_issue_244"
-source-dir = "test"
-main = "test_secure_file_deletion_issue_244.f90"
-
-[[test]]
-name = "test_config_namelist_parsing_issue_250"
-source-dir = "test"
-main = "test_config_namelist_parsing_issue_250.f90"
