@@ -37,6 +37,6 @@ jobs:
     
     - name: Run unit tests
       run: |
-        # Run complete test suite - all tests now CI compatible
-        CI=true fpm test
+        # Run complete test suite
+        fpm test
         echo "All tests completed successfully"
