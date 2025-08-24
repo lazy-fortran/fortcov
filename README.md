@@ -237,13 +237,62 @@ fortcov --source="../../../etc/"  # Error: Path contains dangerous characters
 - Update to latest FortCov version for memory safety fixes
 - Check file permissions in source directories
 
+## Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+fpm test
+
+# Run specific test
+fpm test test_coverage_engine
+
+# Run with coverage
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+```
+
+### Test Infinite Loop Prevention
+
+⚠️ **Important**: Some tests are marked with `.FORK_BOMB_DISABLED` extension to prevent infinite recursion:
+
+```bash
+# These files are DISABLED to prevent infinite loops
+test/test_documentation_commands_issue_232.sh.FORK_BOMB_DISABLED
+test/test_readme_gcov_workflow.sh.FORK_BOMB_DISABLED
+test/test_issue_260_comprehensive.sh.FORK_BOMB_DISABLED
+```
+
+**Why**: Tests that call `fpm test` create infinite recursion (fork bombs) causing the test suite to hang.
+
+**Solution**: Problematic tests are renamed with `.FORK_BOMB_DISABLED` extension so FPM ignores them.
+
+### Writing Safe Tests
+
+✅ **Good**: Test functionality directly
+```fortran
+program test_coverage_engine
+    use coverage_engine
+    call test_coverage_calculation()  ! Direct module testing
+end program
+```
+
+❌ **Bad**: Recursive test calls  
+```bash
+#!/bin/bash
+fpm test  # This causes infinite recursion!
+```
+
+For detailed testing guidelines, see [`docs/TESTING.md`](docs/TESTING.md).
+
 ## Contributing
 
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature-name`
 3. Write tests: Follow TDD approach (RED/GREEN/REFACTOR)
-4. Implement changes: Keep functions <50 lines, files <500 lines
-5. Submit PR: Include working code examples
+4. Implement changes: Keep functions <50 lines, files <500 lines  
+5. **Ensure tests don't cause infinite loops**: Never call `fpm test` from within tests
+6. Submit PR: Include working code examples
 
 ## License
 
