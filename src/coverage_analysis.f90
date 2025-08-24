@@ -46,7 +46,7 @@ contains
         end if
         
         ! Handle imported JSON analysis path
-        if (allocated(config%import_file)) then
+        if (allocated(config%import_file) .and. len_trim(config%import_file) > 0) then
             exit_code = perform_imported_json_analysis(config)
             return
         end if
