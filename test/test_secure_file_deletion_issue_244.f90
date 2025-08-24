@@ -562,7 +562,7 @@ contains
         
         ! Check if temp files contain sensitive paths (simplified check)
         call execute_command_line("find /tmp -name 'fortcov_secure_*' -exec grep -l " // &
-                                   "'ssh\\|home\\|root\\|etc' {} \\; >/dev/null 2>&1", exitstat=stat)
+                                   "'ssh\|home\|root\|etc' {} \; >/dev/null 2>&1", exitstat=stat)
         if (stat == 0) then
             sensitive_found = .true.
         end if
