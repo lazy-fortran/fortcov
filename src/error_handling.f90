@@ -9,8 +9,6 @@ module error_handling
     integer, parameter, public :: ERROR_PERMISSION_DENIED = 1005
     integer, parameter, public :: ERROR_OUT_OF_MEMORY = 1006
     integer, parameter, public :: ERROR_INVALID_CONFIG = 1007
-    integer, parameter, public :: ERROR_PARTIAL_PROCESSING = 1008
-    integer, parameter, public :: ERROR_CIRCULAR_DEPENDENCY = 1009
     integer, parameter, public :: ERROR_INCOMPLETE_COVERAGE = 1010
     integer, parameter, public :: ERROR_THRESHOLD_NOT_MET = 1011
     
@@ -48,8 +46,6 @@ module error_handling
     public :: handle_permission_denied
     public :: handle_out_of_memory
     public :: handle_invalid_config
-    public :: handle_file_batch_processing
-    public :: handle_circular_dependency_detection
     public :: handle_incomplete_coverage
     public :: handle_fatal_error_with_trace
     public :: handle_no_coverage_files
@@ -162,65 +158,6 @@ contains
         write(error_ctx%context, '(A)') "Configuration parsing"
     end subroutine handle_invalid_config
 
-    ! Handle batch file processing with partial failures
-    subroutine handle_file_batch_processing(files, processed_count, error_ctx)
-        character(len=*), intent(in) :: files(:)
-        integer, intent(out) :: processed_count
-        type(error_context_t), intent(out) :: error_ctx
-        
-        integer :: i, valid_count, corrupt_count
-        
-        valid_count = 0
-        corrupt_count = 0
-        
-        ! Process files and check for actual corruption
-        do i = 1, size(files)
-            if (is_file_corrupted(files(i))) then
-                corrupt_count = corrupt_count + 1
-            else
-                valid_count = valid_count + 1
-            end if
-        end do
-        
-        processed_count = valid_count
-        
-        if (corrupt_count > 0) then
-            error_ctx%error_code = ERROR_PARTIAL_PROCESSING
-            error_ctx%recoverable = .true.
-            
-            write(error_ctx%message, '(A,I0,A,I0,A)') &
-                "Processed ", valid_count, " of ", size(files), &
-                " files. Skipped corrupted files."
-            
-            write(error_ctx%suggestion, '(A)') &
-                "Check skipped files for corruption or format issues."
-            
-            write(error_ctx%context, '(A)') "Batch file processing"
-        else
-            error_ctx%error_code = ERROR_SUCCESS
-            error_ctx%recoverable = .true.
-        end if
-    end subroutine handle_file_batch_processing
-
-    ! Handle circular dependency detection
-    subroutine handle_circular_dependency_detection(modules, error_ctx)
-        character(len=*), intent(in) :: modules(:)
-        type(error_context_t), intent(out) :: error_ctx
-        
-        ! Simulate circular dependency detection
-        ! For test purposes, assume modules form a cycle
-        error_ctx%error_code = ERROR_CIRCULAR_DEPENDENCY
-        error_ctx%recoverable = .false.
-        
-        write(error_ctx%message, '(A,I0,A)') &
-            "Circular dependency detected in ", size(modules), &
-            " modules. Module hierarchy contains cycle."
-        
-        write(error_ctx%suggestion, '(A)') &
-            "Refactor module dependencies to eliminate circular references."
-        
-        write(error_ctx%context, '(A)') "Module dependency analysis"
-    end subroutine handle_circular_dependency_detection
 
     ! Handle incomplete coverage data
     subroutine handle_incomplete_coverage(coverage_file, error_ctx)
@@ -481,35 +418,5 @@ contains
         end if
     end subroutine safe_write_context
 
-    ! Helper function to check if a file is corrupted
-    function is_file_corrupted(filename) result(corrupted)
-        character(len=*), intent(in) :: filename
-        logical :: corrupted
-        
-        integer :: unit, stat
-        logical :: file_exists
-        character(len=256) :: first_line
-        
-        corrupted = .true.  ! Assume corrupted until proven otherwise
-        
-        ! Check if file exists
-        inquire(file=filename, exist=file_exists)
-        if (.not. file_exists) return
-        
-        ! Open file and try to read first line
-        open(newunit=unit, file=filename, status='old', iostat=stat)
-        if (stat /= 0) return
-        
-        read(unit, '(A)', iostat=stat) first_line
-        close(unit)
-        
-        if (stat /= 0) return
-        
-        ! For .gcov text files, first line should start with version info
-        ! or be readable text format
-        if (len_trim(first_line) > 0) then
-            corrupted = .false.
-        end if
-    end function is_file_corrupted
 
 end module error_handling
