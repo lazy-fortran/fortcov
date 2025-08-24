@@ -13,7 +13,7 @@
 
 **Build Configuration**: FPM-based project
 - Build system: `fpm.toml` properly configured
-- Build command: `fmp build` ✅ SUCCESSFUL (100% compile success)
+- Build command: `fpm build` ✅ SUCCESSFUL (100% compile success)
 - 62 Fortran source files + 4 C files compiled successfully
 - Library and executable built without errors
 
@@ -25,7 +25,7 @@
 ## Test Infrastructure Status ⚠️ DEGRADED
 
 **Test Execution Issues Identified**:
-- Command: `fmp test` experiences timeout and repetitive failures
+- Command: `fpm test` experiences timeout and repetitive failures
 - Symptoms: 
   - `find: missing argument to '-exec'` errors
   - Multiple `STOP 0` and `STOP 1` signals
@@ -34,7 +34,7 @@
 
 **Test Files Analysis**:
 - Main test runner: `/test/check.f90` (basic placeholder)
-- 14 specific test files defined in `fmp.toml`
+- 14 specific test files defined in `fpm.toml`
 - Several disabled test files (*.disabled)
 - Mix of Fortran and shell script tests
 

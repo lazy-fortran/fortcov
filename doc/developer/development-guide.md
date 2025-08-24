@@ -268,7 +268,7 @@ call process_file_streaming(filename, buffer_size=4096)
 # Complete testing workflow
 fpm build
 fpm test
-fmp test --flag "-fprofile-arcs -ftest-coverage"
+fpm test --flag "-fprofile-arcs -ftest-coverage"
 gcov src/*.f90
 fortcov --source=src --fail-under=90 --output=coverage.md
 ```

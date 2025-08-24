@@ -19,7 +19,7 @@ sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 xcode-select --install
 brew install gcc fortran-lang/tap/fpm
 git clone https://github.com/lazy-fortran/fortcov.git
-cd fortcov && fmp build --profile release
+cd fortcov && fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 ```
 

@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
-- [ ] #252: Typo in installation instructions - fmp vs fpm
 - [ ] #253: Typo in GitLab CI documentation - fmp vs fpm
 - [ ] #254: Typo in troubleshooting section - fmp vs fpm
 - [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
@@ -20,7 +19,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-*No active work - Sprint 1 completed*
+- [x] #252: Typo in installation instructions - fmp vs fpm (branch: fix-installation-typo-252)
 
 ## DONE (Completed Work)
 - [x] #277: Add auto-discovery of test build and gcov processing (completed in PR #334)

@@ -72,7 +72,7 @@
         start_time=$(date +%s)
         
         # Create mock coverage analysis for demonstration
-        # In real usage: fmp run fortcov -- --source=src --output=coverage.html
+        # In real usage: fpm run fortcov -- --source=src --output=coverage.html
         cat > coverage-${{ matrix.compiler }}-${{ matrix.os }}.html << 'EOF'
         <!DOCTYPE html>
         <html>

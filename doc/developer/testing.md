@@ -84,7 +84,7 @@ fortcov --source=test --output=test-coverage.md
 
 ```bash
 # Run performance benchmarks
-fmp test test_performance_benchmarks
+fpm test test_performance_benchmarks
 
 # Profile test execution
 fpm build --flag "-pg"
@@ -528,9 +528,9 @@ Each major feature should have a test plan:
 
 ### Problem Overview
 
-FortCov tests were causing infinite loops when test scripts recursively called `fmp test` within the test suite execution. This created "fork bombs" where:
+FortCov tests were causing infinite loops when test scripts recursively called `fpm test` within the test suite execution. This created "fork bombs" where:
 
-1. **Root cause**: Test files calling `fmp test` within their execution
+1. **Root cause**: Test files calling `fpm test` within their execution
 2. **Symptom**: Test suite hanging indefinitely or taking 3+ minutes 
 3. **Impact**: CI/CD pipelines blocked, development workflow disrupted
 

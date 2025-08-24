@@ -85,7 +85,7 @@ For reliability, the system maintains a curated list of validated commit pairs:
 1. Git Checkout & Build Phase
    ├── git checkout <baseline_sha>
    ├── fpm build --flag "-fprofile-arcs -ftest-coverage"
-   ├── fmp test --flag "-fprofile-arcs -ftest-coverage" 
+   ├── fpm test --flag "-fprofile-arcs -ftest-coverage" 
    └── fortcov --export-json=baseline.json
 
 2. Coverage Data Collection Phase

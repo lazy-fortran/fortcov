@@ -27,7 +27,7 @@ rm -rf build/ && fpm build --profile release
 **Memory Errors (fixed in v2.0+):**
 ```bash
 # Update to latest version
-git pull && fmp build --profile release
+git pull && fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 ```
 
