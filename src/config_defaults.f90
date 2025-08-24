@@ -18,6 +18,7 @@ module config_defaults
     public :: ensure_zero_config_output_directory
     public :: get_max_files_from_env
     public :: handle_zero_configuration_mode
+    public :: apply_legacy_zero_config_defaults
 
 contains
 
@@ -131,13 +132,28 @@ contains
     end subroutine get_max_files_from_env
 
     subroutine handle_zero_configuration_mode(config)
-        !! Apply zero-configuration defaults for unset fields
+        !! Apply zero-configuration defaults (basic mode)
+        !! Enhanced auto-discovery integration is applied separately to avoid 
+        !! circular dependencies (Issue #281)
         type(config_t), intent(inout) :: config
-
-        logical :: has_source_paths
 
         ! Mark as zero-configuration mode
         config%zero_configuration_mode = .true.
+
+        ! Apply zero-config defaults
+        call apply_legacy_zero_config_defaults(config)
+
+        ! NOTE: Enhanced auto-discovery integration (Issue #281) is now 
+        ! applied separately from the main application entry point to 
+        ! avoid circular module dependencies
+
+    end subroutine handle_zero_configuration_mode
+
+    subroutine apply_legacy_zero_config_defaults(config)
+        !! Apply legacy zero-configuration defaults (preserved for compatibility)
+        type(config_t), intent(inout) :: config
+        
+        logical :: has_source_paths
 
         ! Check if source paths are already set
         has_source_paths = allocated(config%source_paths) .and. &
@@ -172,6 +188,6 @@ contains
             config%gcov_executable = "gcov"
         end if
 
-    end subroutine handle_zero_configuration_mode
+    end subroutine apply_legacy_zero_config_defaults
 
 end module config_defaults

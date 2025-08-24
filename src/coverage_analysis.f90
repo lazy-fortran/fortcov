@@ -16,6 +16,7 @@ module coverage_analysis
     use error_handling
     use file_utils, only: read_file_content, file_exists
     use coverage_tui_handler
+    use coverage_workflows, only: execute_auto_test_workflow
     implicit none
     private
     
@@ -99,8 +100,26 @@ contains
         
     end subroutine display_analysis_startup
     
+    subroutine report_auto_test_failure(auto_test_exit_code)
+        !! Reports auto-test execution failure but allows continuation
+        integer, intent(in) :: auto_test_exit_code
+        
+        select case (auto_test_exit_code)
+        case (124)
+            print *, "⚠️  Auto-test execution timed out"
+        case (2)
+            print *, "⚠️  Build system detection failed"
+        case default
+            print *, "⚠️  Auto-test execution failed (exit code:", &
+                     auto_test_exit_code, ")"
+        end select
+        print *, "   Continuing with coverage analysis from existing files"
+        
+    end subroutine report_auto_test_failure
+    
     function perform_standard_analysis(config) result(exit_code)
-        !! Performs standard coverage analysis workflow
+        !! Performs standard coverage analysis workflow with auto-test integration
+        !! Enhanced for Issue #281 - integrates auto-test execution in zero-config mode
         type(config_t), intent(in) :: config
         integer :: exit_code
         
@@ -109,8 +128,18 @@ contains
         type(coverage_data_t) :: merged_coverage
         type(coverage_stats_t) :: line_stats
         logical :: parser_error, reporter_error
+        integer :: auto_test_exit_code
         
         exit_code = EXIT_SUCCESS
+        
+        ! NEW: Execute auto-test workflow if enabled (Issue #281)
+        if (config%zero_configuration_mode .and. config%auto_test_execution) then
+            auto_test_exit_code = execute_auto_test_workflow(config)
+            if (auto_test_exit_code /= EXIT_SUCCESS .and. .not. config%quiet) then
+                ! Auto-test execution failed, but continue with coverage analysis
+                call report_auto_test_failure(auto_test_exit_code)
+            end if
+        end if
         
         ! Find and filter coverage files
         call find_and_filter_coverage_files(config, coverage_files, filtered_files)
