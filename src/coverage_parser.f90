@@ -485,7 +485,7 @@ contains
         class(gcov_parser_t), intent(in) :: this
         character(len=:), allocatable :: extensions(:)
         
-        ! Placeholder - will support .gcov text files when text parsing is implemented
+        ! Text parsing for .gcov files not yet implemented
         allocate(character(len=5) :: extensions(1))
         extensions(1) = ".gcov"
         
