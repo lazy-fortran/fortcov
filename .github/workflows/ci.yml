@@ -1,0 +1,39 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+    
+    - name: Install gfortran
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+    
+    - name: Install Fortran Package Manager
+      run: |
+        curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
+        chmod +x fpm
+        sudo mv fpm /usr/local/bin/
+    
+    - name: Verify installations
+      run: |
+        gfortran --version
+        fpm --version
+    
+    - name: Build project
+      run: fpm build
+    
+    - name: Run unit tests
+      run: fpm test
