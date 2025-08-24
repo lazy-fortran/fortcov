@@ -9,9 +9,11 @@ module coverage_workflows
     use fortcov_config
     use coverage_diff
     use file_utils
-    use string_utils
+    use string_utils, only: format_integer, to_lower, matches_pattern
     use error_handling
     use zero_configuration_manager, only: auto_discover_coverage_files_priority
+    use build_system_detector
+    use secure_command_executor, only: escape_shell_argument
     implicit none
     private
     
@@ -20,6 +22,7 @@ module coverage_workflows
     public :: perform_coverage_diff_analysis
     public :: launch_coverage_tui_mode
     public :: filter_coverage_files_by_patterns
+    public :: execute_auto_test_workflow
     
 contains
     
@@ -608,5 +611,170 @@ contains
         call move_alloc(temp_files, files)
         
     end subroutine resize_file_array
+    
+    function execute_auto_test_workflow(config) result(exit_code)
+        !! Execute automatic test workflow with build system detection
+        !!
+        !! Integrates build system detection with automatic test execution.
+        !! Detects the build system, generates appropriate test command with
+        !! coverage flags, executes tests with timeout handling, and provides
+        !! comprehensive error management.
+        !!
+        !! Args:
+        !!   config: Configuration object with auto_test_execution settings
+        !!
+        !! Returns:
+        !!   exit_code: 0 for success, non-zero for various failure conditions
+        !!     - 0: Success or skipped (when auto_test_execution = .false.)
+        !!     - 1: Test execution failed
+        !!     - 2: Build system detection failed
+        !!     - 124: Test execution timed out (standard timeout exit code)
+        
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        type(build_system_info_t) :: build_info
+        type(error_context_t) :: error_ctx
+        character(len=512) :: test_command
+        integer :: test_exit_code
+        logical :: execution_success
+        
+        exit_code = EXIT_SUCCESS
+        
+        ! Skip auto-test execution if disabled
+        if (.not. config%auto_test_execution) then
+            if (.not. config%quiet) then
+                print *, "ℹ️  Auto-test execution disabled"
+            end if
+            return
+        end if
+        
+        if (.not. config%quiet) then
+            print *, "🚀 Executing automatic test workflow..."
+        end if
+        
+        ! Step 1: Detect build system
+        call detect_build_system('.', build_info, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            if (.not. config%quiet) then
+                print *, "❌ Build system detection failed: " // &
+                         trim(error_ctx%message)
+            end if
+            exit_code = 2  ! Build system detection failed
+            return
+        end if
+        
+        ! Step 2: Handle unknown build system
+        if (build_info%system_type == 'unknown') then
+            if (.not. config%quiet) then
+                print *, "⚠️  No known build system detected, skipping tests"
+                print *, "   Supported: FPM, CMake, Make, Meson"
+            end if
+            return  ! Skip gracefully
+        end if
+        
+        ! Step 3: Check if build tool is available
+        if (.not. build_info%tool_available) then
+            if (.not. config%quiet) then
+                print *, "⚠️  Build tool not available for " // &
+                         trim(build_info%system_type) // ", skipping tests"
+            end if
+            return  ! Skip gracefully
+        end if
+        
+        if (.not. config%quiet) then
+            print *, "📦 Build system detected: " // trim(build_info%system_type)
+        end if
+        
+        ! Step 4: Execute tests with timeout
+        call execute_tests_with_timeout(build_info%test_command, config, &
+                                       test_exit_code, execution_success)
+        
+        ! Step 5: Handle test execution results
+        if (.not. execution_success) then
+            exit_code = test_exit_code
+            if (.not. config%quiet) then
+                if (test_exit_code == 124) then
+                    print *, "⏱️  Test execution timed out after " // &
+                             format_timeout_message(config%test_timeout_seconds)
+                else
+                    print *, "❌ Test execution failed with exit code: " // &
+                             format_integer(test_exit_code)
+                end if
+            end if
+        else
+            if (.not. config%quiet) then
+                print *, "✅ Tests completed successfully"
+            end if
+        end if
+        
+    end function execute_auto_test_workflow
+    
+    subroutine execute_tests_with_timeout(test_command, config, exit_code, &
+                                         success)
+        !! Execute test command with timeout handling
+        !!
+        !! Uses system timeout command to limit test execution time and prevent
+        !! hanging tests. Provides secure command execution with proper
+        !! argument escaping.
+        !!
+        !! Args:
+        !!   test_command: The test command to execute
+        !!   config: Configuration with timeout settings
+        !!   exit_code: Exit code from test execution
+        !!   success: True if tests passed, false if failed or timed out
+        
+        character(len=*), intent(in) :: test_command
+        type(config_t), intent(in) :: config
+        integer, intent(out) :: exit_code
+        logical, intent(out) :: success
+        
+        character(len=1024) :: full_command
+        character(len=32) :: timeout_str
+        
+        success = .false.
+        
+        ! Build timeout command with proper escaping
+        write(timeout_str, '(I0)') config%test_timeout_seconds
+        full_command = 'timeout ' // trim(timeout_str) // ' ' // &
+                      escape_shell_argument(test_command)
+        
+        if (.not. config%quiet) then
+            print *, "🔧 Executing: " // trim(test_command)
+            print *, "⏱️  Timeout: " // trim(timeout_str) // " seconds"
+        end if
+        
+        ! Execute the command with timeout
+        call execute_command_line(full_command, exitstat=exit_code)
+        
+        ! Check results
+        if (exit_code == 0) then
+            success = .true.
+        else if (exit_code == 124) then
+            ! Standard timeout exit code
+            success = .false.
+        else
+            ! Test failure or other error
+            success = .false.
+        end if
+        
+    end subroutine execute_tests_with_timeout
+    
+    function format_timeout_message(seconds) result(message)
+        !! Format timeout duration for user-friendly display
+        integer, intent(in) :: seconds
+        character(len=64) :: message
+        
+        if (seconds < 60) then
+            write(message, '(I0,A)') seconds, ' seconds'
+        else if (seconds < 3600) then
+            write(message, '(I0,A,I0,A)') seconds/60, ' minutes ', &
+                                         mod(seconds, 60), ' seconds'
+        else
+            write(message, '(I0,A,I0,A,I0,A)') seconds/3600, ' hours ', &
+                                              mod(seconds/60, 60), ' minutes ', &
+                                              mod(seconds, 60), ' seconds'
+        end if
+    end function format_timeout_message
     
 end module coverage_workflows
