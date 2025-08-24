@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
-- [ ] #253: Typo in GitLab CI documentation - fmp vs fpm
 - [ ] #254: Typo in troubleshooting section - fmp vs fpm
 - [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
 - [ ] #256: Documentation shows incorrect --format flag instead of --output-format
@@ -19,7 +18,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-*No current work - ready for next item*
+- [ ] #253: Typo in GitLab CI documentation - fmp vs fpm
 
 ## DONE (Completed Work)
 - [x] #252: Typo in installation instructions - fmp vs fpm (completed in PR #335)
