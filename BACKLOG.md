@@ -25,7 +25,7 @@
 - [ ] #268: Consolidate redundant issue #249 test files
 
 ## DOING (Current Work)
-- [x] #249: Zero-configuration mode not working as documented (branch: fix-zero-config-issue-249)
 
 ## DONE (Completed)
+- [x] #249: Zero-configuration mode not working as documented
 - [x] #260: Multiple README documentation inconsistencies and workflow failures
