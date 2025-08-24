@@ -82,3 +82,18 @@ The fix should:
 2. Preserve all parsed CLI flag values
 3. Generate errors for invalid flags
 4. Keep zero-configuration functionality working for no-argument case
+
+## Test Infinite Loop Prevention
+
+⚠️ **IMPORTANT**: Tests in this directory follow the `.FORK_BOMB_DISABLED` convention to prevent infinite recursion.
+
+**Problem**: Tests that call `fpm test` create infinite loops (fork bombs) causing the test suite to hang.
+
+**Solution**: Shell scripts that would cause recursion are renamed with `.FORK_BOMB_DISABLED` extension.
+
+**Safe Testing Patterns**:
+- ✅ Test Fortran modules directly in `.f90` files
+- ✅ Test binary execution with direct paths: `./build/gfortran_*/app/fortcov`  
+- ❌ Never call `fpm test` from within tests
+
+For comprehensive testing guidelines, see [`../docs/TESTING.md`](../docs/TESTING.md).
