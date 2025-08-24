@@ -1,19 +1,43 @@
 # Development Backlog
 
-## CURRENT SPRINT (Auto-Discovery Feature)
-- [ ] #277: Add auto-discovery of test build and gcov processing
-- [ ] #278: Implement build system detection for auto-discovery
-- [ ] #279: Add auto-test execution to coverage workflows
-- [ ] #280: Add auto-discovery configuration options
-- [ ] #281: Enhance zero-configuration mode with auto-discovery integration
-- [ ] #246: CLI flag parsing completely broken - all options silently ignored
+## CURRENT SPRINT (Critical Defects & Architecture)
+### CRITICAL (Test Suite Blockers)
+- [ ] #293: Bug: Find command syntax error causes test suite hangs and failures
+- [ ] #294: Bug: Test suite hangs with infinite loops causing 3+ minute timeouts
 - [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
+
+### HIGH (Architecture & Security)
+- [ ] #298: Architecture: fortcov_config.f90 violates 1000-line module size limit
+- [ ] #246: CLI flag parsing completely broken - all options silently ignored
+- [ ] #295: Bug: CLI flag parsing inconsistent - some flags work, others fail
+- [ ] #296: Security: Multiple input validation vulnerabilities remain unpatched
+- [ ] #297: Security: File deletion vulnerabilities allow temp file persistence
+
+### MEDIUM (Dead Code Cleanup)
+- [ ] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
+- [ ] #284: Remove dead code: orphaned test reference in fpm.toml
+- [ ] #286: Remove dead code: build artifacts in repository (CONSOLIDATED)
+- [ ] #288: Remove dead code: typo in test performance script
+- [ ] #289: Remove dead code: potentially unused error handling functions
+- [ ] #292: Dead code audit summary: multiple categories of obsolete code found
+
+### Sprint 1 Features (Deferred - Focus on Defects First)
+- [ ] #299: Architecture: Sprint 1 auto-discovery features not yet implemented
+- [ ] #278: Implement build system detection for auto-discovery
+- [ ] #280: Add auto-discovery configuration options
+- [ ] #279: Add auto-test execution to coverage workflows
+- [ ] #281: Enhance zero-configuration mode with auto-discovery integration
+- [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
 
 ## DONE (Completed Work)
 - [x] #257: Integration validation script failures and missing patterns (completed in PR #276)
 - [x] Circular dependency compilation error: coverage_model.mod corrupted at line 1573 column 24 (completed in PR #282)
+- [x] #285: TODO comments consolidated into #283
+- [x] #287: Commented-out code consolidated into #283
+- [x] #290: Compiled files consolidated into #286
+- [x] #291: Placeholder implementations consolidated into #283
 
 ## FUTURE SPRINTS (High-level Planning)
 
