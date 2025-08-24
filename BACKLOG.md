@@ -3,7 +3,6 @@
 ## TODO (Ordered by Priority)
 
 ### CRITICAL (Core Functionality Broken)
-- [ ] #251: Diff mode incorrectly requires --source parameter
 
 ### HIGH (Build System Issues)
 - [ ] #259: Meson example configuration errors - reserved target name and deprecated API
@@ -28,6 +27,7 @@
 - [ ] #271: Improve iostat error handling granularity
 
 ## DOING (Current Work)
+- [ ] #251: Diff mode incorrectly requires --source parameter (branch: fix-diff-mode-source-requirement-251)
 
 ## DONE (Completed)
 - [x] #250: Configuration file parsing fails with iostat=5010
