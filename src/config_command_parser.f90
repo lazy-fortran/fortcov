@@ -469,6 +469,22 @@ contains
         case ("--strict")
             config%strict_mode = .true.
 
+        case ("--auto-discovery")
+            config%auto_discovery = .true.
+
+        case ("--no-auto-discovery")
+            config%auto_discovery = .false.
+
+        case ("--auto-test")
+            config%auto_test_execution = .true.
+
+        case ("--no-auto-test")
+            config%auto_test_execution = .false.
+
+        case ("--test-timeout")
+            call parse_integer_with_error(value, config%test_timeout_seconds, &
+                                          "test timeout", success, error_message)
+
         case default
             success = .false.
             error_message = "Unknown flag: " // trim(flag)
