@@ -2,11 +2,9 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (Test Suite Blockers)
-- [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
 
 ### HIGH (Architecture & Security)
 - [ ] #246: CLI flag parsing completely broken - all options silently ignored
-- [ ] #297: Security: File deletion vulnerabilities allow temp file persistence
 
 ### MEDIUM (Dead Code Cleanup)
 - [ ] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
@@ -25,9 +23,10 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #297: Security: File deletion vulnerabilities allow temp file persistence
+- [ ] #245: Multiple test suite segmentation faults indicate memory safety issues
 
 ## DONE (Completed Work)
+- [x] #297: Security: File deletion vulnerabilities allow temp file persistence (completed in PR #311)
 - [x] #296: Security: Multiple input validation vulnerabilities remain unpatched (completed in PR #308)
 - [x] #298: Architecture: fortcov_config.f90 violates 1000-line module size limit (completed in PR #306)
 - [x] #294: Bug: Test suite hangs with infinite loops causing 3+ minute timeouts (completed in PR #303)
