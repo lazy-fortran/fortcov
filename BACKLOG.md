@@ -3,7 +3,6 @@
 ## TODO (Ordered by Priority)
 
 ### CRITICAL (Core Functionality Broken)
-- [ ] #260: Multiple README documentation inconsistencies and workflow failures
 - [ ] #249: Zero-configuration mode not working as documented  
 - [ ] #250: Configuration file parsing fails with iostat=5010
 - [ ] #251: Diff mode incorrectly requires --source parameter
@@ -21,5 +20,6 @@
 - [ ] #252: Typo in installation instructions - fmp vs fpm
 
 ## DOING (Current Work)
+- [x] #260: Multiple README documentation inconsistencies and workflow failures (branch: docs-readme-inconsistencies-260)
 
 ## DONE (Completed)
