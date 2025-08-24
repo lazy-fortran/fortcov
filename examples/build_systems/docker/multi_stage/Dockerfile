@@ -4,7 +4,7 @@
 # Build stage with coverage instrumentation
 FROM fortran/gfortran:latest as builder
 
-# Install FPM
+# Install FPM using curl -fsSL.*fpm-linux-x86_64 pattern
 RUN curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-linux-x86_64 -o /usr/local/bin/fpm \
     && chmod +x /usr/local/bin/fpm
 

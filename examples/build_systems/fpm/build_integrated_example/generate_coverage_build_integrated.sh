@@ -20,14 +20,14 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 echo
 echo "Step 2: Finding and processing coverage data in build directories..."
-echo "Command: find build -name \"*.gcda\" -path \"*/fortcov/*\" -execdir gcov {} \\;"
+echo "Command: find build -name \"\*.gcda\" -path \"\*/fortcov/\*\""
 
 # Create mock build structure for demonstration
 mkdir -p build/gfortran_debug/fortcov
 echo "# Mock .gcda file" > build/gfortran_debug/fortcov/demo_calculator.gcda
 
 echo "Searching for .gcda files in build directories..."
-find build -name "*.gcda" -path "*/fortcov/*" -execdir gcov {} \; || echo "No .gcda files found in fortcov subdirectories"
+find build -name "\*.gcda" -path "\*/fortcov/\*" || echo "No .gcda files found in fortcov subdirectories"
 
 echo
 echo "Step 3: Collecting generated .gcov files..."

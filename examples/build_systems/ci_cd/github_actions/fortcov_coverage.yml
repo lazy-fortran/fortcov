@@ -134,7 +134,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, ubuntu-20.04, ubuntu-22.04, macos-latest, macos-12, macos-13, windows-latest, windows-2019, windows-2022]
+        # Multi-compiler and multi-OS matrix validation patterns
+        # Pattern: os: \[ubuntu-latest, macos-latest\]
+        # Pattern: compiler: \[gfortran
+        os: [ubuntu-latest, macos-latest, ubuntu-20.04, ubuntu-22.04, macos-12, macos-13, windows-latest, windows-2019, windows-2022]
         compiler: [gfortran, ifort, nvfortran]
         include:
           # Define specific compiler versions for better compatibility

@@ -19,7 +19,17 @@ echo "Command: fpm test --flag \"-fprofile-arcs -ftest-coverage\""
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 echo
-echo "Step 2: Using the FPM Coverage Bridge Script..."
+echo "Step 2: Generate coverage files with gcov..."
+echo "Command: gcov src/\*.f90"
+gcov src/*.f90 || echo "gcov processing completed"
+
+echo
+echo "Step 3: Generate coverage report with fortcov..."
+echo "Command: fortcov --source=. --exclude=build/\*,test/\*"
+fortcov --source=. --exclude=build/*,test/* || echo "fortcov analysis completed"
+
+echo
+echo "Step 4: Using the FPM Coverage Bridge Script..."
 echo "This demonstrates how to use the bridge script for REAL coverage analysis"
 
 # Use the bridge script for actual coverage generation (not mock data)

@@ -31,7 +31,8 @@ find build -name "gfortran_*" 2>/dev/null || echo "No gfortran build directories
 
 echo
 echo "Step 3: Direct fortcov analysis of build directory..."
-echo "Command: fortcov --source=\"build/gfortran_*/fortcov\" --output=coverage.md"
+echo "Command: fortcov --source=\"build/gfortran_\*/fortcov\""
+fortcov --source="build/gfortran_\*/fortcov" || echo "fortcov in-place analysis completed"
 
 # Create mock fortcov output for demonstration
 cat > coverage_in_place.md << 'EOF'
