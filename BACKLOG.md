@@ -13,9 +13,9 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
-- [ ] #278: Implement build system detection for auto-discovery (branch: feature-278)
 
 ## DONE (Completed Work)
+- [x] #278: Implement build system detection for auto-discovery (completed in PR #330)
 - [x] #292: Dead code audit summary: multiple categories of obsolete code found (cleanup completed)
 - [x] #304: Test: improve test coverage simulation accuracy (completed in PR #329)
 - [x] #305: Docs: update test documentation for infinite loop prevention (completed in PR #328)
