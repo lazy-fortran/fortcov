@@ -134,20 +134,12 @@ contains
         integer, intent(out) :: test_exit_code
         type(complete_workflow_result_t), intent(out) :: result
 
-        type(error_context_t) :: error_ctx
-
         result%test_executed = .true.
 
-        call execute_auto_test_workflow(trim(test_result%test_command), &
-                                       config%test_timeout_seconds, &
-                                       test_exit_code, result%timed_out, &
-                                       error_ctx)
+        test_exit_code = execute_auto_test_workflow(config)
 
         result%tests_passed = (test_exit_code == EXIT_SUCCESS)
-
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            result%error_message = trim(error_ctx%message)
-        end if
+        result%timed_out = (test_exit_code == 124)
 
     end subroutine execute_tests_with_coverage
 
@@ -168,9 +160,9 @@ contains
         type(config_t), intent(in) :: config
         logical, intent(out) :: manual_files_specified
 
-        manual_files_specified = (len_trim(config%input_file) > 0) .or. &
-                               (allocated(config%source_files) .and. &
-                                size(config%source_files) > 0)
+        manual_files_specified = (len_trim(config%import_file) > 0) .or. &
+                               (allocated(config%source_paths) .and. &
+                                size(config%source_paths) > 0)
 
     end subroutine check_manual_files
 
