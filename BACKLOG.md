@@ -18,6 +18,9 @@
 - [ ] #254: Typo in troubleshooting section - fmp vs fpm
 - [ ] #253: Typo in GitLab CI documentation - fmp vs fpm
 - [ ] #252: Typo in installation instructions - fmp vs fpm
+- [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
+- [ ] #263: Remove excessively long test filename in examples
+- [ ] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
 
 ## DOING (Current Work)
 - [x] #260: Multiple README documentation inconsistencies and workflow failures (branch: docs-readme-inconsistencies-260)

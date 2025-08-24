@@ -1,28 +1,17 @@
 # FortCov Examples and Tutorials
 
-Practical examples showing how to use FortCov in real-world scenarios.
+**Working examples** - see main [README.md](../../README.md) for complete tutorials.
 
-## Basic Tutorial
+## Basic Example
 
-### Your First Coverage Report
+**Complete working example:**
 
 ```bash
-# Create simple project
-mkdir my-calculator && cd my-calculator
+mkdir calc && cd calc && fpm init calc
 
-# Initialize FPM project
-cat > fpm.toml << 'EOF'
-name = "calculator"
-version = "0.1.0"
-EOF
-
-mkdir -p src test
-```
-
-**Create source code** (`src/calculator.f90`):
-
-```fortran
-module calculator
+# Source (src/calc.f90)
+cat > src/calc.f90 << 'EOF'
+module calc
     implicit none
     public :: add, subtract
 contains
@@ -30,120 +19,89 @@ contains
         real, intent(in) :: a, b
         real :: c
         c = a + b
-    end function add
+    end function
     
     function subtract(a, b) result(c)
-        real, intent(in) :: a, b
+        real, intent(in) :: a, b  
         real :: c
         c = a - b
-    end function subtract
-end module calculator
-```
+    end function
+end module
+EOF
 
-**Generate coverage:**
+# Test (test/test_calc.f90)
+cat > test/test_calc.f90 << 'EOF'
+program test_calc
+    use calc
+    implicit none
+    if (abs(add(2.0, 3.0) - 5.0) > 1e-6) stop 1
+    if (abs(subtract(5.0, 2.0) - 3.0) > 1e-6) stop 1
+    print *, 'All tests passed!'
+end program
+EOF
 
-```bash
-# Build and test with coverage
+# Generate coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-
-# Zero-configuration mode (recommended)
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+find build -name "*.gcda" | while read gcda_file; do
+  gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov  # That's it! Report in build/coverage/coverage.md
-
-# Traditional mode (for custom configurations)
-gcov src/*.f90
-fortcov --source=src --output=coverage.md
-
-# Enhanced with quality gate
-fortcov --threshold=75 --quiet
+fortcov  # Creates coverage.md
 ```
 
-## Build System Integration
+**Expected output:**
+```markdown
+| Filename | Stmts | Covered | Cover | Missing |
+|----------|-------|---------|-------|---------|  
+| src/calc.f90 | 6 | 6 | 100.00% | |
+| TOTAL | 6 | 6 | 100.00% | |
+```
 
-### FPM Integration
+## Build Integration Examples
 
-**Zero-Configuration Workflow (Recommended)**
-
+**FPM (recommended):**
 ```bash
-# Simplest possible FPM integration
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-done  # FPM-aware coverage
-fortcov                       # Auto-discovers everything!
+find build -name "*.gcda" | while read gcda_file; do
+  gcov -b "$gcda_file" 2>/dev/null || true
+done
+fortcov
 ```
 
-**Traditional FPM Workflow**
-
-```bash
-# For custom configurations
-fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
-fortcov --source=. --exclude=build/*,test/* --output=coverage.md
-```
-
-### CMake Integration
-
+**CMake:**
 ```cmake
-# CMakeLists.txt
-set(CMAKE_Fortran_FLAGS_TESTING "-g -O0 -fprofile-arcs -ftest-coverage")
-
+set(CMAKE_Fortran_FLAGS_TESTING "-fprofile-arcs -ftest-coverage")
 add_custom_target(coverage
-    COMMAND gcov ${CMAKE_BINARY_DIR}/*.gcno
-    COMMAND fortcov --source=${CMAKE_SOURCE_DIR} --output=coverage.html
+    COMMAND gcov *.gcno
+    COMMAND fortcov --source=${CMAKE_SOURCE_DIR}
 )
 ```
 
-### Makefile Integration
-
+**Makefile:**
 ```makefile
-COVERAGE_FLAGS = -fprofile-arcs -ftest-coverage
-
 coverage: test
-	gcov $(SOURCES)
-	fortcov --source=. --output=coverage.html
-
-.PHONY: coverage
+	gcov $(SOURCES) 
+	fortcov --source=.
 ```
 
-## CI/CD Examples
+## CI/CD Integration
 
-### GitHub Actions
-
+**GitHub Actions:**
 ```yaml
-name: Coverage
-on: [push, pull_request]
-
-jobs:
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-    - name: Generate Coverage
-      run: |
-        fpm test --flag "-fprofile-arcs -ftest-coverage"
-        find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-          gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
-        done
-        fortcov --threshold=80 --quiet
-    - name: Upload Coverage Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage-report
-        path: build/coverage/coverage.md
+- run: |
+    fpm test --flag "-fprofile-arcs -ftest-coverage"
+    find build -name "*.gcda" | while read gcda_file; do
+      gcov -b "$gcda_file" 2>/dev/null || true
+    done
+    fortcov --fail-under=80 --format=json
 ```
 
-### GitLab CI
-
+**GitLab CI:**
 ```yaml
 coverage:
   script:
-    - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
-    - fortcov --format=xml --output=coverage.xml --threshold=80
-  coverage: '/Total coverage: (\d+\.\d+)%/'
+    - fpm test --flag "-fprofile-arcs -ftest-coverage" 
+    - find build -name "*.gcda" | while read gcda_file; do gcov -b "$gcda_file" 2>/dev/null || true; done
+    - fortcov --format=xml --fail-under=80
   artifacts:
     reports:
       coverage_report:
@@ -151,4 +109,4 @@ coverage:
         path: coverage.xml
 ```
 
-For comprehensive build system integration examples, see the examples/build_systems/ directory.
+For comprehensive build system examples, see `examples/build_systems/` directory and main [README.md](../../README.md).

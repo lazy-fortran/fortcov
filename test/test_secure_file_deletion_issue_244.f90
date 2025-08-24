@@ -106,7 +106,7 @@ contains
         end if
 
         ! Execute safe_find_files which creates and should delete temp file
-        call safe_find_files(temp_file_pattern, files, error_ctx, max_files=5)
+        call safe_find_files(temp_file_pattern, files, error_ctx)
         
         ! Check temp directory after operation - temp files should be gone
         call check_temp_directory_state(temp_exists_after)
@@ -158,7 +158,7 @@ contains
 
         ! Execute multiple find operations
         do i = 1, 3
-            call safe_find_files(patterns(i), files, error_ctx, max_files=10)
+            call safe_find_files(patterns(i), files, error_ctx)
             if (allocated(files)) then
                 if (debug_mode) then
                     write(*, '(A, I0, A, I0, A)') "   DEBUG: Pattern ", i, " found ", size(files), " files"
@@ -244,7 +244,7 @@ contains
         test_pattern = "*.f90"
         
         ! Execute find operation
-        call safe_find_files(test_pattern, files, error_ctx, max_files=1)
+        call safe_find_files(test_pattern, files, error_ctx)
         
         ! Simulate checking if concurrent access issues are handled
         concurrent_access_handled = .false.
@@ -293,7 +293,7 @@ contains
 
         ! Perform multiple operations
         do i = 1, operation_count
-            call safe_find_files("*.f90", files, error_ctx, max_files=2)
+            call safe_find_files("*.f90", files, error_ctx)
             if (allocated(files)) deallocate(files)
         end do
 
@@ -411,8 +411,8 @@ contains
         call start_test("Concurrent Deletion Conflicts")
 
         ! Execute concurrent-like operations
-        call safe_find_files("*.f90", files1, error_ctx1, max_files=3)
-        call safe_find_files("*.f90", files2, error_ctx2, max_files=3)
+        call safe_find_files("*.f90", files1, error_ctx1)
+        call safe_find_files("*.f90", files2, error_ctx2)
         
         conflicts_detected = 0
         if (error_ctx1%error_code /= ERROR_SUCCESS) conflicts_detected = conflicts_detected + 1
@@ -449,7 +449,7 @@ contains
         call start_test("Disk Space Deletion Failure")
 
         ! Execute operation that might encounter disk issues
-        call safe_find_files("**/*.f90", files, error_ctx, max_files=100)
+        call safe_find_files("**/*.f90", files, error_ctx)
         
         disk_errors_handled = .false.
         if (error_ctx%error_code /= ERROR_SUCCESS) then
@@ -490,7 +490,7 @@ contains
         call start_test("Readonly Filesystem Deletion")
 
         ! Try operation in potentially readonly area
-        call safe_find_files("/usr/**/*.f90", files, error_ctx, max_files=5)
+        call safe_find_files("/usr/**/*.f90", files, error_ctx)
         
         readonly_handled = .false.
         if (error_ctx%error_code /= ERROR_SUCCESS) then
@@ -561,7 +561,8 @@ contains
         sensitive_found = .false.
         
         ! Check if temp files contain sensitive paths (simplified check)
-        call execute_command_line("find /tmp -name 'fortcov_secure_*' -exec grep -l 'ssh\\|home\\|root\\|etc' {} \\; >/dev/null 2>&1", exitstat=stat)
+        call execute_command_line("find /tmp -name 'fortcov_secure_*' -exec grep -l " // &
+                                   "'ssh\\|home\\|root\\|etc' {} \\; >/dev/null 2>&1", exitstat=stat)
         if (stat == 0) then
             sensitive_found = .true.
         end if
