@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
-- [ ] #305: Docs: update test documentation for infinite loop prevention
 - [ ] #304: Test: improve test coverage simulation accuracy
 
 ### MEDIUM (Dead Code Cleanup)
@@ -17,6 +16,7 @@
 - [ ] #277: Add auto-discovery of test build and gcov processing
 
 ## DOING (Current Work)
+- [ ] #305: Docs: update test documentation for infinite loop prevention (branch: docs-305)
 
 ## DONE (Completed Work)
 - [x] #327: Cleanup: analyze and optimize test suite for CI performance (tests cleaned up, CI fixed)
