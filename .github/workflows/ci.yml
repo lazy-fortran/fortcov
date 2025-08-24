@@ -36,4 +36,7 @@ jobs:
       run: fpm build
     
     - name: Run unit tests
-      run: fpm test
+      run: |
+        set -e
+        fpm test
+        echo "All tests completed successfully"
