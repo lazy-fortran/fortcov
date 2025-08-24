@@ -3,7 +3,6 @@
 ## TODO (Ordered by Priority)
 
 ### CRITICAL (Core Functionality Broken)
-- [ ] #249: Zero-configuration mode not working as documented  
 - [ ] #250: Configuration file parsing fails with iostat=5010
 - [ ] #251: Diff mode incorrectly requires --source parameter
 
@@ -23,6 +22,7 @@
 - [ ] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
 
 ## DOING (Current Work)
-- [x] #260: Multiple README documentation inconsistencies and workflow failures (branch: docs-readme-inconsistencies-260)
+- [x] #249: Zero-configuration mode not working as documented (branch: fix-zero-config-issue-249)
 
 ## DONE (Completed)
+- [x] #260: Multiple README documentation inconsistencies and workflow failures
