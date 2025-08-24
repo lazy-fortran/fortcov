@@ -8,7 +8,7 @@
 - **Status**: ✅ FIXED
 
 ### 2. **Typo in Self-Coverage Script**
-- **Issue**: `fmp test` instead of `fpm test` in self_coverage_test.sh line 30
+- **Issue**: `fpm test` command typo in self_coverage_test.sh line 30
 - **Fix**: Corrected to `fpm test --flag "-fprofile-arcs -ftest-coverage"`
 - **Status**: ✅ FIXED
 

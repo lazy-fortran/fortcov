@@ -322,7 +322,7 @@ end program
 ```
 
 ### Disabled Example: test_documentation_commands_issue_232.sh.FORK_BOMB_DISABLED
-This file contains comprehensive testing logic but is disabled because it originally called `fmp test` recursively. The test logic is preserved for reference and could be converted to use direct binary execution.
+This file contains comprehensive testing logic but is disabled because it originally called `fpm test` recursively. The test logic is preserved for reference and could be converted to use direct binary execution.
 
 ## Integration with CI/CD
 

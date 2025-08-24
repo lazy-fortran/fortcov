@@ -142,7 +142,7 @@ The main fortcov project uses **Fortran Package Manager (FPM)** for all operatio
 ### Integration Tests
 Integration tests use a **hybrid approach** for maximum flexibility:
 - **FPM-based fixtures**: Test fixtures with `fpm.toml` files use FPM for consistent builds
-- **Legacy fixtures**: Older fixtures without `fmp.toml` use direct gfortran compilation
+- **Legacy fixtures**: Older fixtures without `fpm.toml` use direct gfortran compilation
 - **Auto-detection**: Test runner automatically detects which approach to use per fixture
 
 ### Rationale
