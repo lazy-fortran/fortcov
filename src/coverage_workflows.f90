@@ -983,6 +983,10 @@ contains
         ! Use custom gcov executable if specified, otherwise default to 'gcov'
         if (allocated(config%gcov_executable)) then
             gcov_exe = trim(config%gcov_executable)
+            ! If gcov_executable is empty or only whitespace, use default
+            if (len_trim(gcov_exe) == 0) then
+                gcov_exe = "gcov"
+            end if
         else
             gcov_exe = "gcov"
         end if

@@ -11,7 +11,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-*No current work - ready for next TODO item*
+- [ ] #255: find command syntax error in secure file deletion test
 
 ## DONE (Completed Work)
 - [x] #325: Refactor: reduce file size in secure_command_executor (completed in PR #345 - 758→139 lines, 86% reduction)
@@ -71,7 +71,7 @@
 ## TODO (Future Work - Ordered by Priority)
 
 ### MEDIUM (Documentation Errors)
-- [ ] #255: find command syntax error in secure file deletion test
+*Next item moved to DOING*
 - [ ] #263: Remove excessively long test filename in examples
 - [ ] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
 - [ ] #266: Fix ineffective directory change in test_zero_configuration_issue_249
