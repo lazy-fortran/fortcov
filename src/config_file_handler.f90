@@ -3,11 +3,17 @@ module config_file_handler
     !! 
     !! Focused on reading and processing configuration files.
     !! Extracted from config_parser.f90 to maintain SRP and size limits.
+    use iso_fortran_env, only: error_unit
     use foundation_constants
     use foundation_layer_utils
     use fortcov_config, only: config_t
     implicit none
     private
+    
+    ! Parameter constants for array sizing
+    integer, parameter :: MAX_SOURCE_PATHS = 100
+    integer, parameter :: MAX_EXCLUDE_PATTERNS = 100
+    integer, parameter :: MAX_INCLUDE_PATTERNS = 100
     
     public :: parse_config_file
     public :: load_config_file_with_merge
@@ -117,9 +123,9 @@ contains
         character(len=256) :: input_format
         character(len=256) :: output_format
         character(len=256) :: output_path
-        character(len=256), dimension(100) :: source_paths
-        character(len=256), dimension(100) :: exclude_patterns
-        character(len=256), dimension(100) :: include_patterns
+        character(len=256), dimension(MAX_SOURCE_PATHS) :: source_paths
+        character(len=256), dimension(MAX_EXCLUDE_PATTERNS) :: exclude_patterns
+        character(len=256), dimension(MAX_INCLUDE_PATTERNS) :: include_patterns
         character(len=256) :: gcov_executable
         character(len=256) :: gcov_args
         real :: minimum_coverage
@@ -221,10 +227,15 @@ contains
         config%include_unchanged = include_unchanged
         config%keep_gcov_files = keep_gcov_files
         
-        ! Transfer arrays
+        ! Transfer arrays with validation
         call transfer_string_array(source_paths, config%source_paths)
         call transfer_string_array(exclude_patterns, config%exclude_patterns)
         call transfer_string_array(include_patterns, config%include_patterns)
+        
+        ! Validate array bounds (warn if arrays appear full)
+        call validate_array_bounds(source_paths, MAX_SOURCE_PATHS, "source_paths")
+        call validate_array_bounds(exclude_patterns, MAX_EXCLUDE_PATTERNS, "exclude_patterns")
+        call validate_array_bounds(include_patterns, MAX_INCLUDE_PATTERNS, "include_patterns")
         
     end subroutine parse_namelist_config_file
     
@@ -499,5 +510,31 @@ contains
             end if
         end if
     end subroutine get_max_files_from_env
+    
+    subroutine validate_array_bounds(input_array, max_size, array_name)
+        !! Validate array bounds and warn if array appears to be at capacity
+        character(len=*), dimension(:), intent(in) :: input_array
+        integer, intent(in) :: max_size
+        character(len=*), intent(in) :: array_name
+        
+        integer :: i, count
+        
+        ! Count non-empty elements
+        count = 0
+        do i = 1, size(input_array)
+            if (len_trim(input_array(i)) > 0) then
+                count = count + 1
+            end if
+        end do
+        
+        ! Warn if array is at or near capacity
+        if (count >= max_size - 5) then
+            write(error_unit, '(A,A,A,I0,A,I0,A)') &
+                "WARNING: ", trim(array_name), &
+                " array is nearly full (", count, "/", max_size, &
+                "). Consider increasing parameter in config_file_handler module."
+        end if
+        
+    end subroutine validate_array_bounds
     
 end module config_file_handler
