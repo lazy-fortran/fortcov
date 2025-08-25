@@ -13,6 +13,8 @@
 
 ### LOW (Technical Debt)
 - [ ] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target
+- [ ] #369: refactor: replace formatted write with string concatenation in gcda pattern building
+- [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
 - [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (branch: fix-364)
