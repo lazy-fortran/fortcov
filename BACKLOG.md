@@ -33,7 +33,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #396: Root cause: Validation rejects 'markdown' format but config default uses it [EPIC: Critical Infrastructure Defects]
+- [ ] #396: BLOCKED - Test failures preventing PR #401 merge (CLI flag parsing, coverage discovery) [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
