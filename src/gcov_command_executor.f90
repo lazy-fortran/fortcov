@@ -252,8 +252,7 @@ contains
         character(len=10) :: time_str
         
         call date_and_time(date_str, time_str)
-        write(temp_filename, '(A,A,A,A)') &
-            "/tmp/fortcov_gcov_", date_str, "_", time_str(1:6)
+        temp_filename = "/tmp/fortcov_gcov_" // trim(date_str) // "_" // time_str(1:6)
     end subroutine create_temp_filename
 
     subroutine cleanup_temp_file(temp_filename)

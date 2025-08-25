@@ -309,9 +309,9 @@ contains
         integer, intent(in) :: unit
         character(len=*), intent(in) :: source_name
         
-        write(unit, '(A,A)') "        -:    0:Source:", source_name
-        write(unit, '(A,A)') "        -:    0:Graph:", trim(source_name) // ".gcno"
-        write(unit, '(A,A)') "        -:    0:Data:", trim(source_name) // ".gcda"  
+        write(unit, '(A)') "        -:    0:Source:" // trim(source_name)
+        write(unit, '(A)') "        -:    0:Graph:" // trim(source_name) // ".gcno"
+        write(unit, '(A)') "        -:    0:Data:" // trim(source_name) // ".gcda"  
         write(unit, '(A)') "        -:    0:Runs:1"
         write(unit, '(A)') "        -:    0:Programs:1"
     end subroutine write_gcov_headers

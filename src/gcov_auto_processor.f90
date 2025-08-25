@@ -177,7 +177,7 @@ contains
         type(error_context_t) :: error_ctx
 
         ! Build search pattern for .gcda files
-        write(search_pattern, '(A,A,A)') trim(project_path), '/', GCDA_PATTERN
+        search_pattern = trim(project_path) // '/' // GCDA_PATTERN
 
         ! Use secure file finding
         call safe_find_files(search_pattern, gcda_files, error_ctx)
@@ -377,7 +377,7 @@ contains
         call clear_error_context(error_ctx)
         
         ! Build secure pattern for .gcno files
-        write(pattern, '(A,A)') trim(directory), '/*.gcno'
+        pattern = trim(directory) // '/*.gcno'
         
         ! Use secure file finding
         call safe_find_files(pattern, gcno_files, error_ctx)
