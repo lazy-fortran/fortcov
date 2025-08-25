@@ -8,6 +8,7 @@ module terminal_ui_manager
     use theme_manager
     use tui_main_loop
     use report_configuration
+    use string_utilities, only: int_to_str, real_to_str
     implicit none
     private
 
@@ -78,25 +79,5 @@ contains
         call tui%cleanup()
         success = .true.
     end subroutine start_interactive_tui
-
-    ! Helper function to convert integer to string
-    function int_to_str(num) result(str)
-        integer, intent(in) :: num
-        character(len=:), allocatable :: str
-        character(len=20) :: temp_str
-
-        write(temp_str, '(I0)') num
-        str = trim(temp_str)
-    end function int_to_str
-
-    ! Helper function to convert real to string
-    function real_to_str(num) result(str)
-        real, intent(in) :: num
-        character(len=:), allocatable :: str
-        character(len=20) :: temp_str
-
-        write(temp_str, '(F0.1)') num
-        str = trim(temp_str)
-    end function real_to_str
 
 end module terminal_ui_manager

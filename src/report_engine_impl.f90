@@ -36,6 +36,9 @@ module report_engine_impl
         procedure :: apply_filtering => report_engine_apply_filtering
         procedure :: calculate_metrics => report_engine_calculate_metrics
         procedure :: generate_styled_report => report_engine_generate_styled_report
+        ! Private helper procedures
+        procedure, private :: prepare_report_data
+        procedure, private :: generate_format_specific_output
     end type report_engine_t
 
 contains
@@ -354,8 +357,7 @@ contains
         
         type(transformed_data_t) :: transformed_data
         type(color_scheme_t) :: theme
-        character(len=:), allocatable :: source_content, highlighted_content, &
-                                         & css_variables
+        character(len=:), allocatable :: source_content
         
         success = .false.
         error_msg = ""
@@ -364,6 +366,30 @@ contains
             error_msg = "Report engine not initialized"
             return
         end if
+        
+        ! Prepare report data (theme, transformed data, source content)
+        call this%prepare_report_data(transformed_data, theme, source_content, &
+                                      success, error_msg)
+        if (.not. success) return
+        
+        ! Generate format-specific output
+        call this%generate_format_specific_output(format, source_content, theme, &
+                                                 output, success, error_msg)
+        
+    end subroutine report_engine_generate_styled_report
+    
+    ! Prepare report data (theme, transformed data, source content)
+    subroutine prepare_report_data(this, transformed_data, theme, &
+                                   source_content, success, error_msg)
+        class(report_engine_t), intent(inout) :: this
+        type(transformed_data_t), intent(out) :: transformed_data
+        type(color_scheme_t), intent(out) :: theme
+        character(len=:), allocatable, intent(out) :: source_content
+        logical, intent(out) :: success
+        character(len=:), allocatable, intent(out) :: error_msg
+        
+        success = .false.
+        error_msg = ""
         
         ! Transform data
         call this%transformer%transform_data(this%source_data, transformed_data, &
@@ -385,11 +411,30 @@ contains
             source_content = "! No source files available"
         end if
         
+        success = .true.
+    end subroutine prepare_report_data
+    
+    ! Generate format-specific output
+    subroutine generate_format_specific_output(this, format, source_content, &
+                                               theme, output, success, error_msg)
+        class(report_engine_t), intent(inout) :: this
+        character(len=*), intent(in) :: format
+        character(len=*), intent(in) :: source_content
+        type(color_scheme_t), intent(in) :: theme
+        character(len=:), allocatable, intent(out) :: output
+        logical, intent(out) :: success
+        character(len=:), allocatable, intent(out) :: error_msg
+        
+        character(len=:), allocatable :: highlighted_content, css_variables
+        
+        success = .false.
+        error_msg = ""
+        
         ! Apply syntax highlighting based on format
         select case (trim(format))
         case ("html")
             call this%highlighter%highlight_for_html(source_content, &
-                                                    & highlighted_content, success)
+                                                    highlighted_content, success)
             if (.not. success) then
                 error_msg = "Failed to generate HTML highlighting"
                 return
@@ -399,11 +444,11 @@ contains
             call this%theme_manager%generate_css_variables(theme, css_variables)
             output = '<style>' // new_line('a') // css_variables // &
                      new_line('a') // &
-                     & '</style>' // new_line('a') // highlighted_content
+                     '</style>' // new_line('a') // highlighted_content
             
         case ("terminal")
             call this%highlighter%highlight_for_terminal(source_content, &
-                                                        & highlighted_content, success)
+                                                        highlighted_content, success)
             if (.not. success) then
                 error_msg = "Failed to generate terminal highlighting"
                 return
@@ -416,7 +461,7 @@ contains
         end select
         
         success = .true.
-    end subroutine report_engine_generate_styled_report
+    end subroutine generate_format_specific_output
     
     ! HTML generation delegated to html_report_generator module
     

@@ -4,6 +4,7 @@ module coverage_metrics_calculator
     !! Handles computation and management of coverage statistics.
     !! Extracted from report_engine_impl.f90 for SRP compliance.
     use coverage_model
+    use string_utilities, only: real_to_str
     implicit none
     private
 
@@ -102,15 +103,5 @@ contains
                 'Delta:    ' // real_to_str(coverage_delta) // '%' // new_line('a') // &
                 'Status:   ' // status // new_line('a')
     end subroutine generate_diff_output
-
-    ! Helper function to convert real to string
-    function real_to_str(num) result(str)
-        real, intent(in) :: num
-        character(len=:), allocatable :: str
-        character(len=20) :: temp_str
-
-        write(temp_str, '(F0.1)') num
-        str = trim(temp_str)
-    end function real_to_str
 
 end module coverage_metrics_calculator
