@@ -229,14 +229,24 @@ contains
         logical :: requires_value
 
         select case (trim(flag))
+        ! Flags that do NOT require values
         case ("--help", "-h", "--version", "-V", "--verbose", "-v", &
               "--quiet", "-q", "--validate", "--keep-gcov-files", &
               "--tui", "--strict", "--include-unchanged", &
               "--auto-discovery", "--no-auto-discovery", &
               "--auto-test", "--no-auto-test")
             requires_value = .false.
-        case default
+        ! Flags that DO require values
+        case ("--source", "-s", "--exclude", "-e", "--include", "-i", &
+              "--output", "-o", "--format", "-f", "--config", "-c", &
+              "--import", "--gcov-executable", "--gcov-args", &
+              "--minimum", "-m", "--threshold", "--fail-under", &
+              "--threads", "-t", "--diff", "--diff-threshold", &
+              "--test-timeout")
             requires_value = .true.
+        ! Unknown flags do not require values (will be caught as invalid later)
+        case default
+            requires_value = .false.
         end select
 
     end function flag_requires_value
