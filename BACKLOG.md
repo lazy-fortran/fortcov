@@ -5,7 +5,6 @@
 ### EPIC: Critical Infrastructure Defects
 
 ### EPIC: Core Functionality Restoration
-- [ ] #388: Invalid option produces confusing error message
 
 ### EPIC: Architecture Size Compliance
 - [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability
@@ -26,7 +25,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #390: Output format mapping bug: format parameter values incorrectly converted [EPIC: Core Functionality Restoration]
+- [ ] #388: Invalid option produces confusing error message [EPIC: Core Functionality Restoration]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
