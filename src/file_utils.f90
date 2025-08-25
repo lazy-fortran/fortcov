@@ -495,23 +495,65 @@ contains
         character(len=:), allocatable, intent(out) :: content
         type(error_context_t), intent(out) :: error_ctx
         
-        integer :: unit, iostat
+        integer :: unit
         integer(int64) :: file_size
         character(len=1), allocatable :: buffer(:)
-        type(validation_result_t) :: validation_result
-        logical :: file_exists
         
         call clear_error_context(error_ctx)
         
-        ! Check if file exists first
-        inquire(file=filename, exist=file_exists)
-        if (.not. file_exists) then
-            call handle_missing_source(filename, error_ctx)
+        ! Validate file accessibility and constraints
+        call validate_file_for_reading(filename, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
             content = ""
             return
         end if
         
-        ! Comprehensive file validation before opening
+        ! Open and prepare file for reading
+        call open_file_for_stream_reading(filename, unit, file_size, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            content = ""
+            return
+        end if
+        
+        ! Handle empty files
+        if (file_size <= 0) then
+            allocate(character(len=0) :: content)
+            close(unit)
+            return
+        end if
+        
+        ! Validate and perform memory allocation
+        call validate_and_allocate_buffer(filename, file_size, buffer, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            close(unit)
+            content = ""
+            return
+        end if
+        
+        ! Read file content and convert to string
+        call read_and_convert_file_content(filename, unit, file_size, buffer, &
+                                          content, error_ctx)
+        
+    end subroutine read_file_content_enhanced
+    
+    ! Validate file exists and meets constraints for reading
+    subroutine validate_file_for_reading(filename, error_ctx)
+        character(len=*), intent(in) :: filename
+        type(error_context_t), intent(out) :: error_ctx
+        
+        logical :: file_exists
+        type(validation_result_t) :: validation_result
+        
+        call clear_error_context(error_ctx)
+        
+        ! Check file existence
+        inquire(file=filename, exist=file_exists)
+        if (.not. file_exists) then
+            call handle_missing_source(filename, error_ctx)
+            return
+        end if
+        
+        ! Validate file constraints
         call validate_file_constraints(filename, validation_result)
         if (.not. validation_result%is_valid) then
             error_ctx%error_code = ERROR_INVALID_CONFIG
@@ -520,78 +562,117 @@ contains
             call safe_write_suggestion(error_ctx, &
                 "Check file accessibility and format")
             call safe_write_context(error_ctx, "File content reading")
-            content = ""
-            return
         end if
+    end subroutine validate_file_for_reading
+    
+    ! Open file for stream reading and get file size
+    subroutine open_file_for_stream_reading(filename, unit, file_size, error_ctx)
+        character(len=*), intent(in) :: filename
+        integer, intent(out) :: unit
+        integer(int64), intent(out) :: file_size
+        type(error_context_t), intent(out) :: error_ctx
         
-        ! Open file with enhanced error handling
+        integer :: iostat
+        
+        call clear_error_context(error_ctx)
+        
         open(newunit=unit, file=filename, status='old', action='read', &
              form='unformatted', access='stream', iostat=iostat)
         if (iostat /= 0) then
             call interpret_iostat_open_error(iostat, filename, error_ctx)
-            content = ""
             return
         end if
         
-        ! Get file size with validation
         inquire(unit=unit, size=file_size)
-        if (file_size <= 0) then
-            allocate(character(len=0) :: content)
-            close(unit)
-            return
-        end if
+    end subroutine open_file_for_stream_reading
+    
+    ! Validate memory requirements and allocate buffer
+    subroutine validate_and_allocate_buffer(filename, file_size, buffer, error_ctx)
+        character(len=*), intent(in) :: filename
+        integer(int64), intent(in) :: file_size
+        character(len=1), allocatable, intent(out) :: buffer(:)
+        type(error_context_t), intent(out) :: error_ctx
+        
+        type(validation_result_t) :: validation_result
+        
+        call clear_error_context(error_ctx)
         
         ! Validate memory allocation request
         call validate_memory_allocation_request(file_size, validation_result)
         if (.not. validation_result%is_valid) then
-            error_ctx%error_code = ERROR_OUT_OF_MEMORY
-            call safe_write_message(error_ctx, &
-                "File too large for memory allocation: " // trim(filename))
-            call safe_write_suggestion(error_ctx, &
-                "1. Process file in smaller chunks" // char(10) // &
-                "2. Increase available memory" // char(10) // &
-                "3. Use streaming read approach")
-            call safe_write_context(error_ctx, "File content reading")
-            content = ""
-            close(unit)
+            call set_memory_allocation_error(filename, error_ctx)
             return
         end if
         
-        ! Safe memory allocation with bounds checking
-        if (file_size > huge(1)) then  ! Check if file_size fits in default integer
-            error_ctx%error_code = ERROR_OUT_OF_MEMORY
-            call safe_write_message(error_ctx, &
-                "File size exceeds maximum supported size: " // trim(filename))
-            call safe_write_suggestion(error_ctx, &
-                "Process file in smaller chunks or use 64-bit build")
-            call safe_write_context(error_ctx, "File content reading")
-            content = ""
-            close(unit)
+        ! Check if file size fits in default integer
+        if (file_size > huge(1)) then
+            call set_file_size_error(filename, error_ctx)
             return
         end if
         
-        ! Read entire file with enhanced error handling
         allocate(buffer(int(file_size)))
-        read(unit, iostat=iostat) buffer
+    end subroutine validate_and_allocate_buffer
+    
+    ! Set memory allocation error context
+    subroutine set_memory_allocation_error(filename, error_ctx)
+        character(len=*), intent(in) :: filename
+        type(error_context_t), intent(out) :: error_ctx
         
+        error_ctx%error_code = ERROR_OUT_OF_MEMORY
+        call safe_write_message(error_ctx, &
+            "File too large for memory allocation: " // trim(filename))
+        call safe_write_suggestion(error_ctx, &
+            "1. Process file in smaller chunks" // char(10) // &
+            "2. Increase available memory" // char(10) // &
+            "3. Use streaming read approach")
+        call safe_write_context(error_ctx, "File content reading")
+    end subroutine set_memory_allocation_error
+    
+    ! Set file size error context
+    subroutine set_file_size_error(filename, error_ctx)
+        character(len=*), intent(in) :: filename
+        type(error_context_t), intent(out) :: error_ctx
+        
+        error_ctx%error_code = ERROR_OUT_OF_MEMORY
+        call safe_write_message(error_ctx, &
+            "File size exceeds maximum supported size: " // trim(filename))
+        call safe_write_suggestion(error_ctx, &
+            "Process file in smaller chunks or use 64-bit build")
+        call safe_write_context(error_ctx, "File content reading")
+    end subroutine set_file_size_error
+    
+    ! Read file content and convert buffer to string
+    subroutine read_and_convert_file_content(filename, unit, file_size, buffer, &
+                                            content, error_ctx)
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: unit
+        integer(int64), intent(in) :: file_size
+        character(len=1), allocatable, intent(inout) :: buffer(:)
+        character(len=:), allocatable, intent(out) :: content
+        type(error_context_t), intent(inout) :: error_ctx
+        
+        integer :: iostat
+        
+        ! Read file content
+        read(unit, iostat=iostat) buffer
         if (iostat /= 0) then
             call interpret_iostat_read_error(iostat, filename, error_ctx)
             if (allocated(buffer)) deallocate(buffer)
-            content = ""
             close(unit)
+            content = ""
             return
         end if
         
+        ! Close file with error handling
         close(unit, iostat=iostat)
         if (iostat /= 0) then
             call interpret_iostat_close_error(iostat, filename, error_ctx)
-            ! Continue despite close error - content was successfully read
-            error_ctx%recoverable = .true.
+            error_ctx%recoverable = .true.  ! Continue despite close error
         end if
         
-        ! Convert buffer to string
+        ! Convert buffer to string and cleanup
         content = transfer(buffer, repeat(' ', int(file_size)))
         deallocate(buffer)
-    end subroutine read_file_content_enhanced
+    end subroutine read_and_convert_file_content
 
 end module file_utils

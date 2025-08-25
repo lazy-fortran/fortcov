@@ -526,106 +526,148 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
+        character(len=:), allocatable :: normalized_flag
+
         success = .true.
         error_message = ""
+        normalized_flag = trim(flag)
 
-        select case (trim(flag))
+        ! Process flags by category
+        call process_control_flags(normalized_flag, config, success)
+        if (success) return
+        
+        call process_value_flags(normalized_flag, value, config, success, error_message)
+        if (.not. success .or. success) return
+        
+        call process_boolean_flags(normalized_flag, config, success)
+        if (success) return
+        
+        call process_complex_flags(normalized_flag, value, config, success, error_message)
+        if (.not. success .or. success) return
+        
+        ! Unknown flag
+        success = .false.
+        error_message = "Unknown flag: " // trim(flag)
+
+    end subroutine process_single_flag
+    
+    ! Process control flags (help, version, validate)
+    subroutine process_control_flags(flag, config, success)
+        character(len=*), intent(in) :: flag
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        
+        success = .true.
+        
+        select case (flag)
         case ("--help", "-h")
             config%show_help = .true.
-
         case ("--version", "-V")
             config%show_version = .true.
-
-        case ("--verbose", "-v")
-            config%verbose = .true.
-
-        case ("--quiet", "-q")
-            config%quiet = .true.
-
         case ("--validate")
             config%validate_config_only = .true.
-
+        case default
+            success = .false.
+        end select
+    end subroutine process_control_flags
+    
+    ! Process flags that require string values
+    subroutine process_value_flags(flag, value, config, success, error_message)
+        character(len=*), intent(in) :: flag, value
+        type(config_t), intent(inout) :: config
+        logical, intent(inout) :: success
+        character(len=*), intent(out) :: error_message
+        
+        success = .true.
+        
+        select case (flag)
         case ("--source", "-s")
             call add_source_path(value, config, success, error_message)
-
         case ("--exclude", "-e")
             call add_exclude_pattern(value, config, success, error_message)
-
         case ("--include", "-i")
             call add_include_pattern(value, config, success, error_message)
-
         case ("--output", "-o")
             config%output_path = value
-
         case ("--format", "-f")
             config%output_format = value
-
+        case ("--config", "-c")
+            config%config_file = value
+        case ("--import")
+            config%import_file = value
+        case ("--gcov-executable")
+            config%gcov_executable = value
+        case ("--gcov-args")
+            config%gcov_args = value
+        case default
+            success = .false.
+        end select
+    end subroutine process_value_flags
+    
+    ! Process boolean flags
+    subroutine process_boolean_flags(flag, config, success)
+        character(len=*), intent(in) :: flag
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        
+        success = .true.
+        
+        select case (flag)
+        case ("--verbose", "-v")
+            config%verbose = .true.
+        case ("--quiet", "-q")
+            config%quiet = .true.
+        case ("--include-unchanged")
+            config%include_unchanged = .true.
+        case ("--keep-gcov-files")
+            config%keep_gcov_files = .true.
+        case ("--tui")
+            config%tui_mode = .true.
+        case ("--strict")
+            config%strict_mode = .true.
+        case ("--auto-discovery")
+            config%auto_discovery = .true.
+        case ("--no-auto-discovery")
+            config%auto_discovery = .false.
+        case ("--auto-test")
+            config%auto_test_execution = .true.
+        case ("--no-auto-test")
+            config%auto_test_execution = .false.
+        case default
+            success = .false.
+        end select
+    end subroutine process_boolean_flags
+    
+    ! Process complex flags requiring complex parsing
+    subroutine process_complex_flags(flag, value, config, success, error_message)
+        character(len=*), intent(in) :: flag, value
+        type(config_t), intent(inout) :: config
+        logical, intent(inout) :: success
+        character(len=*), intent(out) :: error_message
+        
+        select case (flag)
         case ("--minimum", "-m", "--threshold")
             call parse_real_with_error(value, config%minimum_coverage, &
                                        "minimum coverage", success, error_message)
-
         case ("--fail-under")
             call parse_real_with_error(value, config%fail_under_threshold, &
                                        "fail threshold", success, error_message)
-
         case ("--threads", "-t")
             call parse_integer_with_error(value, config%threads, &
                                           "thread count", success, error_message)
-
-        case ("--config", "-c")
-            config%config_file = value
-
         case ("--diff")
             config%enable_diff = .true.
             call parse_diff_files(value, config, success, error_message)
-
         case ("--diff-threshold")
             call parse_real_with_error(value, config%diff_threshold, &
                                        "diff threshold", success, error_message)
-
-        case ("--include-unchanged")
-            config%include_unchanged = .true.
-
-        case ("--import")
-            config%import_file = value
-
-        case ("--gcov-executable")
-            config%gcov_executable = value
-
-        case ("--gcov-args")
-            config%gcov_args = value
-
-        case ("--keep-gcov-files")
-            config%keep_gcov_files = .true.
-
-        case ("--tui")
-            config%tui_mode = .true.
-
-        case ("--strict")
-            config%strict_mode = .true.
-
-        case ("--auto-discovery")
-            config%auto_discovery = .true.
-
-        case ("--no-auto-discovery")
-            config%auto_discovery = .false.
-
-        case ("--auto-test")
-            config%auto_test_execution = .true.
-
-        case ("--no-auto-test")
-            config%auto_test_execution = .false.
-
         case ("--test-timeout")
             call parse_integer_with_error(value, config%test_timeout_seconds, &
                                           "test timeout", success, error_message)
-
         case default
             success = .false.
-            error_message = "Unknown flag: " // trim(flag)
         end select
-
-    end subroutine process_single_flag
+    end subroutine process_complex_flags
 
     subroutine process_positional_arguments(positionals, positional_count, &
                                              config, success, error_message)
