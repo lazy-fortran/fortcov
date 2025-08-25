@@ -1,78 +1,47 @@
 # Development Backlog
 
-## CURRENT SPRINT (Critical Infrastructure & Architecture Alignment)
+## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
-### HIGH (Architecture Compliance)  
-<!-- No high priority items -->
+### EPIC: Critical Infrastructure Defects
+- [ ] #395: CRITICAL: Infinite recursion when processing gcov files - fork bomb
+- [ ] #396: Root cause: Validation rejects 'markdown' format but config default uses it
+- [ ] #397: README contains multiple non-functional command examples
 
-### MEDIUM (Quality & Reliability)
-<!-- No medium priority items -->
+### EPIC: Core Functionality Restoration
+- [ ] #389: Zero-configuration mode fails with 'Unsupported output format: markdown' error
+- [ ] #394: Diff option documented in help but not implemented in parser
+- [ ] #393: Tool enters zero-config mode when config file is explicitly specified
+- [ ] #392: Config file parser rejects valid options from example file
+- [ ] #391: Output file created as empty directory instead of file
+- [ ] #390: Output format mapping bug: format parameter values incorrectly converted
+- [ ] #388: Invalid option produces confusing error message
 
-### LOW (Technical Debt)
-<!-- No technical debt items -->
+### EPIC: Architecture Size Compliance
+- [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability
+- [ ] #399: Architecture risk: 5 modules approaching 1000-line hard limit requiring immediate decomposition
+
+### EPIC: Code Quality & Dead Code Elimination
+- [ ] #386: cleanup: massive code duplication in int_to_string functions
+- [ ] #387: cleanup: duplicate real_to_string functions
+- [ ] #376: cleanup: remove unused config_file_handler module
+- [ ] #385: cleanup: remove disabled fork bomb test files
+- [ ] #377: cleanup: remove unused coverage_line_types module
+- [ ] #378: cleanup: remove unused platform_detection module
+- [ ] #379: cleanup: remove unused secure_temp_file_types module
+- [ ] #380: cleanup: remove unused temp_file_c_interfaces module
+- [ ] #381: cleanup: remove unused temp_file_error_handling module
+- [ ] #382: cleanup: remove unused sanitize_filename function
+- [ ] #383: cleanup: remove unused is_safe_path function
+- [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
 <!-- No current work -->
 
-## DONE (Completed Work)
-- [x] #370: refactor: replace formatted write with string concatenation in gcno pattern building (completed in PR #375 - architectural consistency achieved, gcno pattern optimized alongside gcda patterns)
-- [x] #369: refactor: replace formatted write with string concatenation in gcda pattern building (completed in PR #375 - critical CI hanging issue resolved, string concatenation optimization achieved)
-- [x] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target (completed in PR #374 - QADS compliance achieved, all functions now ≤50 lines, critical infrastructure fixes included)
-- [x] #314: fix: resolve remaining 2 security test pattern matching issues (completed in PR #373 - implemented FORTCOV_TEST_MODE environment variable, fixed output format issues, maintains strict production security)
-- [x] #366: architecture: 13 modules exceed 500-line target violating size principles (completed in PR #372 - Phase 1 SRP module extraction: 11 new modules extracted from report_engine_impl.f90)
-- [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (completed in PR #371 - decomposed into 4 specialized modules: 1008→460 lines, 54% reduction)
-- [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (completed in PR #368 - replaced formatted write with string concatenation)
-- [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
-- [x] #312: Optimize pattern matching performance in security assessment (completed in PR #362 - consolidated pattern matching with LRU caching, 5x performance improvement)
-- [x] #336: Fix: resolve 4 remaining gcov processing test failures (completed in PR #360 - gcov processing stability significantly improved)
-- [x] #356: Fix: rescue commits from main (completed in PR #359 - removed obsolete Makefile successfully)
-- [x] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines (completed in PR #358 - extracted helper functions following SRP)
-- [x] #271: Improve iostat error handling granularity (completed in PR #357 - comprehensive iostat error interpretation with granular reporting)
-- [x] #270: Refactor hardcoded array size in namelist parsing (completed in PR #355 - replaced hardcoded 100 with parameter constants)
-- [x] #266: Fix ineffective directory change in test_zero_configuration_issue_249 (completed in PR #354 - investigation confirmed issue obsolete)
-- [x] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90 (completed in PR #353 - investigation confirmed issue obsolete)
-- [x] #263: Remove excessively long test filename in examples (completed in PR #352 - investigation confirmed file never existed)
-- [x] #325: Refactor: reduce file size in secure_command_executor (completed in PR #345 - 758→139 lines, 86% reduction)
-- [x] #323: Refactor: reduce safe_close_and_delete function size (completed in PR #342)
-- [x] #324: Fix: address line length violations in secure_command_executor (completed in PR #341)
-- [x] #268: Consolidate redundant issue #249 test files (completed in PR #340)
-- [x] #275: Remove unused tempfile import in test_makefile_syntax.py (completed in PR #339)
-- [x] #267: Potential command injection in test shell commands (fixed in PR #338)
-- [x] #256: Documentation shows incorrect --format flag instead of --output-format (invalid - documentation was correct)
-- [x] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm' (resolved in PR #337 comprehensive fix)
-- [x] #254: Typo in troubleshooting section - fmp vs fpm (resolved in PR #337 comprehensive fix)
-- [x] #253: Typo in GitLab CI documentation - fmp vs fpm (completed in PR #337)
-- [x] #252: Typo in installation instructions - fmp vs fpm (completed in PR #335)
-- [x] #277: Add auto-discovery of test build and gcov processing (completed in PR #334)
-- [x] #281: Enhance zero-configuration mode with auto-discovery integration (completed in PR #333)
-- [x] #279: Add auto-test execution to coverage workflows (completed in PR #332)
-- [x] #280: Add auto-discovery configuration options (completed in PR #331)
-- [x] #278: Implement build system detection for auto-discovery (completed in PR #330)
-- [x] #292: Dead code audit summary: multiple categories of obsolete code found (cleanup completed)
-- [x] #304: Test: improve test coverage simulation accuracy (completed in PR #329)
-- [x] #305: Docs: update test documentation for infinite loop prevention (completed in PR #328)
-- [x] #327: Cleanup: analyze and optimize test suite for CI performance (tests cleaned up, CI fixed)
-- [x] #309: Security: refine Windows device names validation in path security (completed in PR #326)
-- [x] #310: Security: complete error message path leakage sanitization (completed in PR #322)
-- [x] #289: Remove dead code: potentially unused error handling functions (completed in PR #321)
-- [x] #288: Remove dead code: typo in test performance script (completed in PR #320)
-- [x] #286: Remove dead code: build artifacts in repository (completed in PR #319)
-- [x] #284: Remove dead code: orphaned test reference in fpm.toml (completed in PR #318)
-- [x] #283: Remove dead code: disabled test files and diff-related code (CONSOLIDATED)
-- [x] #246: CLI flag parsing completely broken - all options silently ignored (completed in PR #316)
-- [x] #245: Multiple test suite segmentation faults indicate memory safety issues (fixed with allocation guards)
-- [x] #297: Security: File deletion vulnerabilities allow temp file persistence (completed in PR #311)
-- [x] #296: Security: Multiple input validation vulnerabilities remain unpatched (completed in PR #308)
-- [x] #298: Architecture: fortcov_config.f90 violates 1000-line module size limit (completed in PR #306)
-- [x] #294: Bug: Test suite hangs with infinite loops causing 3+ minute timeouts (completed in PR #303)
-- [x] #293: Bug: Find command syntax error causes test suite hangs and failures (completed in PR #302)
-- [x] #300: cleanup: rescue test_format.nml from main branch (completed in PR #301)
-- [x] #257: Integration validation script failures and missing patterns (completed in PR #276)
-- [x] Circular dependency compilation error: coverage_model.mod corrupted at line 1573 column 24 (completed in PR #282)
-- [x] #285: TODO comments consolidated into #283
-- [x] #287: Commented-out code consolidated into #283
-- [x] #290: Compiled files consolidated into #286
-- [x] #291: Placeholder implementations consolidated into #283
+## PRODUCT_BACKLOG (High-level Features)
+- [ ] Advanced Coverage Analytics & Reporting
+- [ ] Performance Optimization & Scalability  
+- [ ] Enhanced Integration & Compatibility
+- [ ] User Experience & Developer Productivity
 
 ## FUTURE SPRINTS (High-level Planning)
 
