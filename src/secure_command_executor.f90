@@ -376,8 +376,9 @@ contains
         ! Check for disk space issues (simplified heuristic)
         ! Only check if file exists to avoid df errors
         if (file_existed) then
-            call execute_command_line("df " // trim(filename) // " 2>/dev/null | grep -q ' 9[0-9]% '", &
-                                     exitstat=stat)
+            call execute_command_line("df " // trim(filename) // &
+                " 2>/dev/null | grep -q ' 9[0-9]% '", &
+                exitstat=stat)
             disk_space_risk = (stat == 0)  ! High disk usage detected
         else
             disk_space_risk = .false.
@@ -387,27 +388,34 @@ contains
         if (file_in_temp_directory) then
             security_issues_detected = .true.
             if (close_iostat /= 0) then
-                security_message = "Critical: Temp file delete operation failed - security cleanup required"
+                security_message = "Critical: Temp file delete operation " // &
+                    "failed - security cleanup required"
             else
-                security_message = "Security audit: Temp file delete operation completed"
+                security_message = "Security audit: Temp file delete " // &
+                    "operation completed"
             end if
         else if (file_in_readonly_location .and. file_existed) then
             security_issues_detected = .true.
-            security_message = "Security warning: Readonly filesystem temp cleanup restricted"
+            security_message = "Security warning: Readonly filesystem " // &
+                "temp cleanup restricted"
         else if (concurrent_access_risk) then
             security_issues_detected = .true.
-            security_message = "Security alert: Concurrent temp file access - locking conflicts detected"
+            security_message = "Security alert: Concurrent temp file " // &
+                "access - locking conflicts detected"
         else if (disk_space_risk) then
             security_issues_detected = .true.
-            security_message = "Security risk: Disk space critical - temp file cleanup may fail"
+            security_message = "Security risk: Disk space critical - " // &
+                "temp file cleanup may fail"
         else if (close_iostat /= 0 .and. deletion_successful) then
             ! Primary deletion method failed but fallback succeeded
             security_issues_detected = .true.
-            security_message = "Security audit: Primary temp file delete failed - fallback cleanup used"
+            security_message = "Security audit: Primary temp file delete " // &
+                "failed - fallback cleanup used"
         else if (file_existed .and. index(filename, 'fortcov') > 0) then
             ! Always report security assessment for fortcov temp files
             security_issues_detected = .true.
-            security_message = "Security compliance: Fortcov temp file delete operation assessed"
+            security_message = "Security compliance: Fortcov temp file " // &
+                "delete operation assessed"
         end if
         
     end subroutine assess_deletion_security_risks
@@ -421,13 +429,15 @@ contains
         integer :: stat
         
         ! Detect concurrent access scenarios - multiple operations
-        concurrent_risk = (index(pattern, '*.f90') > 0)  ! Common pattern = concurrent risk
+        ! Common pattern = concurrent risk
+        concurrent_risk = (index(pattern, '*.f90') > 0)
         
         ! Detect readonly filesystem access patterns
         readonly_risk = (index(pattern, '/usr/') > 0 .or. index(pattern, '/proc/') > 0)
         
         ! Check for disk space issues
-        call execute_command_line("df . 2>/dev/null | grep -q ' 9[0-9]% '", exitstat=stat)
+        call execute_command_line("df . 2>/dev/null | grep -q ' 9[0-9]% '", &
+            exitstat=stat)
         disk_space_risk = (stat == 0)
         
         ! Detect sensitive data patterns
@@ -439,19 +449,22 @@ contains
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
-                "Security warning: Readonly filesystem permission denied - write access restricted")
+                "Security warning: Readonly filesystem permission denied - " // &
+                "write access restricted")
         else if (index(pattern, '**') > 0 .and. index(pattern, '*.f90') > 0) then
             ! Test 9: Disk space deletion failure - specific recursive pattern
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
-                "Security alert: Disk space critical - temp file cleanup may fail due to full disk")
+                "Security alert: Disk space critical - temp file cleanup " // &
+                "may fail due to full disk")
         else if (index(pattern, 'nonexistent') > 0) then
             ! Test 6: Error handling for deletion failures
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
-                "Security audit: Temp file deletion failure handling assessed for nonexistent pattern")
+                "Security audit: Temp file deletion failure handling " // &
+                "assessed for nonexistent pattern")
         else if (concurrent_risk .and. error_ctx%error_code == ERROR_SUCCESS) then
             ! Test 8: Concurrent deletion conflicts - report proactively
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
@@ -463,7 +476,8 @@ contains
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
-                "Security warning: Readonly filesystem temp file cleanup may be restricted")
+                "Security warning: Readonly filesystem temp file cleanup " // &
+                "may be restricted")
         else if (disk_space_risk) then
             ! General disk space issues
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED  
@@ -790,7 +804,8 @@ contains
             call check_path_component_for_device(path_component, is_device)
             if (is_device) then
                 error_ctx%error_code = ERROR_INVALID_PATH
-                call safe_write_message(error_ctx, "Windows device name access not allowed")
+                call safe_write_message(error_ctx, &
+                    "Windows device name access not allowed")
                 return
             end if
         end if
