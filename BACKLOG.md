@@ -14,9 +14,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [x] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines (branch: refactor-343)
+*No current work*
 
 ## DONE (Completed Work)
+- [x] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines (completed in PR #358 - extracted helper functions following SRP)
 - [x] #271: Improve iostat error handling granularity (completed in PR #357 - comprehensive iostat error interpretation with granular reporting)
 - [x] #270: Refactor hardcoded array size in namelist parsing (completed in PR #355 - replaced hardcoded 100 with parameter constants)
 - [x] #266: Fix ineffective directory change in test_zero_configuration_issue_249 (completed in PR #354 - investigation confirmed issue obsolete)
