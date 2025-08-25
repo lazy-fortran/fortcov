@@ -96,3 +96,4 @@
 - [ ] #348: Refactor: reduce safe_execute_gcov function size to under 50 lines
 - [ ] #349: Refactor: reduce assess_deletion_security_risks function size to under 50 lines
 - [ ] #350: Refactor: reduce escape_shell_argument function size to under 50 lines
+- [ ] #361: Refactor: improve gcov processing test mock infrastructure
