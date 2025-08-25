@@ -189,10 +189,7 @@ contains
             config%source_paths(1) = "."
         end if
 
-        ! Set HTML output if not explicitly set
-        if (config%output_format == "terminal") then
-            config%output_format = "html"
-        end if
+        ! Terminal format is valid and supported - no conversion needed
 
         ! Set default output path if not set
         if (len_trim(config%output_path) == 0) then
