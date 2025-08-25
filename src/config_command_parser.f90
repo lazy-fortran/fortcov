@@ -25,6 +25,7 @@ module config_command_parser
     public :: process_positional_arguments
     public :: has_input_related_arguments
     public :: has_output_related_arguments
+    public :: prevent_fork_bomb_with_manual_files
 
 contains
 
@@ -185,6 +186,9 @@ contains
             if (.not. success) return
         end if
 
+        ! Apply fork bomb prevention (Issue #395)
+        call prevent_fork_bomb_with_manual_files(config)
+
         ! Apply final defaults
         call apply_html_default_filename(config)
         call ensure_zero_config_output_directory(config)
@@ -228,6 +232,9 @@ contains
             call parse_config_file(config, success, error_message)
             if (.not. success) return
         end if
+
+        ! Apply fork bomb prevention (Issue #395)
+        call prevent_fork_bomb_with_manual_files(config)
 
         ! Apply defaults for HTML output
         call apply_html_default_filename(config)
@@ -735,18 +742,8 @@ contains
         is_valid_coverage_file = .false.
         is_source_path = .false.
 
-        ! Check if file/directory exists
-        inquire(file=trim(arg), exist=file_exists)
-        if (.not. file_exists) return
-
-        ! Check if it's a directory
-        call check_if_directory(arg, is_directory)
-        if (is_directory) then
-            is_source_path = .true.
-            return
-        end if
-
-        ! Check file extension
+        ! First check file extension to recognize coverage files by pattern
+        ! (even if they don't exist yet - Issue #395 fork bomb prevention)
         dot_pos = index(arg, '.', back=.true.)
         if (dot_pos > 0) then
             extension = arg(dot_pos+1:)
@@ -773,6 +770,18 @@ contains
                 ! Fortran source file
                 is_source_path = .true.
             end select
+        end if
+
+        ! If not recognized by extension, check if it's an existing file/directory
+        if (.not. is_valid_coverage_file .and. .not. is_source_path) then
+            inquire(file=trim(arg), exist=file_exists)
+            if (file_exists) then
+                ! Check if it's a directory
+                call check_if_directory(arg, is_directory)
+                if (is_directory) then
+                    is_source_path = .true.
+                end if
+            end if
         end if
 
     contains
@@ -883,5 +892,42 @@ contains
         end do
 
     end function has_output_related_arguments
+
+    subroutine prevent_fork_bomb_with_manual_files(config)
+        !! Prevent fork bomb by disabling auto-test execution when manual coverage files are provided
+        !! 
+        !! Issue #395: When gcov files are provided as arguments, auto-test execution can cause
+        !! infinite recursion if the test suite itself calls fortcov. This function detects
+        !! manual coverage file specification and disables auto-test execution to prevent the fork bomb.
+        !!
+        !! Args:
+        !!   config: Configuration object to modify
+        
+        type(config_t), intent(inout) :: config
+        logical :: has_manual_coverage_files
+        
+        has_manual_coverage_files = .false.
+        
+        ! Check for manually specified coverage files (positional arguments)
+        if (allocated(config%coverage_files) .and. size(config%coverage_files) > 0) then
+            has_manual_coverage_files = .true.
+        end if
+        
+        ! Check for import file specification
+        if (allocated(config%import_file) .and. len_trim(config%import_file) > 0) then
+            has_manual_coverage_files = .true.
+        end if
+        
+        ! Check for manually specified source paths (also indicates manual mode)
+        if (allocated(config%source_paths) .and. size(config%source_paths) > 0) then
+            has_manual_coverage_files = .true.
+        end if
+        
+        ! If manual coverage files detected, disable auto-test execution to prevent fork bomb
+        if (has_manual_coverage_files) then
+            config%auto_test_execution = .false.
+        end if
+        
+    end subroutine prevent_fork_bomb_with_manual_files
 
 end module config_command_parser
