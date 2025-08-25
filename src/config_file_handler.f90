@@ -9,7 +9,6 @@ module config_file_handler
     use fortcov_config, only: config_t
     use config_types, only: MAX_ARRAY_SIZE
     use error_handling
-    use iostat_error_utils
     implicit none
     private
     
@@ -78,17 +77,7 @@ contains
         open(newunit=unit, file=filename, status='old', action='read', iostat=iostat)
         if (iostat /= 0) then
             success = .false.
-            select case (iostat)
-            case (29)  ! IOSTAT_NO_SUCH_FILE
-                error_message = "Config file not found: " // trim(filename)
-            case (13)  ! IOSTAT_PERMISSION_DENIED  
-                error_message = "Permission denied reading config file: " // &
-                               trim(filename) // ". Check file permissions."
-            case default
-                error_message = "Failed to open config file for format detection" // &
-                               " (iostat=" // get_iostat_error_message(iostat) // "): " // &
-                               trim(filename)
-            end select
+            error_message = "Failed to open config file for format detection"
             return
         end if
         
@@ -191,20 +180,7 @@ contains
              action='read', iostat=iostat, iomsg=iomsg)
         if (iostat /= 0) then
             success = .false.
-            select case (iostat)
-            case (29)  ! IOSTAT_NO_SUCH_FILE
-                error_message = "Config file not found: " // trim(config%config_file)
-            case (13)  ! IOSTAT_PERMISSION_DENIED
-                error_message = "Permission denied reading config file: " // &
-                               trim(config%config_file) // ". Check file permissions."
-            case default
-                error_message = "Failed to open config file (" // &
-                               get_iostat_error_message(iostat) // "): " // &
-                               trim(config%config_file)
-                if (len_trim(iomsg) > 0) then
-                    error_message = trim(error_message) // " - " // trim(iomsg)
-                end if
-            end select
+            error_message = "Failed to open config file: " // trim(iomsg)
             return
         end if
         
@@ -212,34 +188,17 @@ contains
         read(unit, nml=fortcov_config, iostat=iostat, iomsg=iomsg)
         close(unit)
         
-        ! Handle specific iostat codes with granular error reporting
+        ! Handle specific iostat codes
         if (iostat /= 0) then
             success = .false.
-            select case (iostat)
-            case (5010)  ! IOSTAT_FORMAT_ERROR
-                error_message = "Invalid namelist format (format error). " // &
-                               "Check array continuations, quotes, and namelist structure."
-            case (5008)  ! Namelist read error
-                error_message = "Namelist read error. Check syntax: missing '&fortcov_config' " // &
-                               "or closing '/' in config file."
-            case (5001)  ! Invalid namelist name
-                error_message = "Invalid namelist name. Expected '&fortcov_config' " // &
-                               "but found different or malformed namelist."
-            case (-1)    ! EOF
-                error_message = "Unexpected end-of-file in config file. " // &
-                               "Check that namelist is properly closed with '/'."
-            case (-2)    ! EOR 
-                error_message = "Unexpected end-of-record in config file. " // &
-                               "Check line continuations and formatting."
-            case default
-                write(error_message, '(A,A,A,I0,A)') &
-                    "Failed to parse namelist (", &
-                    get_iostat_error_message(iostat), &
-                    ", iostat=", iostat, ")"
-                if (len_trim(iomsg) > 0) then
-                    error_message = trim(error_message) // ": " // trim(iomsg)
-                end if
-            end select
+            if (iostat == 5010) then
+                ! End-of-record error - likely array continuation issue
+                error_message = "Invalid namelist format (end-of-record error). " // &
+                               "Check array continuations and formatting."
+            else
+                write(error_message, '(A,I0,A,A)') &
+                    "Failed to parse namelist (iostat=", iostat, "): ", trim(iomsg)
+            end if
             return
         end if
         
@@ -298,17 +257,7 @@ contains
              action='read', iostat=iostat)
         if (iostat /= 0) then
             success = .false.
-            select case (iostat)
-            case (29)  ! IOSTAT_NO_SUCH_FILE
-                error_message = "Config file not found: " // trim(config%config_file)
-            case (13)  ! IOSTAT_PERMISSION_DENIED
-                error_message = "Permission denied reading config file: " // &
-                               trim(config%config_file) // ". Check file permissions."
-            case default
-                error_message = "Failed to open config file (" // &
-                               get_iostat_error_message(iostat) // "): " // &
-                               trim(config%config_file)
-            end select
+            error_message = "Failed to open config file: " // config%config_file
             return
         end if
         
