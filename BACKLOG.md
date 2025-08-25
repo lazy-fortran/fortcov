@@ -11,7 +11,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-*No active work*
+- [x] #270: Refactor hardcoded array size in namelist parsing
 
 ## DONE (Completed Work)
 - [x] #266: Fix ineffective directory change in test_zero_configuration_issue_249 (completed in PR #354 - investigation confirmed issue obsolete)
@@ -77,7 +77,6 @@
 *Next item moved to DOING*
 
 ### MEDIUM (Code Quality Improvements)
-- [ ] #270: Refactor hardcoded array size in namelist parsing
 - [ ] #271: Improve iostat error handling granularity
 
 ### LOW (Code Quality Improvements)
