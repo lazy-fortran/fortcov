@@ -167,8 +167,8 @@ contains
             print *, "No coverage files found for analysis."
         end if
         
-        ! In test mode, return NO_COVERAGE_DATA instead of FAILURE
-        if (env_status == 0) then
+        ! In test mode OR zero-configuration mode, return NO_COVERAGE_DATA instead of FAILURE
+        if (env_status == 0 .or. config%zero_configuration_mode) then
             exit_code = EXIT_NO_COVERAGE_DATA
         else
             exit_code = EXIT_FAILURE
