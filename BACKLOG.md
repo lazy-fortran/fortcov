@@ -35,7 +35,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-<!-- No current work -->
+- [ ] #395: CRITICAL: Infinite recursion when processing gcov files - fork bomb [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
