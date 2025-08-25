@@ -81,5 +81,8 @@
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
-- [ ] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines
-- [ ] #344: Refactor: reduce validation and security assessment functions to under 50 lines
+- [ ] #346: Refactor: reduce validate_path_security function size to under 50 lines
+- [ ] #347: Refactor: reduce check_path_component_for_device function size to under 50 lines
+- [ ] #348: Refactor: reduce safe_execute_gcov function size to under 50 lines
+- [ ] #349: Refactor: reduce assess_deletion_security_risks function size to under 50 lines
+- [ ] #350: Refactor: reduce escape_shell_argument function size to under 50 lines

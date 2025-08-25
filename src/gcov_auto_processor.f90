@@ -12,8 +12,9 @@ module gcov_auto_processor
     !! - Build directory extraction and processing
 
     use config_types, only: config_t
-    use secure_command_executor, only: safe_find_files, safe_execute_gcov, &
-                                       validate_executable_path
+    use secure_command_executor, only: safe_execute_gcov
+    use secure_file_operations, only: safe_find_files
+    use path_validation, only: validate_executable_path
     use error_handling, only: error_context_t, ERROR_SUCCESS, &
                               clear_error_context
     use file_utils, only: file_exists, find_files

@@ -16,7 +16,10 @@ module fortcov
   use coverage_discovery
   use coverage_diff
   use report_engine
-  use secure_command_executor
+  use secure_command_executor, only: safe_execute_gcov
+  use secure_file_operations, only: safe_find_files, safe_mkdir
+  use path_validation, only: validate_path_security, validate_executable_path
+  use shell_utils, only: escape_shell_argument
   implicit none
   private
 

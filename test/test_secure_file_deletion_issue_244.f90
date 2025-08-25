@@ -20,7 +20,9 @@ program test_secure_file_deletion_issue_244
     !! 5. Error handling for deletion failures
     !!
     use iso_fortran_env, only: error_unit
-    use secure_command_executor
+    use secure_file_operations, only: safe_find_files
+    use path_validation, only: validate_path_security
+    use shell_utils, only: escape_shell_argument
     use error_handling
     implicit none
 

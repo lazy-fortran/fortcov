@@ -17,7 +17,8 @@ program test_security_command_injection_issue_235
     !! - Tests will PASS after security fixes are implemented
     !!
     use gcov_command_executor
-    use secure_command_executor  
+    use secure_file_operations, only: safe_find_files, safe_mkdir
+    use path_validation, only: validate_path_security, validate_executable_path  
     use error_handling
     use file_utils
     use iso_fortran_env, only: error_unit

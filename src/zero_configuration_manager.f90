@@ -245,7 +245,7 @@ contains
     
     subroutine check_gcov_availability(gcov_available)
         !! Check if gcov executable is available in PATH
-        use secure_command_executor, only: validate_executable_path
+        use path_validation, only: validate_executable_path
         logical, intent(out) :: gcov_available
         type(error_context_t) :: error_ctx
         character(len=:), allocatable :: safe_gcov
