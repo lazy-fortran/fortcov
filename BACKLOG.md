@@ -14,9 +14,10 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [x] #366: architecture: 13 modules exceed 500-line target violating size principles (branch: architecture-366)
+<!-- No active work -->
 
 ## DONE (Completed Work)
+- [x] #366: architecture: 13 modules exceed 500-line target violating size principles (completed in PR #372 - Phase 1 SRP module extraction: 11 new modules extracted from report_engine_impl.f90)
 - [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (completed in PR #371 - decomposed into 4 specialized modules: 1008→460 lines, 54% reduction)
 - [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (completed in PR #368 - replaced formatted write with string concatenation)
 - [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
