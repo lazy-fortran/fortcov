@@ -153,7 +153,7 @@ contains
     subroutine create_mock_gcda_files()
         call execute_command_line('mkdir -p test_build/test')
         ! Create minimal valid gcda and gcno files that won't cause gcov to fail
-        ! For testing, we just need the files to exist - gcov will handle missing data gracefully
+        ! For testing, we just need the files to exist - mock gcov will handle them
         call execute_command_line('touch test_build/test/test.gcda')
         call execute_command_line('touch test_build/test/test.gcno')
         ! Create a simple source file for gcov to reference

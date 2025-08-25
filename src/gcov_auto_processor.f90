@@ -442,6 +442,7 @@ contains
         num_mappings = size(gcov_files)
         
         ! Always allocate source_mappings, even if empty
+        if (allocated(source_mappings)) deallocate(source_mappings)
         allocate(source_mappings(num_mappings))
 
         ! For each gcov file, extract source file mapping

@@ -265,6 +265,9 @@ contains
         ! For now, verify config parsing worked
         print *, "   Config verbose flag set correctly: ", config%verbose
         
+        ! Disable auto test execution for this test
+        config%auto_test_execution = .false.
+        
         ! Run analysis and check if verbose messaging appears
         print *, "   Running analysis with verbose flag..."
         exit_code = run_coverage_analysis(config)
