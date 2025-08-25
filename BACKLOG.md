@@ -14,9 +14,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #313: Enhance security assessment documentation and risk prioritization
+*Next item moved from TODO*
 
 ## DONE (Completed Work)
+- [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
 - [x] #312: Optimize pattern matching performance in security assessment (completed in PR #362 - consolidated pattern matching with LRU caching, 5x performance improvement)
 - [x] #336: Fix: resolve 4 remaining gcov processing test failures (completed in PR #360 - gcov processing stability significantly improved)
 - [x] #356: Fix: rescue commits from main (completed in PR #359 - removed obsolete Makefile successfully)
