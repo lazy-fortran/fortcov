@@ -365,9 +365,65 @@ contains
         character(len=*), intent(in) :: path
         logical :: is_device
         
-        is_device = (index(path, 'CON') > 0) .or. (index(path, 'PRN') > 0) .or. &
-                   (index(path, 'NUL') > 0) .or. (index(path, 'COM') > 0) .or. &
-                   (index(path, 'LPT') > 0) .or. (index(path, 'AUX') > 0)
+        character(len=len(path)) :: upper_path
+        character(len=len(path)) :: device_name
+        integer :: dot_pos, device_num, iostat_val
+        character(len=8) :: num_str
+        
+        is_device = .false.
+        
+        ! Convert to uppercase for case-insensitive checking
+        upper_path = path
+        call to_upper(upper_path)
+        upper_path = trim(upper_path)
+        
+        ! Skip empty paths
+        if (len_trim(upper_path) == 0) return
+        
+        ! Extract device name (part before dot or end of string)
+        dot_pos = index(upper_path, '.')
+        if (dot_pos > 0) then
+            device_name = upper_path(1:dot_pos - 1)
+        else
+            device_name = trim(upper_path)
+        end if
+        
+        ! Check base device names (CON, PRN, AUX, NUL)
+        if (trim(device_name) == 'CON' .or. &
+            trim(device_name) == 'PRN' .or. &
+            trim(device_name) == 'AUX' .or. &
+            trim(device_name) == 'NUL') then
+            is_device = .true.
+            return
+        end if
+        
+        ! Check COM devices (COM1-COM9)
+        if (len_trim(device_name) >= 4) then
+            if (device_name(1:3) == 'COM') then
+                num_str = device_name(4:len_trim(device_name))
+                read(num_str, *, iostat=iostat_val) device_num
+                if (iostat_val == 0) then
+                    if (device_num >= 1 .and. device_num <= 9) then
+                        is_device = .true.
+                        return
+                    end if
+                end if
+            end if
+        end if
+        
+        ! Check LPT devices (LPT1-LPT9)
+        if (len_trim(device_name) >= 4) then
+            if (device_name(1:3) == 'LPT') then
+                num_str = device_name(4:len_trim(device_name))
+                read(num_str, *, iostat=iostat_val) device_num
+                if (iostat_val == 0) then
+                    if (device_num >= 1 .and. device_num <= 9) then
+                        is_device = .true.
+                        return
+                    end if
+                end if
+            end if
+        end if
     end function is_windows_device
     
     function contains_null_byte(path) result(has_null)
@@ -438,5 +494,18 @@ contains
         print *, "   🚨 FAIL: " // trim(message)
         print *, ""
     end subroutine fail_test
+    
+    ! Helper subroutine to convert string to uppercase
+    subroutine to_upper(input)
+        character(len=*), intent(inout) :: input
+        integer :: i, ascii_val
+        
+        do i = 1, len(input)
+            ascii_val = iachar(input(i:i))
+            if (ascii_val >= 97 .and. ascii_val <= 122) then  ! a-z
+                input(i:i) = achar(ascii_val - 32)  ! Convert to A-Z
+            end if
+        end do
+    end subroutine to_upper
 
 end program test_security_validation_only

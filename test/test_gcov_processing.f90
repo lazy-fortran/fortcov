@@ -49,7 +49,8 @@ contains
         ! Use our mock gcov that always succeeds
         config%gcov_executable = './test_build/mock_gcov'
         
-        call auto_process_gcov_files('.', config, result)
+        ! Run auto_process on test_build directory
+        call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Gcov processing succeeded')
         call assert_true(allocated(result%gcov_files), 'Gcov files allocated')
@@ -100,7 +101,8 @@ contains
         ! Use our mock gcov that always succeeds
         config%gcov_executable = './test_build/mock_gcov'
         
-        call auto_process_gcov_files('.', config, result)
+        ! Run on test_build directory which contains the build structure
+        call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Build context processing succeeded')
         call assert_true(result%used_build_context, 'Used build context')
@@ -128,7 +130,8 @@ contains
         ! Use our mock gcov that always succeeds and creates gcov files
         config%gcov_executable = './test_build/mock_gcov'
         
-        call auto_process_gcov_files('.', config, result)
+        ! Process test_build directory
+        call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Source mapping succeeded')
         if (allocated(result%source_mappings)) then
@@ -153,7 +156,7 @@ contains
     subroutine create_mock_gcda_files()
         call execute_command_line('mkdir -p test_build/test')
         ! Create minimal valid gcda and gcno files that won't cause gcov to fail
-        ! For testing, we just need the files to exist - gcov will handle missing data gracefully
+        ! For testing, we just need the files to exist - mock gcov will handle them
         call execute_command_line('touch test_build/test/test.gcda')
         call execute_command_line('touch test_build/test/test.gcno')
         ! Create a simple source file for gcov to reference
@@ -246,6 +249,9 @@ contains
     subroutine initialize_default_config(config)
         !! Initialize config with default values
         type(config_t), intent(out) :: config
+        
+        ! Set test mode environment variable
+        call execute_command_line('export FORTCOV_TEST_MODE=1')
         
         config%auto_discovery = .false.
         config%auto_test_execution = .true.

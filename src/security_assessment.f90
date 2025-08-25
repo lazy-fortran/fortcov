@@ -51,6 +51,7 @@ module security_assessment
     ! Public procedures
     public :: assess_deletion_security_risks
     public :: assess_pattern_security_risks
+    public :: check_file_location
     
 contains
 
