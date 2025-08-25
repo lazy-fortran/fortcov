@@ -6,7 +6,7 @@ program test_zero_configuration_issue_249
     use zero_configuration_manager
     use error_handling
     use file_utils
-    use secure_command_executor, only: safe_mkdir
+    use secure_command_executor, only: safe_mkdir, escape_shell_argument
     implicit none
     
     type(config_t) :: config
@@ -16,11 +16,9 @@ program test_zero_configuration_issue_249
     integer :: exit_code
     character(len=256) :: test_dir
     character(len=256) :: gcov_file_path
-    character(len=256) :: current_dir
     integer :: unit
     logical :: test_passed
     type(error_context_t) :: error_ctx
-    integer :: stat
     
     test_passed = .false.
     exit_code = 0
@@ -51,14 +49,8 @@ program test_zero_configuration_issue_249
     write(unit, *) "        -:    7:end module"
     close(unit)
     
-    ! Store current directory and change to test directory safely
-    call getcwd(current_dir)
-    call chdir(trim(test_dir), stat)
-    if (stat /= 0) then
-        print *, "FAIL: Could not change to test directory"
-        call safe_cleanup_test_directory(test_dir)
-        call exit(1)
-    end if
+    ! Work with absolute paths instead of changing directories
+    ! This avoids non-portable getcwd/chdir intrinsics
     
     ! Test 1: No arguments should trigger zero-configuration mode
     print *, "Test 1: Zero-configuration with no arguments"
@@ -108,8 +100,7 @@ program test_zero_configuration_issue_249
         end if
     end if
     
-    ! Return to original directory and clean up safely
-    call chdir(trim(current_dir), stat)
+    ! Clean up test directory
     call safe_cleanup_test_directory(test_dir)
     
     if (exit_code == 0) then
@@ -170,7 +161,8 @@ contains
         if (index(dir_name, "..") > 0) return ! Reject parent paths
         
         ! Only allow simple directory names
-        command = "rmdir " // trim(dir_name) // " 2>/dev/null"
+        ! Use secure escaping from secure_command_executor module
+        command = "rmdir " // escape_shell_argument(trim(dir_name)) // " 2>/dev/null"
         call execute_command_line(command, exitstat=stat)
     end subroutine rmdir
 
