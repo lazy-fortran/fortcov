@@ -19,7 +19,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov  # Auto-discovers everything, creates coverage.md
+fortcov --source=.  # Discovers .gcov files, creates coverage.md
 ```
 
 ## Example Usage
@@ -64,7 +64,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov --fail-under=80
+fortcov --source=. --fail-under=80
 ```
 
 **Output:**
@@ -79,19 +79,19 @@ fortcov --fail-under=80
 
 ```bash
 # Zero-configuration (recommended)
-fortcov                              # Auto-discovers everything
+fortcov --source=.                   # Auto-discovers .gcov files in current directory
 
 # Traditional mode
 fortcov --source=src --output=coverage.md
 
 # CI/CD integration
-fortcov --fail-under=80 --format=json --output=coverage.json
+fortcov --source=. --fail-under=80 --format=json --output=coverage.json
 
 # Interactive analysis
-fortcov --tui
+fortcov --source=. --tui
 
 # Coverage comparison
-fortcov --diff --diff-baseline=old.json --output=changes.md
+fortcov --source=. --diff=baseline.json,current.json --output=changes.md
 ```
 
 ## Installation
@@ -123,7 +123,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov
+fortcov --source=.
 ```
 
 **CMake:**
@@ -156,7 +156,7 @@ coverage: test
     find build -name "*.gcda" | while read gcda_file; do
       gcov -b "$gcda_file" 2>/dev/null || true
     done
-    fortcov --fail-under=80 --format=json --output=coverage.json
+    fortcov --source=. --fail-under=80 --format=json --output=coverage.json
 ```
 
 **GitLab CI:**
@@ -165,7 +165,7 @@ coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage" 
     - find build -name "*.gcda" | while read gcda_file; do gcov -b "$gcda_file" 2>/dev/null || true; done
-    - fortcov --format=xml --output=coverage.xml --fail-under=80
+    - fortcov --source=. --format=xml --output=coverage.xml --fail-under=80
   artifacts:
     reports:
       coverage_report:
@@ -189,7 +189,7 @@ coverage:
 
 **Usage:**
 ```bash
-fortcov --config=fortcov.nml
+fortcov --source=. --config=fortcov.nml
 ```
 
 ## Output Formats
