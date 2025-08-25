@@ -440,7 +440,7 @@ contains
         logical :: is_supported
 
         select case (trim(adjustl(format)))
-        case ("terminal", "json", "xml", "html", "lcov", "cobertura")
+        case ("terminal", "json", "xml", "html", "lcov", "cobertura", "markdown")
             is_supported = .true.
         case default
             is_supported = .false.

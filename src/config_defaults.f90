@@ -97,25 +97,34 @@ contains
         type(config_t), intent(inout) :: config
 
         logical :: dir_exists
-        character(len=512) :: command
-        integer :: exit_status
+        character(len=512) :: command, directory_path
+        integer :: exit_status, last_slash_pos
 
         if (config%zero_configuration_mode .and. &
             len_trim(config%output_path) > 0) then
-            inquire(file=trim(config%output_path), exist=dir_exists)
-            if (.not. dir_exists) then
-                ! Use secure shell argument escaping to prevent command injection
-                command = "mkdir -p " // escape_shell_argument(config%output_path)
-                call execute_command_line(command, exitstat=exit_status)
+            
+            ! Extract directory path from output file path
+            last_slash_pos = index(config%output_path, '/', back=.true.)
+            if (last_slash_pos > 0) then
+                directory_path = config%output_path(1:last_slash_pos-1)
                 
-                ! Handle directory creation failure
-                if (exit_status /= 0) then
-                    write(*,'(A)') "Warning: Failed to create output directory: " // &
-                                   trim(config%output_path)
-                    write(*,'(A)') "Please ensure the directory is writable or " // &
-                                   "create it manually"
+                ! Check if directory exists
+                inquire(file=trim(directory_path), exist=dir_exists)
+                if (.not. dir_exists) then
+                    ! Use secure shell argument escaping to prevent command injection
+                    command = "mkdir -p " // escape_shell_argument(directory_path)
+                    call execute_command_line(command, exitstat=exit_status)
+                    
+                    ! Handle directory creation failure
+                    if (exit_status /= 0) then
+                        write(*,'(A)') "Warning: Failed to create output directory: " // &
+                                       trim(directory_path)
+                        write(*,'(A)') "Please ensure the directory is writable or " // &
+                                       "create it manually"
+                    end if
                 end if
             end if
+            ! If no directory in path, current directory will be used (no mkdir needed)
         end if
 
     end subroutine ensure_zero_config_output_directory
