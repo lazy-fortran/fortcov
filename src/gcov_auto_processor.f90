@@ -354,8 +354,9 @@ contains
                 return
             end if
             
-            ! Build pattern for finding gcov files
-            gcov_pattern = trim(adjustl(build_dir)) // '/' // GCOV_PATTERN
+            ! Build pattern for finding gcov files 
+            ! GCOV_PATTERN is a parameter constant, build_dir may have trailing spaces
+            gcov_pattern = trim(adjustl(build_dir)) // '/*.gcov'
             
             call safe_find_files(trim(gcov_pattern), generated_files, error_ctx)
             if (error_ctx%error_code /= ERROR_SUCCESS .and. .not. error_ctx%recoverable) then
