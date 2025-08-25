@@ -1,5 +1,6 @@
 module tui_main_loop
     use iso_fortran_env, only: real64, int32
+    use string_utilities, only: int_to_str
     implicit none
     private
     
@@ -290,16 +291,6 @@ contains
         
         limit_reached = this%ansi_sequence_count >= MAX_ANSI_SEQUENCES_PER_FRAME
     end function tui_engine_check_ansi_limit
-    
-    ! Helper function to convert integer to string
-    function int_to_str(num) result(str)
-        integer(int32), intent(in) :: num
-        character(len=:), allocatable :: str
-        character(len=20) :: temp_str
-        
-        write(temp_str, '(I0)') num
-        str = trim(temp_str)
-    end function int_to_str
     
     ! Controlled delay using system sleep instead of busy loop
     subroutine controlled_delay(delay_seconds)

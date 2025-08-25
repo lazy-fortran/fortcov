@@ -1,66 +1,25 @@
 module report_engine_impl
     !! Report Engine Implementation - Foundation Layer Component
     !! 
-    !! This module contains the actual implementation of the report engine.
-    !! Extracted from the original report_engine module for Issue #182 compliance.
+    !! Orchestrates report generation using focused, extracted modules.
+    !! Refactored for QADS architecture compliance (Phase 1, Issue #366).
     use iso_fortran_env, only: real64
     use coverage_model
     use data_transformer
     use theme_manager
     use syntax_highlighter
-    use tui_main_loop
+    use report_configuration
+    use coverage_metrics_calculator
+    use html_report_generator
+    use terminal_ui_manager
+    use coverage_data_filter
     implicit none
     private
     
-    ! Public types
+    ! Re-export types from extracted modules
     public :: report_engine_t
-    public :: report_config_t
-    public :: terminal_session_t
-    public :: filter_criteria_t
+    public :: report_config_t, terminal_session_t, filter_criteria_t
     public :: coverage_metrics_t
-    
-    type :: report_config_t
-        character(len=:), allocatable :: output_format
-        character(len=:), allocatable :: theme_name
-        logical :: enable_syntax_highlighting
-        logical :: enable_coverage_annotation
-        logical :: terminal_colors_enabled
-        integer :: max_memory_mb
-        real :: startup_timeout_seconds
-    contains
-        procedure :: init => report_config_init
-    end type report_config_t
-    
-    type :: terminal_session_t
-        logical :: is_active = .false.
-        logical :: colors_enabled = .false.
-        integer :: terminal_width = 80
-        integer :: terminal_height = 24
-        character(len=:), allocatable :: display_buffer
-    contains
-        procedure :: init => terminal_session_init
-        procedure :: cleanup => terminal_session_cleanup
-    end type terminal_session_t
-    
-    type :: filter_criteria_t
-        real :: min_coverage_threshold = 0.0
-        character(len=:), allocatable :: include_patterns(:)
-        character(len=:), allocatable :: exclude_patterns(:)
-        logical :: show_only_uncovered = .false.
-    contains
-        procedure :: init => filter_criteria_init
-    end type filter_criteria_t
-    
-    type :: coverage_metrics_t
-        integer :: total_lines = 0
-        integer :: covered_lines = 0
-        integer :: total_files = 0
-        real :: line_coverage_percentage = 0.0
-        real :: branch_coverage_percentage = 0.0
-        real :: function_coverage_percentage = 0.0
-    contains
-        procedure :: init => coverage_metrics_init
-    end type coverage_metrics_t
     
     type :: report_engine_t
         type(coverage_data_t) :: source_data
@@ -77,6 +36,9 @@ module report_engine_impl
         procedure :: apply_filtering => report_engine_apply_filtering
         procedure :: calculate_metrics => report_engine_calculate_metrics
         procedure :: generate_styled_report => report_engine_generate_styled_report
+        ! Private helper procedures
+        procedure, private :: prepare_report_data
+        procedure, private :: generate_format_specific_output
     end type report_engine_t
 
 contains
@@ -395,8 +357,7 @@ contains
         
         type(transformed_data_t) :: transformed_data
         type(color_scheme_t) :: theme
-        character(len=:), allocatable :: source_content, highlighted_content, &
-                                         & css_variables
+        character(len=:), allocatable :: source_content
         
         success = .false.
         error_msg = ""
@@ -405,6 +366,30 @@ contains
             error_msg = "Report engine not initialized"
             return
         end if
+        
+        ! Prepare report data (theme, transformed data, source content)
+        call this%prepare_report_data(transformed_data, theme, source_content, &
+                                      success, error_msg)
+        if (.not. success) return
+        
+        ! Generate format-specific output
+        call this%generate_format_specific_output(format, source_content, theme, &
+                                                 output, success, error_msg)
+        
+    end subroutine report_engine_generate_styled_report
+    
+    ! Prepare report data (theme, transformed data, source content)
+    subroutine prepare_report_data(this, transformed_data, theme, &
+                                   source_content, success, error_msg)
+        class(report_engine_t), intent(inout) :: this
+        type(transformed_data_t), intent(out) :: transformed_data
+        type(color_scheme_t), intent(out) :: theme
+        character(len=:), allocatable, intent(out) :: source_content
+        logical, intent(out) :: success
+        character(len=:), allocatable, intent(out) :: error_msg
+        
+        success = .false.
+        error_msg = ""
         
         ! Transform data
         call this%transformer%transform_data(this%source_data, transformed_data, &
@@ -426,11 +411,30 @@ contains
             source_content = "! No source files available"
         end if
         
+        success = .true.
+    end subroutine prepare_report_data
+    
+    ! Generate format-specific output
+    subroutine generate_format_specific_output(this, format, source_content, &
+                                               theme, output, success, error_msg)
+        class(report_engine_t), intent(inout) :: this
+        character(len=*), intent(in) :: format
+        character(len=*), intent(in) :: source_content
+        type(color_scheme_t), intent(in) :: theme
+        character(len=:), allocatable, intent(out) :: output
+        logical, intent(out) :: success
+        character(len=:), allocatable, intent(out) :: error_msg
+        
+        character(len=:), allocatable :: highlighted_content, css_variables
+        
+        success = .false.
+        error_msg = ""
+        
         ! Apply syntax highlighting based on format
         select case (trim(format))
         case ("html")
             call this%highlighter%highlight_for_html(source_content, &
-                                                    & highlighted_content, success)
+                                                    highlighted_content, success)
             if (.not. success) then
                 error_msg = "Failed to generate HTML highlighting"
                 return
@@ -440,11 +444,11 @@ contains
             call this%theme_manager%generate_css_variables(theme, css_variables)
             output = '<style>' // new_line('a') // css_variables // &
                      new_line('a') // &
-                     & '</style>' // new_line('a') // highlighted_content
+                     '</style>' // new_line('a') // highlighted_content
             
         case ("terminal")
             call this%highlighter%highlight_for_terminal(source_content, &
-                                                        & highlighted_content, success)
+                                                        highlighted_content, success)
             if (.not. success) then
                 error_msg = "Failed to generate terminal highlighting"
                 return
@@ -457,419 +461,20 @@ contains
         end select
         
         success = .true.
-    end subroutine report_engine_generate_styled_report
+    end subroutine generate_format_specific_output
     
-    ! Helper functions
+    ! HTML generation delegated to html_report_generator module
     
-    function generate_html_structure(data, css_vars, theme) result(html)
-        type(transformed_data_t), intent(in) :: data
-        character(len=*), intent(in) :: css_vars
-        type(color_scheme_t), intent(in) :: theme
-        character(len=:), allocatable :: html
-        character(len=:), allocatable :: file_details, css_styles
-        
-        ! Generate comprehensive CSS styles
-        css_styles = generate_comprehensive_css(css_vars)
-        
-        ! Generate file details section
-        file_details = generate_file_coverage_details(data)
-        
-        html = '<!DOCTYPE html>' // new_line('a') // &
-               '<html lang="en">' // new_line('a') // &
-               '<head>' // new_line('a') // &
-               '    <meta charset="UTF-8">' // new_line('a') // &
-               '    <meta name="viewport" content="width=device-width, ' // &
-               & 'initial-scale=1.0">' // new_line('a') // &
-               '    <title>Fortcov Coverage Report</title>' // new_line('a') // &
-               '    <meta name="description" content="Code coverage report ' // &
-               & 'generated by Fortcov">' // new_line('a') // &
-               css_styles // new_line('a') // &
-               '</head>' // new_line('a') // &
-               '<body>' // new_line('a') // &
-               '    <header class="report-header">' // new_line('a') // &
-               '        <h1>Coverage Report</h1>' // new_line('a') // &
-               '        <div class="theme-info">Theme: ' // theme%name // &
-               & '</div>' // new_line('a') // &
-               '    </header>' // new_line('a') // &
-               '    <main class="report-main">' // new_line('a') // &
-               '        <section class="summary-section cyberpunk">' // &
-               & new_line('a') // &
-               '            <h2>Coverage Summary</h2>' // new_line('a') // &
-               '            <div class="summary-grid">' // new_line('a') // &
-               '                <div class="summary-item">' // new_line('a') // &
-               '                    <span class="summary-label">Total Files:' // &
-               & '</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // &
-               & int_to_str(data%summary%total_files) // '</span>' // new_line('a') // &
-               '                </div>' // new_line('a') // &
-               '                <div class="summary-item">' // new_line('a') // &
-               '                    <span class="summary-label">Total Lines:' // &
-               & '</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // &
-               & int_to_str(data%summary%total_lines) // '</span>' // new_line('a') // &
-               '                </div>' // new_line('a') // &
-               '                <div class="summary-item">' // new_line('a') // &
-               '                    <span class="summary-label">Covered Lines:' // &
-               & '</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // &
-               & int_to_str(data%summary%covered_lines) // '</span>' // &
-               & new_line('a') // &
-               '                </div>' // new_line('a') // &
-               '                <div class="summary-item highlight">' // &
-               & new_line('a') // &
-               '                    <span class="summary-label">Coverage:' // &
-               & '</span>' // new_line('a') // &
-               '                    <span class="summary-value coverage-percent">' // &
-               & real_to_str(data%summary%coverage_percentage) // '%</span>' // &
-               & new_line('a') // &
-               '                </div>' // new_line('a') // &
-               '            </div>' // new_line('a') // &
-               '        </section>' // new_line('a') // &
-               file_details // new_line('a') // &
-               '    </main>' // new_line('a') // &
-               '    <footer class="report-footer">' // new_line('a') // &
-               '        <p>Generated by <strong>Fortcov</strong> - ' // &
-               & 'Fortran Coverage Analysis Tool</p>' // new_line('a') // &
-               '        <p class="timestamp">Report generated at: ' // &
-               & get_current_timestamp() // '</p>' // new_line('a') // &
-               '    </footer>' // new_line('a') // &
-               '</body>' // new_line('a') // &
-               '</html>'
-    end function generate_html_structure
+    ! CSS generation delegated to html_report_generator module
     
-    function generate_comprehensive_css(css_vars) result(css)
-        character(len=*), intent(in) :: css_vars
-        character(len=:), allocatable :: css
-        
-        css = '    <style>' // new_line('a') // &
-              css_vars // new_line('a') // &
-              '        /* Modern HTML5 reset and base styles */' // new_line('a') // &
-              '        * { margin: 0; padding: 0; box-sizing: border-box; }' // &
-              & new_line('a') // &
-              '        body {' // new_line('a') // &
-              '            font-family: "SF Mono", Monaco, Inconsolata, ' // &
-              & '"Roboto Mono", monospace;' // new_line('a') // &
-              '            background: var(--background-color, #1a1a1a);' // &
-              & new_line('a') // &
-              '            color: var(--text-color, #ffffff);' // new_line('a') // &
-              '            line-height: 1.6; margin: 0; padding: 20px;' // &
-              & new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .report-header {' // new_line('a') // &
-              '            background: linear-gradient(135deg, ' // &
-              & 'var(--accent-color, #ff00ff), var(--secondary-color, #00ffff));' // &
-              & new_line('a') // &
-              '            padding: 2rem; margin-bottom: 2rem; border-radius: 8px;' // &
-              & new_line('a') // &
-              '            box-shadow: 0 4px 12px rgba(0,0,0,0.3);' // &
-              & new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .report-header h1 { font-size: 2.5rem; ' // &
-              & 'text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }' // new_line('a') // &
-              '        .theme-info { font-size: 1.1rem; opacity: 0.9; ' // &
-              & 'margin-top: 0.5rem; }' // new_line('a') // &
-              '        .cyberpunk {' // new_line('a') // &
-              '            border: 2px solid var(--accent-color, #ff00ff);' // &
-              & new_line('a') // &
-              '            border-radius: 8px; padding: 1.5rem; ' // &
-              & 'margin: 1rem 0;' // new_line('a') // &
-              '            background: rgba(255, 0, 255, 0.1); ' // &
-              & 'backdrop-filter: blur(5px);' // new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .summary-grid {' // new_line('a') // &
-              '            display: grid; grid-template-columns: ' // &
-              & 'repeat(auto-fit, minmax(200px, 1fr));' // new_line('a') // &
-              '            gap: 1rem; margin-top: 1rem;' // new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .summary-item {' // new_line('a') // &
-              '            background: rgba(0, 255, 255, 0.1); ' // &
-              & 'padding: 1rem; border-radius: 6px;' // new_line('a') // &
-              '            border-left: 4px solid var(--accent-color, #ff00ff);' // &
-              & new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .summary-item.highlight {' // new_line('a') // &
-              '            background: rgba(255, 0, 255, 0.2);' // new_line('a') // &
-              '            border-left: 4px solid var(--secondary-color, ' // &
-              & '#00ffff);' // new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .summary-label { display: block; font-weight: bold; ' // &
-              & 'margin-bottom: 0.5rem; }' // new_line('a') // &
-              '        .summary-value { font-size: 1.5rem; ' // &
-              & 'color: var(--accent-color, #ff00ff); }' // new_line('a') // &
-              '        .coverage-percent { font-weight: bold; ' // &
-              & 'text-shadow: 0 0 10px currentColor; }' // new_line('a') // &
-              '        .file-list { margin-top: 2rem; }' // new_line('a') // &
-              '        .file-item {' // new_line('a') // &
-              '            background: rgba(255, 255, 255, 0.05); ' // &
-              & 'margin: 0.5rem 0; padding: 1rem;' // new_line('a') // &
-              '            border-radius: 6px; border-left: 3px solid ' // &
-              & 'var(--secondary-color, #00ffff);' // new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .file-name { font-weight: bold; ' // &
-              & 'color: var(--accent-color, #ff00ff); }' // new_line('a') // &
-              '        .file-coverage { float: right; ' // &
-              & 'color: var(--secondary-color, #00ffff); }' // new_line('a') // &
-              '        .report-footer {' // new_line('a') // &
-              '            margin-top: 3rem; padding: 1.5rem; ' // &
-              & 'text-align: center;' // new_line('a') // &
-              '            border-top: 1px solid var(--accent-color, #ff00ff); ' // &
-              & 'opacity: 0.8;' // new_line('a') // &
-              '        }' // new_line('a') // &
-              '        .timestamp { font-size: 0.9rem; margin-top: 0.5rem; ' // &
-              & 'opacity: 0.7; }' // new_line('a') // &
-              '        .keyword { color: var(--accent-color, #ff00ff); ' // &
-              & 'font-weight: bold; }' // new_line('a') // &
-              '        .comment { color: #888; font-style: italic; }' // &
-              & new_line('a') // &
-              '        @media (max-width: 768px) {' // new_line('a') // &
-              '            body { padding: 10px; }' // new_line('a') // &
-              '            .report-header h1 { font-size: 2rem; }' // new_line('a') // &
-              '            .summary-grid { grid-template-columns: 1fr; }' // &
-              & new_line('a') // &
-              '        }' // new_line('a') // &
-              '    </style>'
-    end function generate_comprehensive_css
-    
-    function generate_file_coverage_details(data) result(details)
-        type(transformed_data_t), intent(in) :: data
-        character(len=:), allocatable :: details
-        character(len=:), allocatable :: file_list
-        integer :: i
-        
-        ! Generate file list
-        file_list = ''
-        if (allocated(data%files) .and. size(data%files) > 0) then
-            do i = 1, size(data%files)
-                file_list = file_list // &
-                    '            <div class="file-item">' // new_line('a') // &
-                    '                <span class="file-name">' // &
-                    & trim(data%files(i)%filename) // '</span>' // new_line('a') // &
-                    '                <span class="file-coverage">' // &
-                    & real_to_str(data%files(i)%coverage_percentage) // &
-                    & '%</span>' // new_line('a') // &
-                    '                <div style="clear: both;"></div>' // &
-                    & new_line('a') // &
-                    '            </div>' // new_line('a')
-            end do
-        else
-            file_list = '            <div class="file-item">' // new_line('a') // &
-                       '                <span class="file-name">' // &
-                       & 'No files found</span>' // new_line('a') // &
-                       '                <span class="file-coverage">' // &
-                       & '0.0%</span>' // new_line('a') // &
-                       '            </div>' // new_line('a')
-        end if
-        
-        details = '        <section class="file-section">' // new_line('a') // &
-                  '            <h2>File Coverage Details</h2>' // new_line('a') // &
-                  '            <div class="file-list cyberpunk">' // new_line('a') // &
-                  file_list // &
-                  '            </div>' // new_line('a') // &
-                  '        </section>' // new_line('a')
-    end function generate_file_coverage_details
-    
-    function get_current_timestamp() result(timestamp)
-        character(len=:), allocatable :: timestamp
-        character(len=8) :: date_str
-        character(len=10) :: time_str
-        
-        call date_and_time(date_str, time_str)
-        timestamp = date_str(1:4) // '-' // date_str(5:6) // '-' // date_str(7:8) // &
-                   ' ' // time_str(1:2) // ':' // time_str(3:4) // ':' // time_str(5:6)
-    end function get_current_timestamp
-    
-    subroutine generate_terminal_display(data, theme, output)
-        type(transformed_data_t), intent(in) :: data
-        type(color_scheme_t), intent(in) :: theme
-        character(len=:), allocatable, intent(out) :: output
-        
-        output = char(27)//'[1;32m' // 'Coverage Report' // char(27)//'[0m' // &
-                & new_line('a') // &
-                '================================' // new_line('a') // &
-                'Theme: ' // theme%name // new_line('a') // &
-                'Files: ' // int_to_str(data%summary%total_files) // new_line('a') // &
-                'Coverage: ' // real_to_str(data%summary%coverage_percentage) // &
-                & '%' // new_line('a')
-    end subroutine generate_terminal_display
-    
-    subroutine calculate_metrics_for_data(data, metrics)
-        type(coverage_data_t), intent(in) :: data
-        type(coverage_metrics_t), intent(out) :: metrics
-        
-        integer :: i, j, total_executable, total_covered
-        
-        call metrics%init()
-        
-        if (.not. allocated(data%files)) return
-        
-        metrics%total_files = size(data%files)
-        total_executable = 0
-        total_covered = 0
-        
-        do i = 1, size(data%files)
-            if (allocated(data%files(i)%lines)) then
-                do j = 1, size(data%files(i)%lines)
-                    if (data%files(i)%lines(j)%is_executable) then
-                        total_executable = total_executable + 1
-                        if (data%files(i)%lines(j)%execution_count > 0) then
-                            total_covered = total_covered + 1
-                        end if
-                    end if
-                end do
-            end if
-        end do
-        
-        metrics%total_lines = total_executable
-        metrics%covered_lines = total_covered
-        
-        if (total_executable > 0) then
-            metrics%line_coverage_percentage = &
-                real(total_covered) / real(total_executable) * 100.0
-        end if
-    end subroutine calculate_metrics_for_data
-    
-    subroutine generate_diff_output(baseline, current, output)
-        type(coverage_metrics_t), intent(in) :: baseline, current
-        character(len=:), allocatable, intent(out) :: output
-        
-        real :: coverage_delta
-        character(len=:), allocatable :: status
-        
-        coverage_delta = current%line_coverage_percentage - &
-                        & baseline%line_coverage_percentage
-        
-        if (coverage_delta > 0.1) then
-            status = "improved"
-        else if (coverage_delta < -0.1) then
-            status = "degraded"
-        else
-            status = "unchanged"
-        end if
-        
-        output = 'Coverage Diff Report' // new_line('a') // &
-                '===================' // new_line('a') // &
-                'Baseline: ' // real_to_str(baseline%line_coverage_percentage) // &
-                & '%' // new_line('a') // &
-                'Current:  ' // real_to_str(current%line_coverage_percentage) // &
-                & '%' // new_line('a') // &
-                'Delta:    ' // real_to_str(coverage_delta) // '%' // new_line('a') // &
-                'Status:   ' // status // new_line('a')
-    end subroutine generate_diff_output
-    
-    subroutine should_include_file(file, criteria, include)
-        type(coverage_file_t), intent(in) :: file
-        type(filter_criteria_t), intent(in) :: criteria
-        logical, intent(out) :: include
-        
-        real :: file_coverage
-        integer :: i
-        logical :: matches_include, matches_exclude
-        
-        include = .true.
-        
-        ! Check coverage threshold
-        file_coverage = file%get_line_coverage()
-        if (file_coverage < criteria%min_coverage_threshold) then
-            include = .false.
-            return
-        end if
-        
-        ! Check include patterns
-        if (allocated(criteria%include_patterns) .and. &
-            size(criteria%include_patterns) > 0) then
-            matches_include = .false.
-            do i = 1, size(criteria%include_patterns)
-                if (index(file%filename, trim(criteria%include_patterns(i))) > 0) then
-                    matches_include = .true.
-                    exit
-                end if
-            end do
-            if (.not. matches_include) then
-                include = .false.
-                return
-            end if
-        end if
-        
-        ! Check exclude patterns
-        if (allocated(criteria%exclude_patterns) .and. &
-            size(criteria%exclude_patterns) > 0) then
-            matches_exclude = .false.
-            do i = 1, size(criteria%exclude_patterns)
-                if (index(file%filename, trim(criteria%exclude_patterns(i))) > 0) then
-                    matches_exclude = .true.
-                    exit
-                end if
-            end do
-            if (matches_exclude) then
-                include = .false.
-                return
-            end if
-        end if
-    end subroutine should_include_file
-    
-    function int_to_str(num) result(str)
-        integer, intent(in) :: num
-        character(len=:), allocatable :: str
-        character(len=20) :: temp_str
-        
-        write(temp_str, '(I0)') num
-        str = trim(temp_str)
-    end function int_to_str
-    
-    function real_to_str(num) result(str)
-        real, intent(in) :: num
-        character(len=:), allocatable :: str
-        character(len=20) :: temp_str
-        
-        write(temp_str, '(F0.1)') num
-        str = trim(temp_str)
-    end function real_to_str
-    
-    ! Start interactive TUI with proper main loop
-    subroutine start_interactive_tui(session, display_content, success, error_msg)
-        type(terminal_session_t), intent(inout) :: session
-        character(len=*), intent(in) :: display_content
-        logical, intent(out) :: success
-        character(len=:), allocatable, intent(out) :: error_msg
-        
-        type(tui_engine_t) :: tui
-        type(tui_config_t) :: tui_config
-        
-        success = .false.
-        error_msg = ""
-        
-        ! Configure TUI engine
-        call tui_config%init()
-        tui_config%enable_colors = session%colors_enabled
-        tui_config%input_timeout_ms = 50  ! 20 FPS for responsive UI
-        tui_config%max_iterations = 5000  ! Safety limit
-        tui_config%debug_mode = .false.
-        
-        ! Initialize TUI engine
-        call tui%init(tui_config)
-        
-        ! Set display content
-        tui%display_buffer = display_content
-        
-        ! Display initial content
-        if (session%colors_enabled) then
-            print *, char(27)//'[2J'//char(27)//'[H'  ! Clear screen and home cursor
-        end if
-        print *, trim(display_content)
-        print *, ""
-        print *, "Interactive TUI Mode - Press Ctrl+C to exit"
-        print *, "Frame rate limited to prevent system issues"
-        
-        ! Run the TUI main loop with proper controls
-        call tui%run_main_loop(.true., 30.0_real64)  ! Interactive, 30 second max
-        
-        ! Clean up
-        if (session%colors_enabled) then
-            print *, char(27)//'[0m'  ! Reset terminal colors
-        end if
-        
-        call tui%cleanup()
-        success = .true.
-    end subroutine start_interactive_tui
+    ! All helper functions delegated to specialized modules:
+    ! - File coverage details -> html_report_generator
+    ! - Timestamp -> html_report_generator  
+    ! - Terminal display -> terminal_ui_manager
+    ! - Metrics calculation -> coverage_metrics_calculator
+    ! - Diff generation -> coverage_metrics_calculator
+    ! - File filtering -> coverage_data_filter
+    ! - String conversion -> individual modules
+    ! - Interactive TUI -> terminal_ui_manager
 
 end module report_engine_impl

@@ -3,7 +3,7 @@
 ## CURRENT SPRINT (Critical Infrastructure & Architecture Alignment)
 
 ### HIGH (Architecture Compliance)  
-- [ ] #366: architecture: 13 modules exceed 500-line target violating size principles
+<!-- No high priority items -->
 
 ### MEDIUM (Quality & Reliability)
 - [ ] #314: fix: resolve remaining 2 security test pattern matching issues
@@ -14,7 +14,7 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-<!-- No current work -->
+- [x] #366: architecture: 13 modules exceed 500-line target violating size principles (branch: architecture-366)
 
 ## DONE (Completed Work)
 - [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (completed in PR #371 - decomposed into 4 specialized modules: 1008→460 lines, 54% reduction)
