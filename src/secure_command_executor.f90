@@ -160,6 +160,7 @@ contains
                 error_ctx%error_code = ERROR_MISSING_FILE
                 call safe_write_message(error_ctx, "Failed to read search results")
             end if
+            ! Leave files unallocated on error
             return
         end if
         
@@ -174,9 +175,11 @@ contains
         ! Close and delete temporary file with proper error handling
         call safe_close_and_delete(unit, temp_filename, error_ctx)
         
-        ! Allocate output array
+        ! Allocate output array - even if empty to distinguish success with no files
         allocate(character(len=256) :: files(num_files))
-        files(1:num_files) = temp_files(1:num_files)
+        if (num_files > 0) then
+            files(1:num_files) = temp_files(1:num_files)
+        end if
     end subroutine parse_find_output
     
     ! Safe file finding with injection protection
@@ -196,7 +199,10 @@ contains
         
         ! Validate pattern
         call validate_path_security(pattern, safe_pattern, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) return
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            ! Leave files unallocated on validation error
+            return
+        end if
         
         ! Create secure temporary filename for output
         call create_secure_temp_filename(temp_filename)
@@ -221,6 +227,7 @@ contains
                 call safe_write_message(error_ctx, &
                     "File search failed with exit code " // format_integer(stat))
             end if
+            ! Leave files unallocated on command failure
             return
         end if
         
