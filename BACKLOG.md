@@ -9,12 +9,11 @@
 <!-- No medium priority items -->
 
 ### LOW (Technical Debt)
-- [ ] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target
 - [ ] #369: refactor: replace formatted write with string concatenation in gcda pattern building
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-<!-- No active work - ready for next sprint item -->
+- [ ] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target (branch: refactor-367)
 
 ## DONE (Completed Work)
 - [x] #314: fix: resolve remaining 2 security test pattern matching issues (completed in PR #373 - implemented FORTCOV_TEST_MODE environment variable, fixed output format issues, maintains strict production security)

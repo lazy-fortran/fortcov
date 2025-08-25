@@ -110,108 +110,161 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
+        character(len=256) :: normalized_key
+        
         success = .true.
         error_message = ""
-
-        select case (trim(adjustl(key)))
+        normalized_key = trim(adjustl(key))
+        
+        ! Try string options first
+        call process_string_options(normalized_key, value, config, success)
+        if (success) return
+        
+        ! Try array options
+        call process_array_options(normalized_key, value, config, success, error_message)
+        if (success) return
+        
+        ! Try numeric options
+        call process_numeric_options(normalized_key, value, config, success, error_message)
+        if (success) return
+        
+        ! Try boolean options
+        call process_boolean_options(normalized_key, value, config, success)
+        if (success) return
+        
+        ! Unknown option - warn but don't fail
+        call handle_unknown_option(normalized_key, config)
+        success = .true.
+        
+    end subroutine process_config_file_option
+    
+    ! Process string-type configuration options
+    subroutine process_string_options(key, value, config, success)
+        character(len=*), intent(in) :: key, value
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        
+        success = .true.
+        
+        select case (key)
         case ("input_format", "input-format")
             config%input_format = trim(value)
-
         case ("output_format", "output-format", "format")
             config%output_format = trim(value)
-
         case ("output_path", "output-path", "output")
             config%output_path = trim(value)
-
-        case ("source_path", "source-path", "source")
-            call add_source_path(trim(value), config, success, error_message)
-
-        case ("exclude_pattern", "exclude-pattern", "exclude")
-            call add_exclude_pattern(trim(value), config, success, error_message)
-
-        case ("include_pattern", "include-pattern", "include")
-            call add_include_pattern(trim(value), config, success, error_message)
-
         case ("gcov_executable", "gcov-executable")
             config%gcov_executable = trim(value)
-
         case ("gcov_args", "gcov-args")
             config%gcov_args = trim(value)
-
+        case ("import_file", "import-file", "import")
+            config%import_file = trim(value)
+        case default
+            success = .false.
+        end select
+    end subroutine process_string_options
+    
+    ! Process array-type configuration options
+    subroutine process_array_options(key, value, config, success, error_message)
+        character(len=*), intent(in) :: key, value
+        type(config_t), intent(inout) :: config
+        logical, intent(inout) :: success
+        character(len=*), intent(out) :: error_message
+        
+        select case (key)
+        case ("source_path", "source-path", "source")
+            call add_source_path(trim(value), config, success, error_message)
+        case ("exclude_pattern", "exclude-pattern", "exclude")
+            call add_exclude_pattern(trim(value), config, success, error_message)
+        case ("include_pattern", "include-pattern", "include")
+            call add_include_pattern(trim(value), config, success, error_message)
+        case default
+            success = .false.
+        end select
+    end subroutine process_array_options
+    
+    ! Process numeric configuration options
+    subroutine process_numeric_options(key, value, config, success, error_message)
+        character(len=*), intent(in) :: key, value
+        type(config_t), intent(inout) :: config
+        logical, intent(inout) :: success
+        character(len=*), intent(out) :: error_message
+        
+        select case (key)
         case ("minimum_coverage", "minimum-coverage", "minimum")
             call parse_real_with_error(value, config%minimum_coverage, &
                                        "minimum coverage", success, error_message)
-
         case ("fail_under", "fail-under")
             call parse_real_with_error(value, config%fail_under_threshold, &
                                        "fail threshold", success, error_message)
-
-        case ("threads")
-            call parse_integer_with_error(value, config%threads, &
-                                          "thread count", success, error_message)
-
-        case ("verbose")
-            config%verbose = parse_boolean_value(value)
-
-        case ("quiet")
-            config%quiet = parse_boolean_value(value)
-
-        case ("keep_gcov_files", "keep-gcov-files")
-            config%keep_gcov_files = parse_boolean_value(value)
-
-        case ("tui_mode", "tui-mode", "tui")
-            config%tui_mode = parse_boolean_value(value)
-
-        case ("strict_mode", "strict-mode", "strict")
-            config%strict_mode = parse_boolean_value(value)
-
         case ("diff_threshold", "diff-threshold")
             call parse_real_with_error(value, config%diff_threshold, &
                                        "diff threshold", success, error_message)
-
-        case ("include_unchanged", "include-unchanged")
-            config%include_unchanged = parse_boolean_value(value)
-
-        case ("import_file", "import-file", "import")
-            config%import_file = trim(value)
-
+        case ("threads")
+            call parse_integer_with_error(value, config%threads, &
+                                          "thread count", success, error_message)
         case ("max_files", "max-files")
             call parse_integer_with_error(value, config%max_files, &
                                           "max files", success, error_message)
-
-        case ("auto_discovery", "auto-discovery")
-            config%auto_discovery = parse_boolean_value(value)
-
-        case ("auto_test_execution", "auto-test-execution", "auto-test")
-            config%auto_test_execution = parse_boolean_value(value)
-
         case ("test_timeout_seconds", "test-timeout-seconds", "test-timeout")
             call parse_integer_with_error(value, config%test_timeout_seconds, &
                                           "test timeout", success, error_message)
-
         case default
-            ! Unknown option - warn but don't fail
-            if (config%verbose) then
-                print '(A)', "Warning: Unknown configuration option: " // trim(key)
-            end if
+            success = .false.
         end select
-
-    contains
-
-        function parse_boolean_value(str) result(bool_val)
-            !! Parse boolean value from string
-            character(len=*), intent(in) :: str
-            logical :: bool_val
-
-            select case (trim(adjustl(str)))
-            case ("true", "True", "TRUE", "yes", "Yes", "YES", "1", "on", "On", "ON")
-                bool_val = .true.
-            case default
-                bool_val = .false.
-            end select
-
-        end function parse_boolean_value
-
-    end subroutine process_config_file_option
+    end subroutine process_numeric_options
+    
+    ! Process boolean configuration options
+    subroutine process_boolean_options(key, value, config, success)
+        character(len=*), intent(in) :: key, value
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        
+        success = .true.
+        
+        select case (key)
+        case ("verbose")
+            config%verbose = parse_boolean_value_standalone(value)
+        case ("quiet")
+            config%quiet = parse_boolean_value_standalone(value)
+        case ("keep_gcov_files", "keep-gcov-files")
+            config%keep_gcov_files = parse_boolean_value_standalone(value)
+        case ("tui_mode", "tui-mode", "tui")
+            config%tui_mode = parse_boolean_value_standalone(value)
+        case ("strict_mode", "strict-mode", "strict")
+            config%strict_mode = parse_boolean_value_standalone(value)
+        case ("include_unchanged", "include-unchanged")
+            config%include_unchanged = parse_boolean_value_standalone(value)
+        case ("auto_discovery", "auto-discovery")
+            config%auto_discovery = parse_boolean_value_standalone(value)
+        case ("auto_test_execution", "auto-test-execution", "auto-test")
+            config%auto_test_execution = parse_boolean_value_standalone(value)
+        case default
+            success = .false.
+        end select
+    end subroutine process_boolean_options
+    
+    ! Handle unknown configuration options
+    subroutine handle_unknown_option(key, config)
+        character(len=*), intent(in) :: key
+        type(config_t), intent(in) :: config
+        
+        if (config%verbose) then
+            print '(A)', "Warning: Unknown configuration option: " // trim(key)
+        end if
+    end subroutine handle_unknown_option
+    
+    ! Parse boolean value from string
+    function parse_boolean_value_standalone(str) result(bool_val)
+        character(len=*), intent(in) :: str
+        logical :: bool_val
+        
+        select case (trim(adjustl(str)))
+        case ("true", "True", "TRUE", "yes", "Yes", "YES", "1", "on", "On", "ON")
+            bool_val = .true.
+        case default
+            bool_val = .false.
+        end select
+    end function parse_boolean_value_standalone
 
 end module config_file_parser

@@ -17,7 +17,6 @@ module config_file_handler
     public :: parse_config_file
     public :: load_config_file_with_merge
     public :: merge_config_with_cli_priority
-    public :: process_config_file_option
     public :: parse_namelist_config_file
     public :: detect_config_format
     
@@ -115,10 +114,257 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
+        type(namelist_config_data_t) :: namelist_data
+        integer :: unit
+        
+        success = .true.
+        error_message = ""
+        
+        ! Initialize namelist data with defaults
+        call init_namelist_data(namelist_data)
+        
+        ! Read namelist from file
+        call read_namelist_file(config%config_file, namelist_data, unit, success, error_message)
+        if (.not. success) return
+        
+        ! Transfer data to config structure
+        call transfer_data_to_config(namelist_data, config)
+        
+        ! Validate arrays and warn if near capacity
+        call validate_namelist_arrays(namelist_data)
+        
+    end subroutine parse_namelist_config_file
+    
+    subroutine init_namelist_data(namelist_data)
+        !! Initialize namelist data with default values
+        type(namelist_config_data_t), intent(out) :: namelist_data
+        
+        namelist_data%input_format = ""
+        namelist_data%output_format = ""
+        namelist_data%output_path = ""
+        namelist_data%source_paths = ""
+        namelist_data%exclude_patterns = ""
+        namelist_data%include_patterns = ""
+        namelist_data%gcov_executable = ""
+        namelist_data%gcov_args = ""
+        namelist_data%minimum_coverage = -1.0
+        namelist_data%fail_under_threshold = -1.0
+        namelist_data%threads = -1
+        namelist_data%verbose = .false.
+        namelist_data%quiet = .false.
+        namelist_data%tui_mode = .false.
+        namelist_data%strict_mode = .false.
+        namelist_data%enable_diff = .false.
+        namelist_data%diff_baseline_file = ""
+        namelist_data%include_unchanged = .false.
+        namelist_data%diff_threshold = -1.0
+        namelist_data%keep_gcov_files = .false.
+        namelist_data%max_files = -1
+        
+    end subroutine init_namelist_data
+    
+    subroutine read_namelist_file(config_file, namelist_data, unit, success, error_message)
+        !! Read namelist from configuration file
+        character(len=*), intent(in) :: config_file
+        type(namelist_config_data_t), intent(inout) :: namelist_data
+        integer, intent(out) :: unit
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: iostat
+        character(len=256) :: iomsg
+        
+        ! Namelist variables (required for namelist reading)
+        character(len=256) :: input_format, output_format, output_path
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths, exclude_patterns, include_patterns
+        character(len=256) :: gcov_executable, gcov_args, diff_baseline_file
+        real :: minimum_coverage, fail_under_threshold, diff_threshold
+        integer :: threads, max_files
+        logical :: verbose, quiet, tui_mode, strict_mode, enable_diff, include_unchanged, keep_gcov_files
+        
+        namelist /fortcov_config/ input_format, output_format, output_path, source_paths, &
+                                  exclude_patterns, include_patterns, gcov_executable, gcov_args, &
+                                  minimum_coverage, fail_under_threshold, threads, verbose, quiet, &
+                                  tui_mode, strict_mode, enable_diff, diff_baseline_file, &
+                                  include_unchanged, diff_threshold, keep_gcov_files, max_files
+        
+        ! Copy from structure to local variables
+        input_format = namelist_data%input_format
+        output_format = namelist_data%output_format
+        output_path = namelist_data%output_path
+        source_paths = namelist_data%source_paths
+        exclude_patterns = namelist_data%exclude_patterns
+        include_patterns = namelist_data%include_patterns
+        gcov_executable = namelist_data%gcov_executable
+        gcov_args = namelist_data%gcov_args
+        minimum_coverage = namelist_data%minimum_coverage
+        fail_under_threshold = namelist_data%fail_under_threshold
+        threads = namelist_data%threads
+        verbose = namelist_data%verbose
+        quiet = namelist_data%quiet
+        tui_mode = namelist_data%tui_mode
+        strict_mode = namelist_data%strict_mode
+        enable_diff = namelist_data%enable_diff
+        diff_baseline_file = namelist_data%diff_baseline_file
+        include_unchanged = namelist_data%include_unchanged
+        diff_threshold = namelist_data%diff_threshold
+        keep_gcov_files = namelist_data%keep_gcov_files
+        max_files = namelist_data%max_files
+        
+        ! Open and read file
+        open(newunit=unit, file=config_file, status='old', action='read', iostat=iostat, iomsg=iomsg)
+        if (iostat /= 0) then
+            success = .false.
+            error_message = "Failed to open config file: " // trim(iomsg)
+            return
+        end if
+        
+        read(unit, nml=fortcov_config, iostat=iostat, iomsg=iomsg)
+        close(unit)
+        
+        if (iostat /= 0) then
+            success = .false.
+            call format_namelist_error(iostat, iomsg, error_message)
+            return
+        end if
+        
+        ! Copy back to structure
+        namelist_data%input_format = input_format
+        namelist_data%output_format = output_format
+        namelist_data%output_path = output_path
+        namelist_data%source_paths = source_paths
+        namelist_data%exclude_patterns = exclude_patterns
+        namelist_data%include_patterns = include_patterns
+        namelist_data%gcov_executable = gcov_executable
+        namelist_data%gcov_args = gcov_args
+        namelist_data%minimum_coverage = minimum_coverage
+        namelist_data%fail_under_threshold = fail_under_threshold
+        namelist_data%threads = threads
+        namelist_data%verbose = verbose
+        namelist_data%quiet = quiet
+        namelist_data%tui_mode = tui_mode
+        namelist_data%strict_mode = strict_mode
+        namelist_data%enable_diff = enable_diff
+        namelist_data%diff_baseline_file = diff_baseline_file
+        namelist_data%include_unchanged = include_unchanged
+        namelist_data%diff_threshold = diff_threshold
+        namelist_data%keep_gcov_files = keep_gcov_files
+        namelist_data%max_files = max_files
+        
+        success = .true.
+        error_message = ""
+        
+    end subroutine read_namelist_file
+    
+    subroutine transfer_data_to_config(namelist_data, config)
+        !! Transfer namelist data to config structure
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        type(config_t), intent(inout) :: config
+        
+        ! Transfer string values (only if not empty)
+        if (len_trim(namelist_data%input_format) > 0) config%input_format = trim(namelist_data%input_format)
+        if (len_trim(namelist_data%output_format) > 0) config%output_format = trim(namelist_data%output_format)
+        if (len_trim(namelist_data%output_path) > 0) config%output_path = trim(namelist_data%output_path)
+        if (len_trim(namelist_data%gcov_executable) > 0) config%gcov_executable = trim(namelist_data%gcov_executable)
+        if (len_trim(namelist_data%gcov_args) > 0) config%gcov_args = trim(namelist_data%gcov_args)
+        if (len_trim(namelist_data%diff_baseline_file) > 0) config%diff_baseline_file = trim(namelist_data%diff_baseline_file)
+        
+        ! Transfer numeric values (only if set)
+        if (namelist_data%minimum_coverage >= 0.0) config%minimum_coverage = namelist_data%minimum_coverage
+        if (namelist_data%fail_under_threshold >= 0.0) config%fail_under_threshold = namelist_data%fail_under_threshold
+        if (namelist_data%threads > 0) config%threads = namelist_data%threads
+        if (namelist_data%max_files > 0) config%max_files = namelist_data%max_files
+        if (namelist_data%diff_threshold >= 0.0) config%diff_threshold = namelist_data%diff_threshold
+        
+        ! Transfer logical values
+        config%verbose = namelist_data%verbose
+        config%quiet = namelist_data%quiet
+        config%tui_mode = namelist_data%tui_mode
+        config%strict_mode = namelist_data%strict_mode
+        config%enable_diff = namelist_data%enable_diff
+        config%include_unchanged = namelist_data%include_unchanged
+        config%keep_gcov_files = namelist_data%keep_gcov_files
+        
+        ! Transfer arrays with validation
+        call transfer_string_array(namelist_data%source_paths, config%source_paths)
+        call transfer_string_array(namelist_data%exclude_patterns, config%exclude_patterns)
+        call transfer_string_array(namelist_data%include_patterns, config%include_patterns)
+        
+    end subroutine transfer_data_to_config
+    
+    subroutine validate_namelist_arrays(namelist_data)
+        !! Validate namelist arrays and warn if near capacity
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        
+        call validate_array_bounds(namelist_data%source_paths, MAX_ARRAY_SIZE, "source_paths")
+        call validate_array_bounds(namelist_data%exclude_patterns, MAX_ARRAY_SIZE, "exclude_patterns")
+        call validate_array_bounds(namelist_data%include_patterns, MAX_ARRAY_SIZE, "include_patterns")
+        
+    end subroutine validate_namelist_arrays
+    
+    ! Type to hold all namelist variables
+    type :: namelist_config_data_t
+        character(len=256) :: input_format
+        character(len=256) :: output_format
+        character(len=256) :: output_path
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: include_patterns
+        character(len=256) :: gcov_executable
+        character(len=256) :: gcov_args
+        real :: minimum_coverage
+        real :: fail_under_threshold
+        integer :: threads
+        logical :: verbose
+        logical :: quiet
+        logical :: tui_mode
+        logical :: strict_mode
+        logical :: enable_diff
+        character(len=256) :: diff_baseline_file
+        logical :: include_unchanged
+        real :: diff_threshold
+        logical :: keep_gcov_files
+        integer :: max_files
+    end type namelist_config_data_t
+    
+    ! Initialize namelist variables with default values
+    subroutine initialize_namelist_variables(namelist_data)
+        type(namelist_config_data_t), intent(out) :: namelist_data
+        
+        namelist_data%input_format = ""
+        namelist_data%output_format = ""
+        namelist_data%output_path = ""
+        namelist_data%source_paths = ""
+        namelist_data%exclude_patterns = ""
+        namelist_data%include_patterns = ""
+        namelist_data%gcov_executable = ""
+        namelist_data%gcov_args = ""
+        namelist_data%minimum_coverage = -1.0
+        namelist_data%fail_under_threshold = -1.0
+        namelist_data%threads = -1
+        namelist_data%verbose = .false.
+        namelist_data%quiet = .false.
+        namelist_data%tui_mode = .false.
+        namelist_data%strict_mode = .false.
+        namelist_data%enable_diff = .false.
+        namelist_data%diff_baseline_file = ""
+        namelist_data%include_unchanged = .false.
+        namelist_data%diff_threshold = -1.0
+        namelist_data%keep_gcov_files = .false.
+        namelist_data%max_files = -1
+    end subroutine initialize_namelist_variables
+    
+    ! Read namelist from file
+    subroutine read_namelist_from_file(config_file, namelist_data, success, error_message)
+        character(len=*), intent(in) :: config_file
+        type(namelist_config_data_t), intent(inout) :: namelist_data
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
         integer :: unit, iostat
         character(len=256) :: iomsg
         
-        ! Namelist variables (must match config_t fields)
+        ! Define namelist - need to use individual variables due to Fortran limitations
         character(len=256) :: input_format
         character(len=256) :: output_format
         character(len=256) :: output_path
@@ -149,94 +395,190 @@ contains
                                   diff_baseline_file, include_unchanged, diff_threshold, &
                                   keep_gcov_files, max_files
         
-        success = .true.
-        error_message = ""
+        ! Copy from structure to local variables
+        input_format = namelist_data%input_format
+        output_format = namelist_data%output_format
+        output_path = namelist_data%output_path
+        source_paths = namelist_data%source_paths
+        exclude_patterns = namelist_data%exclude_patterns
+        include_patterns = namelist_data%include_patterns
+        gcov_executable = namelist_data%gcov_executable
+        gcov_args = namelist_data%gcov_args
+        minimum_coverage = namelist_data%minimum_coverage
+        fail_under_threshold = namelist_data%fail_under_threshold
+        threads = namelist_data%threads
+        verbose = namelist_data%verbose
+        quiet = namelist_data%quiet
+        tui_mode = namelist_data%tui_mode
+        strict_mode = namelist_data%strict_mode
+        enable_diff = namelist_data%enable_diff
+        diff_baseline_file = namelist_data%diff_baseline_file
+        include_unchanged = namelist_data%include_unchanged
+        diff_threshold = namelist_data%diff_threshold
+        keep_gcov_files = namelist_data%keep_gcov_files
+        max_files = namelist_data%max_files
         
-        ! Initialize with defaults
-        input_format = ""
-        output_format = ""
-        output_path = ""
-        source_paths = ""
-        exclude_patterns = ""
-        include_patterns = ""
-        gcov_executable = ""
-        gcov_args = ""
-        minimum_coverage = -1.0
-        fail_under_threshold = -1.0
-        threads = -1
-        verbose = .false.
-        quiet = .false.
-        tui_mode = .false.
-        strict_mode = .false.
-        enable_diff = .false.
-        diff_baseline_file = ""
-        include_unchanged = .false.
-        diff_threshold = -1.0
-        keep_gcov_files = .false.
-        max_files = -1
+        call open_namelist_file(config_file, unit, success, error_message)
+        if (.not. success) return
         
-        ! Open config file
-        open(newunit=unit, file=config%config_file, status='old', &
+        call read_namelist_data_from_unit(unit, success, error_message)
+        close(unit)
+        
+        ! Copy back to structure
+        namelist_data%input_format = input_format
+        namelist_data%output_format = output_format
+        namelist_data%output_path = output_path
+        namelist_data%source_paths = source_paths
+        namelist_data%exclude_patterns = exclude_patterns
+        namelist_data%include_patterns = include_patterns
+        namelist_data%gcov_executable = gcov_executable
+        namelist_data%gcov_args = gcov_args
+        namelist_data%minimum_coverage = minimum_coverage
+        namelist_data%fail_under_threshold = fail_under_threshold
+        namelist_data%threads = threads
+        namelist_data%verbose = verbose
+        namelist_data%quiet = quiet
+        namelist_data%tui_mode = tui_mode
+        namelist_data%strict_mode = strict_mode
+        namelist_data%enable_diff = enable_diff
+        namelist_data%diff_baseline_file = diff_baseline_file
+        namelist_data%include_unchanged = include_unchanged
+        namelist_data%diff_threshold = diff_threshold
+        namelist_data%keep_gcov_files = keep_gcov_files
+        namelist_data%max_files = max_files
+        
+        contains
+        
+        subroutine read_namelist_data_from_unit(unit, success, error_message)
+            integer, intent(in) :: unit
+            logical, intent(out) :: success
+            character(len=*), intent(out) :: error_message
+            
+            integer :: iostat
+            character(len=256) :: iomsg
+            
+            read(unit, nml=fortcov_config, iostat=iostat, iomsg=iomsg)
+            
+            if (iostat /= 0) then
+                success = .false.
+                call format_namelist_error(iostat, iomsg, error_message)
+            else
+                success = .true.
+                error_message = ""
+            end if
+        end subroutine read_namelist_data_from_unit
+        
+    end subroutine read_namelist_from_file
+    
+    ! Open namelist file for reading
+    subroutine open_namelist_file(config_file, unit, success, error_message)
+        character(len=*), intent(in) :: config_file
+        integer, intent(out) :: unit
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: iostat
+        character(len=256) :: iomsg
+        
+        open(newunit=unit, file=config_file, status='old', &
              action='read', iostat=iostat, iomsg=iomsg)
         if (iostat /= 0) then
             success = .false.
             error_message = "Failed to open config file: " // trim(iomsg)
-            return
+        else
+            success = .true.
+            error_message = ""
         end if
+    end subroutine open_namelist_file
+    
+    ! Format namelist reading errors
+    subroutine format_namelist_error(iostat, iomsg, error_message)
+        integer, intent(in) :: iostat
+        character(len=*), intent(in) :: iomsg
+        character(len=*), intent(out) :: error_message
         
-        ! Read namelist
-        read(unit, nml=fortcov_config, iostat=iostat, iomsg=iomsg)
-        close(unit)
-        
-        ! Handle specific iostat codes
-        if (iostat /= 0) then
-            success = .false.
-            if (iostat == 5010) then
-                ! End-of-record error - likely array continuation issue
-                error_message = "Invalid namelist format (end-of-record error). " // &
-                               "Check array continuations and formatting."
-            else
-                write(error_message, '(A,I0,A,A)') &
-                    "Failed to parse namelist (iostat=", iostat, "): ", trim(iomsg)
-            end if
-            return
+        if (iostat == 5010) then
+            error_message = "Invalid namelist format (end-of-record error). " // &
+                           "Check array continuations and formatting."
+        else
+            write(error_message, '(A,I0,A,A)') &
+                "Failed to parse namelist (iostat=", iostat, "): ", trim(iomsg)
         end if
+    end subroutine format_namelist_error
+    
+    ! Transfer all namelist data to config structure
+    subroutine transfer_namelist_to_config(namelist_data, config)
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        type(config_t), intent(inout) :: config
         
-        ! Transfer values to config structure
-        if (len_trim(input_format) > 0) config%input_format = trim(input_format)
-        if (len_trim(output_format) > 0) config%output_format = trim(output_format)
-        if (len_trim(output_path) > 0) config%output_path = trim(output_path)
-        if (len_trim(gcov_executable) > 0) config%gcov_executable = trim(gcov_executable)
-        if (len_trim(gcov_args) > 0) config%gcov_args = trim(gcov_args)
-        if (len_trim(diff_baseline_file) > 0) config%diff_baseline_file = trim(diff_baseline_file)
+        call transfer_string_values(namelist_data, config)
+        call transfer_numeric_values(namelist_data, config)
+        call transfer_logical_values(namelist_data, config)
+        call transfer_array_values(namelist_data, config)
+    end subroutine transfer_namelist_to_config
+    
+    ! Transfer string values from namelist to config
+    subroutine transfer_string_values(namelist_data, config)
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        type(config_t), intent(inout) :: config
         
-        ! Transfer numeric values (only if set)
-        if (minimum_coverage >= 0.0) config%minimum_coverage = minimum_coverage
-        if (fail_under_threshold >= 0.0) config%fail_under_threshold = fail_under_threshold
-        if (threads > 0) config%threads = threads
-        if (max_files > 0) config%max_files = max_files
-        if (diff_threshold >= 0.0) config%diff_threshold = diff_threshold
+        if (len_trim(namelist_data%input_format) > 0) &
+            config%input_format = trim(namelist_data%input_format)
+        if (len_trim(namelist_data%output_format) > 0) &
+            config%output_format = trim(namelist_data%output_format)
+        if (len_trim(namelist_data%output_path) > 0) &
+            config%output_path = trim(namelist_data%output_path)
+        if (len_trim(namelist_data%gcov_executable) > 0) &
+            config%gcov_executable = trim(namelist_data%gcov_executable)
+        if (len_trim(namelist_data%gcov_args) > 0) &
+            config%gcov_args = trim(namelist_data%gcov_args)
+        if (len_trim(namelist_data%diff_baseline_file) > 0) &
+            config%diff_baseline_file = trim(namelist_data%diff_baseline_file)
+    end subroutine transfer_string_values
+    
+    ! Transfer numeric values from namelist to config
+    subroutine transfer_numeric_values(namelist_data, config)
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        type(config_t), intent(inout) :: config
         
-        ! Transfer logical values
-        config%verbose = verbose
-        config%quiet = quiet
-        config%tui_mode = tui_mode
-        config%strict_mode = strict_mode
-        config%enable_diff = enable_diff
-        config%include_unchanged = include_unchanged
-        config%keep_gcov_files = keep_gcov_files
+        if (namelist_data%minimum_coverage >= 0.0) &
+            config%minimum_coverage = namelist_data%minimum_coverage
+        if (namelist_data%fail_under_threshold >= 0.0) &
+            config%fail_under_threshold = namelist_data%fail_under_threshold
+        if (namelist_data%threads > 0) config%threads = namelist_data%threads
+        if (namelist_data%max_files > 0) config%max_files = namelist_data%max_files
+        if (namelist_data%diff_threshold >= 0.0) &
+            config%diff_threshold = namelist_data%diff_threshold
+    end subroutine transfer_numeric_values
+    
+    ! Transfer logical values from namelist to config
+    subroutine transfer_logical_values(namelist_data, config)
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        type(config_t), intent(inout) :: config
         
-        ! Transfer arrays with validation
-        call transfer_string_array(source_paths, config%source_paths)
-        call transfer_string_array(exclude_patterns, config%exclude_patterns)
-        call transfer_string_array(include_patterns, config%include_patterns)
+        config%verbose = namelist_data%verbose
+        config%quiet = namelist_data%quiet
+        config%tui_mode = namelist_data%tui_mode
+        config%strict_mode = namelist_data%strict_mode
+        config%enable_diff = namelist_data%enable_diff
+        config%include_unchanged = namelist_data%include_unchanged
+        config%keep_gcov_files = namelist_data%keep_gcov_files
+    end subroutine transfer_logical_values
+    
+    ! Transfer array values from namelist to config
+    subroutine transfer_array_values(namelist_data, config)
+        type(namelist_config_data_t), intent(in) :: namelist_data
+        type(config_t), intent(inout) :: config
         
-        ! Validate array bounds (warn if arrays appear full)
-        call validate_array_bounds(source_paths, MAX_ARRAY_SIZE, "source_paths")
-        call validate_array_bounds(exclude_patterns, MAX_ARRAY_SIZE, "exclude_patterns")
-        call validate_array_bounds(include_patterns, MAX_ARRAY_SIZE, "include_patterns")
+        call transfer_string_array(namelist_data%source_paths, config%source_paths)
+        call transfer_string_array(namelist_data%exclude_patterns, config%exclude_patterns)
+        call transfer_string_array(namelist_data%include_patterns, config%include_patterns)
         
-    end subroutine parse_namelist_config_file
+        ! Validate array bounds
+        call validate_array_bounds(namelist_data%source_paths, MAX_ARRAY_SIZE, "source_paths")
+        call validate_array_bounds(namelist_data%exclude_patterns, MAX_ARRAY_SIZE, "exclude_patterns")
+        call validate_array_bounds(namelist_data%include_patterns, MAX_ARRAY_SIZE, "include_patterns")
+    end subroutine transfer_array_values
     
     subroutine parse_keyvalue_config_file(config, success, error_message)
         !! Parse configuration file in simple key=value format
@@ -370,67 +712,7 @@ contains
         
     end subroutine merge_config_with_cli_priority
     
-    subroutine process_config_file_option(key, value, config, success, error_message)
-        !! Processes a single option from config file
-        character(len=*), intent(in) :: key, value
-        type(config_t), intent(inout) :: config
-        logical, intent(out) :: success
-        character(len=*), intent(out) :: error_message
-        
-        ! Map config file keys to config fields
-        select case (trim(key))
-        case ('output_format')
-            config%output_format = trim(value)
-        case ('output_path')
-            config%output_path = trim(value)
-        case ('threshold')
-            call parse_config_real_value(value, config%minimum_coverage, success)
-            if (.not. success) then
-                error_message = "Invalid threshold in config file: " // trim(value)
-                return
-            end if
-        case ('verbose')
-            config%verbose = (trim(value) == 'true')
-        case ('quiet')
-            config%quiet = (trim(value) == 'true')
-        case ('tui_mode')
-            config%tui_mode = (trim(value) == 'true')
-        case ('strict_mode')
-            config%strict_mode = (trim(value) == 'true')
-        case ('gcov_executable')
-            config%gcov_executable = trim(value)
-        case ('gcov_args')
-            config%gcov_args = trim(value)
-        case ('threads')
-            call parse_config_integer_value(value, config%threads, success)
-            if (.not. success) then
-                error_message = "Invalid threads value in config file: " // trim(value)
-                return
-            end if
-        case ('max_files')
-            call parse_config_integer_value(value, config%max_files, success)
-            if (.not. success) then
-                error_message = "Invalid max_files value in config file: " // trim(value)
-                return
-            end if
-        case ('diff_baseline_file')
-            config%diff_baseline_file = trim(value)
-        case ('enable_diff')
-            config%enable_diff = (trim(value) == 'true')
-        case ('exclude')
-            ! add_exclude_pattern not yet implemented
-            success = .true.
-        case ('source')
-            ! add_source_path not yet implemented
-            success = .true.
-        case default
-            ! Ignore unknown options in config file
-        end select
-        
-        success = .true.
-        error_message = ""
-        
-    end subroutine process_config_file_option
+    
     
     subroutine parse_config_real_value(str, value, success)
         !! Parses string to real value for config file
