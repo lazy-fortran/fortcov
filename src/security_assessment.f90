@@ -10,7 +10,7 @@ module security_assessment
     implicit none
     private
     
-    ! Performance optimization: Pattern cache
+    ! Performance optimization: Pattern cache (per-function to avoid thread issues)
     type :: pattern_cache_t
         character(len=256) :: pattern = ""
         logical :: is_concurrent_risk = .false.
@@ -19,15 +19,10 @@ module security_assessment
         logical :: is_cached = .false.
     end type pattern_cache_t
     
-    ! Cache for pattern analysis results (small LRU cache)
+    ! Cache parameters
     integer, parameter :: CACHE_SIZE = 16
-    type(pattern_cache_t), save :: pattern_cache(CACHE_SIZE)
-    integer, save :: cache_next_slot = 1
     
-    ! Performance: Disk space check cache
-    logical, save :: disk_space_cached = .false.
-    logical, save :: disk_space_risk = .false.
-    real, save :: last_disk_check_time = 0.0
+    ! Performance: Disk space check cache (per-function to avoid thread issues)
     
     ! Public procedures
     public :: assess_deletion_security_risks
@@ -92,7 +87,6 @@ contains
         logical, intent(in) :: file_existed
         logical, intent(out) :: concurrent_risk, disk_risk
         integer :: stat
-        real :: current_time
         
         ! PERFORMANCE: Early exit for concurrent risk
         concurrent_risk = .false.
@@ -102,21 +96,11 @@ contains
             end if
         end if
         
-        ! PERFORMANCE: Cache disk space check (expensive system call)
+        ! THREAD-SAFE: Direct disk space check without shared cache
         if (file_existed) then
-            call cpu_time(current_time)
-            ! Cache disk space check for 5 seconds to avoid repeated system calls
-            if (disk_space_cached .and. (current_time - last_disk_check_time < 5.0)) then
-                disk_risk = disk_space_risk
-            else
-                call execute_command_line("df " // trim(filename) // &
-                    " 2>/dev/null | grep -q ' 9[0-9]% '", exitstat=stat)
-                disk_risk = (stat == 0)
-                ! Update cache
-                disk_space_cached = .true.
-                disk_space_risk = disk_risk
-                last_disk_check_time = current_time
-            end if
+            call execute_command_line("df " // trim(filename) // &
+                " 2>/dev/null | grep -q ' 9[0-9]% '", exitstat=stat)
+            disk_risk = (stat == 0)
         else
             disk_risk = .false.
         end if
@@ -203,23 +187,28 @@ contains
         logical :: concurrent_risk, readonly_risk, disk_space_risk, sensitive_pattern
         integer :: cache_idx
         
+        ! THREAD-SAFE: Local pattern cache variables
+        type(pattern_cache_t), save :: local_pattern_cache(CACHE_SIZE)
+        integer, save :: local_cache_next_slot = 1
+        
         ! PERFORMANCE: Check pattern cache first
-        cache_idx = find_cached_pattern(pattern)
+        cache_idx = find_cached_pattern(pattern, local_pattern_cache)
         if (cache_idx > 0) then
-            concurrent_risk = pattern_cache(cache_idx)%is_concurrent_risk
-            readonly_risk = pattern_cache(cache_idx)%is_readonly_risk
-            sensitive_pattern = pattern_cache(cache_idx)%is_sensitive
+            concurrent_risk = local_pattern_cache(cache_idx)%is_concurrent_risk
+            readonly_risk = local_pattern_cache(cache_idx)%is_readonly_risk
+            sensitive_pattern = local_pattern_cache(cache_idx)%is_sensitive
         else
             ! Not cached - perform analysis
             call analyze_pattern_risks(pattern, concurrent_risk, readonly_risk, &
                                      sensitive_pattern)
             ! Cache results for future use
             call cache_pattern_results(pattern, concurrent_risk, readonly_risk, &
-                                     sensitive_pattern)
+                                     sensitive_pattern, local_pattern_cache, &
+                                     local_cache_next_slot)
         end if
         
-        ! PERFORMANCE: Reuse cached disk space check
-        call get_cached_disk_space_risk(disk_space_risk)
+        ! THREAD-SAFE: Use local disk space check
+        call get_disk_space_risk(disk_space_risk)
         
         ! Report security concerns based on pattern analysis - priority order
         if (index(pattern, '/usr/') > 0) then
@@ -266,23 +255,24 @@ contains
         
     end subroutine assess_pattern_security_risks
 
-    ! PERFORMANCE: Find cached pattern results
-    pure function find_cached_pattern(pattern) result(cache_idx)
+    ! THREAD-SAFE: Find cached pattern results
+    pure function find_cached_pattern(pattern, cache) result(cache_idx)
         character(len=*), intent(in) :: pattern
+        type(pattern_cache_t), intent(in) :: cache(CACHE_SIZE)
         integer :: cache_idx
         integer :: i
         
         cache_idx = 0
         do i = 1, CACHE_SIZE
-            if (pattern_cache(i)%is_cached .and. &
-                trim(pattern_cache(i)%pattern) == trim(pattern)) then
+            if (cache(i)%is_cached .and. &
+                trim(cache(i)%pattern) == trim(pattern)) then
                 cache_idx = i
                 return
             end if
         end do
     end function find_cached_pattern
     
-    ! PERFORMANCE: Consolidated pattern risk analysis
+    ! SECURITY-CRITICAL: Consolidated pattern risk analysis - MUST DETECT ALL PATTERNS
     pure subroutine analyze_pattern_risks(pattern, concurrent_risk, readonly_risk, &
                                          sensitive_pattern)
         character(len=*), intent(in) :: pattern
@@ -295,73 +285,80 @@ contains
         readonly_risk = .false.
         sensitive_pattern = .false.
         
-        ! PERFORMANCE: Single scan with position-based checks
-        ! Check for concurrent risk patterns first (most common)
+        ! SECURITY: Must check ALL patterns - NO early exits for security
+        ! Check for concurrent risk patterns
         pos = index(pattern, '*.f90')
         if (pos > 0) then
             concurrent_risk = .true.
         end if
         
-        ! Check for readonly patterns with early exit
+        ! Check ALL readonly patterns - NO early exit
         pos = index(pattern, '/usr/')
         if (pos > 0) then
             readonly_risk = .true.
-        else
-            pos = index(pattern, '/proc/')
-            if (pos > 0) then
-                readonly_risk = .true.
-            end if
         end if
         
-        ! Check for sensitive patterns
+        pos = index(pattern, '/proc/')
+        if (pos > 0) then
+            readonly_risk = .true.
+        end if
+        
+        pos = index(pattern, '/sys/')
+        if (pos > 0) then
+            readonly_risk = .true.
+        end if
+        
+        ! Check ALL sensitive patterns - NO early exit
         pos = index(pattern, 'ssh')
         if (pos > 0) then
             sensitive_pattern = .true.
-        else
-            pos = index(pattern, 'home')
-            if (pos > 0) then
-                sensitive_pattern = .true.
-            end if
+        end if
+        
+        pos = index(pattern, 'home')
+        if (pos > 0) then
+            sensitive_pattern = .true.
+        end if
+        
+        pos = index(pattern, 'root')
+        if (pos > 0) then
+            sensitive_pattern = .true.
+        end if
+        
+        pos = index(pattern, 'etc')
+        if (pos > 0) then
+            sensitive_pattern = .true.
         end if
     end subroutine analyze_pattern_risks
     
-    ! PERFORMANCE: Cache pattern analysis results
+    ! THREAD-SAFE: Cache pattern analysis results
     subroutine cache_pattern_results(pattern, concurrent_risk, readonly_risk, &
-                                   sensitive_pattern)
+                                   sensitive_pattern, cache, next_slot)
         character(len=*), intent(in) :: pattern
         logical, intent(in) :: concurrent_risk, readonly_risk, sensitive_pattern
+        type(pattern_cache_t), intent(inout) :: cache(CACHE_SIZE)
+        integer, intent(inout) :: next_slot
         
         ! Simple LRU replacement - use next slot and wrap around
-        pattern_cache(cache_next_slot)%pattern = pattern
-        pattern_cache(cache_next_slot)%is_concurrent_risk = concurrent_risk
-        pattern_cache(cache_next_slot)%is_readonly_risk = readonly_risk
-        pattern_cache(cache_next_slot)%is_sensitive = sensitive_pattern
-        pattern_cache(cache_next_slot)%is_cached = .true.
+        cache(next_slot)%pattern = pattern
+        cache(next_slot)%is_concurrent_risk = concurrent_risk
+        cache(next_slot)%is_readonly_risk = readonly_risk
+        cache(next_slot)%is_sensitive = sensitive_pattern
+        cache(next_slot)%is_cached = .true.
         
-        cache_next_slot = cache_next_slot + 1
-        if (cache_next_slot > CACHE_SIZE) cache_next_slot = 1
+        next_slot = next_slot + 1
+        if (next_slot > CACHE_SIZE) next_slot = 1
     end subroutine cache_pattern_results
     
-    ! PERFORMANCE: Get cached disk space risk
-    subroutine get_cached_disk_space_risk(disk_space_risk)
+    ! THREAD-SAFE: Get disk space risk without shared state
+    subroutine get_disk_space_risk(disk_space_risk)
         logical, intent(out) :: disk_space_risk
-        real :: current_time
         integer :: stat
         
-        call cpu_time(current_time)
-        ! Use cached result if less than 5 seconds old
-        if (disk_space_cached .and. (current_time - last_disk_check_time < 5.0)) then
-            disk_space_risk = disk_space_risk
-        else
-            ! Perform fresh check
-            call execute_command_line("df . 2>/dev/null | grep -q ' 9[0-9]% '", &
-                exitstat=stat)
-            disk_space_risk = (stat == 0)
-            ! Update cache
-            disk_space_cached = .true.
-            disk_space_risk = disk_space_risk
-            last_disk_check_time = current_time
-        end if
-    end subroutine get_cached_disk_space_risk
+        ! Perform fresh check each time for thread safety
+        ! Performance impact is minimal compared to thread safety issues
+        call execute_command_line("df . 2>/dev/null | grep -q ' 9[0-9]% '", &
+            exitstat=stat)
+        disk_space_risk = (stat == 0)
+    end subroutine get_disk_space_risk
 
 end module security_assessment

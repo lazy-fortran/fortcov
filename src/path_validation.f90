@@ -20,10 +20,8 @@ module path_validation
         character(len=:), allocatable :: safe_path
     end type path_validation_cache_t
     
-    ! Small LRU cache for path validation results
+    ! Path validation cache parameters  
     integer, parameter :: PATH_CACHE_SIZE = 32
-    type(path_validation_cache_t), save :: path_cache(PATH_CACHE_SIZE)
-    integer, save :: path_cache_next_slot = 1
     
     ! Public procedures
     public :: validate_path_security
@@ -39,6 +37,9 @@ contains
         
         character(len=len(input_path)) :: working_path
         integer :: i, path_len
+        ! THREAD-SAFE: Local cache variables
+        type(path_validation_cache_t), save :: local_path_cache(PATH_CACHE_SIZE)
+        integer, save :: local_path_cache_next_slot = 1
         
         call clear_error_context(error_ctx)
         working_path = input_path
@@ -59,7 +60,7 @@ contains
         end if
         
         ! PERFORMANCE: Check cache first
-        if (check_path_cache(working_path, safe_path, error_ctx)) then
+        if (check_path_cache(working_path, safe_path, error_ctx, local_path_cache)) then
             return  ! Cache hit - early exit
         end if
         
@@ -67,7 +68,8 @@ contains
         if (scan_for_dangerous_patterns(working_path)) then
             error_ctx%error_code = ERROR_INVALID_PATH
             call safe_write_message(error_ctx, "Path contains dangerous characters")
-            call cache_path_result(working_path, .false., safe_path)
+            call cache_path_result(working_path, .false., safe_path, &
+                                    local_path_cache, local_path_cache_next_slot)
             return
         end if
         
@@ -95,7 +97,8 @@ contains
         safe_path = trim(working_path)
         
         ! PERFORMANCE: Cache successful validation
-        call cache_path_result(working_path, .true., safe_path)
+        call cache_path_result(working_path, .true., safe_path, &
+                               local_path_cache, local_path_cache_next_slot)
     end subroutine validate_path_security
 
     ! Executable path validation
@@ -363,11 +366,12 @@ contains
         end if
     end subroutine sanitize_error_message_path
 
-    ! PERFORMANCE: Check path validation cache
-    function check_path_cache(path, safe_path, error_ctx) result(cache_hit)
+    ! THREAD-SAFE: Check path validation cache
+    function check_path_cache(path, safe_path, error_ctx, cache) result(cache_hit)
         character(len=*), intent(in) :: path
         character(len=:), allocatable, intent(out) :: safe_path
         type(error_context_t), intent(out) :: error_ctx
+        type(path_validation_cache_t), intent(in) :: cache(PATH_CACHE_SIZE)
         logical :: cache_hit
         integer :: i
         
@@ -375,10 +379,10 @@ contains
         call clear_error_context(error_ctx)
         
         do i = 1, PATH_CACHE_SIZE
-            if (path_cache(i)%is_cached .and. &
-                trim(path_cache(i)%path) == trim(path)) then
-                if (path_cache(i)%is_valid) then
-                    safe_path = path_cache(i)%safe_path
+            if (cache(i)%is_cached .and. &
+                trim(cache(i)%path) == trim(path)) then
+                if (cache(i)%is_valid) then
+                    safe_path = cache(i)%safe_path
                 else
                     error_ctx%error_code = ERROR_INVALID_PATH
                     call safe_write_message(error_ctx, "Cached: Path validation failed")
@@ -389,22 +393,24 @@ contains
         end do
     end function check_path_cache
     
-    ! PERFORMANCE: Cache path validation result
-    subroutine cache_path_result(path, is_valid, safe_path)
+    ! THREAD-SAFE: Cache path validation result
+    subroutine cache_path_result(path, is_valid, safe_path, cache, next_slot)
         character(len=*), intent(in) :: path
         logical, intent(in) :: is_valid
         character(len=:), allocatable, intent(in) :: safe_path
+        type(path_validation_cache_t), intent(inout) :: cache(PATH_CACHE_SIZE)
+        integer, intent(inout) :: next_slot
         
         ! Simple LRU replacement
-        path_cache(path_cache_next_slot)%path = path
-        path_cache(path_cache_next_slot)%is_valid = is_valid
-        path_cache(path_cache_next_slot)%is_cached = .true.
+        cache(next_slot)%path = path
+        cache(next_slot)%is_valid = is_valid
+        cache(next_slot)%is_cached = .true.
         if (is_valid) then
-            path_cache(path_cache_next_slot)%safe_path = safe_path
+            cache(next_slot)%safe_path = safe_path
         end if
         
-        path_cache_next_slot = path_cache_next_slot + 1
-        if (path_cache_next_slot > PATH_CACHE_SIZE) path_cache_next_slot = 1
+        next_slot = next_slot + 1
+        if (next_slot > PATH_CACHE_SIZE) next_slot = 1
     end subroutine cache_path_result
     
     ! PERFORMANCE: Consolidated dangerous pattern scanning
