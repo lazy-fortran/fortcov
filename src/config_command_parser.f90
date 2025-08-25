@@ -537,13 +537,13 @@ contains
         if (success) return
         
         call process_value_flags(normalized_flag, value, config, success, error_message)
-        if (.not. success .or. success) return
+        if (success) return
         
         call process_boolean_flags(normalized_flag, config, success)
         if (success) return
         
         call process_complex_flags(normalized_flag, value, config, success, error_message)
-        if (.not. success .or. success) return
+        if (success) return
         
         ! Unknown flag
         success = .false.
@@ -583,10 +583,13 @@ contains
         select case (flag)
         case ("--source", "-s")
             call add_source_path(value, config, success, error_message)
+            ! Flag was recognized even if there was an error
         case ("--exclude", "-e")
             call add_exclude_pattern(value, config, success, error_message)
+            ! Flag was recognized even if there was an error
         case ("--include", "-i")
             call add_include_pattern(value, config, success, error_message)
+            ! Flag was recognized even if there was an error
         case ("--output", "-o")
             config%output_path = value
         case ("--format", "-f")
@@ -800,21 +803,29 @@ contains
         character(len=*), intent(in) :: args(:)
         logical :: has_input_args
 
-        integer :: i
-        character(len=:), allocatable :: arg
+        integer :: i, equals_pos
+        character(len=:), allocatable :: arg, flag_part
 
         has_input_args = .false.
 
         do i = 1, size(args)
             arg = trim(adjustl(args(i)))
 
+            ! Handle flags with equals signs (--flag=value)
+            equals_pos = index(arg, '=')
+            if (equals_pos > 0) then
+                flag_part = arg(1:equals_pos-1)
+            else
+                flag_part = arg
+            end if
+
             ! Check for input-related flags
-            if (arg == "--source" .or. arg == "-s" .or. &
-                arg == "--import" .or. &
-                arg == "--gcov-executable" .or. &
-                arg == "--gcov-args" .or. &
-                arg == "--include" .or. arg == "-i" .or. &
-                arg == "--exclude" .or. arg == "-e") then
+            if (flag_part == "--source" .or. flag_part == "-s" .or. &
+                flag_part == "--import" .or. &
+                flag_part == "--gcov-executable" .or. &
+                flag_part == "--gcov-args" .or. &
+                flag_part == "--include" .or. flag_part == "-i" .or. &
+                flag_part == "--exclude" .or. flag_part == "-e") then
                 has_input_args = .true.
                 return
             end if
@@ -838,21 +849,34 @@ contains
         character(len=*), intent(in) :: args(:)
         logical :: has_output_args
 
-        integer :: i
-        character(len=:), allocatable :: arg
+        integer :: i, equals_pos
+        character(len=:), allocatable :: arg, flag_part
 
         has_output_args = .false.
 
         do i = 1, size(args)
             arg = trim(adjustl(args(i)))
 
-            ! Check for output-related flags
-            if (arg == "--output" .or. arg == "-o" .or. &
-                arg == "--format" .or. arg == "-f" .or. &
-                arg == "--tui" .or. &
-                arg == "--diff" .or. &
-                arg == "--diff-threshold" .or. &
-                arg == "--include-unchanged") then
+            ! Handle flags with equals signs (--flag=value)
+            equals_pos = index(arg, '=')
+            if (equals_pos > 0) then
+                flag_part = arg(1:equals_pos-1)
+            else
+                flag_part = arg
+            end if
+
+            ! Check for output-related flags (including boolean output flags)
+            if (flag_part == "--output" .or. flag_part == "-o" .or. &
+                flag_part == "--format" .or. flag_part == "-f" .or. &
+                flag_part == "--verbose" .or. flag_part == "-v" .or. &
+                flag_part == "--quiet" .or. flag_part == "-q" .or. &
+                flag_part == "--tui" .or. &
+                flag_part == "--diff" .or. &
+                flag_part == "--diff-threshold" .or. &
+                flag_part == "--include-unchanged" .or. &
+                flag_part == "--threshold" .or. flag_part == "-m" .or. &
+                flag_part == "--minimum" .or. &
+                flag_part == "--strict") then
                 has_output_args = .true.
                 return
             end if
