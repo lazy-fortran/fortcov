@@ -80,3 +80,5 @@
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
+- [ ] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines
+- [ ] #344: Refactor: reduce validation and security assessment functions to under 50 lines

@@ -93,41 +93,15 @@ contains
         end if
     end subroutine safe_execute_gcov
 
-    ! Safe file finding with injection protection
-    subroutine safe_find_files(pattern, files, error_ctx)
-        character(len=*), intent(in) :: pattern
-        character(len=:), allocatable, intent(out) :: files(:)
-        type(error_context_t), intent(out) :: error_ctx
+    ! Build find command for file pattern search
+    subroutine build_find_command(safe_pattern, temp_filename, command)
+        character(len=*), intent(in) :: safe_pattern
+        character(len=*), intent(in) :: temp_filename
+        character(len=MAX_COMMAND_LENGTH), intent(out) :: command
         
-        character(len=:), allocatable :: safe_pattern
-        character(len=MAX_COMMAND_LENGTH) :: command
-        character(len=:), allocatable :: temp_filename
-        character(len=256) :: temp_files(100)
-        integer :: unit, stat, iostat, num_files
-        logical :: file_exists, has_security_assessment
-        character(len=512) :: security_message
         character(len=256) :: filename_pattern, base_dir
         integer :: star_pos
         
-        call clear_error_context(error_ctx)
-        
-        ! Validate pattern
-        call validate_path_security(pattern, safe_pattern, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) return
-        
-        ! Create secure temporary filename for output
-        call create_secure_temp_filename(temp_filename)
-        
-        ! Security pre-assessment for pattern-based vulnerabilities
-        call assess_pattern_security_risks(safe_pattern, error_ctx)
-        
-        ! Preserve security assessment for priority reporting
-        has_security_assessment = (error_ctx%error_code /= ERROR_SUCCESS)
-        if (has_security_assessment) then
-            security_message = error_ctx%message
-        end if
-        
-        ! Build safe find command - use shell-safe patterns
         ! Handle recursive patterns (**/) differently
         if (index(safe_pattern, '**/') > 0) then
             ! Extract the filename pattern after **/
@@ -149,7 +123,6 @@ contains
                 base_dir = '.'
             end if
             
-            ! Use find with recursive search
             command = "find " // escape_shell_argument(trim(base_dir)) // " -name " // &
                      escape_shell_argument(trim(filename_pattern)) // &
                      " -type f 2>/dev/null > " // escape_shell_argument(temp_filename)
@@ -167,17 +140,17 @@ contains
             command = "find . -name " // escape_shell_argument(safe_pattern) // &
                      " -type f 2>/dev/null > " // escape_shell_argument(temp_filename)
         end if
+    end subroutine build_find_command
+    
+    ! Parse find command output and populate files array
+    subroutine parse_find_output(temp_filename, files, error_ctx, has_security_assessment)
+        character(len=*), intent(in) :: temp_filename
+        character(len=:), allocatable, intent(out) :: files(:)
+        type(error_context_t), intent(inout) :: error_ctx
+        logical, intent(in) :: has_security_assessment
         
-        ! Execute command
-        call execute_command_line(command, exitstat=stat)
-        if (stat /= 0) then
-            if (.not. has_security_assessment) then
-                error_ctx%error_code = ERROR_INVALID_CONFIG
-                call safe_write_message(error_ctx, &
-                    "File search failed with exit code " // format_integer(stat))
-            end if
-            return
-        end if
+        character(len=256) :: temp_files(100)
+        integer :: unit, iostat, num_files
         
         ! Read results from temporary file
         open(newunit=unit, file=temp_filename, status='old', &
@@ -187,6 +160,7 @@ contains
                 error_ctx%error_code = ERROR_MISSING_FILE
                 call safe_write_message(error_ctx, "Failed to read search results")
             end if
+            ! Leave files unallocated on error
             return
         end if
         
@@ -201,9 +175,64 @@ contains
         ! Close and delete temporary file with proper error handling
         call safe_close_and_delete(unit, temp_filename, error_ctx)
         
-        ! Allocate output array
+        ! Allocate output array - even if empty to distinguish success with no files
         allocate(character(len=256) :: files(num_files))
-        files(1:num_files) = temp_files(1:num_files)
+        if (num_files > 0) then
+            files(1:num_files) = temp_files(1:num_files)
+        end if
+    end subroutine parse_find_output
+    
+    ! Safe file finding with injection protection
+    subroutine safe_find_files(pattern, files, error_ctx)
+        character(len=*), intent(in) :: pattern
+        character(len=:), allocatable, intent(out) :: files(:)
+        type(error_context_t), intent(out) :: error_ctx
+        
+        character(len=:), allocatable :: safe_pattern
+        character(len=MAX_COMMAND_LENGTH) :: command
+        character(len=:), allocatable :: temp_filename
+        integer :: stat
+        logical :: has_security_assessment
+        character(len=512) :: security_message
+        
+        call clear_error_context(error_ctx)
+        
+        ! Validate pattern
+        call validate_path_security(pattern, safe_pattern, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            ! Leave files unallocated on validation error
+            return
+        end if
+        
+        ! Create secure temporary filename for output
+        call create_secure_temp_filename(temp_filename)
+        
+        ! Security pre-assessment for pattern-based vulnerabilities
+        call assess_pattern_security_risks(safe_pattern, error_ctx)
+        
+        ! Preserve security assessment for priority reporting
+        has_security_assessment = (error_ctx%error_code /= ERROR_SUCCESS)
+        if (has_security_assessment) then
+            security_message = error_ctx%message
+        end if
+        
+        ! Build safe find command
+        call build_find_command(safe_pattern, temp_filename, command)
+        
+        ! Execute command
+        call execute_command_line(command, exitstat=stat)
+        if (stat /= 0) then
+            if (.not. has_security_assessment) then
+                error_ctx%error_code = ERROR_INVALID_CONFIG
+                call safe_write_message(error_ctx, &
+                    "File search failed with exit code " // format_integer(stat))
+            end if
+            ! Leave files unallocated on command failure
+            return
+        end if
+        
+        ! Parse output and populate files array
+        call parse_find_output(temp_filename, files, error_ctx, has_security_assessment)
         
     end subroutine safe_find_files
 
@@ -213,13 +242,11 @@ contains
         character(len=*), intent(in) :: filename
         type(error_context_t), intent(inout) :: error_ctx
         
-        integer :: close_iostat, delete_iostat, overwrite_iostat
-        logical :: file_exists_before, file_exists_after
-        character(len=MAX_COMMAND_LENGTH) :: delete_command
-        integer :: attempts, max_attempts = 3
-        logical :: deletion_successful = .false.
-        logical :: potential_security_issues = .false.
+        integer :: close_iostat, delete_iostat
+        logical :: file_exists_before, deletion_successful
+        logical :: potential_security_issues
         character(len=256) :: security_concerns
+        integer, parameter :: max_attempts = 3
         
         ! Check file existence before deletion attempts
         inquire(file=filename, exist=file_exists_before)
@@ -227,13 +254,47 @@ contains
         ! Primary deletion attempt: Fortran close with status='delete'
         close(unit, status='delete', iostat=close_iostat)
         
-        ! Verify deletion was successful
+        ! Attempt file deletion with multiple strategies if needed
+        call attempt_file_deletion(unit, filename, close_iostat, &
+                                  max_attempts, deletion_successful, delete_iostat)
+        
+        ! Comprehensive security vulnerability assessment
+        call assess_deletion_security_risks(filename, close_iostat, delete_iostat, &
+                                           deletion_successful, file_exists_before, &
+                                           potential_security_issues, security_concerns)
+        
+        ! Report any errors or security concerns
+        if (.not. deletion_successful .or. close_iostat /= 0 .or. &
+            potential_security_issues) then
+            call report_deletion_error(error_ctx, filename, close_iostat, &
+                                      deletion_successful, file_exists_before, &
+                                      max_attempts, potential_security_issues, &
+                                      security_concerns)
+        end if
+        
+    end subroutine safe_close_and_delete
+    
+    ! Attempt file deletion using multiple strategies
+    subroutine attempt_file_deletion(unit, filename, close_iostat, &
+                                    max_attempts, deletion_successful, delete_iostat)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: close_iostat
+        integer, intent(in) :: max_attempts
+        logical, intent(out) :: deletion_successful
+        integer, intent(out) :: delete_iostat
+        
+        logical :: file_exists_after
+        character(len=MAX_COMMAND_LENGTH) :: delete_command
+        integer :: attempts, overwrite_iostat
+        
+        ! Verify initial deletion was successful
         inquire(file=filename, exist=file_exists_after)
         deletion_successful = .not. file_exists_after
         
         if (.not. deletion_successful .and. close_iostat /= 0) then
             ! Close failed - try closing without delete first
-            close(unit, iostat=close_iostat)
+            close(unit, iostat=delete_iostat)
             
             ! Multi-layer fallback deletion strategy
             do attempts = 1, max_attempts
@@ -263,10 +324,21 @@ contains
             deletion_successful = .not. file_exists_after
         end if
         
-        ! Comprehensive security vulnerability assessment
-        call assess_deletion_security_risks(filename, close_iostat, delete_iostat, &
-                                           deletion_successful, file_exists_before, &
-                                           potential_security_issues, security_concerns)
+    end subroutine attempt_file_deletion
+    
+    ! Report deletion errors and security concerns
+    subroutine report_deletion_error(error_ctx, filename, close_iostat, &
+                                    deletion_successful, file_exists_before, &
+                                    max_attempts, potential_security_issues, &
+                                    security_concerns)
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: close_iostat
+        logical, intent(in) :: deletion_successful
+        logical, intent(in) :: file_exists_before
+        integer, intent(in) :: max_attempts
+        logical, intent(in) :: potential_security_issues
+        character(len=*), intent(in) :: security_concerns
         
         ! Enhanced error reporting for security compliance
         if (.not. deletion_successful .and. file_exists_before) then
@@ -299,7 +371,7 @@ contains
                 "Security compliance issue detected: " // trim(security_concerns))
         end if
         
-    end subroutine safe_close_and_delete
+    end subroutine report_deletion_error
     
     ! Secure overwrite sensitive data before deletion
     subroutine secure_overwrite_file(filename, iostat)
