@@ -11,7 +11,8 @@ program test_windows_device_comprehensive
     !! - Case sensitivity issues (con vs CON)
     !! - Path component validation (/path/to/CON)
     !!
-    use secure_command_executor
+    use secure_file_operations, only: safe_find_files, safe_mkdir
+    use path_validation, only: validate_path_security, validate_executable_path
     use error_handling
     implicit none
     

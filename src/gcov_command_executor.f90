@@ -8,7 +8,9 @@ module gcov_command_executor
     use iso_fortran_env, only: error_unit
     use error_handling
     use file_utils
-    use secure_command_executor
+    use secure_command_executor, only: safe_execute_gcov
+    use secure_file_operations, only: safe_mkdir
+    use shell_utils, only: escape_shell_argument
     implicit none
     private
     

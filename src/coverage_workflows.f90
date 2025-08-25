@@ -13,7 +13,7 @@ module coverage_workflows
     use error_handling
     use zero_configuration_manager, only: auto_discover_coverage_files_priority
     use build_system_detector
-    use secure_command_executor, only: escape_shell_argument
+    use shell_utils, only: escape_shell_argument
     implicit none
     private
     

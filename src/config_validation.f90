@@ -11,7 +11,7 @@ module config_validation
     use file_utils
     use error_handling
     use input_validation
-    use secure_command_executor, only: validate_executable_path
+    use path_validation, only: validate_executable_path
 
     implicit none
     private

@@ -8,7 +8,7 @@ module config_defaults
     use foundation_constants
     use foundation_layer_utils
     use zero_configuration_manager
-    use secure_command_executor, only: escape_shell_argument
+    use shell_utils, only: escape_shell_argument
     
     implicit none
     private

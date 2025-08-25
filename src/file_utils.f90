@@ -1,7 +1,9 @@
 module file_utils
     use iso_fortran_env, only: error_unit, int64
     use error_handling
-    use secure_command_executor
+    use secure_file_operations, only: safe_find_files, safe_mkdir
+    use path_validation, only: validate_path_security
+    use shell_utils, only: escape_shell_argument
     use input_validation
     implicit none
     private

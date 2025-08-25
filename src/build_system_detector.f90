@@ -13,8 +13,7 @@ module build_system_detector
 
     use iso_fortran_env, only: error_unit
     use error_handling
-    use secure_command_executor, only: validate_executable_path, &
-                                       validate_path_security
+    use path_validation, only: validate_executable_path, validate_path_security
     use file_utils, only: file_exists
     use string_utils, only: trim_string
     implicit none
