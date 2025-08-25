@@ -1,8 +1,11 @@
 # Development Backlog
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
-### HIGH (Documentation & Testing Stability)
-*No remaining HIGH priority documentation issues*
+### CRITICAL (Emergency Issues)
+- [ ] #356: Fix: rescue commits from main
+
+### HIGH (Testing Stability)
+- [ ] #336: Fix: resolve 4 remaining gcov processing test failures
 
 ### MEDIUM (Dead Code Cleanup)
 *Next item moved to DOING*
@@ -11,7 +14,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-*Sprint 2 completed - ready for next phase*
+- [x] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines (branch: refactor-343)
 
 ## DONE (Completed Work)
 - [x] #271: Improve iostat error handling granularity (completed in PR #357 - comprehensive iostat error interpretation with granular reporting)
@@ -85,6 +88,7 @@
 - [ ] #312: Optimize pattern matching performance in security assessment
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
+- [ ] #344: Refactor: reduce validation and security assessment functions to under 50 lines
 - [ ] #346: Refactor: reduce validate_path_security function size to under 50 lines
 - [ ] #347: Refactor: reduce check_path_component_for_device function size to under 50 lines
 - [ ] #348: Refactor: reduce safe_execute_gcov function size to under 50 lines
