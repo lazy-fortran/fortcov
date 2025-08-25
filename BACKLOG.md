@@ -7,10 +7,10 @@
 ### EPIC: Core Functionality Restoration
 
 ### EPIC: Architecture Size Compliance
+- [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability
 - [ ] #399: Architecture risk: 5 modules approaching 1000-line hard limit requiring immediate decomposition
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #386: cleanup: massive code duplication in int_to_string functions
 - [ ] #387: cleanup: duplicate real_to_string functions
 - [ ] #376: cleanup: remove unused config_file_handler module
 - [ ] #385: cleanup: remove disabled fork bomb test files
@@ -24,7 +24,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability [EPIC: Architecture Size Compliance]
+- [ ] #386: cleanup: massive code duplication in int_to_string functions [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
