@@ -14,9 +14,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
+*No current work in progress*
 
 ## DONE (Completed Work)
+- [x] #275: Remove unused tempfile import in test_makefile_syntax.py (completed in PR #339)
 - [x] #267: Potential command injection in test shell commands (fixed in PR #338)
 - [x] #256: Documentation shows incorrect --format flag instead of --output-format (invalid - documentation was correct)
 - [x] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm' (resolved in PR #337 comprehensive fix)
