@@ -2,9 +2,6 @@
 
 ## CURRENT SPRINT (Critical Infrastructure & Architecture Alignment)
 
-### CRITICAL (Infrastructure Blockers)
-- [ ] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit
-
 ### HIGH (Architecture Compliance)  
 - [ ] #366: architecture: 13 modules exceed 500-line target violating size principles
 
@@ -17,7 +14,7 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-<!-- No current work -->
+- [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (branch: critical-365)
 
 ## DONE (Completed Work)
 - [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (completed in PR #368 - replaced formatted write with string concatenation)
