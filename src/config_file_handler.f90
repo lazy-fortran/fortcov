@@ -7,13 +7,12 @@ module config_file_handler
     use foundation_constants
     use foundation_layer_utils
     use fortcov_config, only: config_t
+    use config_types, only: MAX_ARRAY_SIZE
+    use error_handling
     implicit none
     private
     
-    ! Parameter constants for array sizing
-    integer, parameter :: MAX_SOURCE_PATHS = 100
-    integer, parameter :: MAX_EXCLUDE_PATTERNS = 100
-    integer, parameter :: MAX_INCLUDE_PATTERNS = 100
+    ! Using MAX_ARRAY_SIZE from config_types module
     
     public :: parse_config_file
     public :: load_config_file_with_merge
@@ -123,9 +122,9 @@ contains
         character(len=256) :: input_format
         character(len=256) :: output_format
         character(len=256) :: output_path
-        character(len=256), dimension(MAX_SOURCE_PATHS) :: source_paths
-        character(len=256), dimension(MAX_EXCLUDE_PATTERNS) :: exclude_patterns
-        character(len=256), dimension(MAX_INCLUDE_PATTERNS) :: include_patterns
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
+        character(len=256), dimension(MAX_ARRAY_SIZE) :: include_patterns
         character(len=256) :: gcov_executable
         character(len=256) :: gcov_args
         real :: minimum_coverage
@@ -233,9 +232,9 @@ contains
         call transfer_string_array(include_patterns, config%include_patterns)
         
         ! Validate array bounds (warn if arrays appear full)
-        call validate_array_bounds(source_paths, MAX_SOURCE_PATHS, "source_paths")
-        call validate_array_bounds(exclude_patterns, MAX_EXCLUDE_PATTERNS, "exclude_patterns")
-        call validate_array_bounds(include_patterns, MAX_INCLUDE_PATTERNS, "include_patterns")
+        call validate_array_bounds(source_paths, MAX_ARRAY_SIZE, "source_paths")
+        call validate_array_bounds(exclude_patterns, MAX_ARRAY_SIZE, "exclude_patterns")
+        call validate_array_bounds(include_patterns, MAX_ARRAY_SIZE, "include_patterns")
         
     end subroutine parse_namelist_config_file
     
@@ -529,10 +528,8 @@ contains
         
         ! Warn if array is at or near capacity
         if (count >= max_size - 5) then
-            write(error_unit, '(A,A,A,I0,A,I0,A)') &
-                "WARNING: ", trim(array_name), &
-                " array is nearly full (", count, "/", max_size, &
-                "). Consider increasing parameter in config_file_handler module."
+            call safe_write_message("WARNING: " // trim(array_name) // &
+                " array is nearly full. Consider increasing MAX_ARRAY_SIZE parameter.")
         end if
         
     end subroutine validate_array_bounds
