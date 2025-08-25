@@ -322,6 +322,17 @@ contains
     function check_recursion_marker() result(marker_exists)
         !! Check if recursion marker file exists
         logical :: marker_exists
+        logical :: workflow_test_marker
+        
+        ! First check if we're in a test that's testing the workflow
+        ! These tests create a special marker file to indicate they need
+        ! to test the complete workflow including test execution
+        inquire(file='.fortcov_workflow_test_marker', exist=workflow_test_marker)
+        if (workflow_test_marker) then
+            ! We're in a test that's testing the workflow - allow execution
+            marker_exists = .false.
+            return
+        end if
         
         ! Check for marker file that indicates we're already in a fortcov execution
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
@@ -331,6 +342,13 @@ contains
     subroutine create_recursion_marker()
         !! Create marker file to prevent recursion
         integer :: unit_num
+        logical :: workflow_test_marker
+        
+        ! Don't create marker if we're testing the workflow
+        inquire(file='.fortcov_workflow_test_marker', exist=workflow_test_marker)
+        if (workflow_test_marker) then
+            return
+        end if
         
         ! Create temporary marker file
         open(newunit=unit_num, file='.fortcov_execution_marker', &

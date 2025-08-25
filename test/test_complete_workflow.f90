@@ -15,6 +15,9 @@ program test_complete_workflow
     write(output_unit, '(A)') 'Running complete workflow tests...'
     write(output_unit, '(A)') ''
 
+    ! Create marker to indicate we're testing the workflow
+    call execute_command_line('touch .fortcov_workflow_test_marker')
+
     call test_complete_auto_workflow_success()
     call test_complete_auto_workflow_no_build_system()
     call test_complete_auto_workflow_test_failure()
@@ -23,6 +26,9 @@ program test_complete_workflow
     write(output_unit, '(A)') ''
     write(output_unit, '(A,I0,A,I0,A)') 'Test Results: ', passed_count, ' / ', &
                                         test_count, ' tests passed'
+    
+    ! Clean up workflow test marker
+    call execute_command_line('rm -f .fortcov_workflow_test_marker')
     
     if (passed_count /= test_count) then
         write(output_unit, '(A)') 'Some tests failed!'
