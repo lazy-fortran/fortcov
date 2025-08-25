@@ -2,7 +2,7 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### CRITICAL (Emergency Issues)
-- [ ] #356: Fix: rescue commits from main
+*Next item moved to DOING*
 
 ### HIGH (Testing Stability)
 - [ ] #336: Fix: resolve 4 remaining gcov processing test failures
@@ -14,7 +14,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-*No current work*
+- [x] #356: Fix: rescue commits from main
 
 ## DONE (Completed Work)
 - [x] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines (completed in PR #358 - extracted helper functions following SRP)
