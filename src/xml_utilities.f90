@@ -1,6 +1,6 @@
 module xml_utilities
     use coverage_model
-    use string_utils
+    use string_utilities, only: int_to_string
     implicit none
     private
     
@@ -420,16 +420,6 @@ contains
         str = trim(adjustl(temp_str))
         
     end function real_to_string
-    
-    function int_to_string(value) result(str)
-        integer, intent(in) :: value
-        character(len=20) :: temp_str
-        character(len=:), allocatable :: str
-        
-        write(temp_str, '(I0)') value
-        str = trim(adjustl(temp_str))
-        
-    end function int_to_string
     
     function get_directory_path(filename) result(dir_path)
         character(len=*), intent(in) :: filename

@@ -6,6 +6,7 @@ module command_timeout_manager
     !! with cross-platform process management abstractions.
     use iso_c_binding
     use error_handling
+    use string_utilities, only: int_to_string
     implicit none
     private
     
@@ -394,15 +395,6 @@ contains
         end if
     end function contains_dangerous_chars
     
-    ! Simple integer to string conversion
-    function int_to_string(int_val) result(str_val)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str_val
-        character(len=32) :: temp_str
-        
-        write(temp_str, '(I0)') int_val
-        str_val = trim(temp_str)
-    end function int_to_string
 
     ! Fallback timeout simulation for testing (without C interface)
     subroutine simulate_timeout_monitoring(executor, timed_out)
