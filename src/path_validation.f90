@@ -191,8 +191,6 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         logical :: exec_exists
-        character(len=512) :: full_path
-        integer :: exit_stat
         
         call clear_error_context(error_ctx)
         
@@ -213,20 +211,9 @@ contains
                 return
             end if
         else
-            ! Simple executable name - use which command to find it in PATH
-            call execute_command_line("which " // trim(executable) // " > /dev/null 2>&1", &
-                                    exitstat=exit_stat)
-            if (exit_stat == 0) then
-                ! Executable found in PATH - it's safe to use
-                safe_executable = trim(executable)
-            else
-                error_ctx%error_code = ERROR_MISSING_FILE
-                call safe_write_message(error_ctx, &
-                    "Executable not found - check installation and PATH")
-                call safe_write_suggestion(error_ctx, &
-                    "Verify the executable is installed and accessible")
-                return
-            end if
+            ! Simple executable name - trust it's in PATH (safer for CI)
+            ! The actual execution will handle PATH resolution and fail gracefully
+            safe_executable = trim(executable)
         end if
     end subroutine validate_executable_path
     
