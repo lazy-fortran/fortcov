@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
-- [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
 - [ ] #256: Documentation shows incorrect --format flag instead of --output-format
 - [ ] #267: Potential command injection in test shell commands
 
@@ -17,9 +16,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #254: Typo in troubleshooting section - fmp vs fpm
+- [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
 
 ## DONE (Completed Work)
+- [x] #254: Typo in troubleshooting section - fmp vs fpm (resolved in PR #337 comprehensive fix)
 - [x] #253: Typo in GitLab CI documentation - fmp vs fpm (completed in PR #337)
 - [x] #252: Typo in installation instructions - fmp vs fpm (completed in PR #335)
 - [x] #277: Add auto-discovery of test build and gcov processing (completed in PR #334)
