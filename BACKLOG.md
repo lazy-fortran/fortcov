@@ -3,8 +3,6 @@
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
 ### EPIC: Critical Infrastructure Defects
-- [ ] #395: CRITICAL: Infinite recursion when processing gcov files - fork bomb
-- [ ] #396: Root cause: Validation rejects 'markdown' format but config default uses it
 - [ ] #397: README contains multiple non-functional command examples
 
 ### EPIC: Core Functionality Restoration
@@ -35,7 +33,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #395: CRITICAL: Infinite recursion when processing gcov files - fork bomb [EPIC: Critical Infrastructure Defects]
+- [ ] #396: Root cause: Validation rejects 'markdown' format but config default uses it [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
