@@ -5,6 +5,25 @@ module secure_command_executor
     !! shell injection attacks through proper argument validation and escaping.
     !! All shell commands are constructed using safe patterns that avoid
     !! concatenation of unsanitized user input.
+    !!
+    !! SECURITY ARCHITECTURE:
+    !! 1. INPUT VALIDATION: All paths validated before command construction
+    !! 2. ARGUMENT ESCAPING: Shell arguments properly escaped to prevent injection
+    !! 3. COMMAND ISOLATION: Safe command construction without user input concatenation
+    !! 4. PATH RESOLUTION: Secure handling of relative vs absolute paths
+    !! 5. ERROR CONTAINMENT: Secure error handling without information disclosure
+    !!
+    !! INJECTION ATTACK PREVENTION:
+    !! - Shell metacharacter escaping (;, |, &, <, >, $, `, ", ')
+    !! - Argument isolation using shell_utils escape functions
+    !! - No direct user input concatenation in command strings
+    !! - Path traversal protection through validation layer
+    !!
+    !! EXECUTION SAFETY PATTERNS:
+    !! - Working directory isolation using cd command prefix
+    !! - Executable path resolution (relative vs absolute handling)
+    !! - Output redirection with properly escaped filenames
+    !! - Exit status validation for command success verification
     use iso_fortran_env, only: error_unit
     use error_handling
     use string_utils, only: format_integer
@@ -23,6 +42,42 @@ module secure_command_executor
 contains
 
     ! Safe gcov command execution with full injection protection
+    !!
+    !! PRIMARY SECURE EXECUTION INTERFACE:
+    !! This is the main public interface for secure gcov command execution.
+    !! Implements comprehensive security controls to prevent injection attacks
+    !! while maintaining functionality for coverage analysis operations.
+    !!
+    !! SECURITY CONTROLS APPLIED:
+    !!
+    !! 1. PATH VALIDATION:
+    !!    - gcov_executable: Validated for injection patterns and existence
+    !!    - source_file: Checked for traversal attacks and system file access
+    !!    - working_dir: Validated directory path with traversal prevention
+    !!    - output_file: Sanitized output path validation
+    !!
+    !! 2. COMMAND CONSTRUCTION:
+    !!    - Shell argument escaping for all user-provided parameters
+    !!    - Safe command building without direct string concatenation
+    !!    - Proper handling of optional parameters (branch coverage, output)
+    !!
+    !! 3. EXECUTION ENVIRONMENT:
+    !!    - Working directory isolation using cd command
+    !!    - Executable path resolution (supports both names and paths)
+    !!    - Secure output redirection with escaped filenames
+    !!
+    !! USAGE EXAMPLE:
+    !!   type(error_context_t) :: error_ctx
+    !!   call safe_execute_gcov("gcov", "src/module.f90", "build/", 
+    !!                        .true., "coverage.out", error_ctx)
+    !!   if (error_ctx%error_code /= ERROR_SUCCESS) then
+    !!       write(error_unit, '(A)') trim(error_ctx%message)
+    !!   end if
+    !!
+    !! ERROR HANDLING STRATEGY:
+    !! - Recoverable errors allow retry with different parameters
+    !! - Non-recoverable errors indicate security policy violations
+    !! - Error messages provide guidance without exposing system details
     subroutine safe_execute_gcov(gcov_executable, source_file, working_dir, &
                                 branch_coverage, output_file, error_ctx)
         character(len=*), intent(in) :: gcov_executable
@@ -95,10 +150,34 @@ contains
 
 
 
-    ! Helper subroutines (simplified versions)
+    ! SECURITY HELPER SUBROUTINES:
+    !! 
+    !! The following helper subroutines implement security-focused functionality
+    !! for safe command execution, path resolution, and argument handling.
 
     subroutine safe_execute_in_directory(working_dir, gcov_path, source_path, &
                                        branch_coverage, output_path, exit_stat)
+        !! SECURE WORKING DIRECTORY EXECUTION:
+        !! This subroutine handles secure execution of commands within a specified
+        !! working directory, with proper path resolution and injection protection.
+        !!
+        !! SECURITY APPROACH:
+        !! 1. PATH RESOLUTION: Converts relative paths to absolute paths for cd usage
+        !! 2. EXECUTABLE CLASSIFICATION: Distinguishes executable names vs file paths
+        !! 3. COMMAND ISOLATION: Uses cd prefix for directory-scoped execution
+        !! 4. ARGUMENT ESCAPING: All parameters properly escaped before execution
+        !!
+        !! PATH RESOLUTION LOGIC:
+        !! - Executable names ("gcov"): Left as-is for PATH discovery
+        !! - Relative paths ("./gcov"): Converted to absolute paths
+        !! - Absolute paths ("/usr/bin/gcov"): Used directly
+        !! - Source files: Always converted to absolute paths for cd commands
+        !!
+        !! SECURITY RATIONALE:
+        !! Working directory changes require absolute paths to prevent:
+        !! - Relative path confusion attacks
+        !! - Working directory traversal exploits
+        !! - Command execution in unintended locations
         character(len=*), intent(in) :: working_dir, gcov_path, source_path
         logical, intent(in) :: branch_coverage
         character(len=*), intent(in) :: output_path
@@ -131,6 +210,27 @@ contains
     
     subroutine resolve_absolute_path(path, abs_path)
         !! Convert relative path to absolute path
+        !!
+        !! SECURE PATH RESOLUTION:
+        !! This subroutine provides secure conversion of relative paths to
+        !! absolute paths, preventing directory traversal and path confusion attacks.
+        !!
+        !! SECURITY FEATURES:
+        !! - Absolute path detection (leading / character)
+        !! - Current working directory resolution using getcwd
+        !! - Relative path normalization (./ prefix handling)
+        !! - Fallback handling for getcwd failures
+        !!
+        !! PATH HANDLING CASES:
+        !! 1. Empty path: Returns empty string (safe default)
+        !! 2. Absolute path (/path): Used directly (already secure)
+        !! 3. Relative path (./path): Converted to /cwd/path
+        !! 4. Simple name (file): Converted to /cwd/file
+        !!
+        !! ATTACK PREVENTION:
+        !! - Directory traversal: Absolute paths prevent ../ confusion
+        !! - Path injection: No user input concatenation without validation
+        !! - Working directory attacks: Explicit CWD resolution
         character(len=*), intent(in) :: path
         character(len=*), intent(out) :: abs_path
         
@@ -165,6 +265,28 @@ contains
 
     subroutine build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
                                      output_path, command)
+        !! SECURE COMMAND CONSTRUCTION:
+        !! This subroutine builds gcov commands using secure patterns that prevent
+        !! shell injection attacks through proper argument escaping and validation.
+        !!
+        !! SECURITY CONSTRUCTION PROCESS:
+        !! 1. EXECUTABLE ESCAPING: gcov path properly escaped for shell safety
+        !! 2. OPTION HANDLING: Branch coverage flag added without user input
+        !! 3. SOURCE ESCAPING: Source file path escaped to prevent injection
+        !! 4. OUTPUT REDIRECTION: Optional output file with proper escaping
+        !!
+        !! INJECTION PREVENTION TECHNIQUES:
+        !! - escape_shell_argument(): Escapes all shell metacharacters
+        !! - No direct string concatenation with user input
+        !! - Option flags hardcoded (not user-controllable)
+        !! - Output redirection only when explicitly requested
+        !!
+        !! COMMAND STRUCTURE (when fully populated):
+        !! escaped_gcov -b escaped_source > escaped_output
+        !!
+        !! SECURITY VALIDATION:
+        !! All arguments processed through escape_shell_argument() from shell_utils
+        !! module, which handles shell metacharacters: ; | & < > $ ` " '
         character(len=*), intent(in) :: gcov_path, source_path
         logical, intent(in) :: branch_coverage
         character(len=*), intent(in) :: output_path
@@ -185,6 +307,28 @@ contains
     pure function is_executable_name(path) result(is_executable)
         !! Check if path is an executable name (no directory separators)
         !! vs a file path that contains directory information
+        !!
+        !! EXECUTABLE CLASSIFICATION FOR SECURITY:
+        !! This pure function distinguishes between executable names that should
+        !! be resolved via PATH and file paths that contain directory information.
+        !!
+        !! SECURITY RELEVANCE:
+        !! Different path types require different security handling:
+        !!
+        !! EXECUTABLE NAMES ("gcov", "gfortran"):
+        !! - Resolved via system PATH environment variable
+        !! - No directory traversal risk (no / characters)
+        !! - Can be used directly without path resolution
+        !!
+        !! FILE PATHS ("./gcov", "/usr/bin/gcov", "../bin/gcov"):
+        !! - Contain explicit directory information (/ characters)
+        !! - Require absolute path resolution for cd commands
+        !! - Subject to directory traversal validation
+        !!
+        !! IMPLEMENTATION:
+        !! Simple and secure: checks for presence of "/" character
+        !! - Present: File path requiring resolution and validation
+        !! - Absent: Executable name for PATH resolution
         character(len=*), intent(in) :: path
         logical :: is_executable
         

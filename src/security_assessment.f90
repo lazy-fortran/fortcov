@@ -4,13 +4,37 @@ module security_assessment
     !! This module provides comprehensive security risk assessment for
     !! file operations, pattern analysis, and system access validation.
     !! Focuses on proactive security compliance and threat detection.
+    !!
+    !! RISK PRIORITIZATION FRAMEWORK:
+    !! 1. CRITICAL: Temp file cleanup failures (security policy violation)
+    !! 2. HIGH: Readonly filesystem violations (system integrity risk)
+    !! 3. MEDIUM: Concurrent access conflicts (data consistency risk)
+    !! 4. LOW: Disk space warnings (operational risk)
+    !!
+    !! SECURITY PATTERNS DETECTED:
+    !! - Directory traversal attacks (../../../etc/passwd)
+    !! - System file access attempts (/usr/, /etc/, /root/, /proc/, /sys/)
+    !! - Temporary file injection (fortcov_secure_*, /tmp/*)
+    !! - Sensitive directory access (home, ssh, root, etc patterns)
+    !!
     !! PERFORMANCE OPTIMIZED: Consolidated pattern matching, caching, early exits
     use error_handling
     use string_utils, only: format_integer
     implicit none
     private
     
-    ! Performance optimization: Pattern cache (per-function to avoid thread issues)
+    ! THREAD-SAFE PERFORMANCE OPTIMIZATION: Pattern cache (per-function to avoid thread issues)
+    !! 
+    !! CACHING STRATEGY:
+    !! Each function maintains its own pattern cache to ensure thread safety
+    !! while providing performance benefits through pattern recognition caching.
+    !!
+    !! CACHE STRUCTURE RATIONALE:
+    !! - pattern: Stores the exact pattern string for lookup
+    !! - is_concurrent_risk: Cached concurrent access risk assessment
+    !! - is_readonly_risk: Cached filesystem permission risk assessment  
+    !! - is_sensitive: Cached sensitive directory access assessment
+    !! - is_cached: Validity flag for cache entry
     type :: pattern_cache_t
         character(len=256) :: pattern = ""
         logical :: is_concurrent_risk = .false.
@@ -146,6 +170,31 @@ contains
     end subroutine generate_security_message
 
     ! Assess potential security risks in file deletion operations
+    !!
+    !! RISK ASSESSMENT ALGORITHM:
+    !! This subroutine performs comprehensive security evaluation of file deletion
+    !! operations using a multi-layered approach:
+    !!
+    !! 1. LOCATION ANALYSIS: Identifies file type and permission context
+    !!    - Temporary files: /tmp/, fortcov_secure_*, temp patterns
+    !!    - System files: /usr/, /proc/, /sys/ (readonly filesystem detection)
+    !!
+    !! 2. RISK FACTOR EVALUATION: Assesses operational security risks
+    !!    - Concurrent access: Multi-process file locking conflicts
+    !!    - Disk space: Critical storage capacity issues (90%+ usage)
+    !!
+    !! 3. SECURITY MESSAGE GENERATION: Prioritized threat reporting
+    !!    - Critical: Temp file deletion failures (immediate action required)
+    !!    - Warning: Readonly/concurrent access issues (monitoring required)
+    !!    - Audit: Successful operations (compliance logging)
+    !!
+    !! USAGE EXAMPLE:
+    !!   call assess_deletion_security_risks("temp_file.dat", close_stat, 
+    !!                                      del_stat, success, existed, 
+    !!                                      issues_found, message)
+    !!   if (issues_found) then
+    !!       write(error_unit, '(A)') trim(message)
+    !!   end if
     subroutine assess_deletion_security_risks(filename, close_iostat, delete_iostat, &
                                              deletion_successful, file_existed, &
                                              security_issues_detected, security_message)
@@ -180,6 +229,39 @@ contains
     end subroutine assess_deletion_security_risks
     
     ! Assess security risks based on search patterns and operations - OPTIMIZED
+    !!
+    !! PATTERN SECURITY ANALYSIS:
+    !! This subroutine analyzes file patterns for security vulnerabilities using
+    !! cached pattern recognition and prioritized threat detection:
+    !!
+    !! RISK CATEGORIES (Priority Order):
+    !! 1. READONLY FILESYSTEM VIOLATIONS (/usr/, /proc/, /sys/)
+    !!    - Highest priority: System integrity protection
+    !!    - Blocks unauthorized system file access
+    !!
+    !! 2. DISK SPACE CRITICAL CONDITIONS (**/*.f90 recursive patterns)
+    !!    - High priority: Prevents system instability
+    !!    - Detects storage exhaustion risks during operations
+    !!
+    !! 3. CONCURRENT ACCESS RISKS (*.f90 patterns)
+    !!    - Medium priority: Data consistency protection
+    !!    - Identifies potential file locking conflicts
+    !!
+    !! 4. SENSITIVE DIRECTORY PATTERNS (ssh, home, root, etc)
+    !!    - Security monitoring: Privacy and access control
+    !!    - Tracks access to sensitive filesystem areas
+    !!
+    !! PERFORMANCE OPTIMIZATIONS:
+    !! - Thread-safe pattern caching (local cache per function)
+    !! - Early exit strategies for performance-critical paths
+    !! - Consolidated pattern matching to reduce string operations
+    !!
+    !! USAGE EXAMPLE:
+    !!   type(error_context_t) :: ctx
+    !!   call assess_pattern_security_risks("**/*.f90", ctx)
+    !!   if (ctx%error_code /= ERROR_SUCCESS) then
+    !!       write(error_unit, '(A)') trim(ctx%message)
+    !!   end if
     subroutine assess_pattern_security_risks(pattern, error_ctx)
         character(len=*), intent(in) :: pattern
         type(error_context_t), intent(inout) :: error_ctx
@@ -273,6 +355,35 @@ contains
     end function find_cached_pattern
     
     ! SECURITY-CRITICAL: Consolidated pattern risk analysis - MUST DETECT ALL PATTERNS
+    !!
+    !! SECURITY PATTERN DETECTION ALGORITHM:
+    !! This pure subroutine performs comprehensive security pattern analysis
+    !! with mandatory detection of ALL security-relevant patterns.
+    !!
+    !! SECURITY REQUIREMENT: NO EARLY EXITS ALLOWED
+    !! Unlike performance-optimized code, security analysis must examine
+    !! ALL patterns to ensure complete threat detection.
+    !!
+    !! PATTERN CATEGORIES:
+    !! 
+    !! CONCURRENT RISK PATTERNS:
+    !! - *.f90: Source file patterns indicating potential multi-process access
+    !! - Used to detect file locking conflicts during coverage analysis
+    !!
+    !! READONLY RISK PATTERNS:
+    !! - /usr/: System binaries and libraries (write-protected)
+    !! - /proc/: Virtual filesystem (kernel interface, readonly)
+    !! - /sys/: System filesystem (hardware interface, readonly)
+    !!
+    !! SENSITIVE PATTERNS:
+    !! - ssh: SSH configuration and key files
+    !! - home: User home directories (privacy risk)
+    !! - root: System administrator directories (privilege escalation risk)
+    !! - etc: System configuration files (security policy risk)
+    !!
+    !! SECURITY COMPLIANCE:
+    !! This function MUST detect all patterns to maintain security posture.
+    !! Performance optimizations are secondary to security completeness.
     pure subroutine analyze_pattern_risks(pattern, concurrent_risk, readonly_risk, &
                                          sensitive_pattern)
         character(len=*), intent(in) :: pattern
@@ -350,6 +461,26 @@ contains
     end subroutine cache_pattern_results
     
     ! THREAD-SAFE: Get disk space risk without shared state
+    !!
+    !! DISK SPACE SECURITY ASSESSMENT:
+    !! This subroutine performs real-time disk space analysis to detect
+    !! critical storage conditions that could impact security operations.
+    !!
+    !! SECURITY RATIONALE:
+    !! Insufficient disk space can cause:
+    !! - Incomplete temporary file cleanup (security policy violation)
+    !! - Failed security logging (audit trail gaps)
+    !! - System instability affecting security controls
+    !!
+    !! IMPLEMENTATION APPROACH:
+    !! - Uses shell command 'df' to check current directory usage
+    !! - Detects 90%+ usage patterns that indicate critical conditions
+    !! - Thread-safe: No shared state to avoid race conditions
+    !! - Fresh check each time: Ensures real-time accuracy over caching
+    !!
+    !! PERFORMANCE vs SECURITY TRADE-OFF:
+    !! This function prioritizes thread safety and security accuracy
+    !! over performance caching to ensure reliable security assessments.
     subroutine get_disk_space_risk(disk_space_risk)
         logical, intent(out) :: disk_space_risk
         integer :: stat
