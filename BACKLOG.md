@@ -14,9 +14,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #336: Fix: resolve 4 remaining gcov processing test failures
+- [ ] #312: Optimize pattern matching performance in security assessment
 
 ## DONE (Completed Work)
+- [x] #336: Fix: resolve 4 remaining gcov processing test failures (completed in PR #360 - gcov processing stability significantly improved)
 - [x] #356: Fix: rescue commits from main (completed in PR #359 - removed obsolete Makefile successfully)
 - [x] #343: Refactor: reduce assess_deletion_security_risks function size from 77 to under 50 lines (completed in PR #358 - extracted helper functions following SRP)
 - [x] #271: Improve iostat error handling granularity (completed in PR #357 - comprehensive iostat error interpretation with granular reporting)
@@ -87,7 +88,7 @@
 *Next item moved to DOING*
 
 ### LOW (Code Quality Improvements)
-- [ ] #312: Optimize pattern matching performance in security assessment
+*Next item moved to DOING*
 - [ ] #313: Enhance security assessment documentation and risk prioritization
 - [ ] #314: Fix remaining 2 security test pattern matching issues
 - [ ] #344: Refactor: reduce validation and security assessment functions to under 50 lines
