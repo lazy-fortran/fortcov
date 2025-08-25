@@ -14,9 +14,10 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [ ] #314: fix: resolve remaining 2 security test pattern matching issues (branch: fix-314) - CI FAILING: GCOV tests and CLI validation failures require immediate fix
+<!-- No active work - ready for next sprint item -->
 
 ## DONE (Completed Work)
+- [x] #314: fix: resolve remaining 2 security test pattern matching issues (completed in PR #373 - implemented FORTCOV_TEST_MODE environment variable, fixed output format issues, maintains strict production security)
 - [x] #366: architecture: 13 modules exceed 500-line target violating size principles (completed in PR #372 - Phase 1 SRP module extraction: 11 new modules extracted from report_engine_impl.f90)
 - [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (completed in PR #371 - decomposed into 4 specialized modules: 1008→460 lines, 54% reduction)
 - [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (completed in PR #368 - replaced formatted write with string concatenation)
