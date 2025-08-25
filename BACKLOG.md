@@ -5,7 +5,6 @@
 ### EPIC: Critical Infrastructure Defects
 
 ### EPIC: Core Functionality Restoration
-- [ ] #390: Output format mapping bug: format parameter values incorrectly converted
 - [ ] #388: Invalid option produces confusing error message
 
 ### EPIC: Architecture Size Compliance
@@ -27,7 +26,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #394: TEST FAILURES in --diff implementation - build discovery tests 18/19, zero-config workflow tests 2/4 [EPIC: Core Functionality Restoration]
+- [ ] #390: Output format mapping bug: format parameter values incorrectly converted [EPIC: Core Functionality Restoration]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
