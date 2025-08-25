@@ -1,20 +1,22 @@
 # Development Backlog
 
-## CURRENT SPRINT (Critical Defects & Architecture)
-### CRITICAL (Emergency Issues)
-*Next item moved to DOING*
+## CURRENT SPRINT (Critical Infrastructure & Architecture Alignment)
 
-### HIGH (Testing Stability)
-*Next item moved to DOING*
+### CRITICAL (Infrastructure Blockers)
+- [ ] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline
+- [ ] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit
 
-### MEDIUM (Dead Code Cleanup)
-*Next item moved to DOING*
+### HIGH (Architecture Compliance)  
+- [ ] #366: architecture: 13 modules exceed 500-line target violating size principles
 
-### Sprint 1 Features (COMPLETED)
-*All Sprint 1 auto-discovery features implemented and merged*
+### MEDIUM (Quality & Reliability)
+- [ ] #314: fix: resolve remaining 2 security test pattern matching issues
+
+### LOW (Technical Debt)
+- [ ] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target
 
 ## DOING (Current Work)
-*Next item moved from TODO*
+*No active work - ready for next sprint item*
 
 ## DONE (Completed Work)
 - [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
@@ -71,31 +73,19 @@
 
 ## FUTURE SPRINTS (High-level Planning)
 
-### Sprint 2: Documentation and Quality Improvements
-- Goal: Resolve documentation inconsistencies and improve code quality
-- Approach: Systematic review and cleanup of documentation, refactor problematic code patterns
-- Key decisions: Standardize terminology (fpm not fmp), improve error handling granularity
+### Sprint 2: Architecture Compliance & Stability
+- **Goal**: Achieve full architecture compliance and restore CI stability
+- **Approach**: Systematic module decomposition following SRP, infrastructure fixes
+- **Key Decisions**: 
+  - Priority: CRITICAL infrastructure fixes before architecture refactoring
+  - Module extraction strategy: Single responsibility per extracted module
+  - Maintain API compatibility during refactoring
+- **Success Metrics**: All modules <500 lines, CI fully stable, zero architecture violations
 
-### Sprint 3: Security and Testing Enhancements
-- Goal: Strengthen security validation and expand test coverage
-- Approach: Review command injection vulnerabilities, consolidate test files
-- Key decisions: Enhanced input validation, unified security patterns
-
-## TODO (Future Work - Ordered by Priority)
-
-### MEDIUM (Documentation Errors)
-*Next item moved to DOING*
-
-### MEDIUM (Code Quality Improvements)
-*Next item moved to DOING*
-
-### LOW (Code Quality Improvements)
-*Next item moved to DOING*
-- [ ] #314: Fix remaining 2 security test pattern matching issues
-- [ ] #344: Refactor: reduce validation and security assessment functions to under 50 lines
-- [ ] #346: Refactor: reduce validate_path_security function size to under 50 lines
-- [ ] #347: Refactor: reduce check_path_component_for_device function size to under 50 lines
-- [ ] #348: Refactor: reduce safe_execute_gcov function size to under 50 lines
-- [ ] #349: Refactor: reduce assess_deletion_security_risks function size to under 50 lines
-- [ ] #350: Refactor: reduce escape_shell_argument function size to under 50 lines
-- [ ] #361: Refactor: improve gcov processing test mock infrastructure
+### Sprint 3: Quality & Performance Optimization  
+- **Goal**: Enhance test reliability and optimize performance bottlenecks
+- **Approach**: Security test stabilization, function-level refactoring for maintainability
+- **Key Decisions**:
+  - Focus on test infrastructure reliability
+  - Function size compliance through focused extraction
+  - Performance optimization without sacrificing correctness
