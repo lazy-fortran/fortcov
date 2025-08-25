@@ -46,7 +46,7 @@ contains
         
         call create_mock_fpm_project()
         
-        call auto_discover_test_build('.', config, result)
+        call auto_discover_test_build('test_temp_dir', config, result)
         
         call assert_true(result%success, 'FPM detection succeeded')
         call assert_equal_string(result%build_system, 'fpm', 'Build system detected')
@@ -70,7 +70,7 @@ contains
         
         call create_mock_cmake_project()
         
-        call auto_discover_test_build('.', config, result)
+        call auto_discover_test_build('test_temp_dir', config, result)
         
         call assert_true(result%success, 'CMake detection succeeded')
         call assert_equal_string(result%build_system, 'cmake', 'Build system detected')
@@ -94,7 +94,7 @@ contains
         
         call create_mock_make_project()
         
-        call auto_discover_test_build('.', config, result)
+        call auto_discover_test_build('test_temp_dir', config, result)
         
         call assert_true(result%success, 'Make detection succeeded')
         call assert_equal_string(result%build_system, 'make', 'Build system detected')
@@ -118,7 +118,7 @@ contains
         
         call create_mock_meson_project()
         
-        call auto_discover_test_build('.', config, result)
+        call auto_discover_test_build('test_temp_dir', config, result)
         
         call assert_true(result%success, 'Meson detection succeeded')
         call assert_equal_string(result%build_system, 'meson', 'Build system detected')
@@ -142,7 +142,7 @@ contains
         
         ! No mock build files created
         
-        call auto_discover_test_build('.', config, result)
+        call auto_discover_test_build('test_temp_dir', config, result)
         
         call assert_false(result%success, 'Unknown system handled')
         call assert_equal_string(result%build_system, 'unknown', 'Build system unknown')
@@ -153,23 +153,27 @@ contains
     ! Mock creation and cleanup subroutines
     
     subroutine create_mock_fpm_project()
-        call execute_command_line('touch fpm.toml')
+        call execute_command_line('mkdir -p test_temp_dir')
+        call execute_command_line('touch test_temp_dir/fpm.toml')
     end subroutine create_mock_fpm_project
 
     subroutine create_mock_cmake_project()
-        call execute_command_line('touch CMakeLists.txt')
+        call execute_command_line('mkdir -p test_temp_dir')
+        call execute_command_line('touch test_temp_dir/CMakeLists.txt')
     end subroutine create_mock_cmake_project
 
     subroutine create_mock_make_project()
-        call execute_command_line('touch Makefile')
+        call execute_command_line('mkdir -p test_temp_dir')
+        call execute_command_line('touch test_temp_dir/Makefile')
     end subroutine create_mock_make_project
 
     subroutine create_mock_meson_project()
-        call execute_command_line('touch meson.build')
+        call execute_command_line('mkdir -p test_temp_dir')
+        call execute_command_line('touch test_temp_dir/meson.build')
     end subroutine create_mock_meson_project
 
     subroutine cleanup_mock_project()
-        call execute_command_line('rm -f fpm.toml CMakeLists.txt Makefile meson.build')
+        call execute_command_line('rm -rf test_temp_dir')
     end subroutine cleanup_mock_project
 
     ! Test assertion helpers
