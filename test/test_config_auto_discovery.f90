@@ -216,6 +216,8 @@ contains
         print '(A,I0,A,I0,A)', "Test Results: ", passed_tests, "/", total_tests, " passed"
         if (passed_tests /= total_tests) then
             error stop 1
+        else
+            stop 0
         end if
     end subroutine print_test_summary
 

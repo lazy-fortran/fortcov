@@ -54,7 +54,7 @@ contains
         print *, ""
         print *, "Running: No-args zero-config complete workflow"
         
-        ! GIVEN: No arguments (simulate 'fortcov')
+        ! GIVEN: No arguments (simulate 'fortcov') in test environment
         allocate(no_args(0))
         call parse_config(no_args, config, success, error_message)
         

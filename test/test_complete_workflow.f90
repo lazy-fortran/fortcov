@@ -27,6 +27,8 @@ program test_complete_workflow
     if (passed_count /= test_count) then
         write(output_unit, '(A)') 'Some tests failed!'
         stop 1
+    else
+        stop 0
     end if
 
 contains

@@ -140,13 +140,16 @@ contains
         call initialize_default_config(config)
         config%auto_discovery = .true.
         
-        ! No mock build files created
+        ! Create empty directory (no build files)
+        call execute_command_line('mkdir -p test_temp_dir')
         
         call auto_discover_test_build('test_temp_dir', config, result)
         
         call assert_false(result%success, 'Unknown system handled')
         call assert_equal_string(result%build_system, 'unknown', 'Build system unknown')
         call assert_true(len_trim(result%guidance_message) > 0, 'Guidance provided')
+        
+        call cleanup_mock_project()
         
     end subroutine test_auto_discover_test_build_unknown_system
 
