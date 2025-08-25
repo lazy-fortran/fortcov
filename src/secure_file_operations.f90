@@ -74,29 +74,15 @@ contains
         
         logical :: file_exists_after
         character(len=MAX_COMMAND_LENGTH) :: delete_command
-        integer :: attempts, overwrite_iostat, temp_iostat
-        
-        ! Initialize delete_iostat based on close_iostat
-        delete_iostat = close_iostat
+        integer :: attempts, overwrite_iostat
         
         ! Verify initial deletion was successful
         inquire(file=filename, exist=file_exists_after)
         deletion_successful = .not. file_exists_after
         
-        ! If deletion was successful but close had error, clear the error
-        if (deletion_successful .and. close_iostat /= 0) then
-            delete_iostat = 0  ! File was deleted despite close error
-        end if
-        
-        if (.not. deletion_successful) then
-            ! File still exists - try additional deletion strategies
-            if (close_iostat /= 0) then
-                ! Close failed - try closing without delete first
-                close(unit, iostat=temp_iostat)
-                if (temp_iostat /= 0) then
-                    delete_iostat = temp_iostat  ! Update status only if this also failed
-                end if
-            end if
+        if (.not. deletion_successful .and. close_iostat /= 0) then
+            ! Close failed - try closing without delete first
+            close(unit, iostat=delete_iostat)
             
             ! Multi-layer fallback deletion strategy
             do attempts = 1, max_attempts
@@ -113,26 +99,17 @@ contains
                 
                 ! Strategy 2: System deletion command
                 delete_command = "rm -f " // escape_shell_argument(filename)
-                call execute_command_line(delete_command, exitstat=temp_iostat)
-                ! Store the actual deletion command status
-                if (temp_iostat /= 0) then
-                    delete_iostat = temp_iostat
-                end if
+                call execute_command_line(delete_command, exitstat=delete_iostat)
                 
                 ! Brief pause between attempts to handle concurrent access
                 if (attempts < max_attempts) then
-                    call execute_command_line("sleep 0.1", exitstat=temp_iostat)
+                    call execute_command_line("sleep 0.1", exitstat=delete_iostat)
                 end if
             end do
             
             ! Final verification
             inquire(file=filename, exist=file_exists_after)
             deletion_successful = .not. file_exists_after
-            
-            ! Clear error status if deletion ultimately succeeded
-            if (deletion_successful) then
-                delete_iostat = 0
-            end if
         end if
         
     end subroutine attempt_file_deletion

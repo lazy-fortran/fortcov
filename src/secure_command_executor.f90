@@ -104,28 +104,11 @@ contains
         character(len=*), intent(in) :: output_path
         integer, intent(out) :: exit_stat
         
-        character(len=MAX_COMMAND_LENGTH) :: command, gcov_command
-        character(len=512) :: gcov_command_path
+        character(len=MAX_COMMAND_LENGTH) :: command
         
-        ! Handle relative gcov paths by using shell variable for original directory
-        if (index(gcov_path, './') == 1 .or. &
-            (gcov_path(1:1) /= '/' .and. index(gcov_path, '/') > 0)) then
-            ! Relative path - build command with variable expansion
-            gcov_command = '"$ORIG_DIR"/' // escape_shell_argument(gcov_path)
-            if (branch_coverage) then
-                gcov_command = trim(gcov_command) // " -b"
-            end if
-            gcov_command = trim(gcov_command) // " " // escape_shell_argument(source_path)
-            gcov_command = trim(gcov_command) // " > " // escape_shell_argument(output_path)
-            command = "ORIG_DIR=$(pwd) && cd " // escape_shell_argument(working_dir) // &
-                     " && " // trim(gcov_command)
-        else
-            ! Absolute path or command name - use as is
-            call build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
-                                       output_path, gcov_command)
-            command = "cd " // escape_shell_argument(working_dir) // " && " // trim(gcov_command)
-        end if
-        
+        call build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
+                                   output_path, command)
+        command = "cd " // escape_shell_argument(working_dir) // " && " // command
         call execute_command_line(command, exitstat=exit_stat)
     end subroutine safe_execute_in_directory
 
