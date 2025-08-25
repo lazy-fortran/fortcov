@@ -50,8 +50,8 @@ contains
         
         call assert_true(result%success, 'Complete workflow succeeded')
         call assert_true(result%auto_discovery_used, 'Auto-discovery was used')
-        ! Fork bomb prevention kicks in when running in test environment
-        call assert_false(result%test_executed, 'Tests skipped due to fork bomb prevention')
+        ! In auto-discovery mode without manual files, tests should execute
+        call assert_true(result%test_executed, 'Tests executed in auto mode')
         call assert_true(result%gcov_processed, 'Gcov was processed')
         call assert_true(result%coverage_generated, 'Coverage was generated')
         
