@@ -213,13 +213,11 @@ contains
         character(len=*), intent(in) :: filename
         type(error_context_t), intent(inout) :: error_ctx
         
-        integer :: close_iostat, delete_iostat, overwrite_iostat
-        logical :: file_exists_before, file_exists_after
-        character(len=MAX_COMMAND_LENGTH) :: delete_command
-        integer :: attempts, max_attempts = 3
-        logical :: deletion_successful = .false.
-        logical :: potential_security_issues = .false.
+        integer :: close_iostat, delete_iostat
+        logical :: file_exists_before, deletion_successful
+        logical :: potential_security_issues
         character(len=256) :: security_concerns
+        integer, parameter :: max_attempts = 3
         
         ! Check file existence before deletion attempts
         inquire(file=filename, exist=file_exists_before)
@@ -227,13 +225,47 @@ contains
         ! Primary deletion attempt: Fortran close with status='delete'
         close(unit, status='delete', iostat=close_iostat)
         
-        ! Verify deletion was successful
+        ! Attempt file deletion with multiple strategies if needed
+        call attempt_file_deletion(unit, filename, close_iostat, &
+                                  max_attempts, deletion_successful, delete_iostat)
+        
+        ! Comprehensive security vulnerability assessment
+        call assess_deletion_security_risks(filename, close_iostat, delete_iostat, &
+                                           deletion_successful, file_exists_before, &
+                                           potential_security_issues, security_concerns)
+        
+        ! Report any errors or security concerns
+        if (.not. deletion_successful .or. close_iostat /= 0 .or. &
+            potential_security_issues) then
+            call report_deletion_error(error_ctx, filename, close_iostat, &
+                                      deletion_successful, file_exists_before, &
+                                      max_attempts, potential_security_issues, &
+                                      security_concerns)
+        end if
+        
+    end subroutine safe_close_and_delete
+    
+    ! Attempt file deletion using multiple strategies
+    subroutine attempt_file_deletion(unit, filename, close_iostat, &
+                                    max_attempts, deletion_successful, delete_iostat)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: close_iostat
+        integer, intent(in) :: max_attempts
+        logical, intent(out) :: deletion_successful
+        integer, intent(out) :: delete_iostat
+        
+        logical :: file_exists_after
+        character(len=MAX_COMMAND_LENGTH) :: delete_command
+        integer :: attempts, overwrite_iostat
+        
+        ! Verify initial deletion was successful
         inquire(file=filename, exist=file_exists_after)
         deletion_successful = .not. file_exists_after
         
         if (.not. deletion_successful .and. close_iostat /= 0) then
             ! Close failed - try closing without delete first
-            close(unit, iostat=close_iostat)
+            close(unit, iostat=delete_iostat)
             
             ! Multi-layer fallback deletion strategy
             do attempts = 1, max_attempts
@@ -263,10 +295,21 @@ contains
             deletion_successful = .not. file_exists_after
         end if
         
-        ! Comprehensive security vulnerability assessment
-        call assess_deletion_security_risks(filename, close_iostat, delete_iostat, &
-                                           deletion_successful, file_exists_before, &
-                                           potential_security_issues, security_concerns)
+    end subroutine attempt_file_deletion
+    
+    ! Report deletion errors and security concerns
+    subroutine report_deletion_error(error_ctx, filename, close_iostat, &
+                                    deletion_successful, file_exists_before, &
+                                    max_attempts, potential_security_issues, &
+                                    security_concerns)
+        type(error_context_t), intent(inout) :: error_ctx
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: close_iostat
+        logical, intent(in) :: deletion_successful
+        logical, intent(in) :: file_exists_before
+        integer, intent(in) :: max_attempts
+        logical, intent(in) :: potential_security_issues
+        character(len=*), intent(in) :: security_concerns
         
         ! Enhanced error reporting for security compliance
         if (.not. deletion_successful .and. file_exists_before) then
@@ -299,7 +342,7 @@ contains
                 "Security compliance issue detected: " // trim(security_concerns))
         end if
         
-    end subroutine safe_close_and_delete
+    end subroutine report_deletion_error
     
     ! Secure overwrite sensitive data before deletion
     subroutine secure_overwrite_file(filename, iostat)
