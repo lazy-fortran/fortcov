@@ -553,31 +553,32 @@ contains
     subroutine create_mock_fpm_project()
         ! Create test in a temporary directory to avoid interfering with project
         call execute_command_line('mkdir -p test_temp_dir')
-        call execute_command_line('cd test_temp_dir && echo "name = \"test_project\"" > fpm.toml')
-        call execute_command_line('cd test_temp_dir && echo "version = \"0.1.0\"" >> fpm.toml')
+        call execute_command_line('echo "name = \"test_project\"" > test_temp_dir/fpm.toml')
+        call execute_command_line('echo "version = \"0.1.0\"" >> test_temp_dir/fpm.toml')
         ! Create minimal source file so FPM has something to test
-        call execute_command_line('cd test_temp_dir && mkdir -p src')
-        call execute_command_line('cd test_temp_dir && echo "module test_mod" > src/test_mod.f90')
-        call execute_command_line('cd test_temp_dir && echo "end module test_mod" >> src/test_mod.f90')
+        call execute_command_line('mkdir -p test_temp_dir/src')
+        call execute_command_line('echo "module test_mod" > test_temp_dir/src/test_mod.f90')
+        call execute_command_line('echo "end module test_mod" >> test_temp_dir/src/test_mod.f90')
     end subroutine create_mock_fpm_project
 
     subroutine create_mock_cmake_project()
         call execute_command_line('mkdir -p test_temp_dir')
-        call execute_command_line('cd test_temp_dir && touch CMakeLists.txt')
+        call execute_command_line('touch test_temp_dir/CMakeLists.txt')
     end subroutine create_mock_cmake_project
 
     subroutine create_mock_make_project()
         call execute_command_line('mkdir -p test_temp_dir')
-        call execute_command_line('cd test_temp_dir && touch Makefile')
+        call execute_command_line('touch test_temp_dir/Makefile')
     end subroutine create_mock_make_project
 
     subroutine create_mock_meson_project()
         call execute_command_line('mkdir -p test_temp_dir')
-        call execute_command_line('cd test_temp_dir && touch meson.build')
+        call execute_command_line('touch test_temp_dir/meson.build')
     end subroutine create_mock_meson_project
 
     subroutine create_mock_gcda_files()
-        call execute_command_line('cd test_temp_dir && mkdir -p build/test && touch build/test/test.gcda')
+        call execute_command_line('mkdir -p test_temp_dir/build/test')
+        call execute_command_line('touch test_temp_dir/build/test/test.gcda')
     end subroutine create_mock_gcda_files
 
     subroutine create_mock_build_structure()
@@ -595,7 +596,7 @@ contains
 
     subroutine create_mock_existing_gcov_files()
         call execute_command_line('mkdir -p test_temp_dir')
-        call execute_command_line('cd test_temp_dir && touch existing.gcov')
+        call execute_command_line('touch test_temp_dir/existing.gcov')
     end subroutine create_mock_existing_gcov_files
 
     subroutine create_mock_failing_project()
