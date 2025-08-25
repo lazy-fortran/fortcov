@@ -12,9 +12,10 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [ ] #369: refactor: replace formatted write with string concatenation in gcda pattern building (branch: refactor-369)
+<!-- No current work -->
 
 ## DONE (Completed Work)
+- [x] #369: refactor: replace formatted write with string concatenation in gcda pattern building (completed in PR #375 - critical CI hanging issue resolved, string concatenation optimization achieved)
 - [x] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target (completed in PR #374 - QADS compliance achieved, all functions now ≤50 lines, critical infrastructure fixes included)
 - [x] #314: fix: resolve remaining 2 security test pattern matching issues (completed in PR #373 - implemented FORTCOV_TEST_MODE environment variable, fixed output format issues, maintains strict production security)
 - [x] #366: architecture: 13 modules exceed 500-line target violating size principles (completed in PR #372 - Phase 1 SRP module extraction: 11 new modules extracted from report_engine_impl.f90)
