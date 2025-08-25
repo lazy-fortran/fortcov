@@ -38,7 +38,6 @@ name = "test_complete_workflow"
 source-dir = "test"
 main = "test_complete_workflow.f90"
 
-# Test for configuration file auto-discovery functionality
 [[test]]
 name = "test_config_file_auto_discovery"
 source-dir = "test"
@@ -59,7 +58,6 @@ name = "test_cli_flag_parsing_issue_231"
 source-dir = "test"
 main = "test_cli_flag_parsing_issue_231.f90"
 
-# Test for auto-discovery configuration options
 [[test]]
 name = "test_config_auto_discovery"
 source-dir = "test"
