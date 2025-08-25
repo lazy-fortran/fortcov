@@ -12,6 +12,19 @@ module path_validation
     ! Maximum path length for security validation
     integer, parameter :: MAX_PATH_LENGTH = 4096
     
+    ! PERFORMANCE OPTIMIZATION: Path validation cache
+    type :: path_validation_cache_t
+        character(len=256) :: path = ""
+        logical :: is_valid = .false.
+        logical :: is_cached = .false.
+        character(len=:), allocatable :: safe_path
+    end type path_validation_cache_t
+    
+    ! Small LRU cache for path validation results
+    integer, parameter :: PATH_CACHE_SIZE = 32
+    type(path_validation_cache_t), save :: path_cache(PATH_CACHE_SIZE)
+    integer, save :: path_cache_next_slot = 1
+    
     ! Public procedures
     public :: validate_path_security
     public :: validate_executable_path
@@ -45,19 +58,16 @@ contains
             return
         end if
         
-        ! Enhanced injection protection - check for all dangerous patterns
-        if (index(working_path, '..') > 0 .or. &
-            index(working_path, ';') > 0 .or. &
-            index(working_path, '|') > 0 .or. &
-            index(working_path, '&') > 0 .or. &
-            index(working_path, '<') > 0 .or. &
-            index(working_path, '>') > 0 .or. &
-            index(working_path, '$') > 0 .or. &
-            index(working_path, '`') > 0 .or. &
-            index(working_path, '"') > 0 .or. &
-            index(working_path, "'") > 0) then
+        ! PERFORMANCE: Check cache first
+        if (check_path_cache(working_path, safe_path, error_ctx)) then
+            return  ! Cache hit - early exit
+        end if
+        
+        ! PERFORMANCE: Single scan for dangerous patterns with early exits
+        if (scan_for_dangerous_patterns(working_path)) then
             error_ctx%error_code = ERROR_INVALID_PATH
             call safe_write_message(error_ctx, "Path contains dangerous characters")
+            call cache_path_result(working_path, .false., safe_path)
             return
         end if
         
@@ -83,6 +93,9 @@ contains
         
         ! Allocate and copy safe path
         safe_path = trim(working_path)
+        
+        ! PERFORMANCE: Cache successful validation
+        call cache_path_result(working_path, .true., safe_path)
     end subroutine validate_path_security
 
     ! Executable path validation
@@ -124,28 +137,55 @@ contains
         end if
     end subroutine check_url_encoded_attacks
     
-    ! System file access protection
+    ! System file access protection - OPTIMIZED
     subroutine check_system_file_access(path, error_ctx)
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
         
-        character(len=len(path)) :: lower_path
+        ! PERFORMANCE: Avoid full string conversion if possible
+        if (len_trim(path) == 0) return
         
-        ! Convert to lowercase for case-insensitive checking
-        call to_lowercase(path, lower_path)
-        
-        ! Block access to system directories
-        if (index(lower_path, '/etc/') == 1 .or. &
-            index(lower_path, '/proc/') == 1 .or. &
-            index(lower_path, '/sys/') == 1 .or. &
-            index(lower_path, '/dev/') == 1 .or. &
-            index(lower_path, '/root/') == 1 .or. &
-            index(lower_path, '/tmp/') == 1 .or. &
-            index(lower_path, '/home/') == 1 .or. &
-            index(lower_path, '/var/log/') == 1) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
+        ! PERFORMANCE: Check common system paths first with early exits
+        ! Most common system paths first for better performance
+        if (path(1:1) == '/') then
+            ! Check the most common cases first
+            if (starts_with_ignore_case(path, '/tmp/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/home/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/etc/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/root/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/usr/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/var/log/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/proc/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/sys/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            else if (starts_with_ignore_case(path, '/dev/')) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, "System file access not allowed")
+                return
+            end if
         end if
     end subroutine check_system_file_access
     
@@ -322,5 +362,109 @@ contains
             call safe_write_message(error_ctx, "Invalid path - access denied")
         end if
     end subroutine sanitize_error_message_path
+
+    ! PERFORMANCE: Check path validation cache
+    function check_path_cache(path, safe_path, error_ctx) result(cache_hit)
+        character(len=*), intent(in) :: path
+        character(len=:), allocatable, intent(out) :: safe_path
+        type(error_context_t), intent(out) :: error_ctx
+        logical :: cache_hit
+        integer :: i
+        
+        cache_hit = .false.
+        call clear_error_context(error_ctx)
+        
+        do i = 1, PATH_CACHE_SIZE
+            if (path_cache(i)%is_cached .and. &
+                trim(path_cache(i)%path) == trim(path)) then
+                if (path_cache(i)%is_valid) then
+                    safe_path = path_cache(i)%safe_path
+                else
+                    error_ctx%error_code = ERROR_INVALID_PATH
+                    call safe_write_message(error_ctx, "Cached: Path validation failed")
+                end if
+                cache_hit = .true.
+                return
+            end if
+        end do
+    end function check_path_cache
+    
+    ! PERFORMANCE: Cache path validation result
+    subroutine cache_path_result(path, is_valid, safe_path)
+        character(len=*), intent(in) :: path
+        logical, intent(in) :: is_valid
+        character(len=:), allocatable, intent(in) :: safe_path
+        
+        ! Simple LRU replacement
+        path_cache(path_cache_next_slot)%path = path
+        path_cache(path_cache_next_slot)%is_valid = is_valid
+        path_cache(path_cache_next_slot)%is_cached = .true.
+        if (is_valid) then
+            path_cache(path_cache_next_slot)%safe_path = safe_path
+        end if
+        
+        path_cache_next_slot = path_cache_next_slot + 1
+        if (path_cache_next_slot > PATH_CACHE_SIZE) path_cache_next_slot = 1
+    end subroutine cache_path_result
+    
+    ! PERFORMANCE: Consolidated dangerous pattern scanning
+    pure function scan_for_dangerous_patterns(path) result(has_dangerous)
+        character(len=*), intent(in) :: path
+        logical :: has_dangerous
+        integer :: i, path_len
+        
+        has_dangerous = .false.
+        path_len = len_trim(path)
+        
+        ! Single pass through string checking for all dangerous patterns
+        do i = 1, path_len - 1
+            select case (path(i:i))
+            case ('.')
+                if (i < path_len .and. path(i+1:i+1) == '.') then
+                    has_dangerous = .true.
+                    return
+                end if
+            case (';', '|', '&', '<', '>', '$', '`', '"', "'")
+                has_dangerous = .true.
+                return
+            end select
+        end do
+        
+        ! Check last character
+        if (path_len > 0) then
+            select case (path(path_len:path_len))
+            case (';', '|', '&', '<', '>', '$', '`', '"', "'")
+                has_dangerous = .true.
+                return
+            end select
+        end if
+    end function scan_for_dangerous_patterns
+    
+    ! PERFORMANCE: Fast case-insensitive prefix check
+    pure function starts_with_ignore_case(str, prefix) result(starts)
+        character(len=*), intent(in) :: str, prefix
+        logical :: starts
+        integer :: i, prefix_len
+        character :: c1, c2
+        
+        starts = .false.
+        prefix_len = len_trim(prefix)
+        
+        if (len_trim(str) < prefix_len) return
+        
+        ! Fast character-by-character comparison with case conversion
+        do i = 1, prefix_len
+            c1 = str(i:i)
+            c2 = prefix(i:i)
+            
+            ! Convert to lowercase for comparison
+            if (c1 >= 'A' .and. c1 <= 'Z') c1 = char(ichar(c1) + 32)
+            if (c2 >= 'A' .and. c2 <= 'Z') c2 = char(ichar(c2) + 32)
+            
+            if (c1 /= c2) return
+        end do
+        
+        starts = .true.
+    end function starts_with_ignore_case
 
 end module path_validation
