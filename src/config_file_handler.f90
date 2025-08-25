@@ -528,8 +528,8 @@ contains
         
         ! Warn if array is at or near capacity
         if (count >= max_size - 5) then
-            call safe_write_message("WARNING: " // trim(array_name) // &
-                " array is nearly full. Consider increasing MAX_ARRAY_SIZE parameter.")
+            write(error_unit, '(A)') "WARNING: " // trim(array_name) // &
+                " array is nearly full. Consider increasing MAX_ARRAY_SIZE parameter."
         end if
         
     end subroutine validate_array_bounds
