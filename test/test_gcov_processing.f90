@@ -46,11 +46,31 @@ contains
         call create_mock_gcda_files()
         call create_mock_gcov_executable()
         
-        ! Use our mock gcov that always succeeds
-        config%gcov_executable = './test_build/mock_gcov'
+        ! Use absolute path for mock gcov so it works when cd is used
+        block
+            character(len=512) :: abs_path
+            integer :: unit_num, iostat
+            call execute_command_line('realpath test_build/mock_gcov > /tmp/mock_gcov_path.txt')
+            open(newunit=unit_num, file='/tmp/mock_gcov_path.txt', status='old', action='read')
+            read(unit_num, '(A)', iostat=iostat) abs_path
+            close(unit_num)
+            config%gcov_executable = trim(abs_path)
+        end block
         
         ! Run auto_process on test_build directory
         call auto_process_gcov_files('test_build', config, result)
+        
+        if (.not. result%success) then
+            print *, '  DEBUG: Error message: ', trim(result%error_message)
+            print *, '  DEBUG: Guidance: ', trim(result%guidance_message)
+            print *, '  DEBUG: Gcov executable: ', trim(config%gcov_executable)
+            ! Check if mock gcov exists
+            block
+                logical :: file_exists
+                inquire(file=trim(config%gcov_executable), exist=file_exists)
+                print *, '  DEBUG: Mock gcov exists: ', file_exists
+            end block
+        end if
         
         call assert_true(result%success, 'Gcov processing succeeded')
         call assert_true(allocated(result%gcov_files), 'Gcov files allocated')
@@ -98,8 +118,16 @@ contains
         call create_mock_gcda_files_in_build()
         call create_mock_gcov_executable()
         
-        ! Use our mock gcov that always succeeds
-        config%gcov_executable = './test_build/mock_gcov'
+        ! Use absolute path for mock gcov so it works when cd is used
+        block
+            character(len=512) :: abs_path
+            integer :: unit_num, iostat
+            call execute_command_line('realpath test_build/mock_gcov > /tmp/mock_gcov_path.txt')
+            open(newunit=unit_num, file='/tmp/mock_gcov_path.txt', status='old', action='read')
+            read(unit_num, '(A)', iostat=iostat) abs_path
+            close(unit_num)
+            config%gcov_executable = trim(abs_path)
+        end block
         
         ! Run on test_build directory which contains the build structure
         call auto_process_gcov_files('test_build', config, result)
@@ -127,8 +155,16 @@ contains
         call create_mock_gcov_with_sources()
         call create_mock_gcov_executable()
         
-        ! Use our mock gcov that always succeeds and creates gcov files
-        config%gcov_executable = './test_build/mock_gcov'
+        ! Use absolute path for mock gcov so it works when cd is used
+        block
+            character(len=512) :: abs_path
+            integer :: unit_num, iostat
+            call execute_command_line('realpath test_build/mock_gcov > /tmp/mock_gcov_path.txt')
+            open(newunit=unit_num, file='/tmp/mock_gcov_path.txt', status='old', action='read')
+            read(unit_num, '(A)', iostat=iostat) abs_path
+            close(unit_num)
+            config%gcov_executable = trim(abs_path)
+        end block
         
         ! Process test_build directory
         call auto_process_gcov_files('test_build', config, result)
@@ -202,18 +238,22 @@ contains
         ! Create a shell script that acts as mock gcov
         ! Write it directly with execute_command_line to avoid quote issues
         call execute_command_line('mkdir -p test_build')
-        call execute_command_line('cat > test_build/mock_gcov << ''MOCKGCOV''' // char(10) // &
+        call execute_command_line('cat > test_build/mock_gcov << "MOCKGCOV"' // char(10) // &
                                   '#!/bin/bash' // char(10) // &
                                   '# Mock gcov for testing' // char(10) // &
                                   'input_file="$1"' // char(10) // &
-                                  'dir=$(dirname "$input_file")' // char(10) // &
+                                  'echo "Mock gcov invoked with: $input_file in dir: $(pwd)" >&2' // char(10) // &
                                   'if [[ "$input_file" == *.gcno ]]; then' // char(10) // &
                                   '  base=$(basename "$input_file" .gcno)' // char(10) // &
-                                  '  # Create gcov file in the same directory as the gcno file' // char(10) // &
-                                  '  echo "        -:    0:Source:$base.f90" > "$dir/$base.f90.gcov"' // char(10) // &
-                                  '  echo "        -:    1:module $base" >> "$dir/$base.f90.gcov"' // char(10) // &
-                                  '  echo "        1:    2:  implicit none" >> "$dir/$base.f90.gcov"' // char(10) // &
-                                  '  echo "        -:    3:end module" >> "$dir/$base.f90.gcov"' // char(10) // &
+                                  '  # Create gcov file in current directory (where gcov is run from)' // char(10) // &
+                                  '  output_file="$base.f90.gcov"' // char(10) // &
+                                  '  echo "Creating gcov file: $output_file in $(pwd)" >&2' // char(10) // &
+                                  '  echo "        -:    0:Source:$base.f90" > "$output_file"' // char(10) // &
+                                  '  echo "        -:    1:module $base" >> "$output_file"' // char(10) // &
+                                  '  echo "        1:    2:  implicit none" >> "$output_file"' // char(10) // &
+                                  '  echo "        -:    3:end module" >> "$output_file"' // char(10) // &
+                                  '  sync' // char(10) // &
+                                  '  ls -la "$output_file" >&2' // char(10) // &
                                   'fi' // char(10) // &
                                   'exit 0' // char(10) // &
                                   'MOCKGCOV')
