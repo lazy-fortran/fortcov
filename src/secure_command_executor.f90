@@ -103,7 +103,7 @@ contains
         safe_working_dir = trim(working_dir)
         safe_output_path = trim(output_file)
         
-        ! Verify source file exists
+        ! Verify input file exists (could be .gcno, .gcda, or source file)
         inquire(file=safe_source_path, exist=file_exists)
         if (.not. file_exists) then
             call handle_missing_source(safe_source_path, error_ctx)

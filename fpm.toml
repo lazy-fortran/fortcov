@@ -1,24 +1,199 @@
 name = "fortcov"
-version = "0.1.0"
-description = "Fortran code coverage analysis tool that generates markdown reports from gfortran gcov data"
+version = "1.0.0"
+license = "MIT"
+author = "lazy-fortran"
+maintainer = "lazy-fortran@github.com"
+copyright = "Copyright (c) 2024 lazy-fortran"
 
 [build]
 auto-executables = true
 auto-tests = true
 auto-examples = true
 
+[dependencies]
+
 [install]
 library = false
-
-[fortran]
-implicit-typing = false
-implicit-external = false
-source-form = "free"
 
 [[executable]]
 name = "fortcov"
 source-dir = "app"
 main = "main.f90"
 
-[dependencies]
-# No external dependencies for now
+[library]
+source-dir = "src"
+
+[[test]]
+name = "check"
+source-dir = "test"
+main = "check.f90"
+
+[[test]]
+name = "test_auto_test_integration"
+source-dir = "test"
+main = "test_auto_test_integration.f90"
+
+[[test]]
+name = "test_branch_coverage_accuracy_issue_304"
+source-dir = "test"
+main = "test_branch_coverage_accuracy_issue_304.f90"
+
+[[test]]
+name = "test_build_discovery"
+source-dir = "test"
+main = "test_build_discovery.f90"
+
+[[test]]
+name = "test_build_system_detector"
+source-dir = "test"
+main = "test_build_system_detector.f90"
+
+[[test]]
+name = "test_cli_argument_parsing_issue_228"
+source-dir = "test"
+main = "test_cli_argument_parsing_issue_228.f90"
+
+[[test]]
+name = "test_cli_flag_parsing_issue_231"
+source-dir = "test"
+main = "test_cli_flag_parsing_issue_231.f90"
+
+[[test]]
+name = "test_complete_workflow"
+source-dir = "test"
+main = "test_complete_workflow.f90"
+
+[[test]]
+name = "test_config_auto_discovery"
+source-dir = "test"
+main = "test_config_auto_discovery.f90"
+
+[[test]]
+name = "test_config_file_auto_discovery"
+source-dir = "test"
+main = "test_config_file_auto_discovery.f90"
+
+[[test]]
+name = "test_coverage_edge_cases_issue_304"
+source-dir = "test"
+main = "test_coverage_edge_cases_issue_304.f90"
+
+[[test]]
+name = "test_coverage_workflows_auto_test"
+source-dir = "test"
+main = "test_coverage_workflows_auto_test.f90"
+
+[[test]]
+name = "test_coverage_workflows_decomposition"
+source-dir = "test"
+main = "test_coverage_workflows_decomposition.f90"
+
+[[test]]
+name = "test_debug_fork_bomb"
+source-dir = "test"
+main = "test_debug_fork_bomb.f90"
+
+[[test]]
+name = "test_diff_mode_source_requirement_issue_251"
+source-dir = "test"
+main = "test_diff_mode_source_requirement_issue_251.f90"
+
+[[test]]
+name = "test_gcda_string_concatenation_fix_369"
+source-dir = "test"
+main = "test_gcda_string_concatenation_fix_369.f90"
+
+[[test]]
+name = "test_gcov_processing"
+source-dir = "test"
+main = "test_gcov_processing.f90"
+
+[[test]]
+name = "test_issue_249"
+source-dir = "test"
+main = "test_issue_249.f90"
+
+[[test]]
+name = "test_issue_395_fork_bomb"
+source-dir = "test"
+main = "test_issue_395_fork_bomb.f90"
+
+[[test]]
+name = "test_memory_allocation_bug_issue_243"
+source-dir = "test"
+main = "test_memory_allocation_bug_issue_243.f90"
+
+[[test]]
+name = "test_path_leakage_security"
+source-dir = "test"
+main = "test_path_leakage_security.f90"
+
+[[test]]
+name = "test_realistic_coverage_simulation_issue_304"
+source-dir = "test"
+main = "test_realistic_coverage_simulation_issue_304.f90"
+
+[[test]]
+name = "test_refactored_modules"
+source-dir = "test"
+main = "test_refactored_modules.f90"
+
+[[test]]
+name = "test_secure_file_deletion_issue_244"
+source-dir = "test"
+main = "test_secure_file_deletion_issue_244.f90"
+
+[[test]]
+name = "test_security_command_injection_issue_235"
+source-dir = "test"
+main = "test_security_command_injection_issue_235.f90"
+
+[[test]]
+name = "test_security_performance_benchmark"
+source-dir = "test"
+main = "test_security_performance_benchmark.f90"
+
+[[test]]
+name = "test_security_validation_only"
+source-dir = "test"
+main = "test_security_validation_only.f90"
+
+[[test]]
+name = "test_specific_path_leakage"
+source-dir = "test"
+main = "test_specific_path_leakage.f90"
+
+[[test]]
+name = "test_string_concatenation_fix_364"
+source-dir = "test"
+main = "test_string_concatenation_fix_364.f90"
+
+[[test]]
+name = "test_test_build_gcov_auto_discovery"
+source-dir = "test"
+main = "test_test_build_gcov_auto_discovery.f90"
+
+[[test]]
+name = "test_windows_device_comprehensive"
+source-dir = "test"
+main = "test_windows_device_comprehensive.f90"
+
+[[test]]
+name = "test_zero_config_auto_discovery_integration"
+source-dir = "test"
+main = "test_zero_config_auto_discovery_integration.f90"
+
+[[test]]
+name = "test_zero_config_complete_workflow"
+source-dir = "test"
+main = "test_zero_config_complete_workflow.f90"
+
+[[test]]
+name = "test_zero_config_override_bug"
+source-dir = "test"
+main = "test_zero_config_override_bug.f90"
+
+[[test]]
+name = "minimal_gcov_test"
+source-dir = "test"
+main = "minimal_gcov_test.f90"

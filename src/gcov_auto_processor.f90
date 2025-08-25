@@ -340,6 +340,10 @@ contains
                 end if
             end do
             exit_status = EXIT_SUCCESS
+        else
+            ! No .gcno files found - still report success if directory exists
+            ! (it may have been processed already)
+            exit_status = EXIT_SUCCESS
         end if
 
         if (exit_status == EXIT_SUCCESS) then
@@ -350,16 +354,11 @@ contains
                 return
             end if
             
-            ! Build pattern using direct string concatenation (KISS principle)
-            if (len_trim(build_dir) + len_trim(GCOV_PATTERN) + 1 <= len(gcov_pattern)) then
-                gcov_pattern = trim(build_dir) // '/' // GCOV_PATTERN
-            else
-                ! Pattern too long - fail gracefully
-                exit_status = EXIT_FAILURE
-                return
-            end if
+            ! Build pattern for finding gcov files 
+            ! GCOV_PATTERN is a parameter constant, build_dir may have trailing spaces
+            gcov_pattern = trim(adjustl(build_dir)) // '/*.gcov'
             
-            call safe_find_files(gcov_pattern, generated_files, error_ctx)
+            call safe_find_files(trim(gcov_pattern), generated_files, error_ctx)
             if (error_ctx%error_code /= ERROR_SUCCESS .and. .not. error_ctx%recoverable) then
                 exit_status = EXIT_FAILURE
             end if
