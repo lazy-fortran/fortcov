@@ -350,9 +350,9 @@ contains
                 return
             end if
             
-            ! Build pattern safely with proper length checking
+            ! Build pattern using direct string concatenation (KISS principle)
             if (len_trim(build_dir) + len_trim(GCOV_PATTERN) + 1 <= len(gcov_pattern)) then
-                write(gcov_pattern, '(A,A,A)') trim(build_dir), '/', GCOV_PATTERN
+                gcov_pattern = trim(build_dir) // '/' // GCOV_PATTERN
             else
                 ! Pattern too long - fail gracefully
                 exit_status = EXIT_FAILURE
