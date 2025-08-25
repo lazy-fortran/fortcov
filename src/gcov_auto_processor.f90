@@ -182,8 +182,8 @@ contains
         ! Use secure file finding
         call safe_find_files(search_pattern, gcda_files, error_ctx)
         
-        ! If secure finding fails, ensure gcda_files is unallocated
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
+        ! Only deallocate files on actual failure, not recoverable issues
+        if (error_ctx%error_code /= ERROR_SUCCESS .and. .not. error_ctx%recoverable) then
             if (allocated(gcda_files)) deallocate(gcda_files)
         end if
     end subroutine find_gcda_files
@@ -324,7 +324,7 @@ contains
 
         ! Securely find .gcno files in build directory
         call safe_find_gcno_files(build_dir, gcno_files, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
+        if (error_ctx%error_code /= ERROR_SUCCESS .and. .not. error_ctx%recoverable) then
             exit_status = EXIT_FAILURE
             return
         end if
@@ -334,7 +334,7 @@ contains
             do i = 1, size(gcno_files)
                 call safe_execute_gcov_on_file(gcov_exe, gcno_files(i), &
                                                build_dir, error_ctx)
-                if (error_ctx%error_code /= ERROR_SUCCESS) then
+                if (error_ctx%error_code /= ERROR_SUCCESS .and. .not. error_ctx%recoverable) then
                     exit_status = EXIT_FAILURE
                     return
                 end if
@@ -344,9 +344,23 @@ contains
 
         if (exit_status == EXIT_SUCCESS) then
             ! Securely find generated .gcov files in build directory
-            write(gcov_pattern, '(A,A,A)') trim(build_dir), '/', GCOV_PATTERN
+            ! Ensure build_dir is valid before using it
+            if (len_trim(build_dir) == 0) then
+                exit_status = EXIT_FAILURE
+                return
+            end if
+            
+            ! Build pattern safely with proper length checking
+            if (len_trim(build_dir) + len_trim(GCOV_PATTERN) + 1 <= len(gcov_pattern)) then
+                write(gcov_pattern, '(A,A,A)') trim(build_dir), '/', GCOV_PATTERN
+            else
+                ! Pattern too long - fail gracefully
+                exit_status = EXIT_FAILURE
+                return
+            end if
+            
             call safe_find_files(gcov_pattern, generated_files, error_ctx)
-            if (error_ctx%error_code /= ERROR_SUCCESS) then
+            if (error_ctx%error_code /= ERROR_SUCCESS .and. .not. error_ctx%recoverable) then
                 exit_status = EXIT_FAILURE
             end if
         end if

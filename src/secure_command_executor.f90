@@ -105,12 +105,51 @@ contains
         integer, intent(out) :: exit_stat
         
         character(len=MAX_COMMAND_LENGTH) :: command
+        character(len=256) :: abs_gcov_path, abs_source_path
         
-        call build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
+        ! Convert relative paths to absolute before cd
+        call resolve_absolute_path(gcov_path, abs_gcov_path)
+        call resolve_absolute_path(source_path, abs_source_path)
+        
+        call build_safe_gcov_command(abs_gcov_path, abs_source_path, branch_coverage, &
                                    output_path, command)
         command = "cd " // escape_shell_argument(working_dir) // " && " // command
         call execute_command_line(command, exitstat=exit_stat)
     end subroutine safe_execute_in_directory
+    
+    subroutine resolve_absolute_path(path, abs_path)
+        !! Convert relative path to absolute path
+        character(len=*), intent(in) :: path
+        character(len=*), intent(out) :: abs_path
+        
+        character(len=256) :: cwd
+        integer :: stat
+        
+        if (len_trim(path) == 0) then
+            abs_path = ''
+            return
+        end if
+        
+        ! If path starts with '/', it's already absolute
+        if (path(1:1) == '/') then
+            abs_path = trim(path)
+        else
+            ! Relative path - prepend current working directory
+            ! Get current working directory
+            call getcwd(cwd, stat)
+            if (stat == 0) then
+                if (path(1:2) == './') then
+                    ! Remove './' prefix
+                    abs_path = trim(cwd) // '/' // path(3:)
+                else
+                    abs_path = trim(cwd) // '/' // trim(path)
+                end if
+            else
+                ! Fallback if getcwd fails
+                abs_path = trim(path)
+            end if
+        end if
+    end subroutine resolve_absolute_path
 
     subroutine build_safe_gcov_command(gcov_path, source_path, branch_coverage, &
                                      output_path, command)
@@ -124,7 +163,11 @@ contains
             command = trim(command) // " -b"
         end if
         command = trim(command) // " " // escape_shell_argument(source_path)
-        command = trim(command) // " > " // escape_shell_argument(output_path)
+        
+        ! Only redirect output if output_path is not empty
+        if (len_trim(output_path) > 0) then
+            command = trim(command) // " > " // escape_shell_argument(output_path)
+        end if
     end subroutine build_safe_gcov_command
 
 
