@@ -13,9 +13,10 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [ ] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target (branch: refactor-367)
+<!-- No active work -->
 
 ## DONE (Completed Work)
+- [x] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target (completed in PR #374 - QADS compliance achieved, all functions now ≤50 lines, critical infrastructure fixes included)
 - [x] #314: fix: resolve remaining 2 security test pattern matching issues (completed in PR #373 - implemented FORTCOV_TEST_MODE environment variable, fixed output format issues, maintains strict production security)
 - [x] #366: architecture: 13 modules exceed 500-line target violating size principles (completed in PR #372 - Phase 1 SRP module extraction: 11 new modules extracted from report_engine_impl.f90)
 - [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (completed in PR #371 - decomposed into 4 specialized modules: 1008→460 lines, 54% reduction)
