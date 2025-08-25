@@ -14,7 +14,7 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [x] #314: fix: resolve remaining 2 security test pattern matching issues (branch: fix-314)
+- [ ] #314: fix: resolve remaining 2 security test pattern matching issues (branch: fix-314) - CI FAILING: GCOV tests and CLI validation failures require immediate fix
 
 ## DONE (Completed Work)
 - [x] #366: architecture: 13 modules exceed 500-line target violating size principles (completed in PR #372 - Phase 1 SRP module extraction: 11 new modules extracted from report_engine_impl.f90)
