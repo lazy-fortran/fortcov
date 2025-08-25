@@ -69,9 +69,9 @@ source-dir = "test"
 main = "test_diff_mode_source_requirement_issue_251.f90"
 
 [[test]]
-name = "test_issue_249_zero_config_working"
+name = "test_issue_249"
 source-dir = "test"
-main = "test_issue_249_zero_config_working.f90"
+main = "test_issue_249.f90"
 
 [[test]]
 name = "test_memory_allocation_bug_issue_243"
@@ -123,20 +123,12 @@ name = "test_zero_config_complete_workflow"
 source-dir = "test"
 main = "test_zero_config_complete_workflow.f90"
 
-[[test]]
-name = "test_zero_config_no_help_issue_249"
-source-dir = "test"
-main = "test_zero_config_no_help_issue_249.f90"
 
 [[test]]
 name = "test_zero_config_override_bug"
 source-dir = "test"
 main = "test_zero_config_override_bug.f90"
 
-[[test]]
-name = "test_zero_configuration_issue_249"
-source-dir = "test"
-main = "test_zero_configuration_issue_249.f90"
 
 [[test]]
 name = "test_coverage_workflows_auto_test"
