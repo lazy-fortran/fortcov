@@ -5,7 +5,6 @@
 ### EPIC: Critical Infrastructure Defects
 
 ### EPIC: Core Functionality Restoration
-- [ ] #394: Diff option documented in help but not implemented in parser
 - [ ] #390: Output format mapping bug: format parameter values incorrectly converted
 - [ ] #388: Invalid option produces confusing error message
 
@@ -28,7 +27,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #397: README contains multiple non-functional command examples [EPIC: Critical Infrastructure Defects]
+- [ ] #394: Diff option documented in help but not implemented in parser [EPIC: Core Functionality Restoration]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
