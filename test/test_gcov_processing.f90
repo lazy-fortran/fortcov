@@ -49,7 +49,8 @@ contains
         ! Use our mock gcov that always succeeds
         config%gcov_executable = './test_build/mock_gcov'
         
-        call auto_process_gcov_files('.', config, result)
+        ! Run auto_process on test_build directory
+        call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Gcov processing succeeded')
         call assert_true(allocated(result%gcov_files), 'Gcov files allocated')
@@ -100,7 +101,8 @@ contains
         ! Use our mock gcov that always succeeds
         config%gcov_executable = './test_build/mock_gcov'
         
-        call auto_process_gcov_files('.', config, result)
+        ! Run on test_build directory which contains the build structure
+        call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Build context processing succeeded')
         call assert_true(result%used_build_context, 'Used build context')
@@ -128,7 +130,8 @@ contains
         ! Use our mock gcov that always succeeds and creates gcov files
         config%gcov_executable = './test_build/mock_gcov'
         
-        call auto_process_gcov_files('.', config, result)
+        ! Process test_build directory
+        call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Source mapping succeeded')
         if (allocated(result%source_mappings)) then

@@ -86,9 +86,15 @@ contains
         
         print *, "Setting up test environment..."
         
-        ! Create test coverage files that will be used by all tests
-        call create_test_gcov_file("test_sample.f90.gcov")
+        ! Create build/gcov directory where discovery looks for files
+        call execute_command_line("mkdir -p build/gcov")
+        
+        ! Create test coverage files in the discovery location
+        call create_test_gcov_file("build/gcov/test_sample.f90.gcov")
         call create_test_source_file("test_sample.f90")
+        
+        ! Also create in current directory for backward compatibility
+        call create_test_gcov_file("test_sample.f90.gcov")
         
         ! Create test output directory
         inquire(file="test_output", exist=dir_exists)
@@ -110,10 +116,11 @@ contains
         !!
         print *, "Cleaning up test environment..."
         
-        ! Remove test files
+        ! Remove test files from all locations
         call execute_command_line("rm -f test_sample.f90.gcov test_sample.f90")
         call execute_command_line("rm -rf test_output")
         call execute_command_line("rm -f test_*.json test_*.xml test_*.html test_*.md")
+        call execute_command_line("rm -rf build/gcov")
         
         print *, "✓ Test environment cleaned"
     end subroutine cleanup_test_environment
@@ -352,7 +359,7 @@ contains
         allocate(character(len=256) :: args(4))
         args(1) = "--threshold=99.9"
         args(2) = "--strict"
-        args(3) = "--source=."
+        args(3) = "--source=build/gcov"
         args(4) = "--output=test_threshold.md"
         
         call parse_config(args, config, success, error_message)
@@ -406,9 +413,11 @@ contains
         call start_test("Exclude Flag (--exclude)")
         
         ! Parse configuration with exclude pattern
-        allocate(character(len=256) :: args(2))
+        allocate(character(len=256) :: args(4))
         args(1) = "--exclude=test_*"
         args(2) = "--output=test_exclude.md"
+        args(3) = "--source=build/gcov"
+        args(4) = "--no-auto-test"
         
         call parse_config(args, config, success, error_message)
         
