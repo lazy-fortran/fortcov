@@ -7,7 +7,6 @@
 ### EPIC: Core Functionality Restoration
 
 ### EPIC: Architecture Size Compliance
-- [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability
 - [ ] #399: Architecture risk: 5 modules approaching 1000-line hard limit requiring immediate decomposition
 
 ### EPIC: Code Quality & Dead Code Elimination
@@ -25,13 +24,16 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #388: Invalid option produces confusing error message [EPIC: Core Functionality Restoration]
+- [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability [EPIC: Architecture Size Compliance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
 - [ ] Performance Optimization & Scalability  
 - [ ] Enhanced Integration & Compatibility
 - [ ] User Experience & Developer Productivity
+
+## DONE (Completed Product Features)
+- [x] Core Functionality Restoration
 
 ## FUTURE SPRINTS (High-level Planning)
 
