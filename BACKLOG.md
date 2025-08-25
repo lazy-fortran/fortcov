@@ -11,9 +11,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [x] #263: Remove excessively long test filename in examples
+- [x] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
 
 ## DONE (Completed Work)
+- [x] #263: Remove excessively long test filename in examples (completed in PR #352 - investigation confirmed file never existed)
 - [x] #325: Refactor: reduce file size in secure_command_executor (completed in PR #345 - 758→139 lines, 86% reduction)
 - [x] #323: Refactor: reduce safe_close_and_delete function size (completed in PR #342)
 - [x] #324: Fix: address line length violations in secure_command_executor (completed in PR #341)
@@ -71,8 +72,6 @@
 ## TODO (Future Work - Ordered by Priority)
 
 ### MEDIUM (Documentation Errors)
-*Issue #263 moved to DOING*
-- [ ] #264: Improve fortcov path detection in test_readme_workflow_issue_260.f90
 - [ ] #266: Fix ineffective directory change in test_zero_configuration_issue_249
 
 ### LOW (Code Quality Improvements)
