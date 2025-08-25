@@ -8,7 +8,6 @@ has correct syntax and can execute without syntax errors.
 
 import os
 import subprocess
-import tempfile
 import unittest
 from pathlib import Path
 
