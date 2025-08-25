@@ -14,9 +14,10 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (branch: critical-365)
+<!-- No current work -->
 
 ## DONE (Completed Work)
+- [x] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit (completed in PR #371 - decomposed into 4 specialized modules: 1008→460 lines, 54% reduction)
 - [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (completed in PR #368 - replaced formatted write with string concatenation)
 - [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
 - [x] #312: Optimize pattern matching performance in security assessment (completed in PR #362 - consolidated pattern matching with LRU caching, 5x performance improvement)
