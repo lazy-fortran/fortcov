@@ -17,9 +17,10 @@
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-- [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (branch: fix-364)
+<!-- No current work -->
 
 ## DONE (Completed Work)
+- [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (completed in PR #368 - replaced formatted write with string concatenation)
 - [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
 - [x] #312: Optimize pattern matching performance in security assessment (completed in PR #362 - consolidated pattern matching with LRU caching, 5x performance improvement)
 - [x] #336: Fix: resolve 4 remaining gcov processing test failures (completed in PR #360 - gcov processing stability significantly improved)
