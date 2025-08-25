@@ -4,6 +4,25 @@ module path_validation
     !! This module provides comprehensive path security validation including
     !! injection protection, directory traversal prevention, and system file
     !! access control for Windows and Unix systems.
+    !!
+    !! SECURITY VALIDATION LAYERS:
+    !! 1. INPUT SANITIZATION: Length limits, dangerous character detection
+    !! 2. INJECTION PROTECTION: Shell metacharacter filtering, URL-encoding detection
+    !! 3. TRAVERSAL PREVENTION: Directory traversal attack blocking (../)
+    !! 4. SYSTEM PROTECTION: Critical system file access prevention
+    !! 5. PLATFORM SECURITY: Windows device name protection, UNC path blocking
+    !!
+    !! THREAT MODEL:
+    !! - Path injection attacks: ; | & < > $ ` " ' metacharacters
+    !! - Directory traversal: ../, URL-encoded variants (%2e, %2f, %5c)
+    !! - System file access: /usr/, /etc/, /root/, /proc/, /sys/, /dev/, /var/log/
+    !! - Windows attacks: Device names (CON, PRN, AUX, COM1-9, LPT1-9), UNC paths
+    !!
+    !! PERFORMANCE FEATURES:
+    !! - Thread-safe local caching for validated paths
+    !! - Single-pass dangerous pattern scanning with early exits
+    !! - Optimized case-insensitive prefix matching
+    !! - LRU cache replacement strategy
     use error_handling
     use string_utils, only: format_integer
     implicit none
@@ -30,6 +49,45 @@ module path_validation
 contains
 
     ! Path security validation
+    !!
+    !! COMPREHENSIVE PATH SECURITY VALIDATION:
+    !! This is the primary security validation function that applies multiple
+    !! layers of protection against path-based attacks.
+    !!
+    !! VALIDATION PROCESS (Applied in Security Priority Order):
+    !!
+    !! 1. LENGTH VALIDATION:
+    !!    - Empty path rejection (prevents null path attacks)
+    !!    - Maximum length enforcement (4096 chars, prevents buffer overflow)
+    !!
+    !! 2. CACHE OPTIMIZATION:
+    !!    - Thread-safe local cache lookup for previously validated paths
+    !!    - Early return for cached results (performance + security)
+    !!
+    !! 3. DANGEROUS PATTERN DETECTION:
+    !!    - Shell metacharacters: ; | & < > $ ` " '
+    !!    - Directory traversal: .. (parent directory access)
+    !!    - Single-pass scanning with early exit on first threat
+    !!
+    !! 4. URL-ENCODED ATTACK PREVENTION:
+    !!    - Detects encoded directory traversal: %2e (.), %2f (/), %5c (\)
+    !!    - Blocks URL encoding bypass attempts
+    !!
+    !! 5. SYSTEM FILE ACCESS CONTROL:
+    !!    - Blocks critical system directories (/usr/, /etc/, /root/, etc.)
+    !!    - Sanitizes error messages to prevent path information leakage
+    !!
+    !! 6. WINDOWS SECURITY:
+    !!    - Device name protection (CON, PRN, AUX, COM1-9, LPT1-9)
+    !!    - UNC path blocking (prevents network path attacks)
+    !!
+    !! USAGE EXAMPLE:
+    !!   character(len=:), allocatable :: safe_path
+    !!   type(error_context_t) :: error_ctx
+    !!   call validate_path_security(user_input, safe_path, error_ctx)
+    !!   if (error_ctx%error_code == ERROR_SUCCESS) then
+    !!       ! Use safe_path for file operations
+    !!   end if
     subroutine validate_path_security(input_path, safe_path, error_ctx)
         character(len=*), intent(in) :: input_path
         character(len=:), allocatable, intent(out) :: safe_path
@@ -102,6 +160,31 @@ contains
     end subroutine validate_path_security
 
     ! Executable path validation
+    !!
+    !! EXECUTABLE SECURITY VALIDATION:
+    !! This subroutine provides enhanced security validation specifically
+    !! for executable files, building on path validation with additional checks.
+    !!
+    !! SECURITY APPROACH:
+    !! 1. Applies all standard path validation (validate_path_security)
+    !! 2. Verifies executable existence (prevents execution of missing files)
+    !! 3. Provides security-focused error messages for operational guidance
+    !!
+    !! USE CASES:
+    !! - Validating gcov executable paths before execution
+    !! - Ensuring build system executables are legitimate
+    !! - Preventing execution of non-existent or inaccessible programs
+    !!
+    !! SECURITY BENEFITS:
+    !! - Prevents "file not found" attacks that might reveal filesystem info
+    !! - Ensures only validated, existing executables are attempted
+    !! - Provides clear, non-leaking error messages for troubleshooting
+    !!
+    !! USAGE EXAMPLE:
+    !!   call validate_executable_path("gcov", safe_exe, error_ctx)
+    !!   if (error_ctx%error_code == ERROR_SUCCESS) then
+    !!       ! safe_exe is validated and exists, ready for execution
+    !!   end if
     subroutine validate_executable_path(executable, safe_executable, error_ctx)
         character(len=*), intent(in) :: executable
         character(len=:), allocatable, intent(out) :: safe_executable
@@ -141,6 +224,38 @@ contains
     end subroutine check_url_encoded_attacks
     
     ! System file access protection - OPTIMIZED
+    !!
+    !! SYSTEM FILE ACCESS CONTROL:
+    !! This subroutine implements high-performance system file access protection
+    !! using optimized pattern matching with security-first design.
+    !!
+    !! PROTECTED SYSTEM AREAS (Priority Order for Performance):
+    !! 1. /tmp/     - Temporary files (highest frequency, checked first)
+    !! 2. /home/    - User directories (privacy protection)
+    !! 3. /etc/     - System configuration (security policy files)
+    !! 4. /root/    - Administrator directory (privilege escalation risk)
+    !! 5. /usr/     - System binaries (system integrity)
+    !! 6. /var/log/ - System logs (audit trail protection)
+    !! 7. /proc/    - Process filesystem (kernel interface)
+    !! 8. /sys/     - System filesystem (hardware interface)
+    !! 9. /dev/     - Device files (hardware access)
+    !!
+    !! PERFORMANCE OPTIMIZATIONS:
+    !! - Early exit on empty paths (avoids unnecessary processing)
+    !! - Unix path detection (leading /) before pattern matching
+    !! - Most common paths checked first (statistical optimization)
+    !! - Case-insensitive matching with optimized comparison
+    !!
+    !! SECURITY DESIGN:
+    !! - All system access blocked with generic "access not allowed" message
+    !! - No path information leaked in error messages
+    !! - Comprehensive coverage of Unix system directories
+    !!
+    !! ERROR MESSAGE STRATEGY:
+    !! Uses generic "System file access not allowed" to prevent:
+    !! - Information disclosure about filesystem structure
+    !! - Path enumeration attacks
+    !! - System reconnaissance through error messages
     subroutine check_system_file_access(path, error_ctx)
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
@@ -193,6 +308,41 @@ contains
     end subroutine check_system_file_access
     
     ! Windows device names protection - comprehensive validation
+    !!
+    !! WINDOWS DEVICE NAME SECURITY PROTECTION:
+    !! This subroutine provides comprehensive protection against Windows
+    !! device name attacks, which can bypass file system security.
+    !!
+    !! WINDOWS SECURITY VULNERABILITY:
+    !! Windows reserves certain names as device names that bypass normal
+    !! file system security. Accessing these names can cause:
+    !! - System instability (device access attempts)
+    !! - Security bypass (direct hardware access)
+    !! - Denial of service (blocking device operations)
+    !!
+    !! PROTECTED DEVICE NAMES:
+    !! 
+    !! BASE DEVICES (case-insensitive):
+    !! - CON   (console input/output)
+    !! - PRN   (default printer)
+    !! - AUX   (auxiliary device)
+    !! - NUL   (null device)
+    !!
+    !! NUMBERED DEVICES:
+    !! - COM1-COM9  (serial communication ports)
+    !! - LPT1-LPT9  (parallel printer ports)
+    !!
+    !! VALIDATION APPROACH:
+    !! 1. Case-insensitive conversion (device names ignore case)
+    !! 2. Full path component analysis (checks each directory/file part)
+    !! 3. Extension handling (CON.txt is still blocked)
+    !! 4. Path separator support (both / and \ handling)
+    !!
+    !! ATTACK SCENARIOS PREVENTED:
+    !! - Direct device access: /path/CON
+    !! - Extension bypass: /path/CON.txt  
+    !! - Case variation: /path/con, /PATH/Con
+    !! - Mixed separators: \path\COM1, /path/LPT1
     subroutine check_windows_device_names(path, error_ctx)
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
@@ -414,6 +564,40 @@ contains
     end subroutine cache_path_result
     
     ! PERFORMANCE: Consolidated dangerous pattern scanning
+    !!
+    !! HIGH-PERFORMANCE SECURITY PATTERN DETECTION:
+    !! This pure function performs comprehensive dangerous pattern detection
+    !! using optimized single-pass scanning techniques.
+    !!
+    !! DANGEROUS PATTERNS DETECTED:
+    !!
+    !! DIRECTORY TRAVERSAL:
+    !! - ".." (parent directory access - most critical security risk)
+    !!
+    !! SHELL METACHARACTERS:
+    !! - ";" (command separator - enables command injection)
+    !! - "|" (pipe operator - enables command chaining)
+    !! - "&" (background execution - enables parallel attacks)
+    !! - "<" ">" (redirection - enables file system manipulation)
+    !! - "$" (variable expansion - enables environment attacks)
+    !! - "`" (command substitution - enables code execution)
+    !! - '"' "'" (quote characters - enables escaping attacks)
+    !!
+    !! PERFORMANCE OPTIMIZATION TECHNIQUES:
+    !! 1. SINGLE PASS SCANNING: Only one traversal of the path string
+    !! 2. EARLY EXIT: Returns immediately on first dangerous pattern found
+    !! 3. SELECT CASE: Optimized character matching using jump tables
+    !! 4. BOUNDARY HANDLING: Efficient last character checking
+    !!
+    !! SECURITY vs PERFORMANCE:
+    !! - Pure function: No side effects, thread-safe
+    !! - Complete detection: All dangerous patterns checked
+    !! - Early termination: Performance optimized without security compromise
+    !!
+    !! USAGE EXAMPLE:
+    !!   if (scan_for_dangerous_patterns(user_path)) then
+    !!       ! Path contains dangerous characters - reject
+    !!   end if
     pure function scan_for_dangerous_patterns(path) result(has_dangerous)
         character(len=*), intent(in) :: path
         logical :: has_dangerous
@@ -447,6 +631,37 @@ contains
     end function scan_for_dangerous_patterns
     
     ! PERFORMANCE: Fast case-insensitive prefix check
+    !!
+    !! OPTIMIZED CASE-INSENSITIVE PREFIX MATCHING:
+    !! This pure function provides high-performance case-insensitive
+    !! prefix matching for security pattern detection.
+    !!
+    !! PERFORMANCE OPTIMIZATIONS:
+    !! 1. LENGTH PRE-CHECK: Early exit if string shorter than prefix
+    !! 2. CHARACTER-BY-CHARACTER: Minimal memory allocation approach
+    !! 3. INLINE CASE CONVERSION: No temporary string allocation
+    !! 4. EARLY EXIT: Returns false immediately on first mismatch
+    !!
+    !! CASE CONVERSION LOGIC:
+    !! - Uppercase to lowercase: subtract 32 from ASCII value
+    !! - Only converts A-Z range (safe ASCII conversion)
+    !! - Handles both input string and prefix pattern
+    !!
+    !! SECURITY APPLICATION:
+    !! Used extensively in system file access protection for:
+    !! - Unix path prefix matching (/usr/, /etc/, /home/, etc.)
+    !! - Case-insensitive security pattern detection
+    !! - Cross-platform path validation
+    !!
+    !! THREAD SAFETY:
+    !! - Pure function with no global state
+    !! - No memory allocation during execution
+    !! - Safe for concurrent security validation operations
+    !!
+    !! USAGE EXAMPLE:
+    !!   if (starts_with_ignore_case("/HOME/user", "/home/")) then
+    !!       ! Detected home directory access (case-insensitive)
+    !!   end if
     pure function starts_with_ignore_case(str, prefix) result(starts)
         character(len=*), intent(in) :: str, prefix
         logical :: starts
