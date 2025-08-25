@@ -15,6 +15,80 @@ module security_assessment
     
 contains
 
+    ! Check file location permissions and characteristics
+    pure subroutine check_file_location(filename, is_temp, is_readonly)
+        character(len=*), intent(in) :: filename
+        logical, intent(out) :: is_temp, is_readonly
+        
+        is_temp = (index(filename, '/tmp/') > 0 .or. &
+                   index(filename, 'temp') > 0 .or. &
+                   index(filename, 'fortcov_secure_') > 0)
+        
+        is_readonly = (index(filename, '/usr/') > 0 .or. &
+                       index(filename, '/proc/') > 0 .or. &
+                       index(filename, '/sys/') > 0)
+    end subroutine check_file_location
+    
+    ! Assess risk factors for file deletion
+    subroutine assess_risk_factors(filename, close_iostat, file_existed, &
+                                    concurrent_risk, disk_risk)
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: close_iostat
+        logical, intent(in) :: file_existed
+        logical, intent(out) :: concurrent_risk, disk_risk
+        integer :: stat
+        
+        concurrent_risk = (close_iostat /= 0 .and. &
+                          index(filename, 'fortcov') > 0)
+        
+        if (file_existed) then
+            call execute_command_line("df " // trim(filename) // &
+                " 2>/dev/null | grep -q ' 9[0-9]% '", exitstat=stat)
+            disk_risk = (stat == 0)
+        else
+            disk_risk = .false.
+        end if
+    end subroutine assess_risk_factors
+    
+    ! Generate security message based on risk assessment
+    pure subroutine generate_security_message(is_temp, is_readonly, &
+                                               concurrent_risk, disk_risk, &
+                                               close_iostat, deletion_successful, &
+                                               file_existed, filename, message)
+        logical, intent(in) :: is_temp, is_readonly, concurrent_risk, disk_risk
+        integer, intent(in) :: close_iostat
+        logical, intent(in) :: deletion_successful, file_existed
+        character(len=*), intent(in) :: filename
+        character(len=*), intent(out) :: message
+        
+        if (is_temp) then
+            if (close_iostat /= 0) then
+                message = "Critical: Temp file delete operation " // &
+                    "failed - security cleanup required"
+            else
+                message = "Security audit: Temp file delete " // &
+                    "operation completed"
+            end if
+        else if (is_readonly .and. file_existed) then
+            message = "Security warning: Readonly filesystem " // &
+                "temp cleanup restricted"
+        else if (concurrent_risk) then
+            message = "Security alert: Concurrent temp file " // &
+                "access - locking conflicts detected"
+        else if (disk_risk) then
+            message = "Security risk: Disk space critical - " // &
+                "temp file cleanup may fail"
+        else if (close_iostat /= 0 .and. deletion_successful) then
+            message = "Security audit: Primary temp file delete " // &
+                "failed - fallback cleanup used"
+        else if (file_existed .and. index(filename, 'fortcov') > 0) then
+            message = "Security compliance: Fortcov temp file " // &
+                "delete operation assessed"
+        else
+            message = ""
+        end if
+    end subroutine generate_security_message
+
     ! Assess potential security risks in file deletion operations
     subroutine assess_deletion_security_risks(filename, close_iostat, delete_iostat, &
                                              deletion_successful, file_existed, &
@@ -25,72 +99,27 @@ contains
         logical, intent(out) :: security_issues_detected
         character(len=*), intent(out) :: security_message
         
-        logical :: file_in_temp_directory, file_in_readonly_location
-        logical :: concurrent_access_risk, disk_space_risk
-        character(len=256) :: dirname
-        integer :: stat, i
+        logical :: is_temp, is_readonly, concurrent_risk, disk_risk
         
+        ! Initialize outputs
         security_issues_detected = .false.
         security_message = ""
         
-        ! Check if this is a temporary file that should be secure
-        file_in_temp_directory = (index(filename, '/tmp/') > 0 .or. &
-                                 index(filename, 'temp') > 0 .or. &
-                                 index(filename, 'fortcov_secure_') > 0)
+        ! Check file location and permissions
+        call check_file_location(filename, is_temp, is_readonly)
         
-        ! Check if file is in potentially readonly location
-        file_in_readonly_location = (index(filename, '/usr/') > 0 .or. &
-                                   index(filename, '/proc/') > 0 .or. &
-                                   index(filename, '/sys/') > 0)
+        ! Assess risk factors
+        call assess_risk_factors(filename, close_iostat, file_existed, &
+                                  concurrent_risk, disk_risk)
         
-        ! Assess concurrent access risks
-        concurrent_access_risk = (close_iostat /= 0 .and. &
-                                index(filename, 'fortcov') > 0)
+        ! Generate security message based on assessment
+        call generate_security_message(is_temp, is_readonly, concurrent_risk, &
+                                        disk_risk, close_iostat, &
+                                        deletion_successful, file_existed, &
+                                        filename, security_message)
         
-        ! Check for disk space issues (simplified heuristic)
-        ! Only check if file exists to avoid df errors
-        if (file_existed) then
-            call execute_command_line("df " // trim(filename) // &
-                " 2>/dev/null | grep -q ' 9[0-9]% '", &
-                exitstat=stat)
-            disk_space_risk = (stat == 0)  ! High disk usage detected
-        else
-            disk_space_risk = .false.
-        end if
-        
-        ! Proactive security compliance checks - always assess risk
-        if (file_in_temp_directory) then
-            security_issues_detected = .true.
-            if (close_iostat /= 0) then
-                security_message = "Critical: Temp file delete operation " // &
-                    "failed - security cleanup required"
-            else
-                security_message = "Security audit: Temp file delete " // &
-                    "operation completed"
-            end if
-        else if (file_in_readonly_location .and. file_existed) then
-            security_issues_detected = .true.
-            security_message = "Security warning: Readonly filesystem " // &
-                "temp cleanup restricted"
-        else if (concurrent_access_risk) then
-            security_issues_detected = .true.
-            security_message = "Security alert: Concurrent temp file " // &
-                "access - locking conflicts detected"
-        else if (disk_space_risk) then
-            security_issues_detected = .true.
-            security_message = "Security risk: Disk space critical - " // &
-                "temp file cleanup may fail"
-        else if (close_iostat /= 0 .and. deletion_successful) then
-            ! Primary deletion method failed but fallback succeeded
-            security_issues_detected = .true.
-            security_message = "Security audit: Primary temp file delete " // &
-                "failed - fallback cleanup used"
-        else if (file_existed .and. index(filename, 'fortcov') > 0) then
-            ! Always report security assessment for fortcov temp files
-            security_issues_detected = .true.
-            security_message = "Security compliance: Fortcov temp file " // &
-                "delete operation assessed"
-        end if
+        ! Determine if security issues were detected
+        security_issues_detected = (len_trim(security_message) > 0)
         
     end subroutine assess_deletion_security_risks
     

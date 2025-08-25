@@ -91,6 +91,10 @@ contains
         result%used_build_context = .false.
         result%error_message = ''
         result%guidance_message = ''
+        
+        ! Always allocate source_mappings array to avoid unallocated access
+        allocate(result%source_mappings(0))
+        ! Note: gcov_files is allocated in process_gcov_in_build_dirs when needed
     end subroutine initialize_gcov_result
 
     subroutine execute_gcov_processing_workflow(project_path, config, result)
@@ -117,11 +121,24 @@ contains
 
         ! Extract and process build directories
         call extract_build_directories(gcda_files, build_dirs)
-        call process_gcov_in_build_dirs(build_dirs, config, result)
+        
+        if (allocated(build_dirs)) then
+            call process_gcov_in_build_dirs(build_dirs, config, result)
+        else
+            ! No build directories found
+            result%error_message = 'No build directories found in .gcda file paths'
+            result%guidance_message = 'Verify build system generated coverage data correctly'
+            allocate(character(len=0) :: result%gcov_files(0))
+        end if
 
         if (result%success) then
             ! Discover source file mappings
-            call discover_source_mappings(result%gcov_files, result%source_mappings)
+            if (allocated(result%gcov_files)) then
+                call discover_source_mappings(result%gcov_files, result%source_mappings)
+            else
+                ! Ensure source_mappings is allocated even if empty
+                allocate(result%source_mappings(0))
+            end if
             result%used_build_context = allocated(build_dirs) .and. size(build_dirs) > 0
         end if
     end subroutine execute_gcov_processing_workflow
@@ -182,6 +199,11 @@ contains
             'Run tests with --profile-arcs --test-coverage flags for GCC, ' // &
             'or use build system coverage targets (e.g., fpm test --flag ' // &
             '"-fprofile-arcs -ftest-coverage")'
+        
+        ! Ensure arrays are allocated even when no files found
+        if (.not. allocated(result%gcov_files)) then
+            allocate(character(len=0) :: result%gcov_files(0))
+        end if
         
     end subroutine handle_no_gcda_files
 
@@ -281,6 +303,8 @@ contains
             result%guidance_message = &
                 'Verify that .gcno files exist in build directories ' // &
                 'and gcov executable is compatible with coverage data format.'
+            ! Allocate empty array to avoid unallocated access
+            allocate(character(len=0) :: result%gcov_files(0))
         end if
     end subroutine process_gcov_in_build_dirs
 
@@ -401,11 +425,9 @@ contains
         integer :: i, num_mappings
         character(len=256) :: source_file
         
-        if (size(gcov_files) == 0) then
-            return
-        end if
-
         num_mappings = size(gcov_files)
+        
+        ! Always allocate source_mappings, even if empty
         allocate(source_mappings(num_mappings))
 
         ! For each gcov file, extract source file mapping
