@@ -11,9 +11,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #325: Refactor: reduce file size in secure_command_executor
+*No current work - ready for next TODO item*
 
 ## DONE (Completed Work)
+- [x] #325: Refactor: reduce file size in secure_command_executor (completed in PR #345 - 758→139 lines, 86% reduction)
 - [x] #323: Refactor: reduce safe_close_and_delete function size (completed in PR #342)
 - [x] #324: Fix: address line length violations in secure_command_executor (completed in PR #341)
 - [x] #268: Consolidate redundant issue #249 test files (completed in PR #340)
