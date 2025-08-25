@@ -9,11 +9,10 @@
 <!-- No medium priority items -->
 
 ### LOW (Technical Debt)
-- [ ] #369: refactor: replace formatted write with string concatenation in gcda pattern building
 - [ ] #370: refactor: replace formatted write with string concatenation in gcno pattern building
 
 ## DOING (Current Work)
-<!-- No active work -->
+- [ ] #369: refactor: replace formatted write with string concatenation in gcda pattern building (branch: refactor-369)
 
 ## DONE (Completed Work)
 - [x] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target (completed in PR #374 - QADS compliance achieved, all functions now ≤50 lines, critical infrastructure fixes included)

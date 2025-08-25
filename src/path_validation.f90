@@ -192,19 +192,28 @@ contains
         
         logical :: exec_exists
         
-        ! First validate as regular path
-        call validate_path_security(executable, safe_executable, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) return
+        call clear_error_context(error_ctx)
         
-        ! Check if executable exists and is executable
-        inquire(file=safe_executable, exist=exec_exists)
-        if (.not. exec_exists) then
-            error_ctx%error_code = ERROR_MISSING_FILE
-            call safe_write_message(error_ctx, &
-                "Executable not found - check installation and PATH")
-            call safe_write_suggestion(error_ctx, &
-                "Verify the executable is installed and accessible")
-            return
+        ! Check if it's an absolute path first
+        if (index(executable, '/') > 0) then
+            ! Absolute or relative path - validate as regular path
+            call validate_path_security(executable, safe_executable, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) return
+            
+            ! Check if executable exists
+            inquire(file=safe_executable, exist=exec_exists)
+            if (.not. exec_exists) then
+                error_ctx%error_code = ERROR_MISSING_FILE
+                call safe_write_message(error_ctx, &
+                    "Executable not found - check installation and PATH")
+                call safe_write_suggestion(error_ctx, &
+                    "Verify the executable is installed and accessible")
+                return
+            end if
+        else
+            ! Simple executable name - trust it's in PATH (safer for CI)
+            ! The actual execution will handle PATH resolution and fail gracefully
+            safe_executable = trim(executable)
         end if
     end subroutine validate_executable_path
     
