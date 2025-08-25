@@ -3,7 +3,6 @@
 ## CURRENT SPRINT (Critical Infrastructure & Architecture Alignment)
 
 ### CRITICAL (Infrastructure Blockers)
-- [ ] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline
 - [ ] #365: critical: architecture violation - coverage_workflows.f90 exceeds 1000-line hard limit
 
 ### HIGH (Architecture Compliance)  
@@ -16,7 +15,7 @@
 - [ ] #367: refactor: consolidate function size violations - 7 functions exceed 50-line target
 
 ## DOING (Current Work)
-*No active work - ready for next sprint item*
+- [x] #364: critical: Fortran runtime error 'End of record' in gcov_auto_processor.f90:355 blocking CI pipeline (branch: fix-364)
 
 ## DONE (Completed Work)
 - [x] #313: Enhance security assessment documentation and risk prioritization (completed in PR #363 - comprehensive documentation improvements with risk framework)
