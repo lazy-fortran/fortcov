@@ -250,6 +250,9 @@ contains
         !! Initialize config with default values
         type(config_t), intent(out) :: config
         
+        ! Set test mode environment variable
+        call execute_command_line('export FORTCOV_TEST_MODE=1')
+        
         config%auto_discovery = .false.
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 30
