@@ -246,104 +246,239 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
-        integer :: i, max_len
-        character(len=:), allocatable :: arg, flag, value
         logical :: expecting_value
-        integer :: equals_pos
 
+        ! Initialize classification state
+        call initialize_argument_classification(flags, positionals, flag_count, &
+                                               positional_count, expecting_value, &
+                                               success, error_message)
+
+        ! Process all arguments
+        call process_all_arguments(args, flags, flag_count, positionals, &
+                                  positional_count, expecting_value, success, error_message)
+        if (.not. success) return
+
+        ! Final validation
+        call validate_argument_completion(flags, flag_count, expecting_value, &
+                                         success, error_message)
+
+    end subroutine classify_command_arguments
+    
+    ! Initialize argument classification arrays and state
+    subroutine initialize_argument_classification(flags, positionals, flag_count, &
+                                                 positional_count, expecting_value, &
+                                                 success, error_message)
+        character(len=1024), allocatable, intent(out) :: flags(:)
+        character(len=1024), allocatable, intent(out) :: positionals(:)
+        integer, intent(out) :: flag_count, positional_count
+        logical, intent(out) :: expecting_value, success
+        character(len=*), intent(out) :: error_message
+        
         success = .true.
         error_message = ""
         flag_count = 0
         positional_count = 0
         expecting_value = .false.
-
-        ! Find maximum argument length
-        max_len = 0
-        do i = 1, size(args)
-            max_len = max(max_len, len_trim(args(i)))
-        end do
-
-        ! Allocate arrays
+        
         allocate(character(len=1024) :: flags(MAX_ARRAY_SIZE))
         allocate(character(len=1024) :: positionals(MAX_ARRAY_SIZE))
-
-        ! Process each argument
+    end subroutine initialize_argument_classification
+    
+    ! Process all command line arguments
+    subroutine process_all_arguments(args, flags, flag_count, positionals, &
+                                    positional_count, expecting_value, success, error_message)
+        character(len=*), intent(in) :: args(:)
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        character(len=1024), allocatable, intent(inout) :: positionals(:)
+        integer, intent(inout) :: positional_count
+        logical, intent(inout) :: expecting_value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: i
+        character(len=:), allocatable :: arg
+        
+        success = .true.
+        error_message = ""
+        
         do i = 1, size(args)
             arg = trim(adjustl(args(i)))
-
             if (len_trim(arg) == 0) cycle
-
-            if (expecting_value) then
-                ! This is a value for the previous flag
-                flag_count = flag_count + 1
-                if (flag_count > MAX_ARRAY_SIZE) then
-                    success = .false.
-                    error_message = "Too many flag arguments"
-                    return
-                end if
-                flags(flag_count) = arg
-                expecting_value = .false.
-
-            else if (is_flag_argument(arg)) then
-                ! Check for equals sign (--flag=value syntax)
-                equals_pos = index(arg, '=')
-                if (equals_pos > 0) then
-                    ! Split flag and value
-                    flag = arg(1:equals_pos-1)
-                    value = arg(equals_pos+1:)
-
-                    flag_count = flag_count + 1
-                    if (flag_count > MAX_ARRAY_SIZE) then
-                        success = .false.
-                        error_message = "Too many flag arguments"
-                        return
-                    end if
-                    flags(flag_count) = flag
-
-                    flag_count = flag_count + 1
-                    if (flag_count > MAX_ARRAY_SIZE) then
-                        success = .false.
-                        error_message = "Too many flag arguments"
-                        return
-                    end if
-                    flags(flag_count) = value
-
-                else
-                    ! Regular flag
-                    flag = get_long_form_option(arg)
-
-                    flag_count = flag_count + 1
-                    if (flag_count > MAX_ARRAY_SIZE) then
-                        success = .false.
-                        error_message = "Too many flag arguments"
-                        return
-                    end if
-                    flags(flag_count) = flag
-
-                    if (flag_requires_value(flag)) then
-                        expecting_value = .true.
-                    end if
-                end if
-
-            else
-                ! Positional argument
-                positional_count = positional_count + 1
-                if (positional_count > MAX_ARRAY_SIZE) then
-                    success = .false.
-                    error_message = "Too many positional arguments"
-                    return
-                end if
-                positionals(positional_count) = arg
-            end if
+            
+            call process_single_argument(arg, flags, flag_count, positionals, &
+                                        positional_count, expecting_value, success, error_message)
+            if (.not. success) return
         end do
-
+    end subroutine process_all_arguments
+    
+    ! Process a single command line argument
+    subroutine process_single_argument(arg, flags, flag_count, positionals, &
+                                      positional_count, expecting_value, success, error_message)
+        character(len=*), intent(in) :: arg
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        character(len=1024), allocatable, intent(inout) :: positionals(:)
+        integer, intent(inout) :: positional_count
+        logical, intent(inout) :: expecting_value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        if (expecting_value) then
+            call add_flag_value(arg, flags, flag_count, expecting_value, success, error_message)
+        else if (is_flag_argument(arg)) then
+            call process_flag_argument(arg, flags, flag_count, expecting_value, &
+                                      success, error_message)
+        else
+            call add_positional_argument(arg, positionals, positional_count, &
+                                        success, error_message)
+        end if
+    end subroutine process_single_argument
+    
+    ! Add flag value to flags array
+    subroutine add_flag_value(value, flags, flag_count, expecting_value, success, error_message)
+        character(len=*), intent(in) :: value
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        logical, intent(inout) :: expecting_value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        flag_count = flag_count + 1
+        if (flag_count > MAX_ARRAY_SIZE) then
+            success = .false.
+            error_message = "Too many flag arguments"
+            return
+        end if
+        
+        flags(flag_count) = value
+        expecting_value = .false.
+        success = .true.
+        error_message = ""
+    end subroutine add_flag_value
+    
+    ! Process flag argument (with or without equals)
+    subroutine process_flag_argument(arg, flags, flag_count, expecting_value, &
+                                    success, error_message)
+        character(len=*), intent(in) :: arg
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        logical, intent(inout) :: expecting_value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        integer :: equals_pos
+        
+        equals_pos = index(arg, '=')
+        if (equals_pos > 0) then
+            call process_flag_with_equals(arg, equals_pos, flags, flag_count, &
+                                         success, error_message)
+        else
+            call process_regular_flag(arg, flags, flag_count, expecting_value, &
+                                     success, error_message)
+        end if
+    end subroutine process_flag_argument
+    
+    ! Process flag with equals sign (--flag=value)
+    subroutine process_flag_with_equals(arg, equals_pos, flags, flag_count, &
+                                       success, error_message)
+        character(len=*), intent(in) :: arg
+        integer, intent(in) :: equals_pos
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: flag, value
+        
+        flag = arg(1:equals_pos-1)
+        value = arg(equals_pos+1:)
+        
+        call add_flag_to_array(flag, flags, flag_count, success, error_message)
+        if (.not. success) return
+        
+        call add_flag_to_array(value, flags, flag_count, success, error_message)
+    end subroutine process_flag_with_equals
+    
+    ! Process regular flag without value
+    subroutine process_regular_flag(arg, flags, flag_count, expecting_value, &
+                                   success, error_message)
+        character(len=*), intent(in) :: arg
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        logical, intent(inout) :: expecting_value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        character(len=:), allocatable :: flag
+        
+        flag = get_long_form_option(arg)
+        call add_flag_to_array(flag, flags, flag_count, success, error_message)
+        if (.not. success) return
+        
+        if (flag_requires_value(flag)) then
+            expecting_value = .true.
+        end if
+    end subroutine process_regular_flag
+    
+    ! Add flag to flags array with bounds checking
+    subroutine add_flag_to_array(flag, flags, flag_count, success, error_message)
+        character(len=*), intent(in) :: flag
+        character(len=1024), allocatable, intent(inout) :: flags(:)
+        integer, intent(inout) :: flag_count
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        flag_count = flag_count + 1
+        if (flag_count > MAX_ARRAY_SIZE) then
+            success = .false.
+            error_message = "Too many flag arguments"
+            return
+        end if
+        
+        flags(flag_count) = flag
+        success = .true.
+        error_message = ""
+    end subroutine add_flag_to_array
+    
+    ! Add positional argument with bounds checking
+    subroutine add_positional_argument(arg, positionals, positional_count, &
+                                      success, error_message)
+        character(len=*), intent(in) :: arg
+        character(len=1024), allocatable, intent(inout) :: positionals(:)
+        integer, intent(inout) :: positional_count
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
+        positional_count = positional_count + 1
+        if (positional_count > MAX_ARRAY_SIZE) then
+            success = .false.
+            error_message = "Too many positional arguments"
+            return
+        end if
+        
+        positionals(positional_count) = arg
+        success = .true.
+        error_message = ""
+    end subroutine add_positional_argument
+    
+    ! Validate that argument processing completed correctly
+    subroutine validate_argument_completion(flags, flag_count, expecting_value, &
+                                           success, error_message)
+        character(len=1024), allocatable, intent(in) :: flags(:)
+        integer, intent(in) :: flag_count
+        logical, intent(in) :: expecting_value
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+        
         if (expecting_value) then
             success = .false.
             error_message = "Missing value for flag: " // trim(flags(flag_count))
-            return
+        else
+            success = .true.
+            error_message = ""
         end if
-
-    end subroutine classify_command_arguments
+    end subroutine validate_argument_completion
 
     subroutine process_flag_arguments(flags, flag_count, config, success, error_message)
         !! Process flag arguments

@@ -116,189 +116,321 @@ contains
         logical, intent(out) :: error_flag
         type(coverage_data_t) :: coverage_data
         
-        ! Local variables for parsing
         integer, parameter :: unit = 10
-        character(len=256) :: line
-        integer :: iostat_val, line_num, exec_count
-        character(len=:), allocatable :: source_filename, line_content
-        character(len=:), allocatable :: parts(:)
-        type(coverage_line_t), allocatable :: lines_array(:)
         type(coverage_file_t), allocatable :: files_array(:)
-        integer :: lines_count, files_count
-        logical :: is_executable, has_source
+        integer :: files_count
         
-        ! Initialize output
+        ! Initialize parser state
+        call initialize_parser_state(error_flag, coverage_data, files_array, files_count)
+        if (error_flag) return
+        
+        ! Open and parse the gcov file
+        call open_and_parse_gcov_file(unit, path, files_array, files_count, error_flag)
+        if (error_flag) return
+        
+        ! Build final coverage data
+        call build_coverage_data_from_files(coverage_data, files_array, files_count, &
+                                           error_flag)
+    end function gcov_parse
+    
+    ! Initialize parser state with empty arrays and defaults
+    subroutine initialize_parser_state(error_flag, coverage_data, files_array, files_count)
+        logical, intent(out) :: error_flag
+        type(coverage_data_t), intent(out) :: coverage_data
+        type(coverage_file_t), allocatable, intent(out) :: files_array(:)
+        integer, intent(out) :: files_count
+        
         error_flag = .false.
         coverage_data = coverage_data_t()
-        lines_count = 0
         files_count = 0
+        allocate(coverage_file_t :: files_array(10))  ! Initial capacity
+    end subroutine initialize_parser_state
+    
+    ! Open gcov file and parse all content line by line
+    subroutine open_and_parse_gcov_file(unit, path, files_array, files_count, error_flag)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: path
+        type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
+        integer, intent(inout) :: files_count
+        logical, intent(inout) :: error_flag
+        
+        integer :: iostat_val
+        character(len=256) :: line
+        character(len=:), allocatable :: source_filename
+        type(coverage_line_t), allocatable :: lines_array(:)
+        integer :: lines_count
+        logical :: has_source
+        
+        ! Initialize file parsing state
+        lines_count = 0
         has_source = .false.
         source_filename = "unknown"
-        allocate(coverage_line_t :: lines_array(100)) ! Initial capacity for lines
-        allocate(coverage_file_t :: files_array(10))    ! Initial capacity for files
+        allocate(coverage_line_t :: lines_array(100))  ! Initial capacity
         
+        ! Open file with error handling
+        call open_gcov_file_with_validation(unit, path, error_flag)
+        if (error_flag) return
         
-        ! Open and parse the gcov file with enhanced error handling
-        open(unit, file=path, status="old", iostat=iostat_val)
-        if (iostat_val /= 0) then
-            error_flag = .true.
-            ! Enhanced error reporting for gcov file opening issues
-            block
-                type(error_context_t) :: error_ctx
-                call interpret_iostat_open_error(iostat_val, path, error_ctx)
-                ! Log the detailed error but continue with simple error flag
-                call log_error(error_ctx)
-            end block
-            return
-        end if
-        
-        ! Parse line by line with enhanced error handling
-        do
-            read(unit, '(A)', iostat=iostat_val) line
-            if (iostat_val /= 0) then
-                if (iostat_val == -1) then
-                    ! Normal end of file
-                    exit
-                else
-                    ! Unexpected read error - log it but continue processing
-                    block
-                        type(error_context_t) :: error_ctx
-                        call interpret_iostat_read_error(iostat_val, path, error_ctx)
-                        call log_error(error_ctx)
-                    end block
-                    exit
-                end if
-            end if
-            
-            line = trim(line)
-            if (len(line) == 0) cycle ! Skip empty lines
-            
-            ! Parse header lines
-            if (index(line, "Source:") > 0) then
-                ! New source file - save previous file if we have data
-                if (has_source .and. lines_count > 0) then
-                    call add_file_to_array(files_array, files_count, source_filename, &
-                                         lines_array(1:lines_count))
-                    lines_count = 0  ! Reset for new file
-                end if
-                
-                ! Extract source filename from "Source:filename" pattern
-                source_filename = extract_source_filename(line)
-                has_source = .true.
-                cycle
-            else if (index(line, "Graph:") > 0 .or. index(line, "Data:") > 0) then
-                ! Skip graph and data header lines
-                cycle
-            else if (index(line, "function ") > 0 .and. &
-                     & index(line, " called ") > 0) then
-                ! Parse function summary lines instead of skipping them
-                call parse_function_summary_line(line, source_filename, files_array, &
-                                                files_count)
-                cycle
-            end if
-            
-            ! Parse coverage data lines (format: execution_count:line_number:content)
-            parts = split(line, ":")
-            if (size(parts) < 3) cycle ! Invalid format, skip
-            
-            ! Extract execution count (trim whitespace)
-            if (trim(adjustl(parts(1))) == "-") then
-                exec_count = -1  ! Non-executable line
-                is_executable = .false.
-            else if (trim(adjustl(parts(1))) == "#####") then
-                exec_count = 0   ! Unexecuted line
-                is_executable = .true.
-            else
-                read(parts(1), *, iostat=iostat_val) exec_count
-                if (iostat_val /= 0) then
-                    ! Enhanced error reporting for numeric parsing
-                    block
-                        type(error_context_t) :: error_ctx
-                        call clear_error_context(error_ctx)
-                        error_ctx%error_code = ERROR_INVALID_DATA
-                        call safe_write_message(error_ctx, &
-                            "Invalid execution count '" // trim(parts(1)) // &
-                            "' in gcov file: " // trim(path))
-                        call safe_write_suggestion(error_ctx, &
-                            "Check gcov file format and regenerate if corrupted")
-                        call safe_write_context(error_ctx, "Gcov parsing")
-                        call log_error(error_ctx)
-                    end block
-                    cycle ! Skip this line but continue parsing
-                end if
-                
-                ! Input validation: Normalize execution counts using validation framework
-                exec_count = normalize_execution_count(exec_count)
-                is_executable = .true.
-            end if
-            
-            ! Extract line number (trim whitespace)
-            read(parts(2), *, iostat=iostat_val) line_num
-            if (iostat_val /= 0) then
-                ! Enhanced error reporting for line number parsing
-                block
-                    type(error_context_t) :: error_ctx
-                    call clear_error_context(error_ctx)
-                    error_ctx%error_code = ERROR_INVALID_DATA
-                    call safe_write_message(error_ctx, &
-                        "Invalid line number '" // trim(parts(2)) // &
-                        "' in gcov file: " // trim(path))
-                    call safe_write_suggestion(error_ctx, &
-                        "Check gcov file format and regenerate if corrupted")
-                    call safe_write_context(error_ctx, "Gcov parsing")
-                    call log_error(error_ctx)
-                end block
-                cycle ! Skip this line but continue parsing
-            end if
-            
-            ! Input validation: Check line number bounds but allow non-executable lines
-            ! Note: exec_count = -1 for non-executable lines is valid, don't validate it
-            if (line_num <= 0) then
-                cycle ! Skip invalid line numbers
-            end if
-            
-            ! Validate execution count only for executable lines  
-            if (is_executable .and. exec_count < 0) then
-                cycle ! Skip invalid executable lines
-            end if
-            
-            ! Skip line 0 (header lines)
-            if (line_num == 0) cycle
-            
-            ! Extract line content (join remaining parts with ":")
-            line_content = join_parts(parts, 3)
-            
-            ! Create coverage line
-            lines_count = lines_count + 1
-            if (lines_count > size(lines_array)) then
-                ! Resize array if needed
-                call resize_lines_array(lines_array)
-            end if
-            
-            
-            call lines_array(lines_count)%init(source_filename, line_num, &
-                                             exec_count, is_executable)
-        end do
+        ! Process each line
+        call process_gcov_lines(unit, path, source_filename, lines_array, lines_count, &
+                               files_array, files_count, has_source)
         
         close(unit)
         
-        ! Add the final file if we have data
+        ! Add final file if we have data
         if (has_source .and. lines_count > 0) then
             call add_file_to_array(files_array, files_count, source_filename, &
                                  lines_array(1:lines_count))
         end if
+    end subroutine open_and_parse_gcov_file
+    
+    ! Open gcov file with enhanced error handling
+    subroutine open_gcov_file_with_validation(unit, path, error_flag)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: path
+        logical, intent(out) :: error_flag
         
-        ! Build coverage data if we have valid files
-        if (files_count > 0) then
-            ! Initialize coverage data and assign files
-            call coverage_data%init()
-            coverage_data%files = files_array(1:files_count)
-        else
-            ! Set error flag if we have no useful data
+        integer :: iostat_val
+        
+        open(unit, file=path, status="old", iostat=iostat_val)
+        if (iostat_val /= 0) then
             error_flag = .true.
+            block
+                type(error_context_t) :: error_ctx
+                call interpret_iostat_open_error(iostat_val, path, error_ctx)
+                call log_error(error_ctx)
+            end block
+        else
+            error_flag = .false.
+        end if
+    end subroutine open_gcov_file_with_validation
+    
+    ! Process all lines from gcov file
+    subroutine process_gcov_lines(unit, path, source_filename, lines_array, &
+                                 lines_count, files_array, files_count, has_source)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: path
+        character(len=:), allocatable, intent(inout) :: source_filename
+        type(coverage_line_t), allocatable, intent(inout) :: lines_array(:)
+        integer, intent(inout) :: lines_count
+        type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
+        integer, intent(inout) :: files_count
+        logical, intent(inout) :: has_source
+        
+        character(len=256) :: line
+        integer :: iostat_val
+        
+        do
+            call read_gcov_line_with_validation(unit, path, line, iostat_val)
+            if (iostat_val /= 0) exit
+            
+            line = trim(line)
+            if (len(line) == 0) cycle
+            
+            call process_single_gcov_line(line, path, source_filename, lines_array, &
+                                         lines_count, files_array, files_count, has_source)
+        end do
+    end subroutine process_gcov_lines
+    
+    ! Read single line from gcov file with error handling
+    subroutine read_gcov_line_with_validation(unit, path, line, iostat_val)
+        integer, intent(in) :: unit
+        character(len=*), intent(in) :: path
+        character(len=256), intent(out) :: line
+        integer, intent(out) :: iostat_val
+        
+        read(unit, '(A)', iostat=iostat_val) line
+        if (iostat_val /= 0 .and. iostat_val /= -1) then
+            block
+                type(error_context_t) :: error_ctx
+                call interpret_iostat_read_error(iostat_val, path, error_ctx)
+                call log_error(error_ctx)
+            end block
+        end if
+    end subroutine read_gcov_line_with_validation
+    
+    ! Process single gcov line - dispatch to header or coverage data processing
+    subroutine process_single_gcov_line(line, path, source_filename, lines_array, &
+                                       lines_count, files_array, files_count, has_source)
+        character(len=*), intent(in) :: line, path
+        character(len=:), allocatable, intent(inout) :: source_filename
+        type(coverage_line_t), allocatable, intent(inout) :: lines_array(:)
+        integer, intent(inout) :: lines_count
+        type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
+        integer, intent(inout) :: files_count
+        logical, intent(inout) :: has_source
+        
+        ! Handle source file headers
+        if (index(line, "Source:") > 0) then
+            call handle_source_header(line, source_filename, lines_array, lines_count, &
+                                     files_array, files_count, has_source)
+        else if (index(line, "Graph:") > 0 .or. index(line, "Data:") > 0) then
+            ! Skip graph and data headers
+            return
+        else if (index(line, "function ") > 0 .and. index(line, " called ") > 0) then
+            call parse_function_summary_line(line, source_filename, files_array, files_count)
+        else
+            ! Process coverage data line
+            call process_coverage_data_line(line, path, source_filename, lines_array, &
+                                          lines_count)
+        end if
+    end subroutine process_single_gcov_line
+    
+    ! Handle Source: header lines
+    subroutine handle_source_header(line, source_filename, lines_array, lines_count, &
+                                   files_array, files_count, has_source)
+        character(len=*), intent(in) :: line
+        character(len=:), allocatable, intent(inout) :: source_filename
+        type(coverage_line_t), allocatable, intent(inout) :: lines_array(:)
+        integer, intent(inout) :: lines_count
+        type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
+        integer, intent(inout) :: files_count
+        logical, intent(inout) :: has_source
+        
+        ! Save previous file if we have data
+        if (has_source .and. lines_count > 0) then
+            call add_file_to_array(files_array, files_count, source_filename, &
+                                 lines_array(1:lines_count))
+            lines_count = 0
         end if
         
-    end function gcov_parse
+        source_filename = extract_source_filename(line)
+        has_source = .true.
+    end subroutine handle_source_header
+    
+    ! Process coverage data line (format: execution_count:line_number:content)
+    subroutine process_coverage_data_line(line, path, source_filename, lines_array, &
+                                         lines_count)
+        character(len=*), intent(in) :: line, path, source_filename
+        type(coverage_line_t), allocatable, intent(inout) :: lines_array(:)
+        integer, intent(inout) :: lines_count
+        
+        character(len=:), allocatable :: parts(:)
+        integer :: line_num, exec_count
+        logical :: is_executable
+        
+        parts = split(line, ":")
+        if (size(parts) < 3) return
+        
+        call parse_execution_count(parts(1), path, exec_count, is_executable)
+        call parse_line_number(parts(2), path, line_num)
+        
+        if (line_num <= 0) return
+        if (is_executable .and. exec_count < 0) return
+        if (line_num == 0) return
+        
+        call add_coverage_line(source_filename, line_num, exec_count, is_executable, &
+                             lines_array, lines_count)
+    end subroutine process_coverage_data_line
+    
+    ! Parse execution count from gcov line part
+    subroutine parse_execution_count(count_str, path, exec_count, is_executable)
+        character(len=*), intent(in) :: count_str, path
+        integer, intent(out) :: exec_count
+        logical, intent(out) :: is_executable
+        
+        integer :: iostat_val
+        character(len=:), allocatable :: trimmed_str
+        
+        trimmed_str = trim(adjustl(count_str))
+        
+        if (trimmed_str == "-") then
+            exec_count = -1
+            is_executable = .false.
+        else if (trimmed_str == "#####") then
+            exec_count = 0
+            is_executable = .true.
+        else
+            read(trimmed_str, *, iostat=iostat_val) exec_count
+            if (iostat_val /= 0) then
+                call log_execution_count_error(trimmed_str, path)
+                exec_count = 0
+                is_executable = .false.
+            else
+                exec_count = normalize_execution_count(exec_count)
+                is_executable = .true.
+            end if
+        end if
+    end subroutine parse_execution_count
+    
+    ! Parse line number from gcov line part
+    subroutine parse_line_number(line_str, path, line_num)
+        character(len=*), intent(in) :: line_str, path
+        integer, intent(out) :: line_num
+        
+        integer :: iostat_val
+        
+        read(line_str, *, iostat=iostat_val) line_num
+        if (iostat_val /= 0) then
+            call log_line_number_error(line_str, path)
+            line_num = -1
+        end if
+    end subroutine parse_line_number
+    
+    ! Add coverage line to lines array
+    subroutine add_coverage_line(source_filename, line_num, exec_count, is_executable, &
+                                lines_array, lines_count)
+        character(len=*), intent(in) :: source_filename
+        integer, intent(in) :: line_num, exec_count
+        logical, intent(in) :: is_executable
+        type(coverage_line_t), allocatable, intent(inout) :: lines_array(:)
+        integer, intent(inout) :: lines_count
+        
+        lines_count = lines_count + 1
+        if (lines_count > size(lines_array)) then
+            call resize_lines_array(lines_array)
+        end if
+        
+        call lines_array(lines_count)%init(source_filename, line_num, exec_count, &
+                                          is_executable)
+    end subroutine add_coverage_line
+    
+    ! Log execution count parsing errors
+    subroutine log_execution_count_error(count_str, path)
+        character(len=*), intent(in) :: count_str, path
+        
+        type(error_context_t) :: error_ctx
+        call clear_error_context(error_ctx)
+        error_ctx%error_code = ERROR_INVALID_DATA
+        call safe_write_message(error_ctx, "Invalid execution count '" // &
+                               trim(count_str) // "' in gcov file: " // trim(path))
+        call safe_write_suggestion(error_ctx, &
+                                  "Check gcov file format and regenerate if corrupted")
+        call safe_write_context(error_ctx, "Gcov parsing")
+        call log_error(error_ctx)
+    end subroutine log_execution_count_error
+    
+    ! Log line number parsing errors
+    subroutine log_line_number_error(line_str, path)
+        character(len=*), intent(in) :: line_str, path
+        
+        type(error_context_t) :: error_ctx
+        call clear_error_context(error_ctx)
+        error_ctx%error_code = ERROR_INVALID_DATA
+        call safe_write_message(error_ctx, "Invalid line number '" // &
+                               trim(line_str) // "' in gcov file: " // trim(path))
+        call safe_write_suggestion(error_ctx, &
+                                  "Check gcov file format and regenerate if corrupted")
+        call safe_write_context(error_ctx, "Gcov parsing")
+        call log_error(error_ctx)
+    end subroutine log_line_number_error
+    
+    ! Build final coverage data from collected files
+    subroutine build_coverage_data_from_files(coverage_data, files_array, files_count, &
+                                             error_flag)
+        type(coverage_data_t), intent(inout) :: coverage_data
+        type(coverage_file_t), allocatable, intent(in) :: files_array(:)
+        integer, intent(in) :: files_count
+        logical, intent(out) :: error_flag
+        
+        if (files_count > 0) then
+            call coverage_data%init()
+            coverage_data%files = files_array(1:files_count)
+            error_flag = .false.
+        else
+            error_flag = .true.
+        end if
+    end subroutine build_coverage_data_from_files
 
     ! Helper function to extract source filename from "Source:filename" line
     ! Fix for Issue #103: Clean extraction to avoid malformed filenames
