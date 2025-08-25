@@ -2,7 +2,6 @@
 
 ## CURRENT SPRINT (Critical Defects & Architecture)
 ### HIGH (Documentation & Testing Stability)
-- [ ] #256: Documentation shows incorrect --format flag instead of --output-format
 - [ ] #267: Potential command injection in test shell commands
 
 ### MEDIUM (Dead Code Cleanup)
@@ -16,9 +15,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm'
+- [ ] #256: Documentation shows incorrect --format flag instead of --output-format
 
 ## DONE (Completed Work)
+- [x] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm' (resolved in PR #337 comprehensive fix)
 - [x] #254: Typo in troubleshooting section - fmp vs fpm (resolved in PR #337 comprehensive fix)
 - [x] #253: Typo in GitLab CI documentation - fmp vs fpm (completed in PR #337)
 - [x] #252: Typo in installation instructions - fmp vs fpm (completed in PR #335)
