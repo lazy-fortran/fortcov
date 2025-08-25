@@ -56,8 +56,11 @@ contains
             has_input_sources = has_input_related_arguments(args)
             has_output_flags = has_output_related_arguments(args)
             
+            ! Disable zero-config if diff mode is present (diff provides its own inputs)
+            if (has_diff_mode_arguments(args)) then
+                is_zero_config = .false.
             ! Enable zero-config if only output flags but no input sources
-            if (has_output_flags .and. .not. has_input_sources) then
+            else if (has_output_flags .and. .not. has_input_sources) then
                 is_zero_config = .true.
             end if
         end if
@@ -668,6 +671,13 @@ contains
         case ("--diff")
             config%enable_diff = .true.
             call parse_diff_files(value, config, success, error_message)
+            ! Flag is recognized even if value parsing fails - error will be caught in validation
+            if (.not. success) then
+                ! Store raw value for later validation instead of failing flag recognition
+                config%diff_baseline_file = "PARSE_ERROR"
+                config%diff_current_file = trim(error_message)
+                success = .true.
+            end if
         case ("--diff-threshold")
             call parse_real_with_error(value, config%diff_threshold, &
                                        "diff threshold", success, error_message)
@@ -892,6 +902,36 @@ contains
         end do
 
     end function has_output_related_arguments
+
+    function has_diff_mode_arguments(args) result(has_diff_args)
+        !! Check if arguments contain diff mode flags
+        character(len=*), intent(in) :: args(:)
+        logical :: has_diff_args
+
+        integer :: i, equals_pos
+        character(len=:), allocatable :: arg, flag_part
+
+        has_diff_args = .false.
+
+        do i = 1, size(args)
+            arg = trim(adjustl(args(i)))
+
+            ! Handle flags with equals signs (--flag=value)
+            equals_pos = index(arg, '=')
+            if (equals_pos > 0) then
+                flag_part = arg(1:equals_pos-1)
+            else
+                flag_part = arg
+            end if
+
+            ! Check for diff-related flags
+            if (flag_part == "--diff") then
+                has_diff_args = .true.
+                return
+            end if
+        end do
+
+    end function has_diff_mode_arguments
 
     subroutine prevent_fork_bomb_with_manual_files(config)
         !! Prevent fork bomb by disabling auto-test execution when manual coverage files are provided

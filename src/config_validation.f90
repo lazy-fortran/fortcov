@@ -122,6 +122,7 @@ contains
         logical :: has_source_paths
         logical :: has_coverage_files
         logical :: has_import_file
+        logical :: has_diff_files
 
         is_valid = .true.
         error_message = ""
@@ -131,13 +132,17 @@ contains
         has_coverage_files = allocated(config%coverage_files) .and. &
                              size(config%coverage_files) > 0
         has_import_file = len_trim(config%import_file) > 0
+        has_diff_files = config%enable_diff .and. &
+                         len_trim(config%diff_baseline_file) > 0 .and. &
+                         len_trim(config%diff_current_file) > 0
 
-        ! Must have at least one input source
+        ! Must have at least one input source (including diff files)
         if (.not. has_source_paths .and. &
             .not. has_coverage_files .and. &
-            .not. has_import_file) then
+            .not. has_import_file .and. &
+            .not. has_diff_files) then
             is_valid = .false.
-            error_message = "No input sources specified. Provide source paths, coverage files, or import file"
+            error_message = "No input sources specified. Provide source paths, coverage files, import file, or diff files"
             return
         end if
 
@@ -145,6 +150,13 @@ contains
         if (has_import_file .and. (has_source_paths .or. has_coverage_files)) then
             is_valid = .false.
             error_message = "Cannot mix import file with source paths or coverage files"
+            return
+        end if
+
+        ! Can't mix diff with other sources (diff mode is standalone)
+        if (has_diff_files .and. (has_source_paths .or. has_coverage_files .or. has_import_file)) then
+            is_valid = .false.
+            error_message = "Cannot mix diff mode with source paths, coverage files, or import file"
             return
         end if
 
@@ -157,6 +169,12 @@ contains
         ! Validate coverage files if present
         if (has_coverage_files) then
             call validate_coverage_files(config%coverage_files, is_valid, error_message)
+            if (.not. is_valid) return
+        end if
+
+        ! Validate diff files if present
+        if (has_diff_files) then
+            call validate_diff_files(config, is_valid, error_message)
             if (.not. is_valid) return
         end if
 
@@ -536,5 +554,54 @@ contains
         end if
 
     end subroutine validate_gcov_executable
+
+    subroutine validate_diff_files(config, is_valid, error_message)
+        !! Validate diff file configuration
+        type(config_t), intent(in) :: config
+        logical, intent(out) :: is_valid
+        character(len=*), intent(out) :: error_message
+
+        logical :: baseline_exists, current_exists
+
+        is_valid = .true.
+        error_message = ""
+
+        ! Check if parsing failed during flag recognition
+        if (config%diff_baseline_file == "PARSE_ERROR") then
+            is_valid = .false.
+            error_message = trim(config%diff_current_file)  ! Error message stored here
+            return
+        end if
+
+        ! Validate baseline file exists
+        inquire(file=config%diff_baseline_file, exist=baseline_exists)
+        if (.not. baseline_exists) then
+            is_valid = .false.
+            error_message = "Diff baseline file not found: " // trim(config%diff_baseline_file)
+            return
+        end if
+
+        ! Validate current file exists  
+        inquire(file=config%diff_current_file, exist=current_exists)
+        if (.not. current_exists) then
+            is_valid = .false.
+            error_message = "Diff current file not found: " // trim(config%diff_current_file)
+            return
+        end if
+
+        ! Validate files are readable
+        if (.not. is_file_readable(config%diff_baseline_file)) then
+            is_valid = .false.
+            error_message = "Cannot read diff baseline file: " // trim(config%diff_baseline_file)
+            return
+        end if
+
+        if (.not. is_file_readable(config%diff_current_file)) then
+            is_valid = .false.
+            error_message = "Cannot read diff current file: " // trim(config%diff_current_file)
+            return
+        end if
+
+    end subroutine validate_diff_files
 
 end module config_validation

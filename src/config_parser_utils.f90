@@ -295,20 +295,8 @@ contains
             return
         end if
 
-        ! Validate file existence
-        inquire(file=baseline_file, exist=baseline_exists)
-        if (.not. baseline_exists) then
-            success = .false.
-            error_message = "Baseline file not found: " // trim(baseline_file)
-            return
-        end if
-
-        inquire(file=current_file, exist=current_exists)
-        if (.not. current_exists) then
-            success = .false.
-            error_message = "Current file not found: " // trim(current_file)
-            return
-        end if
+        ! Note: File existence validation is deferred to configuration validation stage
+        ! to allow flag recognition even when files don't exist yet
 
         ! Set the configuration - safe assignment after validation
         config%diff_baseline_file = baseline_file
