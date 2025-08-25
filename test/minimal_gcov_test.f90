@@ -20,7 +20,7 @@ program minimal_gcov_test
 
     ! Initialize config
     config%auto_discovery = .true.
-    config%gcov_executable = 'echo'  ! Use echo instead of mock to avoid script issues
+    config%gcov_executable = 'gcov'  ! Use standard gcov
 
     ! Create minimal test infrastructure
     write(output_unit, '(A)') 'Creating test files...'
