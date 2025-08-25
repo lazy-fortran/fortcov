@@ -110,10 +110,13 @@ contains
         ! Handle relative gcov paths by using shell variable for original directory
         if (index(gcov_path, './') == 1 .or. &
             (gcov_path(1:1) /= '/' .and. index(gcov_path, '/') > 0)) then
-            ! Relative path - preserve it relative to original directory
-            gcov_command_path = '"$ORIG_DIR"/' // trim(gcov_path)
-            call build_safe_gcov_command(gcov_command_path, source_path, branch_coverage, &
-                                       output_path, gcov_command)
+            ! Relative path - build command with variable expansion
+            gcov_command = '"$ORIG_DIR"/' // escape_shell_argument(gcov_path)
+            if (branch_coverage) then
+                gcov_command = trim(gcov_command) // " -b"
+            end if
+            gcov_command = trim(gcov_command) // " " // escape_shell_argument(source_path)
+            gcov_command = trim(gcov_command) // " > " // escape_shell_argument(output_path)
             command = "ORIG_DIR=$(pwd) && cd " // escape_shell_argument(working_dir) // &
                      " && " // trim(gcov_command)
         else
