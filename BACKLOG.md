@@ -5,7 +5,6 @@
 *No remaining HIGH priority documentation issues*
 
 ### MEDIUM (Dead Code Cleanup)
-- [ ] #324: Fix: address line length violations in secure_command_executor
 - [ ] #325: Refactor: reduce file size in secure_command_executor
 - [ ] #323: Refactor: reduce safe_close_and_delete function size
 
@@ -13,7 +12,7 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #268: Consolidate redundant issue #249 test files
+- [ ] #324: Fix: address line length violations in secure_command_executor
 
 ## DONE (Completed Work)
 - [x] #268: Consolidate redundant issue #249 test files (completed in PR #340)
