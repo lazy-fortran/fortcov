@@ -129,12 +129,12 @@ contains
         call start_test("Line 464: mkdir Path Leakage")
         
         ! Test mkdir with a path that will fail and potentially leak in error message
-        call safe_mkdir("/restricted/sensitive/user/directory", error_ctx)
+        call safe_mkdir("/nonexistent_root/sensitive/user/directory", error_ctx)
         
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            if (index(error_ctx%message, "/restricted/sensitive/user/directory") > 0 .or. &
+            if (index(error_ctx%message, "/nonexistent_root/sensitive/user/directory") > 0 .or. &
                 index(error_ctx%message, "sensitive") > 0 .or. &
-                index(error_ctx%message, "/restricted/") > 0) then
+                index(error_ctx%message, "/nonexistent_root/") > 0) then
                 call fail_test("CRITICAL: Line 464 leaks directory path in mkdir error")
             else
                 call pass_test("Line 464: mkdir path properly sanitized")
