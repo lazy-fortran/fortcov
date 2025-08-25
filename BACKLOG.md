@@ -3,14 +3,9 @@
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
 ### EPIC: Critical Infrastructure Defects
-- [ ] #397: README contains multiple non-functional command examples
 
 ### EPIC: Core Functionality Restoration
-- [ ] #389: Zero-configuration mode fails with 'Unsupported output format: markdown' error
 - [ ] #394: Diff option documented in help but not implemented in parser
-- [ ] #393: Tool enters zero-config mode when config file is explicitly specified
-- [ ] #392: Config file parser rejects valid options from example file
-- [ ] #391: Output file created as empty directory instead of file
 - [ ] #390: Output format mapping bug: format parameter values incorrectly converted
 - [ ] #388: Invalid option produces confusing error message
 
@@ -33,7 +28,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #396: BLOCKED - Test failures preventing PR #401 merge (CLI flag parsing, coverage discovery) [EPIC: Critical Infrastructure Defects]
+- [ ] #397: README contains multiple non-functional command examples [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
