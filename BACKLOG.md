@@ -27,7 +27,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #394: Diff option documented in help but not implemented in parser [EPIC: Core Functionality Restoration]
+- [ ] #394: TEST FAILURES in --diff implementation - build discovery tests 18/19, zero-config workflow tests 2/4 [EPIC: Core Functionality Restoration]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
