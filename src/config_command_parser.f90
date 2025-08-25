@@ -555,9 +555,12 @@ contains
         call process_complex_flags(normalized_flag, value, config, success, error_message)
         if (success) return
         
-        ! Unknown flag
-        success = .false.
-        error_message = "Unknown flag: " // trim(flag)
+        ! If we have an error message from flag processing, don't override it
+        if (len_trim(error_message) == 0) then
+            ! Unknown flag
+            success = .false.
+            error_message = "Unknown flag: " // trim(flag)
+        end if
 
     end subroutine process_single_flag
     
@@ -684,6 +687,7 @@ contains
         case ("--test-timeout")
             call parse_integer_with_error(value, config%test_timeout_seconds, &
                                           "test timeout", success, error_message)
+            ! Flag was recognized even if there was an error
         case default
             success = .false.
         end select
