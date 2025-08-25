@@ -6,15 +6,15 @@
 
 ### MEDIUM (Dead Code Cleanup)
 - [ ] #325: Refactor: reduce file size in secure_command_executor
-- [ ] #323: Refactor: reduce safe_close_and_delete function size
 
 ### Sprint 1 Features (COMPLETED)
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #324: Fix: address line length violations in secure_command_executor
+- [ ] #323: Refactor: reduce safe_close_and_delete function size
 
 ## DONE (Completed Work)
+- [x] #324: Fix: address line length violations in secure_command_executor (completed in PR #341)
 - [x] #268: Consolidate redundant issue #249 test files (completed in PR #340)
 - [x] #275: Remove unused tempfile import in test_makefile_syntax.py (completed in PR #339)
 - [x] #267: Potential command injection in test shell commands (fixed in PR #338)
