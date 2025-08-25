@@ -5,7 +5,6 @@
 *No remaining HIGH priority documentation issues*
 
 ### MEDIUM (Dead Code Cleanup)
-- [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 - [ ] #268: Consolidate redundant issue #249 test files
 - [ ] #324: Fix: address line length violations in secure_command_executor
 - [ ] #325: Refactor: reduce file size in secure_command_executor
@@ -15,9 +14,10 @@
 *All Sprint 1 auto-discovery features implemented and merged*
 
 ## DOING (Current Work)
-- [ ] #267: Potential command injection in test shell commands
+- [ ] #275: Remove unused tempfile import in test_makefile_syntax.py
 
 ## DONE (Completed Work)
+- [x] #267: Potential command injection in test shell commands (fixed in PR #338)
 - [x] #256: Documentation shows incorrect --format flag instead of --output-format (invalid - documentation was correct)
 - [x] #262: Typo in troubleshooting.md - 'fmp' should be 'fpm' (resolved in PR #337 comprehensive fix)
 - [x] #254: Typo in troubleshooting section - fmp vs fpm (resolved in PR #337 comprehensive fix)
