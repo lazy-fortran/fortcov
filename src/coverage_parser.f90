@@ -2,6 +2,8 @@ module coverage_parser
     use coverage_model
     use string_utils
     use input_validation
+    use error_handling
+    use iostat_error_utils
     implicit none
     private
     
@@ -136,17 +138,37 @@ contains
         allocate(coverage_file_t :: files_array(10))    ! Initial capacity for files
         
         
-        ! Open and parse the gcov file
+        ! Open and parse the gcov file with enhanced error handling
         open(unit, file=path, status="old", iostat=iostat_val)
         if (iostat_val /= 0) then
             error_flag = .true.
+            ! Enhanced error reporting for gcov file opening issues
+            block
+                type(error_context_t) :: error_ctx
+                call interpret_iostat_open_error(iostat_val, path, error_ctx)
+                ! Log the detailed error but continue with simple error flag
+                call log_error(error_ctx)
+            end block
             return
         end if
         
-        ! Parse line by line
+        ! Parse line by line with enhanced error handling
         do
             read(unit, '(A)', iostat=iostat_val) line
-            if (iostat_val /= 0) exit ! End of file or error
+            if (iostat_val /= 0) then
+                if (iostat_val == -1) then
+                    ! Normal end of file
+                    exit
+                else
+                    ! Unexpected read error - log it but continue processing
+                    block
+                        type(error_context_t) :: error_ctx
+                        call interpret_iostat_read_error(iostat_val, path, error_ctx)
+                        call log_error(error_ctx)
+                    end block
+                    exit
+                end if
+            end if
             
             line = trim(line)
             if (len(line) == 0) cycle ! Skip empty lines
@@ -188,7 +210,22 @@ contains
                 is_executable = .true.
             else
                 read(parts(1), *, iostat=iostat_val) exec_count
-                if (iostat_val /= 0) cycle ! Invalid number, skip
+                if (iostat_val /= 0) then
+                    ! Enhanced error reporting for numeric parsing
+                    block
+                        type(error_context_t) :: error_ctx
+                        call clear_error_context(error_ctx)
+                        error_ctx%error_code = ERROR_INVALID_DATA
+                        call safe_write_message(error_ctx, &
+                            "Invalid execution count '" // trim(parts(1)) // &
+                            "' in gcov file: " // trim(path))
+                        call safe_write_suggestion(error_ctx, &
+                            "Check gcov file format and regenerate if corrupted")
+                        call safe_write_context(error_ctx, "Gcov parsing")
+                        call log_error(error_ctx)
+                    end block
+                    cycle ! Skip this line but continue parsing
+                end if
                 
                 ! Input validation: Normalize execution counts using validation framework
                 exec_count = normalize_execution_count(exec_count)
@@ -197,7 +234,22 @@ contains
             
             ! Extract line number (trim whitespace)
             read(parts(2), *, iostat=iostat_val) line_num
-            if (iostat_val /= 0) cycle ! Invalid line number, skip
+            if (iostat_val /= 0) then
+                ! Enhanced error reporting for line number parsing
+                block
+                    type(error_context_t) :: error_ctx
+                    call clear_error_context(error_ctx)
+                    error_ctx%error_code = ERROR_INVALID_DATA
+                    call safe_write_message(error_ctx, &
+                        "Invalid line number '" // trim(parts(2)) // &
+                        "' in gcov file: " // trim(path))
+                    call safe_write_suggestion(error_ctx, &
+                        "Check gcov file format and regenerate if corrupted")
+                    call safe_write_context(error_ctx, "Gcov parsing")
+                    call log_error(error_ctx)
+                end block
+                cycle ! Skip this line but continue parsing
+            end if
             
             ! Input validation: Check line number bounds but allow non-executable lines
             ! Note: exec_count = -1 for non-executable lines is valid, don't validate it
