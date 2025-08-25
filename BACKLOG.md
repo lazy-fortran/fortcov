@@ -16,6 +16,7 @@
 - [ ] #268: Consolidate redundant issue #249 test files
 
 ## DONE (Completed Work)
+- [x] #268: Consolidate redundant issue #249 test files (completed in PR #340)
 - [x] #275: Remove unused tempfile import in test_makefile_syntax.py (completed in PR #339)
 - [x] #267: Potential command injection in test shell commands (fixed in PR #338)
 - [x] #256: Documentation shows incorrect --format flag instead of --output-format (invalid - documentation was correct)
