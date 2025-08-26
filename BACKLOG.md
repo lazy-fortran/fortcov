@@ -4,7 +4,7 @@
 
 ### EPIC: Infrastructure Stabilization (HIGH - Sprint 2 Phase 2)
 - [x] #464: Security bug: URL-encoded attack validation test failing  
-- [ ] #465: Permission denied error when creating test directories
+- [x] #465: Permission denied error when creating test directories
 - [ ] #467: Fork bomb prevention marker file not cleaned up, blocking normal operation
 - [ ] #473: Input validation bug: minimum threshold accepts invalid values (-1, 999999)
 
@@ -26,7 +26,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #465: Permission denied error when creating test directories [EPIC: Infrastructure Stabilization]
+- [ ] #467: Fork bomb prevention marker file not cleaned up, blocking normal operation [EPIC: Infrastructure Stabilization]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
