@@ -34,6 +34,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
+- [ ] #466: Documentation bug: fortcov *.gcov usage example fails with 'Too many positional arguments' error [EPIC: Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
