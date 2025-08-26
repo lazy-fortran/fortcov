@@ -10,7 +10,6 @@
 - [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #429: Dead code comprehensive cleanup needed for code bloat
 - [ ] #428: Dead code: unused functions in input_validation module
 - [ ] #427: Dead code: unused imports in fortcov module
 - [ ] #425: Dead code: remove unused fortran_syntax_rules module
@@ -21,7 +20,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #429: Dead code comprehensive cleanup needed for code bloat [EPIC: Code Quality & Dead Code Elimination]
+- [ ] #428: Dead code: unused functions in input_validation module [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
