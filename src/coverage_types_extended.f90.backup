@@ -2,16 +2,23 @@ module coverage_types
     !! Core Coverage Data Types (Refactored)
     !!
     !! Aggregates and re-exports coverage types from specialized modules.
-    !! This module maintains backward compatibility by re-exporting types
-    !! from focused modules that maintain SRP and QADS size limits.
+    !! This module maintains backward compatibility while delegating to
+    !! focused modules that maintain SRP and QADS size limits.
+    !!
+    !! NOTE: This module acts as a facade, re-exporting types from:
+    !! - coverage_location_types: Basic location and line/branch types
+    !! - coverage_function_types: Function coverage types
+    !! - coverage_file_types: File coverage types
+    !! - coverage_data_types: Main data container types
+    !! - coverage_diff_types: Diff analysis types
     
-    ! Re-export all types from specialized modules
+    use foundation_constants
+    
+    ! Import from specialized modules
     use coverage_location_types, only: &
-        source_location_t, &
-        coverage_line_t, &
-        coverage_branch_t, &
-        line_coverage_t, &
-        file_coverage_t
+        source_location_t_loc => source_location_t, &
+        coverage_line_t_loc => coverage_line_t, &
+        coverage_branch_t_loc => coverage_branch_t
         
     use coverage_function_types, only: &
         coverage_function_t
@@ -19,19 +26,23 @@ module coverage_types
     use coverage_file_types, only: &
         coverage_file_t
         
+    ! Import JSON compatibility types from coverage_location_types
+    use coverage_location_types, only: &
+        line_coverage_t, &
+        file_coverage_t
+        
     use coverage_data_types, only: &
         coverage_data_t
         
-    ! Import diff types but rename to avoid conflicts
     use coverage_diff_types, only: &
-        line_diff_t_imported => line_diff_t, &
-        file_diff_t_imported => file_diff_t, &
-        coverage_diff_t_imported => coverage_diff_t
+        line_diff_t_diff => line_diff_t, &
+        file_diff_t_diff => file_diff_t, &
+        coverage_diff_t_diff => coverage_diff_t
     
     implicit none
     private
     
-    ! Re-export all types for backward compatibility
+    ! Re-export all types with compatibility wrappers where needed
     public :: source_location_t
     public :: coverage_line_t
     public :: coverage_branch_t
@@ -44,7 +55,33 @@ module coverage_types
     public :: line_coverage_t
     public :: file_coverage_t
     
-    ! Create compatibility types for diff types to match original interface
+    ! Compatibility wrapper types for conflicting definitions
+    ! These maintain the original interface while delegating to new modules
+    
+    type, extends(source_location_t_loc) :: source_location_t
+        ! Extended for allocatable filename compatibility
+        character(len=:), allocatable :: filename_alloc
+    contains
+        procedure :: init => source_location_init_compat
+    end type source_location_t
+    
+    type, extends(coverage_line_t_loc) :: coverage_line_t
+        ! Extended for additional fields
+        integer :: line_number = 0
+        character(len=:), allocatable :: filename
+    contains
+        procedure :: init => line_init_compat
+    end type coverage_line_t
+    
+    type, extends(coverage_branch_t_loc) :: coverage_branch_t
+        ! Extended for additional fields
+        integer :: line_number = 0
+        character(len=:), allocatable :: filename
+    contains
+        procedure :: init => branch_init_compat
+    end type coverage_branch_t
+    
+    ! Compatibility wrapper for line_diff_t
     type :: line_diff_t
         integer :: line_number = 0
         character(len=:), allocatable :: filename
@@ -59,6 +96,7 @@ module coverage_types
         procedure :: init => line_diff_init
     end type line_diff_t
     
+    ! Compatibility wrapper for file_diff_t
     type :: file_diff_t
         character(len=:), allocatable :: filename
         real :: old_coverage = 0.0
@@ -76,6 +114,7 @@ module coverage_types
         procedure :: apply_threshold_analysis => file_diff_apply_threshold_analysis
     end type file_diff_t
     
+    ! Compatibility wrapper for coverage_diff_t
     type :: coverage_diff_t
         real :: baseline_coverage = 0.0
         real :: current_coverage = 0.0
@@ -91,12 +130,89 @@ module coverage_types
     end type coverage_diff_t
     
     ! Constructor interfaces
+    interface coverage_line_t
+        module procedure :: line_constructor
+    end interface coverage_line_t
+    
+    interface coverage_branch_t
+        module procedure :: branch_constructor
+    end interface coverage_branch_t
+    
     interface line_diff_t
         module procedure :: line_diff_constructor
     end interface line_diff_t
     
 contains
 
+    ! Compatibility layer implementations
+    
+    subroutine source_location_init_compat(this, filename, line_number, column_start, column_end)
+        class(source_location_t), intent(out) :: this
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: line_number
+        integer, intent(in), optional :: column_start, column_end
+        
+        this%filename_alloc = filename
+        this%filename = filename
+        this%line_number = line_number
+        if (present(column_start)) this%column_start = column_start
+        if (present(column_end)) this%column_end = column_end
+        
+    end subroutine source_location_init_compat
+    
+    subroutine line_init_compat(this, filename, line_number, execution_count, is_executable)
+        class(coverage_line_t), intent(out) :: this
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: line_number
+        integer, intent(in) :: execution_count
+        logical, intent(in), optional :: is_executable
+        
+        call this%location%init(filename, line_number)
+        this%filename = filename
+        this%line_number = line_number
+        this%execution_count = execution_count
+        if (present(is_executable)) this%is_executable = is_executable
+        
+    end subroutine line_init_compat
+    
+    subroutine branch_init_compat(this, filename, line_number, branch_id, taken_count, not_taken_count)
+        class(coverage_branch_t), intent(out) :: this
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: line_number
+        integer, intent(in) :: branch_id, taken_count, not_taken_count
+        
+        call this%location%init(filename, line_number)
+        this%filename = filename
+        this%line_number = line_number
+        this%branch_id = branch_id
+        this%taken_count = taken_count
+        this%not_taken_count = not_taken_count
+        
+    end subroutine branch_init_compat
+    
+    function line_constructor(execution_count, line_number, filename, is_executable) result(this)
+        integer, intent(in) :: execution_count
+        integer, intent(in) :: line_number
+        character(len=*), intent(in) :: filename
+        logical, intent(in) :: is_executable
+        type(coverage_line_t) :: this
+        
+        call this%init(filename, line_number, execution_count, is_executable)
+        
+    end function line_constructor
+    
+    function branch_constructor(taken_count, not_taken_count, branch_id, line_number, filename) result(this)
+        integer, intent(in) :: taken_count
+        integer, intent(in) :: not_taken_count
+        integer, intent(in) :: branch_id
+        integer, intent(in) :: line_number
+        character(len=*), intent(in) :: filename
+        type(coverage_branch_t) :: this
+        
+        call this%init(filename, line_number, branch_id, taken_count, not_taken_count)
+        
+    end function branch_constructor
+    
     function line_diff_constructor(baseline_line, current_line, diff_type) result(this)
         type(coverage_line_t), intent(in) :: baseline_line
         type(coverage_line_t), intent(in) :: current_line
@@ -106,6 +222,8 @@ contains
         call this%init(baseline_line, current_line, diff_type)
         
     end function line_diff_constructor
+    
+    ! Diff type implementations
     
     subroutine line_diff_init(this, baseline_line, current_line, diff_type)
         class(line_diff_t), intent(inout) :: this

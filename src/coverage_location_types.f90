@@ -26,8 +26,11 @@ module coverage_location_types
         type(source_location_t) :: location
         integer :: execution_count = 0
         logical :: is_executable = .false.
-        logical :: is_covered = .false.
+        logical :: covered = .false.
         logical :: is_branch = .false.
+        ! Additional fields for compatibility
+        integer :: line_number = 0
+        character(len=MAX_FILENAME_LENGTH) :: filename = ""
     contains
         procedure :: init => line_init
         procedure :: is_covered => line_is_covered
@@ -41,6 +44,9 @@ module coverage_location_types
         integer :: not_taken_count = 0
         real :: coverage_percentage = 0.0
         logical :: is_covered = .false.
+        ! Additional fields for compatibility  
+        integer :: line_number = 0
+        character(len=MAX_FILENAME_LENGTH) :: filename = ""
     contains
         procedure :: init => branch_init
         procedure :: is_partially_covered => branch_is_partially_covered
@@ -55,7 +61,7 @@ module coverage_location_types
 
     ! File coverage type (simplified)
     type, public :: file_coverage_t
-        character(len=MAX_FILENAME_LENGTH) :: filename = ""
+        character(len=:), allocatable :: filename
         type(line_coverage_t), allocatable :: lines(:)
     end type file_coverage_t
 
@@ -116,8 +122,10 @@ contains
         this%is_executable = .true.
         if (present(is_executable)) this%is_executable = is_executable
         
-        this%is_covered = (execution_count > 0)
+        this%covered = (execution_count > 0)
         this%is_branch = .false.
+        this%line_number = line_number
+        this%filename = filename
     end subroutine line_init
 
     function line_is_covered(this) result(is_covered)
@@ -125,7 +133,7 @@ contains
         class(coverage_line_t), intent(in) :: this
         logical :: is_covered
         
-        is_covered = this%is_covered .or. (this%execution_count > 0)
+        is_covered = this%covered .or. (this%execution_count > 0)
     end function line_is_covered
 
     subroutine branch_init(this, filename, line_number, branch_id, taken_count, not_taken_count)
@@ -141,6 +149,8 @@ contains
         this%branch_id = branch_id
         this%taken_count = taken_count
         this%not_taken_count = not_taken_count
+        this%line_number = line_number
+        this%filename = filename
         this%is_covered = (taken_count > 0) .or. (not_taken_count > 0)
         
         if ((taken_count + not_taken_count) > 0) then
