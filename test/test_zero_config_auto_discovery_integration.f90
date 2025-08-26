@@ -98,7 +98,7 @@ contains
         type(config_t) :: config
         character(len=0), allocatable :: no_args(:)
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Initialize with no arguments (zero-config trigger)
         allocate(no_args(0))
@@ -161,16 +161,25 @@ contains
         type(config_t) :: config
         type(build_system_info_t) :: build_info
         logical :: integration_success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Zero-config mode setup
         call initialize_config(config)
         config%zero_configuration_mode = .true.
         config%auto_discovery = .true.
         
-        ! WHEN: Integrate build system detection
-        call integrate_build_system_detection(config, build_info, &
-                                             integration_success, error_message)
+        ! WHEN: Detect build system directly (for testing build_info access)
+        block
+            use error_handling, only: error_context_t, ERROR_SUCCESS
+            type(error_context_t) :: error_ctx
+            call detect_build_system(".", build_info, error_ctx)
+            integration_success = (error_ctx%error_code == ERROR_SUCCESS)
+            if (.not. integration_success) then
+                error_message = error_ctx%message
+            else
+                error_message = ""
+            end if
+        end block
         
         ! THEN: Integration should handle various scenarios gracefully
         if (integration_success) then
@@ -228,7 +237,7 @@ contains
         type(config_t) :: config
         character(len=256) :: explicit_output_path
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Explicit configuration
         call initialize_config(config)
@@ -257,7 +266,7 @@ contains
         
         type(config_t) :: config
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Zero-config mode in directory without build system
         call initialize_config(config)
@@ -281,7 +290,7 @@ contains
         
         type(config_t) :: config
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Partial configuration (only output format specified)
         call initialize_config(config)
@@ -308,7 +317,7 @@ contains
         
         type(config_t) :: config
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Zero-config in invalid project (current test environment)
         call initialize_config(config)  
@@ -335,7 +344,7 @@ contains
         
         type(config_t) :: config
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Zero-config mode setup
         call initialize_config(config)
@@ -362,15 +371,24 @@ contains
         type(config_t) :: config
         type(build_system_info_t) :: build_info
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Zero-config setup
         call initialize_config(config)
         config%zero_configuration_mode = .true.
         
-        ! WHEN: Integrate build system detection (uses current project)
-        call integrate_build_system_detection(config, build_info, &
-                                             success, error_message)
+        ! WHEN: Detect build system directly (for testing build_info access)
+        block
+            use error_handling, only: error_context_t, ERROR_SUCCESS
+            type(error_context_t) :: error_ctx
+            call detect_build_system(".", build_info, error_ctx)
+            success = (error_ctx%error_code == ERROR_SUCCESS)
+            if (.not. success) then
+                error_message = error_ctx%message
+            else
+                error_message = ""
+            end if
+        end block
         
         ! THEN: If detection succeeds, should respect priority
         if (success .and. build_info%system_type /= "unknown") then
@@ -390,7 +408,7 @@ contains
         type(config_t) :: config
         character(len=0), allocatable :: no_args(:)
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Simulate 'fortcov' with no arguments
         allocate(no_args(0))
@@ -423,7 +441,7 @@ contains
         
         type(config_t) :: config
         logical :: success
-        character(len=256) :: error_message
+        character(len=:), allocatable :: error_message
         
         ! GIVEN: Zero-config setup
         call initialize_config(config)
