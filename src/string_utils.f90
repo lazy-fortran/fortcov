@@ -8,7 +8,6 @@ module string_utils
     public :: format_integer
     public :: split
     public :: trim_string
-    public :: validate_string_input
     public :: to_lower
     public :: matches_pattern
     public :: check_exclude_patterns_list
@@ -209,38 +208,6 @@ contains
     end function is_whitespace_char
 
 
-    ! Security: Validate string input for safety constraints
-    function validate_string_input(input_str, max_length) result(is_valid)
-        character(len=*), intent(in) :: input_str
-        integer, intent(in) :: max_length
-        logical :: is_valid
-        integer :: i, char_code
-        
-        is_valid = .true.
-        
-        ! Check length limit
-        if (len_trim(input_str) > max_length) then
-            is_valid = .false.
-            return
-        end if
-        
-        ! Check for dangerous characters
-        do i = 1, len_trim(input_str)
-            char_code = ichar(input_str(i:i))
-            
-            ! Reject null characters and most control characters
-            if (char_code == 0 .or. (char_code < 32 .and. char_code /= 9 .and. char_code /= 10)) then
-                is_valid = .false.
-                return
-            end if
-            
-            ! Reject shell command injection characters
-            if (index(';|&`$<>', input_str(i:i)) > 0) then
-                is_valid = .false.
-                return
-            end if
-        end do
-    end function validate_string_input
 
 
 
