@@ -25,8 +25,8 @@ gcov src/*.f90 || echo "gcov processing completed"
 
 echo
 echo "Step 3: Generate coverage report with fortcov..."
-echo "Command: fortcov --source=. --exclude=build/\*,test/\*"
-fortcov --source=. --exclude=build/*,test/* || echo "fortcov analysis completed"
+echo "Command: fortcov --source . --exclude build/* --exclude test/*"
+fortcov --source . --exclude build/* --exclude test/* || echo "fortcov analysis completed"
 
 echo
 echo "Step 4: Using the FPM Coverage Bridge Script..."

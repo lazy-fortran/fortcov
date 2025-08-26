@@ -31,8 +31,8 @@ find build -name "gfortran_*" 2>/dev/null || echo "No gfortran build directories
 
 echo
 echo "Step 3: Direct fortcov analysis of build directory..."
-echo "Command: fortcov --source=\"build/gfortran_\*/fortcov\""
-fortcov --source="build/gfortran_\*/fortcov" || echo "fortcov in-place analysis completed"
+echo "Command: fortcov --source \"build/gfortran_*/fortcov\""
+fortcov --source "build/gfortran_*/fortcov" || echo "fortcov in-place analysis completed"
 
 # Create mock fortcov output for demonstration
 cat > coverage_in_place.md << 'EOF'
@@ -77,7 +77,7 @@ Functions analyzed in-place:
 This pattern is most efficient for automated CI/CD pipelines where
 build artifacts don't need to be preserved in the project root.
 
-**Workflow**: fpm test → fortcov --source="build/gfortran_*/fortcov"
+**Workflow**: fpm test → fortcov --source "build/gfortran_*/fortcov"
 EOF
 
 echo "✓ In-place coverage report generated: coverage_in_place.md"
