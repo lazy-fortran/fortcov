@@ -25,7 +25,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #421: Zero-configuration mode not working - shows help instead of auto-discovering [EPIC: Critical Infrastructure Defects]
+- [ ] #424: Comprehensive documentation cleanup - broken links, outdated examples, file organization [EPIC: Documentation & CLI Consistency]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
