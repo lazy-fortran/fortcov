@@ -21,7 +21,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files [EPIC: Documentation & CLI Consistency]
+- [ ] #429: Dead code comprehensive cleanup needed for code bloat [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
