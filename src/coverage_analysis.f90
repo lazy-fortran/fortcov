@@ -4,7 +4,6 @@ module coverage_analysis
     !! Core analysis orchestration with extracted modules for maintainability.
     !! Functions extracted to separate modules to meet size limits.
     use foundation_constants
-    use foundation_layer_utils
     use coverage_model
     use fortcov_config
     use coverage_analysis_validation

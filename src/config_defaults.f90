@@ -6,7 +6,6 @@ module config_defaults
 
     use config_types, only: config_t, MAX_ARRAY_SIZE
     use foundation_constants
-    use foundation_layer_utils
     use zero_configuration_manager
     use shell_utils, only: escape_shell_argument
     
