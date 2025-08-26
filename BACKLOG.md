@@ -9,7 +9,7 @@
 - [x] #473: Input validation bug: minimum threshold accepts invalid values (-1, 999999)
 
 ### EPIC: User Experience & Documentation (MEDIUM - Sprint 2 Phase 3)
-- [ ] #474: Documentation consolidation: Fix all CLI help mismatches and example errors (consolidates #466, #468, #471)
+- [x] #474: Documentation consolidation: Fix all CLI help mismatches and example errors (consolidates #466, #468, #471)
 - [ ] #475: Sprint 2 final documentation consolidation and validation
 
 ### EPIC: Architecture Compliance (LOW - Sprint 2 Phase 4 - Only after Critical fixes)
@@ -26,7 +26,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #474: Documentation consolidation: Fix all CLI help mismatches and example errors (consolidates #466, #468, #471) [EPIC: User Experience & Documentation]
+- [ ] #475: Sprint 2 final documentation consolidation and validation [EPIC: User Experience & Documentation]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
