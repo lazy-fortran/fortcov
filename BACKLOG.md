@@ -18,7 +18,7 @@
 - [x] #478: fix: QADS line length violations in zero_configuration_manager.f90
 
 ### EPIC: Code Cleanup (LOWEST - Sprint 2 Phase 5 - Only after Core Recovery)
-- [ ] #458: cleanup: remove dead C interface files (~2000+ lines unused)
+- [x] #458: cleanup: remove dead C interface files (~2000+ lines unused)
 - [ ] #459: cleanup: remove obsolete documentation and investigation files
 - [ ] #460: refactor: implement stub functionality in test_build_auto_discovery.f90
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
@@ -26,7 +26,6 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #458: cleanup: remove dead C interface files (~2000+ lines unused) [EPIC: Code Cleanup]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
