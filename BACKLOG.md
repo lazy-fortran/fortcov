@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Functionality Recovery - Sprint 2)
 
 ### EPIC: Core Functionality Recovery (CRITICAL - Sprint 2 Phase 1)
-- [ ] #470: Coverage parsing shows 0.00% even with valid gcov files containing coverage data
 - [ ] #472: CLI argument parsing bug: --source flag not recognized, breaking documented examples
 
 ### EPIC: Infrastructure Stabilization (HIGH - Sprint 2 Phase 2)
@@ -28,7 +27,7 @@
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
 
 ## DOING (Current Work)
-- [ ] #469: Auto-discovery fails to find gcov files in build/gcov/ directory (zero-configuration broken) [EPIC: Core Functionality Recovery]
+- [ ] #470: Coverage parsing shows 0.00% even with valid gcov files containing coverage data [EPIC: Core Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
