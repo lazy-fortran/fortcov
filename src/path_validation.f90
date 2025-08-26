@@ -1,5 +1,5 @@
 module path_validation
-    use path_security_core
+    use path_security_core, only: validate_path_security, validate_executable_path
     implicit none
     private
     

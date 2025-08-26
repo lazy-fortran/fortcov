@@ -1,6 +1,7 @@
 module config_validation_core
     use config_types, only: config_t
     use config_validators_impl
+    use input_source_validator, only: validate_input_sources
     implicit none
     private
     
