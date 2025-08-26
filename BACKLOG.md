@@ -26,6 +26,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
+- [ ] #478: fix: QADS line length violations in zero_configuration_manager.f90 [EPIC: Architecture Compliance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
