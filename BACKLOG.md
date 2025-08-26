@@ -3,6 +3,7 @@
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
 ### EPIC: Critical Infrastructure Defects
+- [ ] #413: fix: complete broken refactored module implementations
 
 ### EPIC: Core Functionality Restoration
 
@@ -18,7 +19,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #377: cleanup: remove unused coverage_line_types module [EPIC: Code Quality & Dead Code Elimination]
+- [ ] #413: fix: complete broken refactored module implementations [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
