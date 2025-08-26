@@ -534,7 +534,7 @@ fortcov --source="../../../../etc" 2>&1 | grep -q "Path traversal detected" && e
 # Test 2: Large file handling
 echo "Testing large file protection..."
 dd if=/dev/zero of=huge_file.gcov bs=1M count=200 2>/dev/null
-fortcov huge_file.gcov 2>&1 | grep -q "File too large" && echo "✅ Large file blocked" || echo "❌ Large file not blocked"
+fortcov --source=. huge_file.gcov 2>&1 | grep -q "File too large" && echo "✅ Large file blocked" || echo "❌ Large file not blocked"
 rm -f huge_file.gcov
 
 # Test 3: Command injection attempts
@@ -544,7 +544,7 @@ fortcov --output="test.txt; rm -rf /" 2>&1 | grep -q "Unsafe characters" && echo
 # Test 4: Memory exhaustion
 echo "Testing memory limits..."
 python3 -c "print('file.f90: ' + 'A'*10000000)" > malformed.gcov
-fortcov malformed.gcov 2>&1 | grep -q "exceeds.*limit" && echo "✅ Memory limit enforced" || echo "❌ Memory limit not enforced"
+fortcov --source=. malformed.gcov 2>&1 | grep -q "exceeds.*limit" && echo "✅ Memory limit enforced" || echo "❌ Memory limit not enforced"
 rm -f malformed.gcov
 
 echo "Security testing completed."
