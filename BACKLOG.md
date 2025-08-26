@@ -21,7 +21,7 @@
 - [x] #491: Cannot build on Windows - C interface file compilation errors
 
 ### EPIC: Documentation Defects (HIGH - Documentation fixes)  
-- [ ] #468: Default format 'terminal' not supported, contradicting help documentation
+- [x] #468: Default format 'terminal' not supported, contradicting help documentation
 - [ ] #471: Default fortcov.nml configuration references non-existent lib/ directory
 
 ### EPIC: Code Cleanup (LOWEST - Sprint 2 Phase 5 - Only after Core Recovery)
@@ -33,7 +33,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #468: Default format 'terminal' not supported, contradicting help documentation [EPIC: Documentation Defects]
+- [ ] #471: Default fortcov.nml configuration references non-existent lib/ directory [EPIC: Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
