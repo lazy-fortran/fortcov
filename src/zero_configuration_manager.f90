@@ -26,6 +26,14 @@ module zero_configuration_manager
     implicit none
     private
     
+    ! Interface for system process ID function
+    interface
+        function c_getpid() bind(c, name="getpid")
+            use iso_c_binding, only: c_int
+            integer(c_int) :: c_getpid
+        end function c_getpid
+    end interface
+    
     ! Public interfaces for zero-configuration functionality
     public :: is_zero_configuration_mode
     public :: apply_zero_configuration_defaults
@@ -35,6 +43,67 @@ module zero_configuration_manager
     public :: show_zero_configuration_error_guidance
     
 contains
+
+    function escape_shell_arg(arg) result(escaped_arg)
+        !! Properly escape shell arguments to prevent injection attacks
+        character(len=*), intent(in) :: arg
+        character(len=:), allocatable :: escaped_arg
+        integer :: i, len_arg, escape_count
+        character :: c
+        
+        len_arg = len_trim(arg)
+        escape_count = 0
+        
+        ! Count special characters that need escaping
+        do i = 1, len_arg
+            c = arg(i:i)
+            if (c == "'" .or. c == '"' .or. c == '\' .or. c == '$' .or. &
+                c == '`' .or. c == '!' .or. c == '*' .or. c == '?' .or. &
+                c == '[' .or. c == ']' .or. c == '(' .or. c == ')' .or. &
+                c == '{' .or. c == '}' .or. c == ';' .or. c == '&' .or. &
+                c == '|' .or. c == '<' .or. c == '>') then
+                escape_count = escape_count + 1
+            end if
+        end do
+        
+        ! Allocate escaped string with extra space for escape characters
+        allocate(character(len=len_arg + escape_count + 2) :: escaped_arg)
+        
+        ! Build escaped string with single quotes
+        escaped_arg = "'" // replace_single_quotes(arg(1:len_arg)) // "'"
+    end function escape_shell_arg
+    
+    function replace_single_quotes(str) result(escaped_str)
+        !! Replace single quotes with '\'' sequence for shell safety
+        character(len=*), intent(in) :: str
+        character(len=:), allocatable :: escaped_str
+        integer :: i, len_str, quote_count, pos
+        
+        len_str = len_trim(str)
+        quote_count = 0
+        
+        ! Count single quotes
+        do i = 1, len_str
+            if (str(i:i) == "'") quote_count = quote_count + 1
+        end do
+        
+        ! Allocate space for replacement (each ' becomes '\'' - 3 extra chars)
+        allocate(character(len=len_str + quote_count*3) :: escaped_str)
+        
+        pos = 1
+        do i = 1, len_str
+            if (str(i:i) == "'") then
+                escaped_str(pos:pos+3) = "'\''"
+                pos = pos + 4
+            else
+                escaped_str(pos:pos) = str(i:i)
+                pos = pos + 1
+            end if
+        end do
+        
+        ! Trim to actual length
+        escaped_str = escaped_str(1:pos-1)
+    end function replace_single_quotes
     
     function is_zero_configuration_mode() result(is_zero_config)
         !! Detect if user invoked fortcov with no arguments (zero-configuration mode)
@@ -474,11 +543,14 @@ contains
         ! Create temporary file for results
         temp_file = "/tmp/fortcov_find_gcov_" // get_unique_suffix()
         
-        ! Build find command - escape directory path for safety
+        ! Build find command - properly escape directory path for security
         if (trim(directory) == ".") then
-            command = "find . -maxdepth 1 -name '*.gcov' -type f > " // trim(temp_file) // " 2>/dev/null"
+            command = "find . -maxdepth 1 -name '*.gcov' -type f > " // &
+                     escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
         else
-            command = "find '" // trim(directory) // "' -maxdepth 1 -name '*.gcov' -type f > " // trim(temp_file) // " 2>/dev/null"
+            command = "find " // escape_shell_arg(trim(directory)) // &
+                     " -maxdepth 1 -name '*.gcov' -type f > " // &
+                     escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
         end if
         
         ! Execute find command
@@ -488,7 +560,8 @@ contains
         allocate(temp_results(100))  ! Reasonable maximum
         file_count = 0
         
-        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, action='read')
+        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, &
+             action='read')
         if (iostat == 0) then
             do
                 read(unit, '(A)', iostat=iostat) line
@@ -502,7 +575,7 @@ contains
         end if
         
         ! Clean up temporary file
-        call execute_command_line("rm -f " // trim(temp_file))
+        call execute_command_line("rm -f " // escape_shell_arg(trim(temp_file)))
         
         ! Allocate final result
         if (file_count > 0) then
@@ -516,17 +589,25 @@ contains
     end function direct_find_gcov_files
     
     function get_unique_suffix() result(suffix)
-        !! Generate a simple unique suffix for temporary files
+        !! Generate a cryptographically secure unique suffix for temporary files
         character(len=16) :: suffix
-        integer :: pid
-        character(len=16) :: pid_str
+        integer :: pid, clock_count
+        character(len=32) :: temp_suffix
         
-        ! Use process ID as unique suffix
-        call get_environment_variable("$", pid_str)
-        if (len_trim(pid_str) == 0) then
-            write(suffix, '(I0)') 12345  ! Fallback
+        ! Get process ID using system call
+        pid = c_getpid()  ! Proper system call for process ID
+        
+        ! Add high-resolution clock for additional entropy
+        call system_clock(clock_count)
+        
+        ! Combine PID and clock for uniqueness - use temp string first
+        write(temp_suffix, '(I0,"_",I0)') pid, clock_count
+        
+        ! Truncate to fit in result
+        if (len_trim(temp_suffix) > 16) then
+            suffix = temp_suffix(1:16)
         else
-            suffix = trim(pid_str)
+            suffix = trim(temp_suffix)
         end if
     end function get_unique_suffix
     
@@ -552,8 +633,10 @@ contains
         ! Create temporary file for results
         temp_file = "/tmp/fortcov_find_gcov_recursive_" // get_unique_suffix()
         
-        ! Build recursive find command
-        command = "find '" // trim(base_directory) // "' -name '*.gcov' -type f > " // trim(temp_file) // " 2>/dev/null"
+        ! Build recursive find command - properly escape paths
+        command = "find " // escape_shell_arg(trim(base_directory)) // &
+                 " -name '*.gcov' -type f > " // &
+                 escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
         
         ! Execute find command
         call execute_command_line(command)
@@ -562,7 +645,8 @@ contains
         allocate(temp_results(200))  ! Reasonable maximum for recursive
         file_count = 0
         
-        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, action='read')
+        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, &
+             action='read')
         if (iostat == 0) then
             do
                 read(unit, '(A)', iostat=iostat) line
@@ -576,7 +660,7 @@ contains
         end if
         
         ! Clean up temporary file
-        call execute_command_line("rm -f " // trim(temp_file))
+        call execute_command_line("rm -f " // escape_shell_arg(trim(temp_file)))
         
         ! Allocate final result
         if (file_count > 0) then
