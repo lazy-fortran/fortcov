@@ -19,6 +19,7 @@
 ### EPIC: Architecture Compliance (LOW - Sprint 2 Phase 4 - Only after Critical fixes)
 - [ ] #457: refactor: split zero_configuration_manager.f90 to reduce file size (646 lines)
 - [ ] #461: refactor: reduce function size in zero_configuration_manager.f90
+- [ ] #478: fix: QADS line length violations in zero_configuration_manager.f90
 
 ### EPIC: Code Cleanup (LOWEST - Sprint 2 Phase 5 - Only after Core Recovery)
 - [ ] #458: cleanup: remove dead C interface files (~2000+ lines unused)
