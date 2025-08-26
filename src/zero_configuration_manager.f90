@@ -316,30 +316,29 @@ contains
         allocate(character(len=256) :: coverage_files(0))
     end function discover_existing_gcov_files
     
-    function direct_find_gcov_files(directory) result(gcov_files)
-        !! Direct filesystem-based .gcov file discovery for zero-config mode
-        !! Uses system find command to discover ALL .gcov files in the directory
-        !! Bypasses security restrictions for zero-configuration functionality
+    function validate_directory_exists(directory) result(exists)
+        !! Check if directory exists for gcov file discovery
         character(len=*), intent(in) :: directory
-        character(len=:), allocatable :: gcov_files(:)
+        logical :: exists
         
-        logical :: dir_exists
-        character(len=512) :: command, temp_file
-        character(len=256) :: line
-        integer :: unit, iostat, file_count, i
-        character(len=256), allocatable :: temp_results(:)
+        inquire(file=directory, exist=exists)
+    end function validate_directory_exists
+    
+    function build_recursive_find_command(base_directory, temp_file) result(command)
+        !! Build recursive find command for gcov files
+        character(len=*), intent(in) :: base_directory, temp_file
+        character(len=512) :: command
         
-        ! Check if directory exists
-        inquire(file=directory, exist=dir_exists)
-        if (.not. dir_exists) then
-            allocate(character(len=256) :: gcov_files(0))
-            return
-        end if
+        command = "find " // escape_shell_arg(trim(base_directory)) // &
+                 " -name '*.gcov' -type f > " // &
+                 escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
+    end function build_recursive_find_command
+    
+    function build_nonrecursive_find_command(directory, temp_file) result(command)
+        !! Build non-recursive find command for gcov files
+        character(len=*), intent(in) :: directory, temp_file
+        character(len=512) :: command
         
-        ! Create temporary file for results
-        temp_file = "/tmp/fortcov_find_gcov_" // get_unique_suffix()
-        
-        ! Build find command - properly escape directory path for security
         if (trim(directory) == ".") then
             command = "find . -maxdepth 1 -name '*.gcov' -type f > " // &
                      escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
@@ -348,12 +347,24 @@ contains
                      " -maxdepth 1 -name '*.gcov' -type f > " // &
                      escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
         end if
+    end function build_nonrecursive_find_command
+    
+    function execute_find_and_read_results(command, temp_file, max_results) &
+                                          result(gcov_files)
+        !! Execute find command and read results from temporary file
+        character(len=*), intent(in) :: command, temp_file
+        integer, intent(in) :: max_results
+        character(len=:), allocatable :: gcov_files(:)
+        
+        character(len=256) :: line
+        integer :: unit, iostat, file_count
+        character(len=256), allocatable :: temp_results(:)
         
         ! Execute find command
         call execute_command_line(command)
         
         ! Read results from temporary file
-        allocate(temp_results(100))  ! Reasonable maximum
+        allocate(temp_results(max_results))
         file_count = 0
         
         open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, &
@@ -362,7 +373,7 @@ contains
             do
                 read(unit, '(A)', iostat=iostat) line
                 if (iostat /= 0) exit
-                if (len_trim(line) > 0 .and. file_count < 100) then
+                if (len_trim(line) > 0 .and. file_count < max_results) then
                     file_count = file_count + 1
                     temp_results(file_count) = trim(line)
                 end if
@@ -382,6 +393,28 @@ contains
         end if
         
         deallocate(temp_results)
+    end function execute_find_and_read_results
+    
+    function direct_find_gcov_files(directory) result(gcov_files)
+        !! Direct filesystem-based .gcov file discovery for zero-config mode
+        !! Uses system find command to discover ALL .gcov files in the directory
+        !! Bypasses security restrictions for zero-configuration functionality
+        character(len=*), intent(in) :: directory
+        character(len=:), allocatable :: gcov_files(:)
+        character(len=512) :: command, temp_file
+        
+        ! Validate directory exists
+        if (.not. validate_directory_exists(directory)) then
+            allocate(character(len=256) :: gcov_files(0))
+            return
+        end if
+        
+        ! Prepare command and temporary file
+        temp_file = "/tmp/fortcov_find_gcov_" // get_unique_suffix()
+        command = build_nonrecursive_find_command(directory, temp_file)
+        
+        ! Execute and read results
+        gcov_files = execute_find_and_read_results(command, temp_file, 100)
     end function direct_find_gcov_files
     
     function get_unique_suffix() result(suffix)
@@ -412,61 +445,20 @@ contains
         !! Recursively search for .gcov files in directory tree
         character(len=*), intent(in) :: base_directory
         character(len=:), allocatable :: gcov_files(:)
-        
-        logical :: dir_exists
         character(len=512) :: command, temp_file
-        character(len=256) :: line
-        integer :: unit, iostat, file_count
-        character(len=256), allocatable :: temp_results(:)
         
-        ! Check if base directory exists
-        inquire(file=base_directory, exist=dir_exists)
-        if (.not. dir_exists) then
+        ! Validate directory exists
+        if (.not. validate_directory_exists(base_directory)) then
             allocate(character(len=256) :: gcov_files(0))
             return
         end if
         
-        ! Create temporary file for results
+        ! Prepare command and temporary file
         temp_file = "/tmp/fortcov_find_gcov_recursive_" // get_unique_suffix()
+        command = build_recursive_find_command(base_directory, temp_file)
         
-        ! Build recursive find command - properly escape paths
-        command = "find " // escape_shell_arg(trim(base_directory)) // &
-                 " -name '*.gcov' -type f > " // &
-                 escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
-        
-        ! Execute find command
-        call execute_command_line(command)
-        
-        ! Read results from temporary file
-        allocate(temp_results(200))  ! Reasonable maximum for recursive
-        file_count = 0
-        
-        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, &
-             action='read')
-        if (iostat == 0) then
-            do
-                read(unit, '(A)', iostat=iostat) line
-                if (iostat /= 0) exit
-                if (len_trim(line) > 0 .and. file_count < 200) then
-                    file_count = file_count + 1
-                    temp_results(file_count) = trim(line)
-                end if
-            end do
-            close(unit)
-        end if
-        
-        ! Clean up temporary file
-        call execute_command_line("rm -f " // escape_shell_arg(trim(temp_file)))
-        
-        ! Allocate final result
-        if (file_count > 0) then
-            allocate(character(len=256) :: gcov_files(file_count))
-            gcov_files(1:file_count) = temp_results(1:file_count)
-        else
-            allocate(character(len=256) :: gcov_files(0))
-        end if
-        
-        deallocate(temp_results)
+        ! Execute and read results
+        gcov_files = execute_find_and_read_results(command, temp_file, 200)
     end function direct_find_gcov_files_recursive
     
 end module zero_configuration_manager
