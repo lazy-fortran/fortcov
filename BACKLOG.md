@@ -15,7 +15,6 @@
 ### EPIC: Architecture Size Compliance
 
 ## DOING (Current Work)
-- [ ] #427: Dead code: unused imports in fortcov module [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
