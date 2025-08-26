@@ -18,9 +18,12 @@ cd your-fortran-project
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 fortcov
 
-# Manual mode with specific files
-gcov src/*.f90
-fortcov --source . --exclude build/* --exclude test/* --output coverage.md
+# Manual gcov file generation (if needed)
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+find . -name "*.gcda" | while read gcda_file; do
+  gcov -b "$gcda_file" --object-directory=$(dirname "$gcda_file") 2>/dev/null || true
+done
+fortcov *.gcov
 ```
 
 ## Documentation
