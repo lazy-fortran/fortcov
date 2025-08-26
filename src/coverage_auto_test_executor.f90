@@ -9,7 +9,7 @@ module coverage_auto_test_executor
     use build_system_detector
     use error_handling
     use shell_utils, only: escape_shell_argument
-    use string_utils, only: format_integer
+    use string_utils, only: int_to_string
     implicit none
     private
 
@@ -274,7 +274,7 @@ contains
                          format_timeout_message(config%test_timeout_seconds)
             else
                 print *, "❌ Test execution failed with exit code: " // &
-                         format_integer(test_exit_code)
+                         int_to_string(test_exit_code)
             end if
         end if
     end subroutine report_test_failure

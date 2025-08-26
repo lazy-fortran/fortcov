@@ -8,7 +8,7 @@ module terminal_ui_manager
     use theme_manager
     use tui_main_loop
     use report_configuration
-    use string_utilities, only: int_to_str, real_to_str
+    use string_utils, only: int_to_str, real_to_str
     implicit none
     private
 

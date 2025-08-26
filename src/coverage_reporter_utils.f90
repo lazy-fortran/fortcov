@@ -5,7 +5,7 @@ module coverage_reporter_utils
     !! Contains shared utility functions for calculating coverage statistics.
     use coverage_model
     use coverage_statistics, only: stats_t => coverage_stats_t
-    use string_utilities, only: int_to_string
+    use string_utils, only: int_to_string
     implicit none
     private
     

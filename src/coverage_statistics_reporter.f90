@@ -12,7 +12,7 @@ module coverage_statistics_reporter
     use coverage_reporter
     use report_engine
     use error_handling
-    use string_utils, only: format_integer
+    use string_utils, only: int_to_string
     
     implicit none
     private
@@ -153,7 +153,7 @@ contains
         
         write(*,'(A)') ""
         write(*,'(A)') "Auto-test execution failed with exit code " // &
-                      format_integer(auto_test_exit_code)
+                      int_to_string(auto_test_exit_code)
         write(*,'(A)') ""
         write(*,'(A)') "Possible solutions:"
         write(*,'(A)') "  1. Check that test files exist and are executable"

@@ -26,7 +26,7 @@ module secure_command_executor
     !! - Exit status validation for command success verification
     use iso_fortran_env, only: error_unit
     use error_handling
-    use string_utils, only: format_integer
+    use string_utils, only: int_to_string
     use shell_utils, only: escape_shell_argument
     implicit none
     private
@@ -130,7 +130,7 @@ contains
             error_ctx%error_code = ERROR_INVALID_CONFIG
             error_ctx%recoverable = .true.  ! Allow recovery for gcov failures
             call safe_write_message(error_ctx, &
-                "gcov command failed with exit code " // format_integer(stat))
+                "gcov command failed with exit code " // int_to_string(stat))
             call safe_write_suggestion(error_ctx, &
                 "Verify gcov is installed and coverage files are valid")
             call safe_write_context(error_ctx, "gcov command execution")

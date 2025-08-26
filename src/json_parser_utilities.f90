@@ -1,5 +1,5 @@
 module json_parser_utilities
-    use string_utilities, only: int_to_string
+    use string_utils, only: int_to_string
     implicit none
     private
     

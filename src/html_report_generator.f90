@@ -5,7 +5,7 @@ module html_report_generator
     !! Extracted from report_engine_impl.f90 for SRP compliance.
     use data_transformer
     use theme_manager
-    use string_utilities, only: int_to_str, real_to_str
+    use string_utils, only: int_to_str, real_to_str
     implicit none
     private
 

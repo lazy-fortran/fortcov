@@ -6,7 +6,7 @@ module coverage_constructors
     !! Focuses on complex calculation and serialization logic.
     use coverage_types
     use foundation_constants
-    use string_utilities, only: int_to_string
+    use string_utils, only: int_to_string
     implicit none
     private
     

@@ -1,6 +1,6 @@
 module path_security_core
     use error_handling
-    use string_utils, only: format_integer
+    use string_utils, only: int_to_string
     use path_pattern_scanner
     use system_file_protection
     use windows_security_validator
@@ -53,7 +53,7 @@ contains
         if (path_len > MAX_PATH_LENGTH) then
             error_ctx%error_code = ERROR_INVALID_PATH
             call safe_write_message(error_ctx, &
-                "Path exceeds maximum length: " // format_integer(MAX_PATH_LENGTH))
+                "Path exceeds maximum length: " // int_to_string(MAX_PATH_LENGTH))
             return
         end if
         

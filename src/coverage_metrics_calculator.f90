@@ -4,7 +4,7 @@ module coverage_metrics_calculator
     !! Handles computation and management of coverage statistics.
     !! Extracted from report_engine_impl.f90 for SRP compliance.
     use coverage_model
-    use string_utilities, only: real_to_str
+    use string_utils, only: real_to_str
     implicit none
     private
 

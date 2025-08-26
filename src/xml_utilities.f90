@@ -1,6 +1,6 @@
 module xml_utilities
     use coverage_model
-    use string_utilities, only: int_to_string, real_to_string
+    use string_utils, only: int_to_string, real_to_string
     implicit none
     private
     

@@ -14,7 +14,7 @@ module input_validation
     
     use error_handling
     use iso_fortran_env, only: int32, int64, real32
-    use string_utilities, only: int_to_string
+    use string_utils, only: int_to_string
     implicit none
     private
     

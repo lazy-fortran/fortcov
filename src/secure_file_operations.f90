@@ -6,7 +6,7 @@ module secure_file_operations
     !! and error reporting.
     use iso_fortran_env, only: error_unit
     use error_handling
-    use string_utils, only: format_integer
+    use string_utils, only: int_to_string
     use path_validation, only: validate_path_security
     use security_assessment, only: assess_deletion_security_risks, &
                                    assess_pattern_security_risks
@@ -136,8 +136,8 @@ contains
             if (close_iostat /= 0) then
                 call safe_write_message(error_ctx, &
                     "Critical: Temp file deletion failed - security risk. " // &
-                    "Close iostat: " // format_integer(close_iostat) // &
-                    ", Delete attempts: " // format_integer(max_attempts))
+                    "Close iostat: " // int_to_string(close_iostat) // &
+                    ", Delete attempts: " // int_to_string(max_attempts))
             else
                 call safe_write_message(error_ctx, &
                     "Critical: Temp file persists after deletion attempts " // &
@@ -150,7 +150,7 @@ contains
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
                 "Security audit: Temp file deletion required fallback. " // &
-                "Primary close iostat: " // format_integer(close_iostat))
+                "Primary close iostat: " // int_to_string(close_iostat))
         else if (potential_security_issues) then
             ! Report security concerns even if deletion appeared successful
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
@@ -244,7 +244,7 @@ contains
             if (.not. has_security_assessment) then
                 error_ctx%error_code = ERROR_INVALID_CONFIG
                 call safe_write_message(error_ctx, &
-                    "File search failed with exit code " // format_integer(stat))
+                    "File search failed with exit code " // int_to_string(stat))
             end if
             ! Leave files unallocated on command failure
             return

@@ -19,7 +19,7 @@ module security_assessment
     !!
     !! PERFORMANCE OPTIMIZED: Consolidated pattern matching, caching, early exits
     use error_handling
-    use string_utils, only: format_integer
+    use string_utils, only: int_to_string
     implicit none
     private
     

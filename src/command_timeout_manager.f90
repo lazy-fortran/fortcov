@@ -6,7 +6,7 @@ module command_timeout_manager
     !! with cross-platform process management abstractions.
     use iso_c_binding
     use error_handling
-    use string_utilities, only: int_to_string
+    use string_utils, only: int_to_string
     implicit none
     private
     

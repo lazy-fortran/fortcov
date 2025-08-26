@@ -7,7 +7,7 @@ module markdown_reporter
                               calculate_statistics, merge_coverage, &
                               compare_coverage
     use coverage_statistics, only: coverage_stats_t, calculate_line_coverage
-    use string_utilities, only: int_to_string
+    use string_utils, only: int_to_string
     use string_utils, only: compress_ranges, format_percentage
     implicit none
     private

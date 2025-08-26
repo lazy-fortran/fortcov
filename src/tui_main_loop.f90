@@ -1,6 +1,6 @@
 module tui_main_loop
     use iso_fortran_env, only: real64, int32
-    use string_utilities, only: int_to_str
+    use string_utils, only: int_to_str
     implicit none
     private
     
