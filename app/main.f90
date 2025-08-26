@@ -8,7 +8,8 @@ program main
   
   type(config_t) :: config
   character(len=:), allocatable :: args(:)
-  character(len=256) :: error_message, enhancement_error
+  character(len=256) :: error_message
+  character(len=:), allocatable :: enhancement_error
   type(error_context_t) :: error_ctx
   logical :: success, enhancement_success
   integer :: exit_code, argc, i
@@ -98,7 +99,7 @@ program main
   
   ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
   if (config%zero_configuration_mode) then
-    exit_code = execute_zero_config_complete_workflow(config)
+    call execute_zero_config_complete_workflow(config, exit_code)
   else
     exit_code = run_coverage_analysis(config)
   end if
