@@ -26,6 +26,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
+- [ ] #464: Security bug: URL-encoded attack validation test failing [EPIC: Infrastructure Stabilization]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
