@@ -16,7 +16,6 @@
 - [ ] #426: Code duplication: consolidate string utility modules
 
 ### EPIC: Architecture Size Compliance
-- [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
 - [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files [EPIC: Documentation & CLI Consistency]
