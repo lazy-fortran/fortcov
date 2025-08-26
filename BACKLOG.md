@@ -9,12 +9,11 @@
 ### EPIC: Architecture Size Compliance
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #382: cleanup: remove unused sanitize_filename function
 - [ ] #383: cleanup: remove unused is_safe_path function
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #382: cleanup: remove unused sanitize_filename function [EPIC: Code Quality & Dead Code Elimination]
+- [ ] #383: cleanup: remove unused is_safe_path function [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
