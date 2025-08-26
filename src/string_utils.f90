@@ -9,7 +9,6 @@ module string_utils
     public :: split
     public :: trim_string
     public :: validate_string_input
-    public :: is_safe_path
     public :: to_lower
     public :: matches_pattern
     public :: check_exclude_patterns_list
@@ -244,39 +243,6 @@ contains
     end function validate_string_input
 
 
-    ! Security: Check if path is safe (no directory traversal)
-    function is_safe_path(path) result(is_safe)
-        character(len=*), intent(in) :: path
-        logical :: is_safe
-        
-        is_safe = .true.
-        
-        ! Reject directory traversal attempts
-        if (index(path, '../') > 0 .or. index(path, '..\\') > 0) then
-            is_safe = .false.
-            return
-        end if
-        
-        ! Reject absolute paths starting with sensitive directories
-        if (index(path, '/etc/') == 1 .or. index(path, '/root/') == 1 .or. &
-            index(path, '/boot/') == 1 .or. index(path, '/sys/') == 1) then
-            is_safe = .false.
-            return
-        end if
-        
-        ! Reject Windows system paths
-        if (index(path, 'C:\Windows') == 1 .or. index(path, 'C:\System') == 1 .or. &
-            index(path, 'C:\\Windows') == 1 .or. index(path, 'C:\\System') == 1) then
-            is_safe = .false.
-            return
-        end if
-        
-        ! Basic validation
-        if (.not. validate_string_input(path, 2048)) then
-            is_safe = .false.
-            return
-        end if
-    end function is_safe_path
 
     ! Convert string to lowercase (helper function)
     function to_lower(str) result(lower_str)
