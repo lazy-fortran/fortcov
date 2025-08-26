@@ -20,8 +20,8 @@ fortcov
 
 # Manual gcov file generation (if needed)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find . -name "*.gcda" | while read gcda_file; do
-  gcov -b "$gcda_file" --object-directory=$(dirname "$gcda_file") 2>/dev/null || true
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
 fortcov *.gcov
 ```

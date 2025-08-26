@@ -42,8 +42,8 @@ EOF
 
 # Generate coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find build -name "*.gcda" | while read gcda_file; do
-  gcov -b "$gcda_file" 2>/dev/null || true
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
 fortcov --source . --output coverage.md
 ```
@@ -61,8 +61,8 @@ fortcov --source . --output coverage.md
 **FPM (recommended):**
 ```bash
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-find build -name "*.gcda" | while read gcda_file; do
-  gcov -b "$gcda_file" 2>/dev/null || true
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
 fortcov --source .
 ```
@@ -89,8 +89,8 @@ coverage: test
 ```yaml
 - run: |
     fpm test --flag "-fprofile-arcs -ftest-coverage"
-    find build -name "*.gcda" | while read gcda_file; do
-      gcov -b "$gcda_file" 2>/dev/null || true
+    find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+      gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
     done
     fortcov --source . --fail-under 80 --format json --output coverage.json
 ```
@@ -100,7 +100,7 @@ coverage: test
 coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage" 
-    - find build -name "*.gcda" | while read gcda_file; do gcov -b "$gcda_file" 2>/dev/null || true; done
+    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --source . --format xml --output coverage.xml --fail-under 80
   artifacts:
     reports:
