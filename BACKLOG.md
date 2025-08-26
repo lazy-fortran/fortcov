@@ -34,6 +34,7 @@
 - [x] #500: critical: scope mismatch between issue 459 requirements and PR 499 implementation
 
 ## DOING (Current Work)
+- [ ] #460: refactor: implement stub functionality in test_build_auto_discovery.f90 [EPIC: Code Cleanup]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
