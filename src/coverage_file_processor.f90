@@ -76,19 +76,28 @@ contains
 
     subroutine parse_coverage_files(files, config, merged_coverage, parse_error)
         !! Parse coverage files and merge into single coverage model
+        use gcov_file_processor, only: process_gcov_file
         character(len=*), intent(in) :: files(:)
         type(config_t), intent(in) :: config
         type(coverage_data_t), intent(out) :: merged_coverage
         logical, intent(out) :: parse_error
         
-        integer :: i, parse_count
+        integer :: i, j, parse_count, file_count
+        type(coverage_data_t) :: file_coverage
+        type(coverage_file_t), allocatable :: all_files(:), temp_files(:)
+        logical :: file_parse_error
         
         parse_error = .false.
         parse_count = 0
+        file_count = 0
         
-        ! Note: merged_coverage initialization will be added when needed
+        ! Initialize merged coverage
+        call merged_coverage%init()
         
-        ! For now, just count and report files - actual parsing will be implemented later
+        ! Allocate initial storage for files
+        allocate(all_files(size(files)))
+        
+        ! Parse each coverage file
         do i = 1, size(files)
             if (len_trim(files(i)) == 0) cycle
             
@@ -99,20 +108,55 @@ contains
                 cycle
             end if
             
-            parse_count = parse_count + 1
-            
             if (.not. config%quiet) then
                 write(*,'(A,I0,A)') "Found coverage file ", i, ": " // trim(files(i))
             end if
+            
+            ! Parse this coverage file
+            call process_gcov_file(files(i), file_coverage, file_parse_error)
+            
+            if (file_parse_error) then
+                if (.not. config%quiet) then
+                    write(*,'(A)') "Warning: Failed to parse: " // trim(files(i))
+                end if
+                cycle
+            end if
+            
+            parse_count = parse_count + 1
+            
+            ! Merge files from this coverage data into our collection
+            if (allocated(file_coverage%files)) then
+                do j = 1, size(file_coverage%files)
+                    file_count = file_count + 1
+                    
+                    ! Expand all_files array if needed
+                    if (file_count > size(all_files)) then
+                        allocate(temp_files(file_count * 2))
+                        temp_files(1:size(all_files)) = all_files
+                        call move_alloc(temp_files, all_files)
+                    end if
+                    
+                    ! Copy file data
+                    all_files(file_count) = file_coverage%files(j)
+                end do
+            end if
         end do
         
-        ! Check if any files were found
-        if (parse_count == 0) then
+        ! Check if any files were successfully parsed
+        if (parse_count == 0 .or. file_count == 0) then
             if (.not. config%quiet) then
                 write(*,'(A)') "Error: No valid coverage files found"
             end if
             parse_error = .true.
             return
+        end if
+        
+        ! Set merged coverage files
+        if (file_count > 0) then
+            ! Deallocate first since init() already allocated empty array
+            if (allocated(merged_coverage%files)) deallocate(merged_coverage%files)
+            allocate(merged_coverage%files(file_count))
+            merged_coverage%files = all_files(1:file_count)
         end if
         
         if (.not. config%quiet) then
