@@ -2,11 +2,11 @@
 
 ## SPRINT_BACKLOG (Critical Functionality Recovery - Sprint 2)
 
-### EPIC: Infrastructure Stabilization (HIGH - Sprint 2 Phase 2)
+### EPIC: Infrastructure Stabilization (HIGH - Sprint 2 Phase 2) ✅ COMPLETED
 - [x] #464: Security bug: URL-encoded attack validation test failing  
 - [x] #465: Permission denied error when creating test directories
 - [x] #467: Fork bomb prevention marker file not cleaned up, blocking normal operation
-- [ ] #473: Input validation bug: minimum threshold accepts invalid values (-1, 999999)
+- [x] #473: Input validation bug: minimum threshold accepts invalid values (-1, 999999)
 
 ### EPIC: User Experience & Documentation (MEDIUM - Sprint 2 Phase 3)
 - [ ] #474: Documentation consolidation: Fix all CLI help mismatches and example errors (consolidates #466, #468, #471)
@@ -26,7 +26,7 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #473: Input validation bug: minimum threshold accepts invalid values (-1, 999999) [EPIC: Infrastructure Stabilization]
+- [ ] #474: Documentation consolidation: Fix all CLI help mismatches and example errors (consolidates #466, #468, #471) [EPIC: User Experience & Documentation]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
@@ -35,6 +35,7 @@
 - [ ] User Experience & Developer Productivity
 
 ## DONE (Completed Product Features)
+- [x] Infrastructure Stabilization (Sprint 2 Phase 2 - All critical infrastructure bugs resolved)
 
 ## FUTURE SPRINTS (High-level Planning)
 
