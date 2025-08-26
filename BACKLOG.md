@@ -2,15 +2,36 @@
 
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
+### EPIC: Core Functionality Restoration (MUST HAVE)
+- [ ] #439: Architecture misalignment: Zero-config functionality violates DESIGN.md sprint objectives
+- [ ] #430: Zero-config fortcov fails with configuration validation error instead of running
+- [ ] #432: CRITICAL: FPM test causes infinite recursion fork bomb in fortcov project  
+- [ ] #437: Major functional regression: Core CLI and config functionality completely broken
+- [ ] #433: Configuration validation always fails for valid CLI arguments
+- [ ] #434: Inconsistent error handling: some flags work while others trigger generic validation failure
+
 ### EPIC: Critical Infrastructure Defects
+- [ ] #435: TUI mode produces no output and may hang indefinitely
+- [ ] #436: Example configuration file fails with generic validation error
+- [ ] #421: Zero-configuration mode not working - shows help instead of auto-discovering
 - [ ] #397: README contains multiple non-functional command examples
 
-### EPIC: Core Functionality Restoration
-- [ ] CRITICAL: Zero-config fortcov command doesn't work (shows help instead of running coverage) - MUST HAVE for next sprint
-
-### EPIC: Architecture Size Compliance
+### EPIC: Documentation & CLI Consistency  
+- [ ] #424: Comprehensive documentation cleanup - broken links, outdated examples, file organization
+- [ ] #423: Inconsistent CLI parameters between help and documentation
+- [ ] #422: README claims non-existent directories and features
+- [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files
 
 ### EPIC: Code Quality & Dead Code Elimination
+- [ ] #429: Dead code comprehensive cleanup needed for code bloat
+- [ ] #428: Dead code: unused functions in input_validation module
+- [ ] #427: Dead code: unused imports in fortcov module
+- [ ] #425: Dead code: remove unused fortran_syntax_rules module
+- [ ] #426: Code duplication: consolidate string utility modules
+
+### EPIC: Architecture Size Compliance
+- [ ] #438: Test file size violations: 9 files exceed 500-line architecture target
+- [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
 
