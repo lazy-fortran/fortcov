@@ -9,13 +9,13 @@
 fortcov
 
 # Traditional usage  
-fortcov --source=src --output=coverage.md
+fortcov --source src --output coverage.md
 
 # CI/CD usage
-fortcov --fail-under=80 --quiet
+fortcov --fail-under 80 --quiet
 
 # Configuration file
-fortcov --config=fortcov.nml
+fortcov --config fortcov.nml
 ```
 
 ## Advanced Options

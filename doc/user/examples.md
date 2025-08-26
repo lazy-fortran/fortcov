@@ -45,7 +45,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov --source=. --output=coverage.md
+fortcov --source . --output coverage.md
 ```
 
 **Expected output:**
@@ -64,7 +64,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov --source=.
+fortcov --source .
 ```
 
 **CMake:**
@@ -72,7 +72,7 @@ fortcov --source=.
 set(CMAKE_Fortran_FLAGS_TESTING "-fprofile-arcs -ftest-coverage")
 add_custom_target(coverage
     COMMAND gcov *.gcno
-    COMMAND fortcov --source=${CMAKE_SOURCE_DIR}
+    COMMAND fortcov --source ${CMAKE_SOURCE_DIR}
 )
 ```
 
@@ -80,7 +80,7 @@ add_custom_target(coverage
 ```makefile
 coverage: test
 	gcov $(SOURCES) 
-	fortcov --source=. --output=coverage.md
+	fortcov --source . --output coverage.md
 ```
 
 ## CI/CD Integration
@@ -92,7 +92,7 @@ coverage: test
     find build -name "*.gcda" | while read gcda_file; do
       gcov -b "$gcda_file" 2>/dev/null || true
     done
-    fortcov --source=. --fail-under=80 --output-format=json --output=coverage.json
+    fortcov --source . --fail-under 80 --format json --output coverage.json
 ```
 
 **GitLab CI:**
@@ -101,7 +101,7 @@ coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage" 
     - find build -name "*.gcda" | while read gcda_file; do gcov -b "$gcda_file" 2>/dev/null || true; done
-    - fortcov --source=. --output-format=xml --output=coverage.xml --fail-under=80
+    - fortcov --source . --format xml --output coverage.xml --fail-under 80
   artifacts:
     reports:
       coverage_report:
