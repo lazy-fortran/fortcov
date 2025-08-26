@@ -10,8 +10,8 @@ FortCov uses **Fortran namelist format** (`fortcov.nml`) for configuration:
 &fortcov_config
     source_paths = 'src/', 'lib/', 'modules/'
     exclude_patterns = 'test/*', '*.mod', 'vendor/*'
-    output_format = 'markdown'
-    output_path = 'coverage.md'
+    output_format = 'json'
+    output_path = 'coverage.json'
     minimum_coverage = 80.0
     verbose = .true.
     quiet = .false.
@@ -25,7 +25,7 @@ FortCov uses **Fortran namelist format** (`fortcov.nml`) for configuration:
 |--------|------|---------|-------------|
 | `source_paths` | string array | `'src/'` | Source directories to analyze |
 | `exclude_patterns` | string array | `''` | File patterns to exclude (glob syntax) |
-| `output_format` | string | `'terminal'` | Output format: terminal, markdown, json, xml |
+| `output_format` | string | `'json'` | Output format: json, xml, html, lcov, cobertura |
 | `output_path` | string | `'-'` | Output file path ('-' for stdout) |
 | `minimum_coverage` | real | `0.0` | Minimum coverage threshold (0-100) |
 | `verbose` | logical | `.false.` | Enable verbose output |
@@ -89,7 +89,12 @@ fortcov --config=prod.nml --validate
 - Use specific source paths instead of wildcards
 - Enable quiet mode for CI/CD pipelines
 
+**Current Implementation Status:**
+- Coverage analysis and terminal display fully working
+- File output generation is not yet implemented (shows "would be generated")
+- Configuration validation is functional
+
 **CI/CD Integration:**
-- Use JSON output format for machine parsing
+- Terminal output provides coverage statistics for parsing
 - Set appropriate coverage thresholds
 - Enable fail-under for quality gates

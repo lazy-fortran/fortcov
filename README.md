@@ -13,10 +13,9 @@ git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov && fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 
-# Zero-configuration mode (auto-discovers coverage files)
+# Manual coverage generation
 cd your-fortran-project
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-fortcov
 
 # Manual gcov file generation (if needed)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
@@ -49,8 +48,7 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 
 ## Features
 
-- **Zero-configuration mode**: Auto-discovers coverage files and generates reports
-- **Multiple output formats**: Markdown, JSON, XML, HTML, LCOV, Cobertura
+- **Multiple output formats**: JSON, XML, HTML, LCOV, Cobertura (terminal display)
 - **Build system integration**: Works with FPM, CMake, Make, and custom build systems  
 - **CI/CD ready**: Designed for automated testing pipelines
 - **Security focused**: Path validation, command injection prevention
@@ -59,37 +57,40 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 ## Example Output
 
 ```bash
-$ fortcov
-FortCov: Starting zero-configuration coverage analysis...
-FortCov: Auto-discovering coverage files...
-FortCov: Found 5 .gcov files in build/gcov/
-FortCov: Analyzing coverage data...
-FortCov: Coverage report generated: build/coverage/coverage.md
+$ fortcov --source=src *.gcov
+📊 Analyzing coverage...
+Found coverage file 1: demo_calculator.f90.gcov
+Found coverage file 2: main.f90.gcov
+Found coverage file 3: test_demo.f90.gcov
+Found 3 coverage files
 
-Coverage Summary:
-  Total lines: 1,234
-  Covered lines: 1,050
-  Coverage: 85.1%
+Coverage Statistics:
+  Line Coverage:  72.86%
+  Lines Covered: 51 of 70 lines
 ```
 
 ## Quick Examples
 
-**Zero-configuration (recommended):**
+**Basic usage:**
 ```bash
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-fortcov  # Auto-discovers coverage files and shows terminal output
+# Generate .gcov files manually:
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov  # Shows terminal coverage output
 ```
 
 **Manual file specification:**
 ```bash
-fortcov *.gcov  # Analyze gcov files with terminal output
+fortcov --source=src *.gcov  # Analyze gcov files with terminal output
 ```
 
-**Note**: File output formats (--output, --format) are working. Use --format=markdown, --format=json, or --format=xml for file output.
+**Note**: Current version shows coverage analysis but file output generation is not yet implemented. Available formats: json, xml, html, lcov, cobertura.
 
 **CI/CD integration:**
 ```bash
-fortcov --minimum 80 --fail-under 80  # Fail if coverage < 80%
+fortcov --source=src *.gcov --minimum 80 --fail-under 80  # Fail if coverage < 80%
 ```
 
 ## Contributing

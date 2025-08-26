@@ -2,7 +2,7 @@
 
 Copy-paste ready examples for common FortCov usage patterns. All examples tested and verified.
 
-## Zero-Configuration Quickstart
+## Basic Coverage Analysis
 
 **Simple project setup:**
 ```bash
@@ -33,9 +33,13 @@ program test_demo
 end program
 EOF
 
-# Generate coverage (zero-configuration)
+# Generate coverage
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-fortcov  # Auto-discovers everything
+# Generate .gcov files manually:
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov
 ```
 
 ## Manual File Processing
@@ -54,23 +58,19 @@ done
 fortcov src_demo.f90.gcov test_demo.f90.gcov
 ```
 
-## Output Format Examples
+## Terminal Output Examples
 
-**Markdown report:**
+**Basic terminal output:**
 ```bash
-fortcov --format=markdown --output=coverage-report.md
+fortcov --source=src *.gcov  # Shows coverage statistics in terminal
 ```
 
-**JSON for CI/CD:**
+**Quiet output for scripts:**
 ```bash
-fortcov --format=json --output=coverage.json --quiet
-# Parse with: jq -r '.summary.line_coverage' coverage.json
+fortcov --source=src *.gcov --quiet
 ```
 
-**XML for integration:**
-```bash
-fortcov --format=xml --output=coverage.xml
-```
+**Note**: File output generation is not yet implemented. Current version provides terminal coverage analysis only.
 
 ## Build System Integration
 
@@ -81,9 +81,12 @@ fortcov --format=xml --output=coverage.xml
 set -e
 echo "Building with coverage..."
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-echo "Generating coverage report..."
-fortcov --format=markdown --output=coverage.md
-echo "Coverage report: coverage.md"
+echo "Generating .gcov files..."
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+echo "Analyzing coverage..."
+fortcov --source=src *.gcov
 ```
 
 **CMake integration:**
@@ -94,9 +97,10 @@ set(CMAKE_Fortran_FLAGS_COVERAGE "-fprofile-arcs -ftest-coverage")
 add_custom_target(coverage
     DEPENDS ${PROJECT_NAME}_test
     COMMAND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_test
-    COMMAND fortcov --source ${CMAKE_SOURCE_DIR}/src --format=html --output=coverage.html
+    COMMAND bash -c "find . -name '*.gcda' | xargs dirname | sort -u | while read dir; do gcov --object-directory=\"$$dir\" \"$$dir\"/*.gcno 2>/dev/null || true; done"
+    COMMAND fortcov --source=src *.gcov
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating coverage report"
+    COMMENT "Generating coverage analysis"
 )
 ```
 
@@ -106,9 +110,12 @@ add_custom_target(coverage
 FCFLAGS_COVERAGE = -fprofile-arcs -ftest-coverage
 
 coverage: test
-	@echo "Generating coverage report..."
-	fortcov --source src --exclude "test/*" --format=markdown --output=coverage.md
-	@echo "Report generated: coverage.md"
+	@echo "Generating .gcov files..."
+	find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do \
+		gcov --object-directory="$$dir" "$$dir"/*.gcno 2>/dev/null || true; \
+	done
+	@echo "Analyzing coverage..."
+	fortcov --source=src *.gcov
 
 .PHONY: coverage
 ```
@@ -140,7 +147,10 @@ jobs:
     - name: Generate Coverage
       run: |
         fpm test --flag "-fprofile-arcs -ftest-coverage"
-        fortcov --format=json --output=coverage.json --fail-under=80
+        find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+          gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+        done
+        fortcov --source=src *.gcov --fail-under=80
     
     - name: Upload Coverage
       uses: actions/upload-artifact@v3
@@ -168,7 +178,8 @@ coverage_analysis:
     - cd ..
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
-    - fortcov --format=xml --output=coverage.xml --fail-under=75
+    - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
+    - fortcov --source=src *.gcov --fail-under=75
   artifacts:
     reports:
       coverage_report:
@@ -180,35 +191,19 @@ coverage_analysis:
 
 ## Advanced Usage Patterns
 
-**Multi-directory analysis:**
+**Multi-file analysis:**
 ```bash
-fortcov --source src --source lib --source modules --exclude "*.mod"
+fortcov src_*.gcov lib_*.gcov modules_*.gcov
 ```
 
-**Coverage comparison:**
-```bash
-# Generate baseline
-fortcov --format=json --output=baseline.json
-
-# After changes
-fortcov --format=json --output=current.json
-
-# Compare
-fortcov --diff baseline.json,current.json --diff-threshold=2.0
-```
+**Note**: Coverage comparison and diff features are not yet implemented in current version.
 
 **Quality gate integration:**
 ```bash
 #!/bin/bash
 # quality-gate.sh
-fortcov --format=json --output=coverage.json --quiet
-coverage=$(jq -r '.summary.line_coverage' coverage.json)
-echo "Current coverage: $coverage%"
-
-if (( $(echo "$coverage < 80" | bc -l) )); then
-    echo "ERROR: Coverage below 80% threshold"
-    exit 1
-fi
+# Note: File output not yet implemented, use --fail-under option
+fortcov --source=src *.gcov --fail-under=80 --quiet
 echo "Coverage check passed"
 ```
 
@@ -220,7 +215,7 @@ echo "Coverage check passed"
 &fortcov_config
     source_paths = 'src/', 'lib/'
     exclude_patterns = '*.mod', 'test/*'
-    output_format = 'terminal'
+    output_format = 'json'
     verbose = .true.
     minimum_coverage = 70.0
 /
@@ -232,8 +227,8 @@ echo "Coverage check passed"
 &fortcov_config
     source_paths = 'src/'
     exclude_patterns = '*.mod', 'test/*', 'vendor/*', 'build/*'
-    output_format = 'json'
-    output_path = 'coverage.json'
+    output_format = 'xml'
+    output_path = 'coverage.xml'
     quiet = .true.
     minimum_coverage = 90.0
 /
@@ -248,4 +243,4 @@ fortcov --config=dev.nml
 fortcov --config=ci.nml --fail-under=95
 ```
 
-All examples are tested and ready for copy-paste use. For additional build system examples, see `/examples/build_systems/` directory.
+Examples updated to reflect current implementation status. File output generation is not yet implemented - current version provides terminal coverage analysis.
