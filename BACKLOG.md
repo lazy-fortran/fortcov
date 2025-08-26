@@ -17,8 +17,8 @@
 - [x] #461: refactor: reduce function size in zero_configuration_manager.f90
 - [x] #478: fix: QADS line length violations in zero_configuration_manager.f90
 
-### EPIC: Critical Bugs (URGENT - Must be fixed immediately)
-- [ ] #491: Cannot build on Windows - C interface file compilation errors
+### EPIC: Critical Bugs (URGENT - Must be fixed immediately) ✅ COMPLETED
+- [x] #491: Cannot build on Windows - C interface file compilation errors
 
 ### EPIC: Documentation Defects (HIGH - Documentation fixes)  
 - [ ] #466: Documentation bug: fortcov *.gcov usage example fails with 'Too many positional arguments' error
@@ -34,7 +34,6 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #491: Cannot build on Windows - C interface file compilation errors [EPIC: Critical Bugs]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
