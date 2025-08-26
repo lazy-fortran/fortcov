@@ -38,7 +38,7 @@ contains
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
         print '(A)', "  -f, --format FORMAT       Output format:"
-        print '(A)', "                            terminal (default), json, xml, html, lcov, cobertura"
+        print '(A)', "                            terminal (default), markdown, json, html, xml"
         print '(A)', ""
         print '(A)', "Coverage Options:"
         print '(A)', "  -m, --minimum PERCENT     Set minimum coverage percentage"
@@ -65,19 +65,13 @@ contains
         print '(A)', "  --tui                     Launch terminal UI mode"
         print '(A)', "  --strict                  Enable strict mode (fail on warnings)"
         print '(A)', ""
-        print '(A)', "Zero-Configuration Mode:"
-        print '(A)', "  When run without arguments in a project directory, fortcov will:"
-        print '(A)', "  - Auto-detect source files and build system"
-        print '(A)', "  - Generate coverage reports automatically"
-        print '(A)', "  - Create HTML output in coverage-report/"
-        print '(A)', ""
         print '(A)', "Examples:"
-        print '(A)', "  fortcov                              # Zero-configuration mode"
-        print '(A)', "  fortcov *.gcov                       # Process .gcov files"
-        print '(A)', "  fortcov -s src/ -o coverage.html    # Analyze source directory"
-        print '(A)', "  fortcov --diff base.json,new.json   # Compare coverage"
+        print '(A)', "  fortcov --source=src *.gcov             # Analyze gcov files with source"
+        print '(A)', "  fortcov --source=src --output=report.md # Generate markdown report"
+        print '(A)', "  fortcov --source=. --format=json        # JSON output format"
+        print '(A)', "  fortcov --diff base.json,new.json       # Compare coverage"
         print '(A)', ""
-        print '(A)', "For more information, visit: https://github.com/fortran-lang/fortcov"
+        print '(A)', "For more information, visit: https://github.com/lazy-fortran/fortcov"
 
     end subroutine show_help_information
 
@@ -94,7 +88,7 @@ contains
         print *, "  - Terminal User Interface (TUI)"
         print *, "  - Parallel processing support"
         print *, ""
-        print *, "Repository: https://github.com/fortran-lang/fortcov"
+        print *, "Repository: https://github.com/lazy-fortran/fortcov"
         print *, "License: Apache-2.0"
 
     end subroutine show_version_information

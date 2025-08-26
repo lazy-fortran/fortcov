@@ -1,72 +1,149 @@
 # FortCov Usage Guide
 
-**Advanced usage patterns** - see main [README.md](../../README.md) for basic usage.
+Advanced usage patterns and workflows. For basic usage, see [README.md](../../README.md).
 
-## Command Reference
+## Core Usage Patterns
+
+**Manual coverage analysis:**
+```bash
+cd your-fortran-project
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+# Generate .gcov files manually:
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov  # Analyze coverage files
+```
+
+**Explicit file specification:**
+```bash
+# Process specific gcov files
+fortcov --source=src file1.gcov file2.gcov
+
+# Process all gcov files in directory
+fortcov --source=src *.gcov
+```
+
+**Source-based analysis:**
+```bash
+# Analyze specific source directories with coverage files
+fortcov --source src --source lib *.gcov
+
+# With exclusions
+fortcov --source . --exclude "test/*" --exclude "*.mod" *.gcov
+```
+
+## Output Formats and Analysis
 
 ```bash
-# Zero-configuration (recommended)
-fortcov
+# Terminal output (current working implementation)
+fortcov --source=src *.gcov
 
-# Traditional usage  
-fortcov --source src --output coverage.md
+# Note: File output formats show 'would be generated' but don't create files
+# Available format options: terminal (default), markdown, json, html, xml
+fortcov --source=src *.gcov --format=json
+fortcov --source=src *.gcov --format=xml
 
-# CI/CD usage
-fortcov --fail-under 80 --quiet
-
-# Configuration file
-fortcov --config fortcov.nml
+# Verbose terminal output
+fortcov --source=src *.gcov --verbose
 ```
 
-## Advanced Options
-
-| Option | Description | Status |
-|--------|-------------|--------|
-| `--format=FORMAT` | Output format (markdown/json/xml) | ✅ Working |
-| `--threshold=N` | Coverage threshold (warning only) | ✅ Working |
-| `--fail-under=N` | Fail if coverage is below N% | ✅ Working |
-| `--tui` | Interactive analysis mode | ✅ Working |
-| `--diff --diff-baseline=FILE` | Coverage comparison | ✅ Working |
-| `--verbose` | Enhanced output | 🔄 Partial |
-| `--quiet` | Suppress stdout | ❌ Not implemented |
-| `--exclude=PATTERN` | Exclude files | 🔄 Partial |
-
-## Configuration Files
-
-**Namelist format** (`fortcov.nml`):
-```fortran
-&fortcov_config
-    source_paths = 'src/', 'lib/'
-    exclude_patterns = 'test/*', '*.mod'
-    output_format = 'markdown'
-    minimum_coverage = 80.0
-    verbose = .false.
-/
-```
-
-## Security Features
-
-FortCov validates all inputs to prevent:
+## Coverage Thresholds and Quality Gates
 
 ```bash
-# These are blocked for security
-fortcov --source="path;rm -rf /"        # Command injection
-fortcov --source="../../../etc/"        # Path traversal  
-fortcov --source="/proc/"                # System access
+# Warning threshold (non-failing)
+fortcov --source=src *.gcov --minimum 80
+
+# Fail if below threshold (exit code 1)
+fortcov --source=src *.gcov --fail-under 85
+
+# Combined thresholds
+fortcov --source=src *.gcov --minimum 80 --fail-under 90
 ```
 
-Use clean paths without special characters.
+## Advanced Analysis Features
 
-## Environment Integration
-
-**Pre-commit workflow:**
+**Interactive TUI Mode:**
 ```bash
-fortcov --fail-under=80 && echo "Ready to commit" || echo "Add more tests"
+# Launch interactive terminal user interface
+fortcov --source=src *.gcov --tui
 ```
 
-**Quality gates:**
+**Note**: Coverage diff analysis features are not yet implemented in the current version. The current implementation provides terminal coverage analysis and interactive TUI mode.
+
+## Workflow Integration
+
+**Pre-commit Hook:**
 ```bash
-fortcov --fail-under=95 --format=json | jq -r '.summary.line_coverage'
+#!/bin/bash
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+# Generate .gcov files
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov --fail-under=80 --quiet
 ```
 
-For complete documentation including CI/CD examples, see main [README.md](../../README.md).
+**CI/CD Pipeline:**
+```bash
+# Generate coverage for CI (note: file output not yet implemented)
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+# Generate .gcov files
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov --fail-under=85 --quiet
+```
+
+**Development Workflow:**
+```bash
+# Quick check during development
+fortcov --source=src *.gcov --verbose
+
+# Detailed analysis with exclusions
+fortcov --source src --exclude "*.mod" --exclude "test/*" *.gcov
+```
+
+## Configuration-Driven Usage
+
+**Environment-specific configs:**
+```bash
+# Development (lower threshold, verbose)
+fortcov --config=dev.nml *.gcov
+
+# Production (high threshold)
+fortcov --config=ci.nml *.gcov
+
+# Override config values
+fortcov --config=dev.nml *.gcov --fail-under=90
+```
+
+## Security and Validation
+
+FortCov includes built-in security validation:
+
+- **Path traversal protection**: Prevents access outside project directory
+- **Command injection prevention**: Validates all input parameters
+- **File size limits**: Prevents processing of excessively large files
+- **Timeout protection**: Prevents long-running operations
+
+All paths are validated and normalized before processing.
+
+## Performance Optimization
+
+**Large project handling:**
+```bash
+# Use specific source paths (faster)
+fortcov --source src --source lib *.gcov
+
+# Parallel processing (note: threads option may not be implemented)
+fortcov --source=src *.gcov --threads 4
+
+# Exclude large directories
+fortcov --source=src --exclude "vendor/*" --exclude "build/*" *.gcov
+```
+
+**Memory management:**
+- Processes files in batches to limit memory usage
+- Automatic cleanup of temporary files
+- Configurable memory limits via configuration files

@@ -43,7 +43,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
-fortcov --source . --output coverage.md  # Creates coverage report
+fortcov --source=src *.gcov  # Shows coverage analysis in terminal
 ```
 
 ## Next Steps

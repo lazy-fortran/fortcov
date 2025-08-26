@@ -1,50 +1,47 @@
 #!/bin/bash
 # FPM Coverage Generation Script
-# Demonstrates Pattern 2: Build-Integrated Coverage Discovery from DESIGN.md
+# Demonstrates manual coverage generation with FPM
 
 set -e  # Exit on error
 
 echo "=== FPM Build System Integration Example ==="
-echo "Pattern 2: Build-Integrated Coverage Discovery"
+echo "Demonstrating manual coverage generation"
 echo
 
 # Clean previous coverage data
 echo "Cleaning previous coverage data..."
-rm -f *.gcov *.gcda *.gcno
+rm -f *.gcov *.gcda *.gcno coverage.md coverage.json
 rm -rf build/
 
-# Step 1: Generate coverage instrumentation
-echo "Step 1: Building with coverage instrumentation..."
+# Method 1: Manual coverage generation (current working approach)
+echo "Method 1: Manual Coverage Generation"
 echo "Command: fpm test --flag \"-fprofile-arcs -ftest-coverage\""
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-echo
-echo "Step 2: Generate coverage files with gcov..."
-echo "Command: gcov src/\*.f90"
-gcov src/*.f90 || echo "gcov processing completed"
+echo "Generating .gcov files..."
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+
+echo "Command: fortcov --source=src *.gcov"
+fortcov --source=src *.gcov || echo "Coverage analysis completed"
 
 echo
-echo "Step 3: Generate coverage report with fortcov..."
-echo "Command: fortcov --source . --exclude build/* --exclude test/*"
-fortcov --source . --exclude build/* --exclude test/* || echo "fortcov analysis completed"
+echo "Method 2: Alternative approach with different files"
+echo "Command: fortcov --source=src demo_calculator.f90.gcov"
+fortcov --source=src demo_calculator.f90.gcov 2>/dev/null || echo "Single file analysis completed"
 
 echo
-echo "Step 4: Using the FPM Coverage Bridge Script..."
-echo "This demonstrates how to use the bridge script for REAL coverage analysis"
-
-# Use the bridge script for actual coverage generation (not mock data)
-echo "Command: ../../../../scripts/fpm_coverage_bridge.sh root coverage.md"
-../../../../scripts/fpm_coverage_bridge.sh root coverage.md
-
-echo "✓ Real coverage report generated using bridge script: coverage.md"
-echo
+echo "=== Results ==="
 echo "Available coverage files:"
-ls -la *.gcov 2>/dev/null || echo "No .gcov files found - check compilation flags"
+ls -la *.gcov 2>/dev/null || echo "No .gcov files found"
 
 echo
-echo "=== FPM Integration Complete ==="
-echo "This example demonstrates DESIGN.md Pattern 2 for FPM integration."
-echo "The workflow: fpm test (with coverage flags) → gcov → fortcov"
-echo
-echo "For simpler usage, use the bridge script:"
-echo "../../../../scripts/fpm_coverage_bridge.sh root coverage.md"
+echo "=== FPM Integration Summary ==="
+echo "Current workflow:"
+echo "1. fpm test --flag \"-fprofile-arcs -ftest-coverage\""
+echo "2. find build -name \"*.gcda\" | xargs dirname | sort -u | while read dir; do gcov --object-directory=\"\$dir\" \"\$dir\"/*.gcno; done"
+echo "3. fortcov --source=src *.gcov"
+echo ""
+echo "Note: File output generation is not yet implemented in current version."
+echo "Current version provides terminal coverage analysis only."
