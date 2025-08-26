@@ -137,7 +137,8 @@ contains
     end subroutine apply_zero_configuration_defaults
     
     function auto_discover_coverage_files_priority() result(coverage_files)
-        !! Auto-discover coverage files using priority-ordered search with automatic gcov generation
+        !! Auto-discover coverage files using priority-ordered search with &
+        !! automatic gcov generation
         character(len=:), allocatable :: coverage_files(:)
         character(len=:), allocatable :: temp_files(:), gcda_files(:)
         logical :: dir_exists, gcov_available
@@ -325,7 +326,8 @@ contains
     end subroutine check_gcov_availability
     
     function discover_gcda_files_priority() result(gcda_files)
-        !! Systematically discover .gcda/.gcno files across different build system patterns
+        !! Systematically discover .gcda/.gcno files across different &
+        !! build system patterns
         character(len=:), allocatable :: gcda_files(:)
         character(len=:), allocatable :: temp_files(:)
         
@@ -476,7 +478,8 @@ contains
         call ensure_directory("build/gcov", dir_created)
         
         success_count = 0
-        allocate(character(len=256) :: temp_generated_files(size(gcda_files) * 10))  ! Estimate
+        allocate(character(len=256) :: &
+            temp_generated_files(size(gcda_files) * 10))  ! Estimate
         
         do i = 1, size(gcda_files)
             source_file = extract_source_from_gcda(gcda_files(i))
@@ -484,7 +487,8 @@ contains
             
             if (error_ctx%error_code == ERROR_SUCCESS .and. &
                 allocated(temp_files) .and. size(temp_files) > 0) then
-                temp_generated_files(success_count+1:success_count+size(temp_files)) = temp_files
+                temp_generated_files(success_count+1:success_count+ &
+                    size(temp_files)) = temp_files
                 success_count = success_count + size(temp_files)
             end if
         end do
@@ -492,7 +496,8 @@ contains
         ! Return successfully generated .gcov files
         if (success_count > 0) then
             allocate(character(len=256) :: generated_gcov_files(success_count))
-            generated_gcov_files(1:success_count) = temp_generated_files(1:success_count)
+            generated_gcov_files(1:success_count) = &
+                temp_generated_files(1:success_count)
         else
             allocate(character(len=256) :: generated_gcov_files(0))
         end if
