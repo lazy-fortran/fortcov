@@ -453,195 +453,140 @@ contains
     
     function direct_find_gcov_files(directory) result(gcov_files)
         !! Direct filesystem-based .gcov file discovery for zero-config mode
-        !! Bypasses secure command executor to avoid security restrictions  
+        !! Uses system find command to discover ALL .gcov files in the directory
+        !! Bypasses security restrictions for zero-configuration functionality
         character(len=*), intent(in) :: directory
         character(len=:), allocatable :: gcov_files(:)
         
-        character(len=256) :: test_files(4)
-        character(len=256) :: filename
-        integer :: file_count, i
-        logical :: file_exists
+        logical :: dir_exists
+        character(len=512) :: command, temp_file
+        character(len=256) :: line
+        integer :: unit, iostat, file_count, i
+        character(len=256), allocatable :: temp_results(:)
         
-        ! Initialize result
-        file_count = 0
-        
-        ! Test specific files that we know exist
-        test_files(1) = trim(directory) // "/test.gcov"
-        test_files(2) = trim(directory) // "/real_test.gcov" 
-        test_files(3) = trim(directory) // "/main.gcov"
-        test_files(4) = trim(directory) // "/coverage.gcov"
-        
-        ! Handle current directory case
-        if (trim(directory) == ".") then
-            test_files(1) = "test.gcov"
-            test_files(2) = "real_test.gcov"
-            test_files(3) = "main.gcov"
-            test_files(4) = "coverage.gcov"
+        ! Check if directory exists
+        inquire(file=directory, exist=dir_exists)
+        if (.not. dir_exists) then
+            allocate(character(len=256) :: gcov_files(0))
+            return
         end if
         
-        ! Count existing files
-        do i = 1, size(test_files)
-            inquire(file=trim(test_files(i)), exist=file_exists)
-            if (file_exists) file_count = file_count + 1
-        end do
+        ! Create temporary file for results
+        temp_file = "/tmp/fortcov_find_gcov_" // get_unique_suffix()
         
-        ! Allocate result array
-        if (file_count > 0) then
-            allocate(character(len=256) :: gcov_files(file_count))
-            file_count = 0  ! Reset counter for filling array
-            do i = 1, size(test_files) 
-                inquire(file=trim(test_files(i)), exist=file_exists)
-                if (file_exists) then
+        ! Build find command - escape directory path for safety
+        if (trim(directory) == ".") then
+            command = "find . -maxdepth 1 -name '*.gcov' -type f > " // trim(temp_file) // " 2>/dev/null"
+        else
+            command = "find '" // trim(directory) // "' -maxdepth 1 -name '*.gcov' -type f > " // trim(temp_file) // " 2>/dev/null"
+        end if
+        
+        ! Execute find command
+        call execute_command_line(command)
+        
+        ! Read results from temporary file
+        allocate(temp_results(100))  ! Reasonable maximum
+        file_count = 0
+        
+        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, action='read')
+        if (iostat == 0) then
+            do
+                read(unit, '(A)', iostat=iostat) line
+                if (iostat /= 0) exit
+                if (len_trim(line) > 0 .and. file_count < 100) then
                     file_count = file_count + 1
-                    gcov_files(file_count) = test_files(i)
+                    temp_results(file_count) = trim(line)
                 end if
             end do
+            close(unit)
+        end if
+        
+        ! Clean up temporary file
+        call execute_command_line("rm -f " // trim(temp_file))
+        
+        ! Allocate final result
+        if (file_count > 0) then
+            allocate(character(len=256) :: gcov_files(file_count))
+            gcov_files(1:file_count) = temp_results(1:file_count)
         else
             allocate(character(len=256) :: gcov_files(0))
         end if
+        
+        deallocate(temp_results)
     end function direct_find_gcov_files
     
-    subroutine check_direct_patterns(directory, temp_files, file_count)
-        !! Check for common .gcov file naming patterns
-        character(len=*), intent(in) :: directory
-        character(len=256), intent(inout) :: temp_files(:)
-        integer, intent(inout) :: file_count
+    function get_unique_suffix() result(suffix)
+        !! Generate a simple unique suffix for temporary files
+        character(len=16) :: suffix
+        integer :: pid
+        character(len=16) :: pid_str
         
-        character(len=256) :: filename
-        logical :: file_exists
-        integer :: max_files, i
-        character(len=32) :: patterns(10)
-        
-        max_files = min(size(temp_files), 100)
-        
-        patterns = ["test.gcov                       ", &
-                   "main.gcov                       ", &
-                   "coverage.gcov                   ", &
-                   "*.gcov                          ", &
-                   "real_test.gcov                  ", &
-                   "demo.gcov                       ", &
-                   "sample.gcov                     ", &
-                   "fortcov.gcov                    ", &
-                   "app.gcov                        ", &
-                   "src.gcov                        "]
-        
-        do i = 1, size(patterns)
-            if (file_count >= max_files) exit
-            
-            if (trim(patterns(i)) == "*.gcov") then
-                ! For *.gcov pattern, try some common names
-                call try_common_gcov_names(directory, temp_files, file_count, max_files)
-            else
-                ! Check specific pattern
-                if (trim(directory) == ".") then
-                    filename = trim(patterns(i))
-                else
-                    filename = trim(directory) // "/" // trim(patterns(i))
-                end if
-                
-                inquire(file=filename, exist=file_exists)
-                if (file_exists) then
-                    file_count = file_count + 1
-                    if (file_count <= max_files) temp_files(file_count) = filename
-                end if
-            end if
-        end do
-    end subroutine check_direct_patterns
+        ! Use process ID as unique suffix
+        call get_environment_variable("$", pid_str)
+        if (len_trim(pid_str) == 0) then
+            write(suffix, '(I0)') 12345  ! Fallback
+        else
+            suffix = trim(pid_str)
+        end if
+    end function get_unique_suffix
     
-    subroutine try_common_gcov_names(directory, temp_files, file_count, max_files)
-        !! Try common .gcov file names found in the directory
-        character(len=*), intent(in) :: directory
-        character(len=256), intent(inout) :: temp_files(:)
-        integer, intent(inout) :: file_count, max_files
-        
-        character(len=256) :: filename
-        logical :: file_exists
-        character(len=32) :: common_names(10)
-        integer :: i
-        
-        ! Common source file names that become .gcov files
-        common_names = ["test_sample.gcov            ", &
-                       "real_test.gcov              ", &
-                       "main.f90.gcov               ", &
-                       "test.f90.gcov               ", &
-                       "demo.f90.gcov               ", &
-                       "app.f90.gcov                ", &
-                       "source.f90.gcov             ", &
-                       "program.f90.gcov            ", &
-                       "module.f90.gcov             ", &
-                       "library.f90.gcov            "]
-        
-        do i = 1, size(common_names)
-            if (file_count >= max_files) exit
-            
-            if (trim(directory) == ".") then
-                filename = trim(common_names(i))
-            else
-                filename = trim(directory) // "/" // trim(common_names(i))
-            end if
-            
-            inquire(file=filename, exist=file_exists)
-            if (file_exists) then
-                file_count = file_count + 1
-                if (file_count <= max_files) temp_files(file_count) = filename
-            end if
-        end do
-    end subroutine try_common_gcov_names
     
     function direct_find_gcov_files_recursive(base_directory) result(gcov_files)
         !! Recursively search for .gcov files in directory tree
         character(len=*), intent(in) :: base_directory
         character(len=:), allocatable :: gcov_files(:)
         
-        character(len=256), allocatable :: temp_files(:), dir_files(:)
-        character(len=256) :: subdir
         logical :: dir_exists
-        integer :: total_count, dir_count, i
-        character(len=32) :: subdirs(10)
+        character(len=512) :: command, temp_file
+        character(len=256) :: line
+        integer :: unit, iostat, file_count
+        character(len=256), allocatable :: temp_results(:)
         
-        ! Initialize
-        allocate(character(len=256) :: gcov_files(0))
-        allocate(temp_files(200))  ! Pre-allocate for multiple directories
-        total_count = 0
-        
-        ! Initialize common subdirectories
-        subdirs = ["gcov    ", "coverage", "reports ", "output  ", "build   ", &
-                   "test    ", "tests   ", "app     ", "src     ", "lib     "]
-        
-        ! Check base directory
-        dir_files = direct_find_gcov_files(base_directory)
-        if (allocated(dir_files) .and. size(dir_files) > 0) then
-            dir_count = min(size(dir_files), 200 - total_count)
-            temp_files(total_count+1:total_count+dir_count) = dir_files(1:dir_count)
-            total_count = total_count + dir_count
+        ! Check if base directory exists
+        inquire(file=base_directory, exist=dir_exists)
+        if (.not. dir_exists) then
+            allocate(character(len=256) :: gcov_files(0))
+            return
         end if
         
-        ! Check common subdirectories
+        ! Create temporary file for results
+        temp_file = "/tmp/fortcov_find_gcov_recursive_" // get_unique_suffix()
         
-        do i = 1, size(subdirs)
-            if (total_count >= 200) exit
-            
-            subdir = trim(base_directory) // "/" // trim(subdirs(i))
-            inquire(file=subdir, exist=dir_exists)
-            
-            if (dir_exists) then
-                dir_files = direct_find_gcov_files(subdir)
-                if (allocated(dir_files) .and. size(dir_files) > 0) then
-                    dir_count = min(size(dir_files), 200 - total_count)
-                    temp_files(total_count+1:total_count+dir_count) = dir_files(1:dir_count)
-                    total_count = total_count + dir_count
+        ! Build recursive find command
+        command = "find '" // trim(base_directory) // "' -name '*.gcov' -type f > " // trim(temp_file) // " 2>/dev/null"
+        
+        ! Execute find command
+        call execute_command_line(command)
+        
+        ! Read results from temporary file
+        allocate(temp_results(200))  ! Reasonable maximum for recursive
+        file_count = 0
+        
+        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, action='read')
+        if (iostat == 0) then
+            do
+                read(unit, '(A)', iostat=iostat) line
+                if (iostat /= 0) exit
+                if (len_trim(line) > 0 .and. file_count < 200) then
+                    file_count = file_count + 1
+                    temp_results(file_count) = trim(line)
                 end if
-            end if
-        end do
-        
-        ! Copy final results
-        if (total_count > 0) then
-            deallocate(gcov_files)
-            allocate(character(len=256) :: gcov_files(total_count))
-            gcov_files(1:total_count) = temp_files(1:total_count)
+            end do
+            close(unit)
         end if
         
-        deallocate(temp_files)
+        ! Clean up temporary file
+        call execute_command_line("rm -f " // trim(temp_file))
+        
+        ! Allocate final result
+        if (file_count > 0) then
+            allocate(character(len=256) :: gcov_files(file_count))
+            gcov_files(1:file_count) = temp_results(1:file_count)
+        else
+            allocate(character(len=256) :: gcov_files(0))
+        end if
+        
+        deallocate(temp_results)
     end function direct_find_gcov_files_recursive
     
 end module zero_configuration_manager
