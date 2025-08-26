@@ -9,7 +9,6 @@
 ### EPIC: Architecture Size Compliance
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #385: cleanup: remove disabled fork bomb test files
 - [ ] #377: cleanup: remove unused coverage_line_types module
 - [ ] #378: cleanup: remove unused platform_detection module
 - [ ] #379: cleanup: remove unused secure_temp_file_types module
@@ -20,7 +19,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #376: cleanup: remove unused config_file_handler module [EPIC: Code Quality & Dead Code Elimination]
+- [ ] #385: cleanup: remove disabled fork bomb test files [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
