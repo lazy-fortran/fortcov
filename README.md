@@ -85,7 +85,7 @@ fortcov  # Auto-discovers coverage files and shows terminal output
 fortcov *.gcov  # Analyze gcov files with terminal output
 ```
 
-**Note**: File output formats (--output, --format) are currently affected by issue #396 and show "would be generated" instead of creating actual files. Terminal output works correctly.
+**Note**: File output formats (--output, --format) are working. Use --format=markdown, --format=json, or --format=xml for file output.
 
 **CI/CD integration:**
 ```bash

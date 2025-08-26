@@ -38,7 +38,7 @@ contains
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
         print '(A)', "  -f, --format FORMAT       Output format:"
-        print '(A)', "                            terminal (default), json, xml, html, lcov, cobertura"
+        print '(A)', "                            terminal (default), markdown, json, xml"
         print '(A)', ""
         print '(A)', "Coverage Options:"
         print '(A)', "  -m, --minimum PERCENT     Set minimum coverage percentage"
@@ -77,7 +77,7 @@ contains
         print '(A)', "  fortcov -s src/ -o coverage.html    # Analyze source directory"
         print '(A)', "  fortcov --diff base.json,new.json   # Compare coverage"
         print '(A)', ""
-        print '(A)', "For more information, visit: https://github.com/fortran-lang/fortcov"
+        print '(A)', "For more information, visit: https://github.com/lazy-fortran/fortcov"
 
     end subroutine show_help_information
 
@@ -94,7 +94,7 @@ contains
         print *, "  - Terminal User Interface (TUI)"
         print *, "  - Parallel processing support"
         print *, ""
-        print *, "Repository: https://github.com/fortran-lang/fortcov"
+        print *, "Repository: https://github.com/lazy-fortran/fortcov"
         print *, "License: Apache-2.0"
 
     end subroutine show_version_information

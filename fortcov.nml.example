@@ -1,53 +1,50 @@
 ! FortCov Configuration File (Fortran Namelist Format)
-! 
-! Copy this file to fortcov.nml and modify as needed
-! Then run: fortcov --config=fortcov.nml
 !
-! All settings are optional. Remove or modify lines as needed.
-! 
-! NOTE: Fortran namelists do NOT support comments inside the namelist block.
+! Copy this file to fortcov.nml and modify as needed.
+! Usage: fortcov --config=fortcov.nml
+!
+! IMPORTANT: Fortran namelists do NOT support comments inside the namelist block.
 ! All comments must be OUTSIDE the &fortcov_config ... / block.
 !
-! Input format options: 'gcov' (default), 'lcov', 'cobertura' (future)
-! Output format options: 'markdown' (default), 'json', 'xml', 'html' (future)
-! Output path: Use '-' for stdout (default)
-! Source paths: Up to 100 paths, processed in order
-! Exclude patterns: Up to 100 glob-style patterns
-! Minimum coverage: 0.0 to 100.0, exit with error code 2 if below threshold
-! Verbose: Enable detailed output
-!
-! INPUT VALIDATION SETTINGS (Issue #122):
-! max_file_size_mb: Maximum coverage file size in MB (default: 100)
-! max_line_number: Maximum line number in coverage data (default: 1000000)
-! max_lines_per_file: Maximum lines per coverage file (default: 1000000)
-! enable_strict_validation: Enable strict input validation (default: true)
-! memory_limit_mb: Maximum memory usage in MB (default: 2048)
-! timeout_seconds: Maximum processing time per file (default: 300)
+! Configuration Options:
+! - source_paths: Source directories to analyze (string array)
+! - exclude_patterns: File patterns to exclude using glob syntax (string array)
+! - output_format: 'terminal' (default), 'markdown', 'json', 'xml'
+! - output_path: Output file path, use '-' for stdout (default)
+! - minimum_coverage: Coverage threshold 0.0-100.0 for warnings
+! - gcov_executable: Path to gcov executable (default: 'gcov')
+! - verbose: Enable detailed output (logical, default: .false.)
+! - quiet: Suppress non-essential output (logical, default: .false.)
 
 &fortcov_config
-    input_format = 'gcov'
-    output_format = 'markdown'
-    output_path = 'coverage.md'
-    source_paths = 'src/', 
-                   'app/'
-    exclude_patterns = '*.mod',
-                       '*.o',
-                       'build/*',
-                       'test/*',
-                       'external/*'
-    gcov_executable = 'gcov'
+    source_paths = 'src/', 'app/'
+    exclude_patterns = '*.mod', '*.o', 'build/*', 'test/*', 'vendor/*'
+    output_format = 'terminal'
+    output_path = '-'
     minimum_coverage = 80.0
+    gcov_executable = 'gcov'
     verbose = .false.
     quiet = .false.
 /
 
-! Input validation configuration (optional)
-! Uncomment and modify these settings if you need custom validation limits
-!&input_validation
-!    max_file_size_mb = 100
-!    max_line_number = 1000000
-!    max_lines_per_file = 1000000
-!    enable_strict_validation = .true.
-!    memory_limit_mb = 2048
-!    timeout_seconds = 300
+! Example: Production CI configuration
+! Copy and modify for your CI/CD pipeline
+!&fortcov_config
+!    source_paths = 'src/'
+!    exclude_patterns = '*.mod', 'test/*', 'vendor/*', 'build/*'
+!    output_format = 'json'
+!    output_path = 'coverage.json'
+!    minimum_coverage = 90.0
+!    quiet = .true.
+!/
+
+! Example: Development configuration
+! Copy and modify for development workflow
+!&fortcov_config
+!    source_paths = 'src/', 'lib/'
+!    exclude_patterns = '*.mod', 'test/*'
+!    output_format = 'markdown'
+!    output_path = 'dev-coverage.md'
+!    minimum_coverage = 70.0
+!    verbose = .true.
 !/

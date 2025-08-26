@@ -1,10 +1,11 @@
 # FortCov Configuration Guide
 
-**Configuration reference** - see main [README.md](../../README.md) for basic usage.
+Complete configuration reference for FortCov. For basic usage, see [README.md](../../README.md).
 
 ## Configuration File Format
 
-**Fortran namelist** (`fortcov.nml`):
+FortCov uses **Fortran namelist format** (`fortcov.nml`) for configuration:
+
 ```fortran
 &fortcov_config
     source_paths = 'src/', 'lib/', 'modules/'
@@ -14,10 +15,24 @@
     minimum_coverage = 80.0
     verbose = .true.
     quiet = .false.
+    gcov_executable = 'gcov'
 /
 ```
 
-## Environment-Specific Configs
+## Complete Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `source_paths` | string array | `'src/'` | Source directories to analyze |
+| `exclude_patterns` | string array | `''` | File patterns to exclude (glob syntax) |
+| `output_format` | string | `'terminal'` | Output format: terminal, markdown, json, xml |
+| `output_path` | string | `'-'` | Output file path ('-' for stdout) |
+| `minimum_coverage` | real | `0.0` | Minimum coverage threshold (0-100) |
+| `verbose` | logical | `.false.` | Enable verbose output |
+| `quiet` | logical | `.false.` | Suppress non-essential output |
+| `gcov_executable` | string | `'gcov'` | Path to gcov executable |
+
+## Environment-Specific Examples
 
 **Development** (`dev.nml`):
 ```fortran
@@ -28,41 +43,53 @@
 /
 ```
 
-**Production** (`prod.nml`):
+**Production CI** (`ci.nml`):
 ```fortran
 &fortcov_config
     source_paths = 'src/'
     exclude_patterns = '*.mod', 'test/*', 'vendor/*'
+    output_format = 'json'
+    output_path = 'coverage.json'
     minimum_coverage = 95.0
     quiet = .true.
-    output_format = 'json'
 /
 ```
 
-## Configuration Options
+**Diff Analysis** (`diff.nml`):
+```fortran
+&fortcov_config
+    output_format = 'json'
+    source_paths = 'src/'
+    verbose = .true.
+/
+```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `source_paths` | string array | `'src/'` | Source directories |
-| `exclude_patterns` | string array | `''` | Exclusion patterns |
-| `output_format` | string | `'markdown'` | Output format |
-| `output_path` | string | `'coverage.md'` | Output file |
-| `minimum_coverage` | real | `0.0` | Threshold percentage |
-| `verbose` | logical | `.false.` | Verbose output |
-| `quiet` | logical | `.false.` | Quiet mode |
-
-## Usage Examples
+## Command-Line Usage
 
 ```bash
 # Use specific config
-fortcov --config=prod.nml
+fortcov --config=ci.nml
 
 # Override config values
 fortcov --config=dev.nml --fail-under=85
 
-# Environment variables
-export FORTCOV_CONFIG=prod.nml
-fortcov
+# Validate config without running
+fortcov --config=prod.nml --validate
 ```
 
-For complete configuration examples, see main [README.md](../../README.md).
+## Configuration Best Practices
+
+**Project Structure Integration:**
+- Place `fortcov.nml` in project root
+- Use environment-specific config files (dev.nml, ci.nml)
+- Version control configuration files
+
+**Performance Optimization:**
+- Exclude unnecessary directories (test/, build/, vendor/)
+- Use specific source paths instead of wildcards
+- Enable quiet mode for CI/CD pipelines
+
+**CI/CD Integration:**
+- Use JSON output format for machine parsing
+- Set appropriate coverage thresholds
+- Enable fail-under for quality gates

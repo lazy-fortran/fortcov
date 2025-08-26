@@ -1,72 +1,153 @@
 # FortCov Usage Guide
 
-**Advanced usage patterns** - see main [README.md](../../README.md) for basic usage.
+Advanced usage patterns and workflows. For basic usage, see [README.md](../../README.md).
 
-## Command Reference
+## Core Usage Patterns
+
+**Zero-configuration (recommended):**
+```bash
+cd your-fortran-project
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+fortcov  # Auto-discovers sources and coverage files
+```
+
+**Explicit file specification:**
+```bash
+# Process specific gcov files
+fortcov file1.gcov file2.gcov
+
+# Process all gcov files in directory
+fortcov *.gcov
+```
+
+**Source-based analysis:**
+```bash
+# Analyze specific source directories
+fortcov --source src --source lib
+
+# With exclusions
+fortcov --source . --exclude "test/*" --exclude "*.mod"
+```
+
+## Output Formats and Destinations
 
 ```bash
-# Zero-configuration (recommended)
+# Terminal output (default)
 fortcov
 
-# Traditional usage  
-fortcov --source src --output coverage.md
+# File output with format
+fortcov --format=markdown --output=coverage.md
+fortcov --format=json --output=coverage.json
+fortcov --format=xml --output=coverage.xml
 
-# CI/CD usage
-fortcov --fail-under 80 --quiet
-
-# Configuration file
-fortcov --config fortcov.nml
+# Combined terminal and file
+fortcov --format=json --output=coverage.json --verbose
 ```
 
-## Advanced Options
-
-| Option | Description | Status |
-|--------|-------------|--------|
-| `--format=FORMAT` | Output format (markdown/json/xml) | ✅ Working |
-| `--threshold=N` | Coverage threshold (warning only) | ✅ Working |
-| `--fail-under=N` | Fail if coverage is below N% | ✅ Working |
-| `--tui` | Interactive analysis mode | ✅ Working |
-| `--diff --diff-baseline=FILE` | Coverage comparison | ✅ Working |
-| `--verbose` | Enhanced output | 🔄 Partial |
-| `--quiet` | Suppress stdout | ❌ Not implemented |
-| `--exclude=PATTERN` | Exclude files | 🔄 Partial |
-
-## Configuration Files
-
-**Namelist format** (`fortcov.nml`):
-```fortran
-&fortcov_config
-    source_paths = 'src/', 'lib/'
-    exclude_patterns = 'test/*', '*.mod'
-    output_format = 'markdown'
-    minimum_coverage = 80.0
-    verbose = .false.
-/
-```
-
-## Security Features
-
-FortCov validates all inputs to prevent:
+## Coverage Thresholds and Quality Gates
 
 ```bash
-# These are blocked for security
-fortcov --source="path;rm -rf /"        # Command injection
-fortcov --source="../../../etc/"        # Path traversal  
-fortcov --source="/proc/"                # System access
+# Warning threshold (non-failing)
+fortcov --minimum 80
+
+# Fail if below threshold (exit code 1)
+fortcov --fail-under 85
+
+# Combined thresholds
+fortcov --minimum 80 --fail-under 90
 ```
 
-Use clean paths without special characters.
+## Advanced Analysis Features
 
-## Environment Integration
-
-**Pre-commit workflow:**
+**Coverage Diff Analysis:**
 ```bash
-fortcov --fail-under=80 && echo "Ready to commit" || echo "Add more tests"
+# Compare two coverage reports
+fortcov --diff baseline.json,current.json
+
+# With custom threshold for warnings
+fortcov --diff baseline.json,current.json --diff-threshold 5.0
+
+# Include unchanged files in diff
+fortcov --diff base.json,new.json --include-unchanged
 ```
 
-**Quality gates:**
+**Terminal UI Mode:**
 ```bash
-fortcov --fail-under=95 --format=json | jq -r '.summary.line_coverage'
+# Interactive exploration
+fortcov --tui
+
+# TUI with specific source
+fortcov --source src --tui
 ```
 
-For complete documentation including CI/CD examples, see main [README.md](../../README.md).
+## Workflow Integration
+
+**Pre-commit Hook:**
+```bash
+#!/bin/bash
+fpm test --flag "-fprofile-arcs -ftest-coverage"
+fortcov --fail-under=80 --quiet
+```
+
+**CI/CD Pipeline:**
+```bash
+# Generate coverage for CI
+fortcov --format=json --output=coverage.json --fail-under=85 --quiet
+
+# Parse results
+coverage=$(jq -r '.summary.line_coverage' coverage.json)
+echo "Coverage: $coverage%"
+```
+
+**Development Workflow:**
+```bash
+# Quick check during development
+fortcov --verbose
+
+# Detailed analysis with exclusions
+fortcov --source src --exclude "*.mod" --exclude "test/*" --format=markdown --output=dev-coverage.md
+```
+
+## Configuration-Driven Usage
+
+**Environment-specific configs:**
+```bash
+# Development (lower threshold, verbose)
+fortcov --config=dev.nml
+
+# Production (high threshold, JSON output)
+fortcov --config=ci.nml
+
+# Override config values
+fortcov --config=dev.nml --fail-under=90
+```
+
+## Security and Validation
+
+FortCov includes built-in security validation:
+
+- **Path traversal protection**: Prevents access outside project directory
+- **Command injection prevention**: Validates all input parameters
+- **File size limits**: Prevents processing of excessively large files
+- **Timeout protection**: Prevents long-running operations
+
+All paths are validated and normalized before processing.
+
+## Performance Optimization
+
+**Large project handling:**
+```bash
+# Use specific source paths (faster)
+fortcov --source src --source lib
+
+# Parallel processing
+fortcov --threads 4
+
+# Exclude large directories
+fortcov --exclude "vendor/*" --exclude "build/*"
+```
+
+**Memory management:**
+- Processes files in batches to limit memory usage
+- Automatic cleanup of temporary files
+- Configurable memory limits via configuration files
