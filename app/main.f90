@@ -4,6 +4,7 @@ program main
   use error_handling
   use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
+  use coverage_workflows, only: launch_coverage_tui_mode
   implicit none
   
   type(config_t) :: config
@@ -108,8 +109,12 @@ program main
     call exit(EXIT_FAILURE)
   end if
   
-  ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
-  if (config%zero_configuration_mode) then
+  ! Check for TUI mode
+  if (config%tui_mode) then
+    ! Launch Terminal User Interface
+    exit_code = launch_coverage_tui_mode(config)
+  else if (config%zero_configuration_mode) then
+    ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
     call execute_zero_config_complete_workflow(config, exit_code)
   else
     exit_code = run_coverage_analysis(config)
