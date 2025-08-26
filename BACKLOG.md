@@ -8,7 +8,6 @@
 - [ ] #397: README contains multiple non-functional command examples
 
 ### EPIC: Documentation & CLI Consistency  
-- [ ] #423: Inconsistent CLI parameters between help and documentation
 - [ ] #422: README claims non-existent directories and features
 - [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files
 
@@ -24,7 +23,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #423: Inconsistent CLI parameters between help and documentation [EPIC: Documentation & CLI Consistency]
+- [ ] #422: README claims non-existent directories and features [EPIC: Documentation & CLI Consistency]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
