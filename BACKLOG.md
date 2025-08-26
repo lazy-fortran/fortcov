@@ -8,6 +8,7 @@
 
 ### EPIC: Architecture Size Compliance
 - [ ] #399: Architecture risk: 5 modules approaching 1000-line hard limit requiring immediate decomposition
+- [ ] #408: refactor: reduce remaining modules exceeding 500-line soft limit
 
 ### EPIC: Code Quality & Dead Code Elimination
 - [ ] #387: cleanup: duplicate real_to_string functions

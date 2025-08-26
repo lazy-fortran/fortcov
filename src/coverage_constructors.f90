@@ -57,7 +57,7 @@ contains
         integer, intent(in) :: line_number
         integer, intent(in) :: branch_id
         
-        call branch%init(filename, line_number, branch_id)
+        call branch%init(filename, line_number, branch_id, 0, 0)
         
     end subroutine initialize_coverage_branch
     
