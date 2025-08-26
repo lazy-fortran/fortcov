@@ -40,8 +40,14 @@ contains
         integer :: i
         logical :: has_input_sources, has_output_flags
 
-        ! No arguments means zero-config
+        ! No arguments means zero-config (Issue #421 fix)
         is_zero_config = (size(args) == 0)
+        
+        ! Force zero-config for empty args array (Issue #421)
+        if (size(args) == 0) then
+            is_zero_config = .true.
+            return
+        end if
 
         if (.not. is_zero_config .and. size(args) > 0) then
             ! Check if all arguments are empty strings
