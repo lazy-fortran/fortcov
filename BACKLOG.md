@@ -6,11 +6,9 @@
 
 ### EPIC: Critical Infrastructure Defects
 
-### EPIC: Documentation & CLI Consistency  
-- [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files
+### EPIC: Documentation & CLI Consistency
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #428: Dead code: unused functions in input_validation module
 - [ ] #427: Dead code: unused imports in fortcov module
 - [ ] #425: Dead code: remove unused fortran_syntax_rules module
 - [ ] #426: Code duplication: consolidate string utility modules
@@ -18,7 +16,7 @@
 ### EPIC: Architecture Size Compliance
 
 ## DOING (Current Work)
-- [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files [EPIC: Documentation & CLI Consistency]
+- [ ] #428: Dead code: unused functions in input_validation module [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
