@@ -29,51 +29,28 @@ contains
     subroutine block_absolute_system_path(path, error_ctx)
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
+        integer :: i
         
-        ! Check for common system directories first (performance)
-        if (starts_with_ignore_case(path, '/tmp/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/home/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/etc/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/root/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/usr/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/var/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/proc/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/sys/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else if (starts_with_ignore_case(path, '/dev/')) then
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "System file access not allowed")
-            return
-        else
-            ! Block any other root-level directory creation
-            ! Allow only relative paths or specific whitelisted paths
-            error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "Root-level directory access not allowed")
-            return
-        end if
+        ! Array of blocked system paths (data-driven approach)
+        character(len=*), parameter :: BLOCKED_PATHS(*) = [ &
+            '/tmp/ ', '/home/', '/etc/ ', '/root/', '/usr/ ', '/var/ ', &
+            '/proc/', '/sys/ ', '/dev/ ' &
+        ]
+        
+        ! Check against blocked system directories
+        do i = 1, size(BLOCKED_PATHS)
+            if (starts_with_ignore_case(path, trim(BLOCKED_PATHS(i)))) then
+                error_ctx%error_code = ERROR_INVALID_PATH
+                call safe_write_message(error_ctx, &
+                    "System file access not allowed")
+                return
+            end if
+        end do
+        
+        ! Block any other root-level directory creation
+        error_ctx%error_code = ERROR_INVALID_PATH
+        call safe_write_message(error_ctx, &
+            "Root-level directory access not allowed")
     end subroutine block_absolute_system_path
 
 end module system_file_protection
