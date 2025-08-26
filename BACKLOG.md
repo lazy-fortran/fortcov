@@ -5,7 +5,6 @@
 ### EPIC: Core Functionality Restoration (MUST HAVE)
 
 ### EPIC: Critical Infrastructure Defects
-- [ ] #421: Zero-configuration mode not working - shows help instead of auto-discovering
 - [ ] #397: README contains multiple non-functional command examples
 
 ### EPIC: Documentation & CLI Consistency  
@@ -26,7 +25,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #436: Example configuration file fails with generic validation error [EPIC: Critical Infrastructure Defects]
+- [ ] #421: Zero-configuration mode not working - shows help instead of auto-discovering [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
