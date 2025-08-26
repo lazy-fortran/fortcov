@@ -1,6 +1,6 @@
 module xml_utilities
     use coverage_model
-    use string_utilities, only: int_to_string
+    use string_utilities, only: int_to_string, real_to_string
     implicit none
     private
     
@@ -15,7 +15,6 @@ module xml_utilities
     public :: parse_lines_from_class
     public :: extract_line_attributes
     public :: get_current_timestamp
-    public :: real_to_string
     public :: int_to_string
     public :: get_directory_path
     public :: get_base_name
@@ -410,16 +409,6 @@ contains
             values(5), ':', values(6), ':', values(7)
             
     end function get_current_timestamp
-    
-    function real_to_string(value) result(str)
-        real, intent(in) :: value
-        character(len=20) :: temp_str
-        character(len=:), allocatable :: str
-        
-        write(temp_str, '(F0.6)') value
-        str = trim(adjustl(temp_str))
-        
-    end function real_to_string
     
     function get_directory_path(filename) result(dir_path)
         character(len=*), intent(in) :: filename
