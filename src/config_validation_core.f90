@@ -7,6 +7,7 @@ module config_validation_core
     
     ! Public procedures
     public :: validate_complete_config
+    public :: validate_complete_config_with_message
     
 contains
 
@@ -88,5 +89,74 @@ contains
         end if
 
     end function validate_complete_config
+
+    subroutine validate_complete_config_with_message(config, is_valid, error_msg)
+        !! Validate entire configuration and return error message
+        type(config_t), intent(in) :: config
+        logical, intent(out) :: is_valid
+        character(len=*), intent(out) :: error_msg
+
+        character(len=512) :: error_message
+        logical :: partial_valid
+
+        is_valid = .true.
+        error_msg = ""
+
+        ! Skip validation for help/version modes
+        if (config%show_help .or. config%show_version) then
+            return
+        end if
+
+        ! Validate input sources
+        call validate_input_sources(config, partial_valid, error_message)
+        if (.not. partial_valid) then
+            is_valid = .false.
+            error_msg = trim(error_message)
+            return
+        end if
+
+        ! Validate output settings
+        call validate_output_settings(config, partial_valid, error_message)
+        if (.not. partial_valid) then
+            is_valid = .false.
+            error_msg = trim(error_message)
+            return
+        end if
+
+        ! Validate threshold settings
+        call validate_threshold_settings(config, partial_valid, error_message)
+        if (.not. partial_valid) then
+            is_valid = .false.
+            error_msg = trim(error_message)
+            return
+        end if
+
+        ! Validate diff configuration if enabled
+        if (config%enable_diff) then
+            call validate_diff_configuration(config, partial_valid, error_message)
+            if (.not. partial_valid) then
+                is_valid = .false.
+                error_msg = trim(error_message)
+                return
+            end if
+        end if
+
+        ! Validate import configuration if specified
+        if (len_trim(config%import_file) > 0) then
+            call validate_import_configuration(config, partial_valid, error_message)
+            if (.not. partial_valid) then
+                is_valid = .false.
+                error_msg = trim(error_message)
+                return
+            end if
+        end if
+
+        ! Validate thread count
+        if (config%threads < 1 .or. config%threads > 256) then
+            is_valid = .false.
+            error_msg = "Thread count must be between 1 and 256"
+        end if
+
+    end subroutine validate_complete_config_with_message
 
 end module config_validation_core
