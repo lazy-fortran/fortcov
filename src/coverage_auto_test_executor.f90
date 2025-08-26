@@ -70,18 +70,30 @@ contains
             return
         end if
         
-        ! Create recursion marker to prevent fork bombs
-        call prepare_for_auto_test_execution()
-        
-        ! Execute tests with proper timeout handling
-        call execute_tests_with_timeout(build_info%test_command, config, &
-                                       test_exit_code, execution_success)
-        
-        ! Report results and set final exit code
-        exit_code = handle_test_execution_results(config, test_exit_code, execution_success)
-        
-        ! Clean up recursion marker
-        call cleanup_recursion_marker()
+        ! Execute auto-test with guaranteed marker cleanup
+        block
+            logical :: marker_created
+            
+            marker_created = .false.
+            
+            ! Create recursion marker to prevent fork bombs
+            call prepare_for_auto_test_execution()
+            marker_created = .true.
+            
+            ! Execute tests with proper timeout handling
+            call execute_tests_with_timeout(build_info%test_command, config, &
+                                           test_exit_code, execution_success)
+            
+            ! Report results and set final exit code
+            exit_code = handle_test_execution_results(config, test_exit_code, &
+                                                    execution_success)
+            
+            ! GUARANTEED cleanup: Always clean up recursion marker if created
+            if (marker_created) then
+                call cleanup_recursion_marker()
+            end if
+            
+        end block
         
     end function execute_auto_test_workflow
     

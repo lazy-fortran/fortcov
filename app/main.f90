@@ -15,6 +15,10 @@ program main
   logical :: success, enhancement_success
   integer :: exit_code, argc, i
   
+  ! CRITICAL: Clean up any stale fork bomb prevention markers from previous runs
+  ! This ensures that crashed or killed previous executions don't block current runs
+  call execute_command_line('rm -f .fortcov_execution_marker')
+  
   ! Get command line arguments (excluding argv(0) which contains executable path)
   ! command_argument_count() returns number of user arguments (not including argv(0))
   argc = command_argument_count()
