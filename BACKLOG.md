@@ -23,6 +23,7 @@
 - [ ] #460: refactor: implement stub functionality in test_build_auto_discovery.f90
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
 - [ ] #480: style: fix line length violations in coverage_file_processor.f90
+- [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
 - [ ] #472: CLI argument parsing bug: --source flag not recognized, breaking documented examples [EPIC: Core Functionality Recovery]
