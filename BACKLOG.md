@@ -3,14 +3,12 @@
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
 ### EPIC: Critical Infrastructure Defects
-- [ ] #413: fix: complete broken refactored module implementations
 
 ### EPIC: Core Functionality Restoration
 
 ### EPIC: Architecture Size Compliance
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #378: cleanup: remove unused platform_detection module
 - [ ] #379: cleanup: remove unused secure_temp_file_types module
 - [ ] #380: cleanup: remove unused temp_file_c_interfaces module
 - [ ] #381: cleanup: remove unused temp_file_error_handling module
@@ -19,7 +17,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #413: fix: complete broken refactored module implementations [EPIC: Critical Infrastructure Defects]
+- [ ] #379: cleanup: remove unused secure_temp_file_types module [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
