@@ -41,7 +41,7 @@
 ! Example: Development configuration
 ! Copy and modify for development workflow
 !&fortcov_config
-!    source_paths = 'src/', 'lib/'
+!    source_paths = 'src/', 'app/'
 !    exclude_patterns = '*.mod', 'test/*'
 !    output_format = 'markdown'
 !    output_path = 'dev-coverage.md'
