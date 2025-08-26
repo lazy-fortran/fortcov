@@ -16,11 +16,10 @@
 - [ ] #426: Code duplication: consolidate string utility modules
 
 ### EPIC: Architecture Size Compliance
-- [ ] #438: Test file size violations: 9 files exceed 500-line architecture target
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #428: Dead code: unused functions in input_validation module [EPIC: Code Quality & Dead Code Elimination]
+- [ ] #438: Test file size violations: 9 files exceed 500-line architecture target [EPIC: Architecture Size Compliance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
