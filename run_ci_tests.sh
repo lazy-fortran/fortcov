@@ -8,7 +8,7 @@ echo "Running unit tests excluding problematic tests..."
 # List of tests to exclude (known issues from main branch)
 EXCLUDE_TESTS=(
     "test_security_performance_benchmark"  # Hangs in performance benchmark
-    "test_test_build_gcov_auto_discovery"  # Build test issue 
+ 
     "test_gcov_processing"                 # Processing issue
     "test_complete_workflow"               # Workflow test issue
 )

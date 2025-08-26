@@ -34,6 +34,7 @@
 - [x] #500: critical: scope mismatch between issue 459 requirements and PR 499 implementation
 
 ## DOING (Current Work)
+- [ ] #462: refactor: evaluate wrapper modules for dead code elimination [EPIC: Code Cleanup]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting

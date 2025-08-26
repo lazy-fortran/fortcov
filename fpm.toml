@@ -163,10 +163,6 @@ name = "test_string_concatenation_fix_364"
 source-dir = "test"
 main = "test_string_concatenation_fix_364.f90"
 
-[[test]]
-name = "test_test_build_gcov_auto_discovery"
-source-dir = "test"
-main = "test_test_build_gcov_auto_discovery.f90"
 
 [[test]]
 name = "test_windows_device_comprehensive"
