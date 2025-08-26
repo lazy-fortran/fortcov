@@ -1,8 +1,7 @@
 module namelist_config_parser
     !! Namelist configuration file parser
     use iso_fortran_env, only: error_unit
-    use fortcov_config, only: config_t
-    use config_types, only: MAX_ARRAY_SIZE
+    use config_types, only: config_t, MAX_ARRAY_SIZE
     implicit none
     private
     

@@ -1,14 +1,16 @@
 module config_file_parser
     !! Configuration file parsing
     !! 
-    !! This module handles parsing of configuration files in namelist format,
-    !! providing a clean interface for loading settings from disk.
+    !! This module handles parsing of configuration files in both namelist and
+    !! key=value formats, providing a clean interface for loading settings from disk.
 
     use config_types, only: config_t, MAX_ARRAY_SIZE
     use config_parser_utils
     use foundation_constants
     use string_utils
     use file_utils
+    use config_format_detector, only: detect_config_format
+    use namelist_config_parser, only: parse_namelist_config_file
 
     implicit none
     private
@@ -19,15 +21,13 @@ module config_file_parser
 contains
 
     subroutine parse_config_file(config, success, error_message)
-        !! Parse configuration from file
+        !! Parse configuration from file - supports both namelist and key=value formats
         type(config_t), intent(inout) :: config
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
-        integer :: unit, iostat, line_num
-        character(len=512) :: line, key, value
-        integer :: equals_pos
-        logical :: file_exists
+        logical :: file_exists, is_namelist
+        character(len=512) :: detect_error
 
         success = .true.
         error_message = ""
@@ -45,6 +45,46 @@ contains
             error_message = "Configuration file not found: " // trim(config%config_file)
             return
         end if
+
+        ! Detect config file format
+        call detect_config_format(config%config_file, is_namelist, success, detect_error)
+        if (.not. success) then
+            error_message = "Failed to detect config format: " // trim(detect_error)
+            return
+        end if
+
+        ! Parse based on detected format
+        if (is_namelist) then
+            ! Use namelist parser for .nml files or files with &namelist syntax
+            if (config%verbose) then
+                print *, "DEBUG: Using namelist parser for ", trim(config%config_file)
+            end if
+            call parse_namelist_config_file(config, success, error_message)
+            if (config%verbose .and. allocated(config%source_paths)) then
+                print *, "DEBUG: After namelist parse, source_paths size = ", size(config%source_paths)
+            end if
+        else
+            ! Use key=value parser for simple config files
+            if (config%verbose) then
+                print *, "DEBUG: Using key=value parser for ", trim(config%config_file)
+            end if
+            call parse_key_value_config_file(config, success, error_message)
+        end if
+
+    end subroutine parse_config_file
+
+    subroutine parse_key_value_config_file(config, success, error_message)
+        !! Parse configuration from key=value format file
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+
+        integer :: unit, iostat, line_num
+        character(len=512) :: line, key, value
+        integer :: equals_pos
+
+        success = .true.
+        error_message = ""
 
         ! Open config file
         open(newunit=unit, file=trim(config%config_file), status='old', &
@@ -100,7 +140,7 @@ contains
 
         close(unit)
 
-    end subroutine parse_config_file
+    end subroutine parse_key_value_config_file
 
     subroutine process_config_file_option(key, value, config, success, error_message)
         !! Process a single configuration file option
