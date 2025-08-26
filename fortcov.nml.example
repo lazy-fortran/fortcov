@@ -29,7 +29,6 @@
     output_format = 'markdown'
     output_path = 'coverage.md'
     source_paths = 'src/', 
-                   'lib/', 
                    'app/'
     exclude_patterns = '*.mod',
                        '*.o',
