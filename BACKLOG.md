@@ -9,7 +9,6 @@
 ### EPIC: Architecture Size Compliance
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #387: cleanup: duplicate real_to_string functions
 - [ ] #376: cleanup: remove unused config_file_handler module
 - [ ] #385: cleanup: remove disabled fork bomb test files
 - [ ] #377: cleanup: remove unused coverage_line_types module
@@ -22,6 +21,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
+- [ ] #387: cleanup: duplicate real_to_string functions [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
