@@ -21,7 +21,6 @@
 - [x] #491: Cannot build on Windows - C interface file compilation errors
 
 ### EPIC: Documentation Defects (HIGH - Documentation fixes)  
-- [ ] #466: Documentation bug: fortcov *.gcov usage example fails with 'Too many positional arguments' error
 - [ ] #468: Default format 'terminal' not supported, contradicting help documentation
 - [ ] #471: Default fortcov.nml configuration references non-existent lib/ directory
 
@@ -34,7 +33,6 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #466: Documentation bug: fortcov *.gcov usage example fails with 'Too many positional arguments' error [EPIC: Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
