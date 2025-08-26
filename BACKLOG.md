@@ -2,9 +2,6 @@
 
 ## SPRINT_BACKLOG (Critical Functionality Recovery - Sprint 2)
 
-### EPIC: Core Functionality Recovery (CRITICAL - Sprint 2 Phase 1)
-- [ ] #472: CLI argument parsing bug: --source flag not recognized, breaking documented examples
-
 ### EPIC: Infrastructure Stabilization (HIGH - Sprint 2 Phase 2)
 - [ ] #464: Security bug: URL-encoded attack validation test failing  
 - [ ] #465: Permission denied error when creating test directories
@@ -26,9 +23,10 @@
 - [ ] #460: refactor: implement stub functionality in test_build_auto_discovery.f90
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
 - [ ] #480: style: fix line length violations in coverage_file_processor.f90
+- [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #470: Coverage parsing shows 0.00% even with valid gcov files containing coverage data [EPIC: Core Functionality Recovery]
+- [ ] #472: CLI argument parsing bug: --source flag not recognized, breaking documented examples [EPIC: Core Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting

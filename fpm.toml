@@ -189,6 +189,11 @@ source-dir = "test"
 main = "test_zero_config_override_bug.f90"
 
 [[test]]
+name = "test_cli_flag_parsing_issue_472"
+source-dir = "test"
+main = "test_cli_flag_parsing_issue_472.f90"
+
+[[test]]
 name = "minimal_gcov_test"
 source-dir = "test"
 main = "minimal_gcov_test.f90"
