@@ -25,6 +25,7 @@
 - [ ] #459: cleanup: remove obsolete documentation and investigation files
 - [ ] #460: refactor: implement stub functionality in test_build_auto_discovery.f90
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
+- [ ] #480: style: fix line length violations in coverage_file_processor.f90
 
 ## DOING (Current Work)
 - [ ] #470: Coverage parsing shows 0.00% even with valid gcov files containing coverage data [EPIC: Core Functionality Recovery]
