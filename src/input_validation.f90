@@ -14,6 +14,7 @@ module input_validation
     
     use error_handling
     use iso_fortran_env, only: int32, int64, real32
+    use string_utilities, only: int_to_string
     implicit none
     private
     
@@ -475,15 +476,6 @@ contains
         if (present(max_path_length_out)) max_path_length_out = MAX_PATH_LENGTH
     end subroutine get_validation_limits
 
-    ! Helper function to convert integer to string
-    function int_to_string(int_val) result(str_val)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str_val
-        character(len=32) :: temp_str
-        
-        write(temp_str, '(I0)') int_val
-        str_val = trim(temp_str)
-    end function int_to_string
 
     ! Helper function to convert int64 to string
     function int64_to_string(int_val) result(str_val)

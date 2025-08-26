@@ -7,7 +7,8 @@ module markdown_reporter
                               calculate_statistics, merge_coverage, &
                               compare_coverage
     use coverage_statistics, only: coverage_stats_t, calculate_line_coverage
-    use string_utils
+    use string_utilities, only: int_to_string
+    use string_utils, only: compress_ranges, format_percentage
     implicit none
     private
     
@@ -232,15 +233,6 @@ contains
         escaped = work_str(1:out_pos-1)
     end function escape_markdown
 
-    ! Convert integer to string
-    function int_to_string(int_val) result(str)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str
-        character(len=20) :: buffer
-        
-        write(buffer, '(I0)') int_val
-        str = trim(buffer)
-    end function int_to_string
 
     ! Clean gcov filename by removing "0:Source:" prefix
     function clean_gcov_filename(filename) result(cleaned)

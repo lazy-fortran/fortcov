@@ -5,6 +5,7 @@ module coverage_reporter_utils
     !! Contains shared utility functions for calculating coverage statistics.
     use coverage_model
     use coverage_statistics, only: stats_t => coverage_stats_t
+    use string_utilities, only: int_to_string
     implicit none
     private
     
@@ -114,15 +115,5 @@ contains
         call func_stats%init(percentage, covered_functions, total_functions, "")
     end subroutine calculate_manual_function_stats
 
-    ! Utility function to convert integer to string
-    function int_to_string(value) result(str)
-        integer, intent(in) :: value
-        character(len=:), allocatable :: str
-        character(len=32) :: temp
-        
-        write(temp, '(I0)') value
-        str = trim(temp)
-        
-    end function int_to_string
 
 end module coverage_reporter_utils

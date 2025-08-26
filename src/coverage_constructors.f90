@@ -6,6 +6,7 @@ module coverage_constructors
     !! Focuses on complex calculation and serialization logic.
     use coverage_types
     use foundation_constants
+    use string_utilities, only: int_to_string
     implicit none
     private
     
@@ -320,14 +321,5 @@ contains
         
     end function file_get_function_coverage_impl
 
-    ! Utility function to convert integer to string
-    function int_to_string(int_val) result(str_val)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str_val
-        character(len=20) :: temp_str
-        
-        write(temp_str, '(I0)') int_val
-        str_val = trim(adjustl(temp_str))
-    end function int_to_string
 
 end module coverage_constructors

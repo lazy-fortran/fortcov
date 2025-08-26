@@ -1,5 +1,5 @@
 module json_parser_utilities
-    use string_utils
+    use string_utilities, only: int_to_string
     implicit none
     private
     
@@ -317,15 +317,5 @@ contains
         end if
         
     end function get_base_name
-    
-    function int_to_string(value) result(str)
-        integer, intent(in) :: value
-        character(len=20) :: temp_str
-        character(len=:), allocatable :: str
-        
-        write(temp_str, '(I0)') value
-        str = trim(adjustl(temp_str))
-        
-    end function int_to_string
 
 end module json_parser_utilities
