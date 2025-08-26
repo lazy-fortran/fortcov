@@ -7,7 +7,6 @@
 ### EPIC: Core Functionality Restoration
 
 ### EPIC: Architecture Size Compliance
-- [ ] #399: Architecture risk: 5 modules approaching 1000-line hard limit requiring immediate decomposition
 - [ ] #408: refactor: reduce remaining modules exceeding 500-line soft limit
 
 ### EPIC: Code Quality & Dead Code Elimination
@@ -24,7 +23,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #398: Architecture violation: 12 modules exceed 500-line target compromising maintainability [EPIC: Architecture Size Compliance]
+- [ ] #399: Architecture risk: 5 modules approaching 1000-line hard limit requiring immediate decomposition [EPIC: Architecture Size Compliance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
