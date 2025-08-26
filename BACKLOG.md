@@ -22,7 +22,6 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #408: refactor: reduce remaining modules exceeding 500-line soft limit [EPIC: Architecture Size Compliance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
