@@ -4,6 +4,7 @@ module system_diff_converter
     use string_utils
     use json_parser_utilities
     use xml_utilities
+    use string_utilities, only: real_to_string
     implicit none
     private
     
