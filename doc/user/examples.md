@@ -70,7 +70,7 @@ fortcov --source=src *.gcov  # Shows coverage statistics in terminal
 fortcov --source=src *.gcov --quiet
 ```
 
-**Current Implementation Status**: Terminal coverage analysis is fully functional. File output formats show "would be generated" but do not create actual files yet.
+**Current Implementation Status**: Text coverage analysis is fully functional. File output formats show "would be generated" but do not create actual files yet.
 
 ## Build System Integration
 
