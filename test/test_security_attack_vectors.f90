@@ -17,7 +17,7 @@ program test_security_attack_vectors
     
     call runner%print_summary()
     
-    if (runner%get_pass_rate() == 100.0) then
+    if (abs(runner%get_pass_rate() - 100.0) < epsilon(1.0)) then
         call exit(0)
     else
         call exit(1)
@@ -141,7 +141,7 @@ contains
         !! Simple URL decoder for testing
         character(len=*), intent(in) :: encoded_path
         character(len=*), intent(out) :: decoded_path
-        integer :: i, j, hex_val
+        integer :: i, j, hex_val, io_stat
         character(len=2) :: hex_str
         
         decoded_path = ""
@@ -152,8 +152,8 @@ contains
             if (encoded_path(i:i) == "%") then
                 if (i + 2 <= len_trim(encoded_path)) then
                     hex_str = encoded_path(i+1:i+2)
-                    read(hex_str, '(Z2)', iostat=hex_val) hex_val
-                    if (hex_val == 0) then
+                    read(hex_str, '(Z2)', iostat=io_stat) hex_val
+                    if (io_stat == 0) then
                         decoded_path(j:j) = char(hex_val)
                         j = j + 1
                     end if
@@ -174,7 +174,6 @@ contains
         character(len=*), intent(in) :: path
         logical :: is_safe
         character(len=256) :: upper_path
-        integer :: i
         
         is_safe = .true.
         
