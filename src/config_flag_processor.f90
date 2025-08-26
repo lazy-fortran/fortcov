@@ -8,7 +8,7 @@ module config_flag_processor
     use config_parser_utils, only: flag_requires_value, add_source_path, &
                                     add_exclude_pattern, add_include_pattern, &
                                     parse_real_with_error, parse_integer_with_error, &
-                                    parse_diff_files
+                                    parse_diff_files, parse_threshold_with_error
     implicit none
     private
 
@@ -190,11 +190,11 @@ contains
         
         select case (flag)
         case ("--minimum", "-m", "--threshold")
-            call parse_real_with_error(value, config%minimum_coverage, &
-                                       "minimum coverage", success, error_message)
+            call parse_threshold_with_error(value, config%minimum_coverage, &
+                                            "minimum coverage", success, error_message)
         case ("--fail-under")
-            call parse_real_with_error(value, config%fail_under_threshold, &
-                                       "fail threshold", success, error_message)
+            call parse_threshold_with_error(value, config%fail_under_threshold, &
+                                            "fail threshold", success, error_message)
         case ("--threads", "-t")
             call parse_integer_with_error(value, config%threads, &
                                           "thread count", success, error_message)
@@ -209,8 +209,8 @@ contains
                 success = .true.
             end if
         case ("--diff-threshold")
-            call parse_real_with_error(value, config%diff_threshold, &
-                                       "diff threshold", success, error_message)
+            call parse_threshold_with_error(value, config%diff_threshold, &
+                                            "diff threshold", success, error_message)
         case ("--test-timeout")
             call parse_integer_with_error(value, config%test_timeout_seconds, &
                                           "test timeout", success, error_message)
