@@ -1,6 +1,6 @@
 # Getting Started with FortCov
 
-**Condensed 5-minute guide** - for complete examples see main [README.md](../../README.md).
+**Condensed 5-minute guide** - for complete build system examples see [examples.md](examples.md).
 
 ## Prerequisites Check
 

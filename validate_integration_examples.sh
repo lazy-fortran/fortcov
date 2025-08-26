@@ -47,7 +47,7 @@ check_pattern "FPM gcov command" \
 
 check_pattern "FPM fortcov command" \
     "$EXAMPLES_DIR/fpm/basic_example/generate_coverage.sh" \
-    "fortcov --source=. --exclude=build/\*,test/\*"
+    "fortcov --source . --exclude build/\* --exclude test/\*"
 
 # Georg's Test 2: FPM Build-Integrated Discovery Pattern  
 check_pattern "FPM build-integrated find command" \

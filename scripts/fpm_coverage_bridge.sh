@@ -147,8 +147,8 @@ generate_simple_coverage() {
     local fortcov_exe
     fortcov_exe=$(find_fortcov) || return 1
     
-    print_info "Command: $fortcov_exe --source=$source_pattern --exclude='$exclude_pattern' --output=$output_file"
-    "$fortcov_exe" --source="$source_pattern" --exclude="$exclude_pattern" --output="$output_file"
+    print_info "Command: $fortcov_exe --source $source_pattern --exclude '$exclude_pattern' --output $output_file"
+    "$fortcov_exe" --source "$source_pattern" --exclude "$exclude_pattern" --output "$output_file"
     
     print_success "Coverage report generated: $output_file"
     
@@ -170,7 +170,7 @@ main() {
             generate_simple_coverage "src" "${2:-coverage.md}" "${3:-$FORTCOV_EXCLUDE_DEFAULT}"
             ;;
         "root"|".")
-            # Emulate: gcov src/*.f90 && fortcov --source=. --exclude='build/*,test/*'
+            # Emulate: gcov src/*.f90 && fortcov --source . --exclude 'build/*' --exclude 'test/*'
             generate_simple_coverage "." "${2:-coverage.md}" "${3:-$FORTCOV_EXCLUDE_DEFAULT}"
             ;;
         "custom")
@@ -190,7 +190,7 @@ main() {
             echo "    Emulates: cd src && gcov *.f90 && fortcov --source=src"
             echo
             echo "  $0 root [output_file] [exclude_pattern]"
-            echo "    Emulates: gcov src/*.f90 && fortcov --source=. --exclude='build/*,test/*'"
+            echo "    Emulates: gcov src/*.f90 && fortcov --source . --exclude 'build/*' --exclude 'test/*'"
             echo
             echo "  $0 custom <source_dir> [output_file] [exclude_pattern]"
             echo "    Custom source directory pattern"
