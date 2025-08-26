@@ -81,6 +81,19 @@ program main
     end if
   end if
   
+  ! CRITICAL: Fork bomb prevention - check before validation (Issue #432)
+  block
+    logical :: marker_exists
+    inquire(file='.fortcov_execution_marker', exist=marker_exists)
+    if (marker_exists) then
+      if (.not. config%quiet) then
+        print *, "🛡️  Fork bomb prevention: fortcov execution disabled"
+        print *, "    (fortcov detected it's running within a test environment)"
+      end if
+      call exit(EXIT_SUCCESS)
+    end if
+  end block
+  
   ! Validate configuration for security and accessibility
   if (.not. validate_config(config)) then
     error_ctx%error_code = ERROR_INVALID_CONFIG
