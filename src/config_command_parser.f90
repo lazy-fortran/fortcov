@@ -11,9 +11,6 @@ module config_command_parser
     use config_argument_classifier
     use config_flag_processor
     use config_argument_detector
-    use foundation_constants
-    use foundation_layer_utils
-    use string_utils
     use zero_configuration_manager
 
     implicit none

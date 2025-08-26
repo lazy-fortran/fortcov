@@ -1,10 +1,9 @@
 module system_diff_converter
     use coverage_model
     use json_coverage_io
-    use string_utils
+    use string_utils, only: real_to_string, int_to_string
     use json_parser_utilities
     use xml_utilities
-    use string_utils, only: real_to_string
     implicit none
     private
     

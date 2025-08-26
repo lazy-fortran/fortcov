@@ -4,7 +4,6 @@ module coverage_tui_handler
     !! Focused on TUI (Text User Interface) mode functionality.
     !! Extracted from coverage_analysis.f90 to maintain SRP and size limits.
     use foundation_constants
-    use foundation_layer_utils
     use fortcov_config, only: config_t
     use tui_main_loop
     implicit none

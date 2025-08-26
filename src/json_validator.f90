@@ -4,7 +4,6 @@ module json_validator
     !! Focused on JSON validation and format checking for coverage data.
     !! Separated from parsing and I/O operations for better separation of concerns.
     use foundation_constants
-    use foundation_layer_utils
     use json_parser, only: json_token_t, expect_token_type, JSON_STRING, JSON_NUMBER, &
                           JSON_OBJECT, JSON_ARRAY, JSON_BOOLEAN, JSON_NULL, &
                           tokenize_json_content

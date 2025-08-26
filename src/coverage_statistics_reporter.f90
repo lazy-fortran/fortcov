@@ -5,7 +5,6 @@ module coverage_statistics_reporter
     !! coverage_analysis.f90 for maintainability and adherence to size limits 
     !! (Issue #333 - Patrick's review feedback).
     use foundation_constants
-    use foundation_layer_utils
     use coverage_model
     use fortcov_config
     use coverage_statistics, only: coverage_stats_t, extended_coverage_stats_t

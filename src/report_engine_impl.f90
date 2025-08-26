@@ -3,7 +3,6 @@ module report_engine_impl
     !! 
     !! Orchestrates report generation using focused, extracted modules.
     !! Refactored for QADS architecture compliance (Phase 1, Issue #366).
-    use iso_fortran_env, only: real64
     use coverage_model
     use data_transformer
     use theme_manager
