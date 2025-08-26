@@ -23,6 +23,7 @@ module config_parser_utils
     public :: get_long_form_option
     public :: flag_requires_value
     public :: parse_diff_files
+    public :: parse_threshold_with_error
 
 contains
 
@@ -313,5 +314,34 @@ contains
         config%diff_current_file = current_file
 
     end subroutine parse_diff_files
+
+    subroutine parse_threshold_with_error(str, value, value_name, success, &
+                                          error_message)
+        !! Parse threshold value with range validation (0.0-100.0)
+        character(len=*), intent(in) :: str
+        real, intent(out) :: value
+        character(len=*), intent(in) :: value_name
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+
+        ! First parse as regular real number
+        call parse_real_value(str, value, success)
+        
+        if (.not. success) then
+            error_message = "Invalid " // trim(value_name) // ": '" // &
+                           trim(str) // "'"
+            return
+        end if
+
+        ! Validate range (0.0 to 100.0)
+        if (value < 0.0 .or. value > 100.0) then
+            success = .false.
+            error_message = "Invalid " // trim(value_name) // ": '" // &
+                           trim(str) // "' (must be between 0.0 and 100.0)"
+        else
+            error_message = ""
+        end if
+
+    end subroutine parse_threshold_with_error
 
 end module config_parser_utils
