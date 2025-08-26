@@ -36,10 +36,12 @@ git checkout -b feature/my-feature
 fpm build
 fpm test
 
-# Generate coverage for your changes
+# Generate coverage for your changes  
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
-fortcov --source=src --output=test-coverage.md
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov
 
 # Commit changes
 git add .
@@ -269,8 +271,10 @@ call process_file_streaming(filename, buffer_size=4096)
 fpm build
 fpm test
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-gcov src/*.f90
-fortcov --source=src --fail-under=90 --output=coverage.md
+find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
+  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+done
+fortcov --source=src *.gcov --fail-under=90
 ```
 
 ### Pull Request Guidelines
