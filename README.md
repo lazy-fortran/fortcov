@@ -74,15 +74,15 @@ Coverage Summary:
 **Zero-configuration (recommended):**
 ```bash
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-fortcov  # Auto-discovers and generates coverage.md
+fortcov  # Auto-discovers coverage files and shows terminal output
 ```
 
 **Manual file specification:**
 ```bash
-fortcov *.gcov --output coverage.md
-fortcov --source src --output coverage.html --format html
-fortcov --import coverage.json --format lcov --output coverage.info
+fortcov *.gcov  # Analyze gcov files with terminal output
 ```
+
+**Note**: File output formats (--output, --format) are currently affected by issue #396 and show "would be generated" instead of creating actual files. Terminal output works correctly.
 
 **CI/CD integration:**
 ```bash
@@ -94,7 +94,7 @@ fortcov --minimum 80 --fail-under 80  # Fail if coverage < 80%
 1. Fork the repository
 2. Create a feature branch: `git checkout -b feature-name`
 3. Make changes and add tests
-4. Run the test suite: `fmp test`
+4. Run the test suite: `fpm test`
 5. Submit a pull request
 
 For detailed contribution guidelines, see [`doc/developer/development-guide.md`](doc/developer/development-guide.md).
