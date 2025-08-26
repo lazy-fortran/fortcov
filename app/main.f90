@@ -1,6 +1,6 @@
 program main
   use fortcov
-  use fortcov_config, only: validate_config
+  use fortcov_config, only: validate_config, validate_config_with_context
   use error_handling
   use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
@@ -70,9 +70,8 @@ program main
     end if
   else if (config%validate_config_only) then
     ! Only validate configuration, don't run analysis
-    if (.not. validate_config(config)) then
-      error_ctx%error_code = ERROR_INVALID_CONFIG
-      error_ctx%message = "Configuration validation failed"
+    call validate_config_with_context(config, error_ctx)
+    if (error_ctx%error_code /= ERROR_SUCCESS) then
       print *, "Configuration validation failed: " // trim(error_ctx%message)
       call exit(EXIT_FAILURE)
     else
@@ -95,15 +94,14 @@ program main
   end block
   
   ! Validate configuration for security and accessibility
-  if (.not. validate_config(config)) then
-    error_ctx%error_code = ERROR_INVALID_CONFIG
-    error_ctx%message = "Configuration validation failed"
-    print *, "Configuration validation failed: " // trim(error_ctx%message)
-    print *, ""
+  call validate_config_with_context(config, error_ctx)
+  if (error_ctx%error_code /= ERROR_SUCCESS) then
+    print *, trim(error_ctx%message)
     if (len_trim(error_ctx%suggestion) > 0) then
-      print *, "Suggested fix: " // trim(error_ctx%suggestion)
       print *, ""
+      print *, "Suggested fix: " // trim(error_ctx%suggestion)
     end if
+    print *, ""
     print *, "For configuration help:"
     print *, "   • See example: cat fortcov.nml.example"
     print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"

@@ -96,7 +96,7 @@ contains
         logical :: is_valid
         character(len=512) :: error_message
 
-        is_valid = validate_complete_config(config)
+        call validate_complete_config_with_message(config, is_valid, error_message)
 
         if (is_valid) then
             error_ctx%error_code = ERROR_SUCCESS
@@ -105,8 +105,8 @@ contains
             error_ctx%context = ""
         else
             error_ctx%error_code = ERROR_INVALID_CONFIG
-            error_ctx%message = "Configuration validation failed"
-            error_ctx%suggestion = "Check configuration parameters. Run with --verbose for detailed validation errors"
+            error_ctx%message = trim(error_message)
+            error_ctx%suggestion = "Check configuration parameters and ensure paths exist"
             error_ctx%context = "Configuration validation"
         end if
 

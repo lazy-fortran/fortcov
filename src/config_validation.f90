@@ -8,6 +8,7 @@ module config_validation
 
     ! Re-export all procedures for backward compatibility
     public :: validate_complete_config
+    public :: validate_complete_config_with_message
     public :: validate_input_sources
     public :: validate_coverage_files
     public :: validate_output_settings
