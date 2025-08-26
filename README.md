@@ -13,13 +13,13 @@ git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov && fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 
-# Generate coverage (zero-configuration)
+# Generate coverage
 cd your-fortran-project
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov  # Auto-discovers everything, creates coverage.md
+fortcov --source=. --output=coverage.md
 ```
 
 ## Example Usage
@@ -64,7 +64,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov --fail-under=80
+fortcov --source=. --fail-under=80 --output=coverage.md
 ```
 
 **Output:**
@@ -78,20 +78,17 @@ fortcov --fail-under=80
 ## Command Line Options
 
 ```bash
-# Zero-configuration (recommended)
-fortcov                              # Auto-discovers everything
-
-# Traditional mode
+# Basic usage
 fortcov --source=src --output=coverage.md
 
 # CI/CD integration
-fortcov --fail-under=80 --format=json --output=coverage.json
+fortcov --source=src --fail-under=80 --output-format=json --output=coverage.json
 
-# Interactive analysis
-fortcov --tui
+# Interactive analysis  
+fortcov --source=src --tui
 
 # Coverage comparison
-fortcov --diff --diff-baseline=old.json --output=changes.md
+fortcov --diff=baseline.json,current.json --output=changes.md
 ```
 
 ## Installation
@@ -123,7 +120,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | while read gcda_file; do
   gcov -b "$gcda_file" 2>/dev/null || true
 done
-fortcov
+fortcov --source=.
 ```
 
 **CMake:**
@@ -156,7 +153,7 @@ coverage: test
     find build -name "*.gcda" | while read gcda_file; do
       gcov -b "$gcda_file" 2>/dev/null || true
     done
-    fortcov --fail-under=80 --format=json --output=coverage.json
+    fortcov --source=. --fail-under=80 --output-format=json --output=coverage.json
 ```
 
 **GitLab CI:**
@@ -165,7 +162,7 @@ coverage:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage" 
     - find build -name "*.gcda" | while read gcda_file; do gcov -b "$gcda_file" 2>/dev/null || true; done
-    - fortcov --format=xml --output=coverage.xml --fail-under=80
+    - fortcov --source=. --output-format=xml --output=coverage.xml --fail-under=80
   artifacts:
     reports:
       coverage_report:
@@ -194,10 +191,10 @@ fortcov --config=fortcov.nml
 
 ## Output Formats
 
-- **Markdown** (default): `--format=markdown` 
-- **JSON**: `--format=json`
-- **XML** (Cobertura): `--format=xml`
-- **HTML**: `--format=html`
+- **Markdown** (default): `--output-format=markdown` 
+- **JSON**: `--output-format=json`
+- **XML** (Cobertura): `--output-format=xml`
+- **HTML**: `--output-format=html`
 
 ## Security Features
 
@@ -224,7 +221,7 @@ fpm --version    # Ensure FPM 0.8.0+
 gfortran --version  # Ensure gfortran 9.0+
 
 # Memory allocation errors (fixed in v2.0+)
-fortcov --verbose  # Shows detailed error information
+fortcov --source=. --verbose  # Shows detailed error information
 
 # Security errors
 fortcov --source="path;rm -rf /"  # Error: Path contains dangerous characters
