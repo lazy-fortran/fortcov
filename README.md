@@ -86,11 +86,11 @@ fortcov --source=src *.gcov  # Shows terminal coverage output
 fortcov --source=src *.gcov  # Analyze gcov files with terminal output
 ```
 
-**Note**: Current version shows coverage analysis but file output generation is not yet implemented. Available formats: terminal (default), markdown, json, html, xml.
+**Current Implementation Status**: Terminal coverage analysis is fully functional. File output formats (markdown, json, html, xml) display "would be generated" but do not create actual files yet.
 
 **CI/CD integration:**
 ```bash
-fortcov --source=src *.gcov --minimum 80 --fail-under 80  # Fail if coverage < 80%
+fortcov --source=src *.gcov --fail-under 80  # Fail if coverage < 80%
 ```
 
 ## Contributing

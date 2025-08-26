@@ -39,10 +39,10 @@ fortcov --source . --exclude "test/*" --exclude "*.mod" *.gcov
 # Terminal output (current working implementation)
 fortcov --source=src *.gcov
 
-# Note: File output formats show 'would be generated' but don't create files
-# Available format options: terminal (default), markdown, json, html, xml
-fortcov --source=src *.gcov --format=json
-fortcov --source=src *.gcov --format=xml
+# File output formats display 'would be generated' but do not create files
+# Available format options: terminal (default), markdown, json, html, xml  
+fortcov --source=src *.gcov --format=json   # Shows format but doesn't create file
+fortcov --source=src *.gcov --format=xml    # Shows format but doesn't create file
 
 # Verbose terminal output
 fortcov --source=src *.gcov --verbose
@@ -69,7 +69,7 @@ fortcov --source=src *.gcov --minimum 80 --fail-under 90
 fortcov --source=src *.gcov --tui
 ```
 
-**Note**: Coverage diff analysis features are not yet implemented in the current version. The current implementation provides terminal coverage analysis and interactive TUI mode.
+**Note**: Coverage diff analysis features are not yet implemented. Current implementation provides terminal coverage analysis and interactive TUI mode.
 
 ## Workflow Integration
 
@@ -86,7 +86,7 @@ fortcov --source=src *.gcov --fail-under=80 --quiet
 
 **CI/CD Pipeline:**
 ```bash
-# Generate coverage for CI (note: file output not yet implemented)
+# Generate coverage for CI (file output shows format but doesn't create files)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate .gcov files
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
@@ -136,7 +136,7 @@ All paths are validated and normalized before processing.
 # Use specific source paths (faster)
 fortcov --source src --source lib *.gcov
 
-# Parallel processing (note: threads option may not be implemented)
+# Parallel processing (threads option not yet implemented)
 fortcov --source=src *.gcov --threads 4
 
 # Exclude large directories
