@@ -5,6 +5,7 @@ module zero_config_core
     use zero_configuration_manager
     use error_handling, only: error_context_t, ERROR_SUCCESS, clear_error_context
     use foundation_constants, only: EXIT_SUCCESS, EXIT_FAILURE
+    use fortcov, only: run_coverage_analysis
     implicit none
     private
     
@@ -139,6 +140,10 @@ contains
         character(len=:), allocatable :: error_message
         type(error_context_t) :: error_ctx
         
+        if (.not. config%quiet) then
+            print '(A)', "FortCov: Starting zero-configuration coverage analysis..."
+        end if
+        
         exit_code = EXIT_FAILURE
         
         ! Enhance configuration with auto-discovery
@@ -148,12 +153,15 @@ contains
             return
         end if
         
-        ! Execute auto test workflow if enabled
+        ! Execute auto test workflow if enabled (non-blocking in zero-config mode)
         if (config%auto_test_execution) then
             exit_code = execute_auto_test_workflow(config)
             if (exit_code /= 0) then
-                call show_zero_configuration_error_guidance()
-                return
+                if (.not. config%quiet) then
+                    print '(A)', "FortCov: Auto-test execution failed, proceeding with existing coverage files..."
+                end if
+                ! Continue with existing coverage files instead of failing
+                exit_code = EXIT_SUCCESS  
             end if
         end if
         
@@ -164,7 +172,77 @@ contains
             return
         end if
         
-        exit_code = EXIT_SUCCESS
+        ! Auto-discover coverage files and source paths
+        call populate_zero_config_with_discovered_files(config, success, error_message)
+        if (.not. success) then
+            if (.not. config%quiet) then
+                print '(A)', "FortCov: " // trim(error_message)
+            end if
+            call show_zero_configuration_error_guidance()
+            return
+        end if
+        
+        ! Execute the actual coverage analysis
+        exit_code = run_coverage_analysis(config)
+        
+        if (.not. config%quiet) then
+            if (exit_code == EXIT_SUCCESS) then
+                print '(A)', "FortCov: Zero-configuration coverage analysis completed successfully!"
+            else
+                print '(A)', "FortCov: Zero-configuration coverage analysis failed."
+            end if
+        end if
     end subroutine execute_zero_config_complete_workflow
+
+    subroutine populate_zero_config_with_discovered_files(config, success, error_message)
+        !! Auto-discover and populate configuration with coverage files and source paths
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=:), allocatable, intent(out) :: error_message
+        
+        character(len=:), allocatable :: discovered_coverage_files(:)
+        character(len=:), allocatable :: discovered_source_paths(:)
+        
+        success = .false.
+        error_message = ""
+        
+        ! Auto-discover coverage files using priority search
+        if (.not. config%quiet) then
+            print '(A)', "FortCov: Auto-discovering coverage files..."
+        end if
+        
+        discovered_coverage_files = auto_discover_coverage_files_priority()
+        
+        if (.not. config%quiet) then
+            if (allocated(discovered_coverage_files)) then
+                print '(A,I0)', "FortCov: Discovery returned ", size(discovered_coverage_files), " files"
+            else
+                print '(A)', "FortCov: Discovery returned no allocated array"
+            end if
+        end if
+        
+        if (.not. allocated(discovered_coverage_files) .or. size(discovered_coverage_files) == 0) then
+            error_message = "No coverage files found in standard locations"
+            return
+        end if
+        
+        ! Auto-discover source paths
+        discovered_source_paths = auto_discover_source_files_priority()
+        
+        ! Populate configuration with discovered files
+        if (allocated(config%coverage_files)) deallocate(config%coverage_files)
+        config%coverage_files = discovered_coverage_files
+        
+        if (allocated(config%source_paths)) deallocate(config%source_paths)
+        config%source_paths = discovered_source_paths
+        
+        if (.not. config%quiet) then
+            print '(A,I0,A)', "FortCov: Found ", size(discovered_coverage_files), " coverage files"
+            print '(A,I0,A)', "FortCov: Using ", size(discovered_source_paths), " source paths"
+        end if
+        
+        success = .true.
+        
+    end subroutine populate_zero_config_with_discovered_files
 
 end module zero_config_core

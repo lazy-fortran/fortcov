@@ -33,10 +33,12 @@ contains
                          len_trim(config%diff_current_file) > 0
 
         ! Must have at least one input source (including diff files)
+        ! Exception: zero-configuration mode handles input discovery automatically
         if (.not. has_source_paths .and. &
             .not. has_coverage_files .and. &
             .not. has_import_file .and. &
-            .not. has_diff_files) then
+            .not. has_diff_files .and. &
+            .not. config%zero_configuration_mode) then
             is_valid = .false.
             error_message = "No input sources specified. Provide source paths, coverage files, import file, or diff files"
             return
@@ -74,8 +76,8 @@ contains
             if (.not. is_valid) return
         end if
 
-        ! Validate gcov executable if using source paths
-        if (has_source_paths) then
+        ! Validate gcov executable if using source paths (skip in zero-config mode)
+        if (has_source_paths .and. .not. config%zero_configuration_mode) then
             call validate_gcov_executable(config%gcov_executable, is_valid, error_message)
             if (.not. is_valid) return
         end if
