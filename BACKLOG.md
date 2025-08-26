@@ -3,8 +3,10 @@
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
 ### EPIC: Critical Infrastructure Defects
+- [ ] #397: README contains multiple non-functional command examples
 
 ### EPIC: Core Functionality Restoration
+- [ ] CRITICAL: Zero-config fortcov command doesn't work (shows help instead of running coverage) - MUST HAVE for next sprint
 
 ### EPIC: Architecture Size Compliance
 
