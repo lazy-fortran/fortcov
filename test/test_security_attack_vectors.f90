@@ -99,7 +99,7 @@ contains
         call assert_false(is_safe, &
             "Input redirection should be blocked", passed)
         
-        # Test append redirection
+        ! Test append redirection
         test_path = "file.txt >> /etc/passwd"
         is_safe = validate_safe_path(test_path)
         call assert_false(is_safe, &
