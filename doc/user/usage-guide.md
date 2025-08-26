@@ -40,7 +40,7 @@ fortcov --source . --exclude "test/*" --exclude "*.mod" *.gcov
 fortcov --source=src *.gcov
 
 # Note: File output formats show 'would be generated' but don't create files
-# Available format options: terminal (default), markdown, json, xml
+# Available format options: terminal (default), markdown, json, html, xml
 fortcov --source=src *.gcov --format=json
 fortcov --source=src *.gcov --format=xml
 
@@ -63,7 +63,13 @@ fortcov --source=src *.gcov --minimum 80 --fail-under 90
 
 ## Advanced Analysis Features
 
-**Note**: Advanced features like diff analysis and TUI mode are not yet implemented in the current version. The current implementation provides terminal coverage analysis only.
+**Interactive TUI Mode:**
+```bash
+# Launch interactive terminal user interface
+fortcov --source=src *.gcov --tui
+```
+
+**Note**: Coverage diff analysis features are not yet implemented in the current version. The current implementation provides terminal coverage analysis and interactive TUI mode.
 
 ## Workflow Integration
 

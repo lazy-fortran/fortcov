@@ -48,7 +48,7 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 
 ## Features
 
-- **Multiple output formats**: terminal (default), markdown, json, xml
+- **Multiple output formats**: terminal (default), markdown, json, html, xml
 - **Build system integration**: Works with FPM, CMake, Make, and custom build systems  
 - **CI/CD ready**: Designed for automated testing pipelines
 - **Security focused**: Path validation, command injection prevention
@@ -86,7 +86,7 @@ fortcov --source=src *.gcov  # Shows terminal coverage output
 fortcov --source=src *.gcov  # Analyze gcov files with terminal output
 ```
 
-**Note**: Current version shows coverage analysis but file output generation is not yet implemented. Available formats: terminal (default), markdown, json, xml.
+**Note**: Current version shows coverage analysis but file output generation is not yet implemented. Available formats: terminal (default), markdown, json, html, xml.
 
 **CI/CD integration:**
 ```bash

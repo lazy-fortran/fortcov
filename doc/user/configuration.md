@@ -25,7 +25,7 @@ FortCov uses **Fortran namelist format** (`fortcov.nml`) for configuration:
 |--------|------|---------|-------------|
 | `source_paths` | string array | `'src/'` | Source directories to analyze |
 | `exclude_patterns` | string array | `''` | File patterns to exclude (glob syntax) |
-| `output_format` | string | `'terminal'` | Output format: terminal (default), markdown, json, xml |
+| `output_format` | string | `'terminal'` | Output format: terminal (default), markdown, json, html, xml |
 | `output_path` | string | `'-'` | Output file path ('-' for stdout) |
 | `minimum_coverage` | real | `0.0` | Minimum coverage threshold (0-100) |
 | `verbose` | logical | `.false.` | Enable verbose output |

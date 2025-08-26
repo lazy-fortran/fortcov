@@ -38,7 +38,7 @@ contains
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
         print '(A)', "  -f, --format FORMAT       Output format:"
-        print '(A)', "                            terminal (default), markdown, json, xml"
+        print '(A)', "                            terminal (default), markdown, json, html, xml"
         print '(A)', ""
         print '(A)', "Coverage Options:"
         print '(A)', "  -m, --minimum PERCENT     Set minimum coverage percentage"

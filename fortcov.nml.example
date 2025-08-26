@@ -9,7 +9,7 @@
 ! Configuration Options:
 ! - source_paths: Source directories to analyze (string array)
 ! - exclude_patterns: File patterns to exclude using glob syntax (string array)
-! - output_format: 'terminal' (default), 'markdown', 'json', 'xml'
+! - output_format: 'terminal' (default), 'markdown', 'json', 'html', 'xml'
 ! - output_path: Output file path, use '-' for stdout (default)
 ! - minimum_coverage: Coverage threshold 0.0-100.0 for warnings
 ! - gcov_executable: Path to gcov executable (default: 'gcov')
