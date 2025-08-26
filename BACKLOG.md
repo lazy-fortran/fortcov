@@ -9,7 +9,6 @@
 ### EPIC: Architecture Size Compliance
 
 ### EPIC: Code Quality & Dead Code Elimination
-- [ ] #379: cleanup: remove unused secure_temp_file_types module
 - [ ] #380: cleanup: remove unused temp_file_c_interfaces module
 - [ ] #381: cleanup: remove unused temp_file_error_handling module
 - [ ] #382: cleanup: remove unused sanitize_filename function
@@ -17,7 +16,7 @@
 - [ ] #384: cleanup: remove unused validate_string_input function
 
 ## DOING (Current Work)
-- [ ] #379: cleanup: remove unused secure_temp_file_types module [EPIC: Code Quality & Dead Code Elimination]
+- [ ] #380: cleanup: remove unused temp_file_c_interfaces module [EPIC: Code Quality & Dead Code Elimination]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
