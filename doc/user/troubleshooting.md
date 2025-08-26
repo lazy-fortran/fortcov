@@ -34,12 +34,12 @@ sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 **Security Messages:**
 ```bash
 # Use clean paths
-fortcov --source=src  # ✅ Good
-# fortcov --source="src;rm -rf /"  # ❌ Blocked
+fortcov --source src  # ✅ Good
+# fortcov --source "src;rm -rf /"  # ❌ Blocked
 
 # Avoid special characters  
-fortcov --output=coverage.md  # ✅ Good
-# fortcov --output="report|danger"  # ❌ Blocked
+fortcov --output coverage.md  # ✅ Good
+# fortcov --output "report|danger"  # ❌ Blocked
 ```
 
 **No Coverage Data:**
