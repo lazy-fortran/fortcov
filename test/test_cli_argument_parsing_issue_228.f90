@@ -84,13 +84,25 @@ contains
         call cleanup_basic_test_environment("comprehensive")
         
         ! Remove specific test files
-        character(len=*), parameter :: cleanup_patterns(3) = [ &
-            "test_*.gcov test_*.f90 test_*.json test_*.cfg", &
-            "test_*.md test_*.xml test_*.html coverage_*", &
-            "test_diff_output.md" &
-        ]
-        
-        call cleanup_test_files_pattern(cleanup_patterns)
+        call execute_command_line('rm -f test_*.gcov test_*.f90 test_*.json test_*.cfg')
+        call execute_command_line('rm -f test_*.md test_*.xml test_*.html coverage_*')
+        call execute_command_line('rm -f test_diff_output.md')
     end subroutine cleanup_comprehensive_test_environment
+
+    subroutine create_test_baseline_json(filename)
+        character(len=*), intent(in) :: filename
+        integer :: unit
+        open(newunit=unit, file=filename, status='replace')
+        write(unit, '(A)') '{"line_coverage": 85.5, "branch_coverage": 70.0}'
+        close(unit)
+    end subroutine create_test_baseline_json
+    
+    subroutine create_test_current_json(filename)
+        character(len=*), intent(in) :: filename
+        integer :: unit
+        open(newunit=unit, file=filename, status='replace')
+        write(unit, '(A)') '{"line_coverage": 90.0, "branch_coverage": 75.0}'
+        close(unit)
+    end subroutine create_test_current_json
 
 end program test_cli_argument_parsing_issue_228

@@ -68,11 +68,7 @@ contains
         call cleanup_basic_test_environment("CLI flag parsing")
         
         ! Clean up specific test files
-        character(len=*), parameter :: cleanup_patterns(1) = [ &
-            "test_*.gcov test_*.f90 test_*.cfg test_output.*" &
-        ]
-        
-        call cleanup_test_files_pattern(cleanup_patterns)
+        call execute_command_line('rm -f test_*.gcov test_*.f90 test_*.cfg test_output.*')
     end subroutine cleanup_test_environment
 
 end program test_cli_flag_parsing_issue_231

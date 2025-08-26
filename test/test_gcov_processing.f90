@@ -62,7 +62,7 @@ contains
         
         if (.not. result%success) then
             print *, '  DEBUG: Error message: ', trim(result%error_message)
-            print *, '  DEBUG: Guidance: ', trim(result%guidance_message)
+            print *, '  DEBUG: Files processed: ', result%files_processed
             print *, '  DEBUG: Gcov executable: ', trim(config%gcov_executable)
             ! Check if mock gcov exists
             block

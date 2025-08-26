@@ -82,14 +82,10 @@ contains
         call cleanup_basic_test_environment("secure file deletion")
         
         ! Clean up any remaining security test files
-        character(len=*), parameter :: security_cleanup_patterns(4) = [ &
-            "temp_*.tmp multi_temp_*.tmp        ", &
-            "sensitive_*.tmp concurrent_*.tmp   ", &
-            "protected_*.tmp locked_*.tmp       ", &
-            "diskspace_*.tmp readonly_*.tmp     " &
-        ]
-        
-        call cleanup_test_files_pattern(security_cleanup_patterns)
+        call execute_command_line('rm -f temp_*.tmp multi_temp_*.tmp')
+        call execute_command_line('rm -f sensitive_*.tmp concurrent_*.tmp')
+        call execute_command_line('rm -f protected_*.tmp locked_*.tmp')
+        call execute_command_line('rm -f diskspace_*.tmp readonly_*.tmp')
         call execute_command_line('rm -rf security_temp_test')
         call execute_command_line('chmod 755 *.tmp 2>/dev/null || true') ! Reset permissions
         call execute_command_line('rm -f *.tmp')
