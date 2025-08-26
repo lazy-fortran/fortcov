@@ -9,7 +9,6 @@ module string_utils
     public :: split
     public :: trim_string
     public :: validate_string_input
-    public :: sanitize_filename
     public :: is_safe_path
     public :: to_lower
     public :: matches_pattern
@@ -244,33 +243,6 @@ contains
         end do
     end function validate_string_input
 
-    ! Security: Sanitize filename by removing dangerous characters
-    function sanitize_filename(filename) result(safe_filename)
-        character(len=*), intent(in) :: filename
-        character(len=:), allocatable :: safe_filename
-        character(len=len(filename)) :: temp_filename
-        integer :: i, j
-        
-        temp_filename = ''
-        j = 1
-        
-        do i = 1, len_trim(filename)
-            ! Keep alphanumeric, period, underscore, hyphen, forward slash
-            if (verify(filename(i:i), &
-                'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-/') &
-                == 0) then
-                temp_filename(j:j) = filename(i:i)
-                j = j + 1
-            end if
-        end do
-        
-        safe_filename = trim(temp_filename)
-        
-        ! Security: Enforce maximum length
-        if (len(safe_filename) > 1024) then
-            safe_filename = safe_filename(1:1024)
-        end if
-    end function sanitize_filename
 
     ! Security: Check if path is safe (no directory traversal)
     function is_safe_path(path) result(is_safe)
