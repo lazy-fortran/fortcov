@@ -254,12 +254,15 @@ contains
     
     subroutine start_tui_interface(config, success)
         !! Starts the terminal user interface
+        use coverage_tui_handler, only: perform_tui_analysis
         type(config_t), intent(in) :: config
         logical, intent(out) :: success
         
-        ! This would launch the actual TUI
-        ! For now, just indicate success
-        success = .true.
+        integer :: exit_code
+        
+        ! Launch the actual TUI using the coverage TUI handler
+        exit_code = perform_tui_analysis(config)
+        success = (exit_code == EXIT_SUCCESS)
         
     end subroutine start_tui_interface
     
