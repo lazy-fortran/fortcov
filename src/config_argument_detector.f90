@@ -38,6 +38,7 @@ contains
             ! Check for input-related flags
             if (flag_part == "--source" .or. flag_part == "-s" .or. &
                 flag_part == "--import" .or. &
+                flag_part == "--config" .or. flag_part == "-c" .or. &
                 flag_part == "--gcov-executable" .or. &
                 flag_part == "--gcov-args" .or. &
                 flag_part == "--include" .or. flag_part == "-i" .or. &
@@ -92,7 +93,8 @@ contains
                 flag_part == "--include-unchanged" .or. &
                 flag_part == "--threshold" .or. flag_part == "-m" .or. &
                 flag_part == "--minimum" .or. &
-                flag_part == "--strict") then
+                flag_part == "--strict" .or. &
+                flag_part == "--validate") then
                 has_output_args = .true.
                 return
             end if
