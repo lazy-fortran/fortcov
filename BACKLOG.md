@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Functionality Recovery - Sprint 2)
 
 ### EPIC: Core Functionality Recovery (CRITICAL - Sprint 2 Phase 1)
-- [ ] #463: Critical: Multiple test failures with EXECUTE_COMMAND_LINE runtime errors
 - [ ] #469: Auto-discovery fails to find gcov files in build/gcov/ directory (zero-configuration broken)
 - [ ] #470: Coverage parsing shows 0.00% even with valid gcov files containing coverage data
 - [ ] #472: CLI argument parsing bug: --source flag not recognized, breaking documented examples
@@ -29,6 +28,7 @@
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
 
 ## DOING (Current Work)
+- [ ] #463: Critical: Multiple test failures with EXECUTE_COMMAND_LINE runtime errors [EPIC: Core Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
