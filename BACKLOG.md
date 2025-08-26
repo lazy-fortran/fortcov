@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Defect Resolution & Architecture Alignment)
 
 ### EPIC: Core Functionality Restoration (MUST HAVE)
-- [ ] #437: Major functional regression: Core CLI and config functionality completely broken
 - [ ] #433: Configuration validation always fails for valid CLI arguments
 - [ ] #434: Inconsistent error handling: some flags work while others trigger generic validation failure
 
@@ -31,7 +30,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #432: CRITICAL: FPM test causes infinite recursion fork bomb in fortcov project [EPIC: Core Functionality Restoration (MUST HAVE)]
+- [ ] #437: Major functional regression: Core CLI and config functionality completely broken [EPIC: Core Functionality Restoration (MUST HAVE)]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
