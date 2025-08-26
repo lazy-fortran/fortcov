@@ -20,9 +20,9 @@
 ### EPIC: Critical Bugs (URGENT - Must be fixed immediately) ✅ COMPLETED
 - [x] #491: Cannot build on Windows - C interface file compilation errors
 
-### EPIC: Documentation Defects (HIGH - Documentation fixes)  
+### EPIC: Documentation Defects (HIGH - Documentation fixes) ✅ COMPLETED
 - [x] #468: Default format 'terminal' not supported, contradicting help documentation
-- [ ] #471: Default fortcov.nml configuration references non-existent lib/ directory
+- [x] #471: Default fortcov.nml configuration references non-existent lib/ directory
 
 ### EPIC: Code Cleanup (LOWEST - Sprint 2 Phase 5 - Only after Core Recovery)
 - [x] #458: cleanup: remove dead C interface files (~2000+ lines unused)
@@ -33,7 +33,6 @@
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
 
 ## DOING (Current Work)
-- [ ] #471: Default fortcov.nml configuration references non-existent lib/ directory [EPIC: Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
@@ -45,6 +44,7 @@
 - [x] Infrastructure Stabilization (Sprint 2 Phase 2 - All critical infrastructure bugs resolved)
 - [x] User Experience & Documentation (Sprint 2 Phase 3 - All documentation consolidated and validated)
 - [x] Architecture Compliance (Sprint 2 Phase 4 - All architecture violations resolved and compliance verified)
+- [x] Documentation Defects (HIGH - All documentation fixes completed)
 
 ## FUTURE SPRINTS (High-level Planning)
 
