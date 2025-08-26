@@ -22,7 +22,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
-fortcov *.gcov
+fortcov --source=src *.gcov
 ```
 
 ## Documentation
@@ -48,7 +48,7 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 
 ## Features
 
-- **Multiple output formats**: JSON, XML, HTML, LCOV, Cobertura (terminal display)
+- **Multiple output formats**: terminal (default), markdown, json, xml
 - **Build system integration**: Works with FPM, CMake, Make, and custom build systems  
 - **CI/CD ready**: Designed for automated testing pipelines
 - **Security focused**: Path validation, command injection prevention
@@ -86,7 +86,7 @@ fortcov --source=src *.gcov  # Shows terminal coverage output
 fortcov --source=src *.gcov  # Analyze gcov files with terminal output
 ```
 
-**Note**: Current version shows coverage analysis but file output generation is not yet implemented. Available formats: json, xml, html, lcov, cobertura.
+**Note**: Current version shows coverage analysis but file output generation is not yet implemented. Available formats: terminal (default), markdown, json, xml.
 
 **CI/CD integration:**
 ```bash

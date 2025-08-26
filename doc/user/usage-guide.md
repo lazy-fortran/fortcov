@@ -40,7 +40,7 @@ fortcov --source . --exclude "test/*" --exclude "*.mod" *.gcov
 fortcov --source=src *.gcov
 
 # Note: File output formats show 'would be generated' but don't create files
-# Available format options: json, xml, html, lcov, cobertura
+# Available format options: terminal (default), markdown, json, xml
 fortcov --source=src *.gcov --format=json
 fortcov --source=src *.gcov --format=xml
 

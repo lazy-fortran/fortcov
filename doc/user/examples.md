@@ -55,7 +55,7 @@ find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
 done
 
 # Process specific files
-fortcov src_demo.f90.gcov test_demo.f90.gcov
+fortcov --source=src src_demo.f90.gcov test_demo.f90.gcov
 ```
 
 ## Terminal Output Examples
@@ -193,7 +193,7 @@ coverage_analysis:
 
 **Multi-file analysis:**
 ```bash
-fortcov src_*.gcov lib_*.gcov modules_*.gcov
+fortcov --source=src src_*.gcov lib_*.gcov modules_*.gcov
 ```
 
 **Note**: Coverage comparison and diff features are not yet implemented in current version.
