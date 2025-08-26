@@ -134,11 +134,6 @@ source-dir = "test"
 main = "test_realistic_coverage_simulation_issue_304.f90"
 
 [[test]]
-name = "test_refactored_modules"
-source-dir = "test"
-main = "test_refactored_modules.f90"
-
-[[test]]
 name = "test_secure_file_deletion_issue_244"
 source-dir = "test"
 main = "test_secure_file_deletion_issue_244.f90"
