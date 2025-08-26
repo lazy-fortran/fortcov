@@ -31,6 +31,7 @@
 - [ ] #462: refactor: evaluate wrapper modules for dead code elimination
 - [ ] #480: style: fix line length violations in coverage_file_processor.f90
 - [ ] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
+- [ ] #500: critical: scope mismatch between issue 459 requirements and PR 499 implementation
 
 ## DOING (Current Work)
 
