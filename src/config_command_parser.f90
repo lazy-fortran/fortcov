@@ -25,6 +25,10 @@ module config_command_parser
     public :: handle_normal_configuration
     public :: process_positional_arguments
     public :: prevent_fork_bomb_with_manual_files
+    ! Re-export functions from config_argument_detector for backward compatibility
+    public :: has_input_related_arguments
+    public :: has_output_related_arguments
+    public :: has_diff_mode_arguments
 
 contains
 
