@@ -27,12 +27,6 @@ Each subdirectory contains a complete, working example with:
 ### Specialized Environments
 - **[docker/](docker/)** - Container-based coverage workflows
 - **[hpc/](hpc/)** - HPC and SLURM integration patterns
-- **[ide/](ide/)** - IDE integration examples (VS Code, CLion)
-
-### Advanced Patterns
-- **[cross_platform/](cross_platform/)** - Multi-compiler, multi-OS examples
-- **[performance/](performance/)** - Large project optimization patterns
-- **[parallel/](parallel/)** - MPI and parallel coverage collection
 
 ## Testing Examples
 
