@@ -5,10 +5,8 @@
 ### EPIC: Core Functionality Restoration (MUST HAVE)
 
 ### EPIC: Critical Infrastructure Defects
-- [ ] #397: README contains multiple non-functional command examples
 
 ### EPIC: Documentation & CLI Consistency  
-- [ ] #422: README claims non-existent directories and features
 - [ ] #431: README gcov workflow documentation is incorrect and doesn't generate gcov files
 
 ### EPIC: Code Quality & Dead Code Elimination
@@ -23,7 +21,7 @@
 - [ ] Module decomposition: Extract focused test utilities to achieve size compliance
 
 ## DOING (Current Work)
-- [ ] #422: README claims non-existent directories and features [EPIC: Documentation & CLI Consistency]
+- [ ] #397: README contains multiple non-functional command examples [EPIC: Critical Infrastructure Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
