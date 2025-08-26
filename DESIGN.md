@@ -229,3 +229,95 @@ coverage_orchestrator.f90 (existing)
 5. **#277**: Final integration and testing (completion)
 
 This architecture transforms fortcov into a true single-command solution while maintaining security, performance, and backward compatibility standards.
+
+## Sprint 2: Critical Functionality Recovery
+
+### Sprint Goal
+**PRIMARY OBJECTIVE**: Restore core fortcov functionality to working state and achieve sprint 1 auto-discovery goals
+
+**CRITICAL SUCCESS CRITERIA**:
+1. **Auto-discovery workflow functional**: `fortcov` command works end-to-end without manual intervention
+2. **Coverage parsing accuracy**: Shows actual coverage percentages from valid gcov files
+3. **CLI consistency**: All documented examples work as specified
+4. **Test infrastructure stable**: All tests pass reliably enabling validation workflow
+
+### Definition of Done (Sprint 2)
+
+#### PHASE 1: Core Functionality Recovery (CRITICAL - MUST COMPLETE)
+- [ ] **Test Infrastructure Stable**: All `fpm test --flag "-fprofile-arcs -ftest-coverage"` tests pass without runtime errors
+- [ ] **Auto-discovery Functional**: Zero-config mode finds gcov files in `build/gcov/` directory successfully
+- [ ] **Coverage Parsing Accurate**: Shows actual coverage percentages instead of 0.00%
+- [ ] **CLI Arguments Working**: `--source` flag and all documented examples work correctly
+- [ ] **Fork Bomb Prevention**: Marker file cleanup works properly, doesn't block normal operation
+
+#### PHASE 2: Infrastructure Stabilization (HIGH - COMPLETE AFTER PHASE 1)
+- [ ] **Security Tests Pass**: URL-encoded attack validation and all security tests pass
+- [ ] **Permission Handling**: Test directory creation uses proper temporary directories
+- [ ] **Input Validation**: CLI accepts only valid threshold values with proper error messages
+
+#### PHASE 3: User Experience & Documentation (MEDIUM - AFTER CRITICAL FIXES)
+- [ ] **Documentation Consistency**: All CLI help matches implementation, all examples work
+- [ ] **Configuration Valid**: Default fortcov.nml references existing directories only
+- [ ] **Error Messages Clear**: Users get actionable feedback for common errors
+
+#### PHASE 4: Architecture Compliance (LOW - ONLY AFTER CORE RECOVERY)
+- [ ] **File Size Compliance**: zero_configuration_manager.f90 under 500 lines
+- [ ] **Function Size Compliance**: All functions under 50 lines
+- [ ] **Module Structure**: Clear separation of responsibilities
+
+#### PHASE 5: Code Cleanup (LOWEST - FINAL PHASE)
+- [ ] **Dead Code Removal**: C interfaces and obsolete files eliminated
+- [ ] **Stub Implementation**: test_build_auto_discovery.f90 properly implemented or removed
+- [ ] **Documentation Cleanup**: Investigation files and old documentation removed
+
+### Success Metrics
+
+#### Functional Requirements
+- **Primary Workflow**: `fortcov` command completes successfully showing actual coverage
+- **Zero Configuration**: Auto-discovery finds files without manual specification
+- **Documentation Accuracy**: All README examples work copy-paste
+- **Test Reliability**: CI passes consistently without manual intervention
+
+#### Quality Requirements
+- **Performance**: Single command completes within 5 seconds for small projects
+- **Security**: All security validation tests pass
+- **Usability**: Error messages provide clear resolution guidance
+- **Architecture**: Code follows size and structure standards
+
+### Risk Mitigation
+
+#### Critical Path Dependencies
+1. **Test Infrastructure FIRST**: Must fix test failures before validating other fixes
+2. **Auto-discovery Core**: Fix file discovery before coverage parsing
+3. **CLI Consistency**: Fix argument parsing before documentation updates
+
+#### Rollback Strategy
+If Phase 1 cannot be completed:
+- Document minimum working manual workflow
+- Provide clear troubleshooting guide
+- Plan incremental recovery in subsequent sprints
+
+### Technical Approach
+
+#### Phase 1 Implementation Strategy
+1. **Fix Test Runtime Errors**: Address EXECUTE_COMMAND_LINE failures and permission issues
+2. **Debug Auto-discovery**: Add logging to file discovery process, verify path resolution
+3. **Fix Coverage Parsing**: Debug gcov file parsing and statistics calculation
+4. **Repair CLI Parsing**: Fix argument parsing to match documented interface
+
+#### Integration Testing Strategy
+- **End-to-end Validation**: Test complete workflow from clean state to coverage report
+- **Multiple Build Systems**: Verify FPM integration works properly
+- **Documentation Examples**: Test all README examples as integration tests
+
+### Learning from Sprint 1 Failure
+
+#### Root Cause Analysis
+1. **Assumed Working Foundation**: Attempted architecture work before verifying core functionality
+2. **Insufficient Integration Testing**: Unit tests passed but end-to-end workflow was broken
+3. **Documentation Drift**: Examples didn't match implementation
+
+#### Process Improvements
+- **Test-First Recovery**: Fix all test failures before feature work
+- **End-to-end Validation**: Require working examples before completion
+- **Continuous Integration**: Ensure CI validates documented workflows
