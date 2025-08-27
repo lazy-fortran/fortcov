@@ -13,7 +13,7 @@ module config_defaults_core
     private
 
     public :: initialize_default_config
-    public :: apply_html_default_filename
+    public :: apply_default_output_filename
     public :: apply_default_output_path_for_coverage_files
     public :: ensure_zero_config_output_directory
     public :: get_max_files_from_env
@@ -63,16 +63,30 @@ contains
 
     end subroutine initialize_default_config
 
-    subroutine apply_html_default_filename(config)
-        !! Apply default filename when HTML output is selected without path
+    subroutine apply_default_output_filename(config)
+        !! Apply default filename when output format is selected without path
         type(config_t), intent(inout) :: config
 
-        if (config%output_format == "html" .and. &
-            len_trim(config%output_path) == 0) then
-            config%output_path = "coverage.html"
+        ! Apply default output paths for all formats when not specified
+        if (len_trim(config%output_path) == 0) then
+            select case (trim(config%output_format))
+            case ("html")
+                config%output_path = "coverage.html"
+            case ("json")
+                config%output_path = "coverage.json"
+            case ("xml")
+                config%output_path = "coverage.xml"
+            case ("markdown", "md")
+                config%output_path = "coverage.md"
+            case ("text")
+                config%output_path = "coverage.txt"
+            case default
+                ! For unknown formats, use generic extension
+                config%output_path = "coverage." // trim(config%output_format)
+            end select
         end if
 
-    end subroutine apply_html_default_filename
+    end subroutine apply_default_output_filename
 
     subroutine apply_default_output_path_for_coverage_files(config)
         !! Apply default output path when processing coverage files directly
@@ -83,10 +97,23 @@ contains
         has_coverage_files = allocated(config%coverage_files) .and. &
                               size(config%coverage_files) > 0
 
-        if (has_coverage_files .and. &
-            config%output_format == "html" .and. &
-            len_trim(config%output_path) == 0) then
-            config%output_path = "coverage.html"
+        ! Apply default output paths for all formats when not specified
+        if (len_trim(config%output_path) == 0) then
+            select case (trim(config%output_format))
+            case ("html")
+                config%output_path = "coverage.html"
+            case ("json")
+                config%output_path = "coverage.json"
+            case ("xml")
+                config%output_path = "coverage.xml"
+            case ("markdown", "md")
+                config%output_path = "coverage.md"
+            case ("text")
+                config%output_path = "coverage.txt"
+            case default
+                ! For unknown formats, use generic extension
+                config%output_path = "coverage." // trim(config%output_format)
+            end select
         end if
 
     end subroutine apply_default_output_path_for_coverage_files

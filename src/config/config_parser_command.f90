@@ -199,7 +199,7 @@ contains
         call prevent_fork_bomb_with_manual_files(config)
 
         ! Apply final defaults
-        call apply_html_default_filename(config)
+        call apply_default_output_filename(config)
         call ensure_zero_config_output_directory(config)
 
     end subroutine handle_zero_configuration_with_overrides
@@ -245,8 +245,8 @@ contains
         ! Apply fork bomb prevention (Issue #395)
         call prevent_fork_bomb_with_manual_files(config)
 
-        ! Apply defaults for HTML output
-        call apply_html_default_filename(config)
+        ! Apply defaults for output formats
+        call apply_default_output_filename(config)
         call apply_default_output_path_for_coverage_files(config)
 
     end subroutine handle_normal_configuration
