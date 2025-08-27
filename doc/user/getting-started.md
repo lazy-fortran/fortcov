@@ -12,15 +12,21 @@ which gfortran gcov fpm fortcov  # All must be installed
 
 ```bash
 # 1. Create project
-mkdir calc && cd calc && fpm init calc
+mkdir hello && cd hello && fpm new hello
 
-# 2. Add source (src/calc.f90)
-cat > src/calc.f90 << 'EOF'
-module calc
+# 2. Update source to add testable function (src/hello.f90)
+cat > src/hello.f90 << 'EOF'
+module hello
     implicit none
-    public :: add
+    private
+
+    public :: say_hello, add_numbers
 contains
-    function add(a, b) result(c)
+    subroutine say_hello
+        print *, "Hello, hello!"
+    end subroutine say_hello
+
+    function add_numbers(a, b) result(c)
         real, intent(in) :: a, b
         real :: c
         c = a + b
@@ -28,12 +34,12 @@ contains
 end module
 EOF
 
-# 3. Add test (test/test_calc.f90)
-cat > test/test_calc.f90 << 'EOF'
-program test_calc
-    use calc
+# 3. Add test (test/test_hello.f90)
+cat > test/test_hello.f90 << 'EOF'
+program test_hello
+    use hello
     implicit none
-    if (abs(add(2.0, 3.0) - 5.0) > 1e-6) stop 1
+    if (abs(add_numbers(2.0, 3.0) - 5.0) > 1e-6) stop 1
     print *, 'OK'
 end program
 EOF

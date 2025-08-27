@@ -14,6 +14,7 @@
 - [ ] #596: fix: auto-discovery fails to find existing gcov files
 
 ## DOING (Current Work)
+- [ ] #541: docs: getting-started guide function mismatch with default fpm template [EPIC: User Experience & Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
