@@ -152,10 +152,18 @@ contains
                         "Expected success, got: " // trim(error_message))
         
         ! Test 2.2: Check for existing gcov files or ability to generate them
-        call execute_command_line('find . -name "*.gcov" > /tmp/gcov_files.txt 2>/dev/null')
-        
-        open(newunit=unit_number, file='/tmp/gcov_files.txt', status='old', &
-             iostat=iostat, action='read')
+        block
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            character(len=512) :: gcov_files_list
+            
+            temp_dir = get_temp_dir()
+            gcov_files_list = temp_dir // '/gcov_files.txt'
+            
+            call execute_command_line('find . -name "*.gcov" > "' // trim(gcov_files_list) // '" 2>/dev/null')
+            
+            open(newunit=unit_number, file=trim(gcov_files_list), status='old', &
+                 iostat=iostat, action='read')
         if (iostat == 0) then
             do
                 read(unit_number, '(A)', iostat=iostat) line
@@ -184,7 +192,8 @@ contains
                         "Should not always show 0.00%")
         
         ! Cleanup
-        call execute_command_line('rm -f /tmp/gcov_files.txt mock_coverage_test.f90.gcov')
+            call execute_command_line('rm -f "' // trim(gcov_files_list) // '" mock_coverage_test.f90.gcov')
+        end block
         
     end subroutine test_criterion_2_coverage_parsing_accuracy
 
@@ -278,13 +287,22 @@ contains
                         "Should detect we're running inside tests")
         
         ! Test 4.4: Command execution stability
-        call execute_command_line('echo "test" > /tmp/fortcov_test_output.txt', &
-                                  wait=.true., exitstat=exit_status)
+        block
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            character(len=512) :: test_output_file
+            
+            temp_dir = get_temp_dir()
+            test_output_file = temp_dir // '/fortcov_test_output.txt'
+            
+            call execute_command_line('echo "test" > "' // trim(test_output_file) // '"', &
+                                      wait=.true., exitstat=exit_status)
         call assert_test(exit_status == 0, "Command execution stability", &
                         "Basic commands should execute successfully")
         
         ! Cleanup
-        call execute_command_line('rm -f /tmp/fortcov_test_output.txt')
+            call execute_command_line('rm -f "' // trim(test_output_file) // '"')
+        end block
         
     end subroutine test_criterion_4_test_infrastructure_stability
 
@@ -493,16 +511,11 @@ contains
     end subroutine create_mock_gcov_with_coverage
 
     function test_environment_detected() result(is_test_env)
-        !! Simple test environment detection
+        !! Use consistent test environment detection
+        use test_environment_utils, only: test_environment_detected_util => test_environment_detected
         logical :: is_test_env
-        character(len=256) :: env_value
-        integer :: status
         
-        call get_environment_variable('FPM_TEST', env_value, status=status)
-        is_test_env = (status == 0)
-        
-        ! Default to true since we're running in a test
-        if (.not. is_test_env) is_test_env = .true.
+        is_test_env = test_environment_detected_util()
     end function test_environment_detected
 
 end program test_sprint_2_validation_comprehensive

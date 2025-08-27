@@ -9,7 +9,6 @@ program test_cli_consistency_validation
     
     use iso_fortran_env, only: output_unit, error_unit
     use fortcov_config, only: config_t, parse_config, show_help, show_version
-    use foundation_constants, only: EXIT_SUCCESS, EXIT_FAILURE
     implicit none
     
     integer :: test_count = 0

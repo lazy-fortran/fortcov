@@ -150,7 +150,12 @@ contains
         print *, "Test: GCov no files found scenario"
         
         call initialize_test_config(config)
-        empty_directory = "/tmp/empty_gcov_test_dir"
+        block  
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            temp_dir = get_temp_dir()
+            empty_directory = temp_dir // "/empty_gcov_test_dir"
+        end block
         
         ! Create empty test directory
         call ensure_directory_safe(empty_directory, error_ctx)

@@ -126,8 +126,7 @@ contains
         end block
         call assert_test(detected, "FPM project detection", &
                         "Should detect fpm.toml")
-        call assert_test(trim(build_info%system_type) == "fmp" .or. &
-                        trim(build_info%system_type) == "fpm", &
+        call assert_test(trim(build_info%system_type) == "fpm", &
                         "FPM system type correct", &
                         "Expected fpm, got: " // trim(build_info%system_type))
         
@@ -190,7 +189,7 @@ contains
         workspace_path = trim(test_dir)
         
         ! Setup FPM project for testing
-        call create_fmp_test_project(workspace_path)
+        call create_fpm_test_project(workspace_path)
         
         ! Configure for auto-test execution
         allocate(no_args(0))
@@ -236,12 +235,20 @@ contains
         ! Create mock gcov files to simulate successful test execution
         call create_mock_gcov_files(workspace_path)
         
-        ! Test gcov file discovery
-        call execute_command_line('find ' // trim(workspace_path) // &
-                                 ' -name "*.gcov" > /tmp/found_gcov.txt')
-        
-        open(newunit=unit_number, file='/tmp/found_gcov.txt', &
-             status='old', iostat=iostat, action='read')
+        ! Test gcov file discovery  
+        block
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            character(len=512) :: found_gcov_file
+            
+            temp_dir = get_temp_dir()
+            found_gcov_file = temp_dir // '/found_gcov.txt'
+            
+            call execute_command_line('find ' // trim(workspace_path) // &
+                                     ' -name "*.gcov" > "' // trim(found_gcov_file) // '"')
+            
+            open(newunit=unit_number, file=trim(found_gcov_file), &
+                 status='old', iostat=iostat, action='read')
         
         gcov_files_exist = .false.
         if (iostat == 0) then
@@ -261,8 +268,9 @@ contains
                             "Mock gcov files should be readable")
         end if
         
-        ! Cleanup
-        call execute_command_line('rm -f /tmp/found_gcov.txt')
+            ! Cleanup
+            call execute_command_line('rm -f "' // trim(found_gcov_file) // '"')
+        end block
         
     end subroutine test_gcov_generation_and_discovery
 
@@ -354,10 +362,10 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== FPM PROJECT SCENARIO ==="
         
-        workspace_path = trim(test_dir) // "_fmp"
+        workspace_path = trim(test_dir) // "_fpm"
         call execute_command_line('mkdir -p ' // trim(workspace_path))
         
-        call create_fmp_test_project(workspace_path)
+        call create_fpm_test_project(workspace_path)
         
         block
             use error_handling, only: error_context_t
@@ -498,7 +506,7 @@ contains
 
     ! Project creation utilities
     
-    subroutine create_fmp_test_project(workspace_path)
+    subroutine create_fpm_test_project(workspace_path)
         character(len=*), intent(in) :: workspace_path
         integer :: unit_number
         
@@ -521,7 +529,7 @@ contains
         write(unit_number, '(A)') 'end program main'
         close(unit_number)
         
-    end subroutine create_fmp_test_project
+    end subroutine create_fpm_test_project
 
     subroutine create_cmake_test_project(workspace_path)
         character(len=*), intent(in) :: workspace_path
@@ -574,22 +582,17 @@ contains
     subroutine create_complete_project_scenario()
         !! Creates a complete realistic project for end-to-end testing
         
-        call create_fmp_test_project(".")
+        call create_fpm_test_project(".")
         call create_mock_gcov_files(".")
         
     end subroutine create_complete_project_scenario
 
     function test_environment_detected() result(is_test_env)
-        !! Simple test environment detection
+        !! Use consistent test environment detection
+        use test_environment_utils, only: test_environment_detected_util => test_environment_detected
         logical :: is_test_env
-        character(len=256) :: env_value
-        integer :: status
         
-        call get_environment_variable('FPM_TEST', env_value, status=status)
-        is_test_env = (status == 0)
-        
-        ! Default to true since we're running in a test
-        if (.not. is_test_env) is_test_env = .true.
+        is_test_env = test_environment_detected_util()
     end function test_environment_detected
 
 end program test_auto_discovery_end_to_end_validation
