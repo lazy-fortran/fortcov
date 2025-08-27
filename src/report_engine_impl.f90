@@ -3,15 +3,15 @@ module report_engine_impl
     !! 
     !! Orchestrates report generation using focused, extracted modules.
     !! Refactored for QADS architecture compliance (Phase 1, Issue #366).
-    use coverage_model
-    use data_transformer
-    use theme_manager
+    use coverage_model_core
+    use data_transformer_impl
+    use theme_manager_core
     use syntax_highlighter
-    use report_configuration
-    use coverage_metrics_calculator
-    use html_report_generator
-    use terminal_ui_manager
-    use coverage_data_filter
+    use report_config_core
+    use coverage_metrics_core
+    use html_reporter_impl
+    use tui_manager_core
+    use coverage_data_filter_impl
     implicit none
     private
     

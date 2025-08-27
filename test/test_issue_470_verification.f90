@@ -2,10 +2,10 @@ program test_issue_470_verification
     !! Verification test for Issue #470 fix
     !! 
     !! Tests that coverage parsing now shows correct percentages instead of 0.00%
-    use coverage_file_processor, only: parse_coverage_files
-    use coverage_statistics, only: calculate_line_coverage, coverage_stats_t
-    use coverage_data_model, only: coverage_data_t
-    use fortcov_config, only: config_t
+    use coverage_processor_file, only: parse_coverage_files
+    use coverage_stats_core, only: calculate_line_coverage, coverage_stats_t
+    use coverage_data_core, only: coverage_data_t
+    use config_core, only: config_t
     implicit none
     
     type(config_t) :: config

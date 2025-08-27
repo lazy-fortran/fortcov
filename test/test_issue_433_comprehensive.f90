@@ -1,8 +1,8 @@
 program test_issue_433_comprehensive
     !! Comprehensive test for issue #433 - Configuration validation with specific errors
-    use fortcov_config
+    use config_core
     use config_types
-    use error_handling
+    use error_handling_core
     implicit none
     
     type(config_t) :: config

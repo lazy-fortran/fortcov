@@ -8,9 +8,9 @@ program test_path_leakage_security
     !! 
     !! This test demonstrates Issue #310: Path leakage in error messages
     !!
-    use secure_file_operations, only: safe_find_files, safe_mkdir
-    use path_validation, only: validate_path_security, validate_executable_path
-    use error_handling
+    use file_ops_secure, only: safe_find_files, safe_mkdir
+    use path_validation_core, only: validate_path_security, validate_executable_path
+    use error_handling_core
     implicit none
     
     integer :: test_count = 0

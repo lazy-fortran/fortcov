@@ -1,6 +1,6 @@
 module coverage_parser_factory
-    use coverage_model
-    use input_validation
+    use coverage_model_core
+    use input_validation_core
     implicit none
     private
     
@@ -107,7 +107,7 @@ contains
 
     ! GCov parser implementation - delegates to gcov_file_processor
     function gcov_parse(this, path, error_flag) result(coverage_data)
-        use gcov_file_processor
+        use gcov_file_processor_impl
         class(gcov_parser_t), intent(in) :: this
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag

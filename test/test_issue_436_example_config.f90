@@ -2,8 +2,8 @@ program test_issue_436_example_config
     !! Test for issue #436: Example configuration file fails validation
     !! Bug: The official example config file fails with generic validation error
     
-    use fortcov_config, only: config_t, parse_config, validate_config_with_context
-    use error_handling, only: error_context_t
+    use config_core, only: config_t, parse_config, validate_config_with_context
+    use error_handling_core, only: error_context_t
     use iso_fortran_env, only: output_unit
     implicit none
     

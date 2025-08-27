@@ -3,9 +3,9 @@ program test_coverage_parsing_bug_470
     !! 
     !! This test reproduces the bug where FortCov reports 0.00% coverage 
     !! when processing valid gcov files with actual coverage data.
-    use coverage_statistics, only: calculate_line_coverage, coverage_stats_t
-    use coverage_data_model, only: coverage_data_t, coverage_file_t, coverage_line_t
-    use gcov_file_processor, only: process_gcov_file
+    use coverage_stats_core, only: calculate_line_coverage, coverage_stats_t
+    use coverage_data_core, only: coverage_data_t, coverage_file_t, coverage_line_t
+    use gcov_file_processor_impl, only: process_gcov_file
     implicit none
     
     logical :: test_passed = .true.

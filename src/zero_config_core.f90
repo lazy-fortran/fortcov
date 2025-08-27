@@ -1,11 +1,11 @@
 module zero_config_core
     use config_types, only: config_t
-    use build_system_detector, only: build_system_info_t, detect_build_system
-    use coverage_auto_test_executor, only: execute_auto_test_workflow
-    use zero_configuration_manager
-    use error_handling, only: error_context_t, ERROR_SUCCESS, clear_error_context
-    use foundation_constants, only: EXIT_SUCCESS, EXIT_FAILURE
-    use fortcov, only: run_coverage_analysis
+    use build_detector_core, only: build_system_info_t, detect_build_system
+    use coverage_test_executor_impl, only: execute_auto_test_workflow
+    use zero_config_manager
+    use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
+    use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
+    use fortcov_core, only: run_coverage_analysis
     implicit none
     private
     

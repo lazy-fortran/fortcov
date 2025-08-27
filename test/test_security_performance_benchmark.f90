@@ -10,12 +10,12 @@ program test_security_performance_benchmark
     !! 2. Path validation caching effectiveness
     !! 3. Early exit logic benefits
     !! 4. Overall security assessment throughput
-    use security_assessment, only: assess_pattern_security_risks, &
+    use security_assessment_core, only: assess_pattern_security_risks, &
                                    assess_deletion_security_risks, &
                                    check_file_location
-    use path_validation, only: validate_path_security
-    use secure_file_operations, only: safe_find_files
-    use error_handling
+    use path_validation_core, only: validate_path_security
+    use file_ops_secure, only: safe_find_files
+    use error_handling_core
     implicit none
     
     integer :: i, iterations

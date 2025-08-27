@@ -4,8 +4,8 @@ program test_diff_mode_source_requirement_issue_251
     !! This test validates that diff mode can work without --source parameter
     !! when using JSON files, as documented in the help text.
     
-    use fortcov_config
-    use error_handling
+    use config_core
+    use error_handling_core
     implicit none
     
     integer :: test_count = 0

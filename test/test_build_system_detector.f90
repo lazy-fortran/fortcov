@@ -9,8 +9,8 @@ program test_build_system_detector
     !! - Edge cases and malformed configurations
     
     use iso_fortran_env, only: error_unit, output_unit
-    use build_system_detector
-    use error_handling
+    use build_detector_core
+    use error_handling_core
     implicit none
     
     integer :: total_tests = 0

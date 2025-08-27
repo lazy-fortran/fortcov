@@ -1,8 +1,8 @@
 program test_issue_434_error_consistency
     !! Test for issue #434 - Consistent error handling across all flags
-    use fortcov_config
+    use config_core
     use config_types
-    use error_handling
+    use error_handling_core
     implicit none
     
     type(config_t) :: config

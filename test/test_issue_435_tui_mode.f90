@@ -1,8 +1,8 @@
 program test_issue_435_tui_mode
     !! Test for issue #435 - TUI mode functionality
-    use fortcov_config
+    use config_core
     use config_types
-    use coverage_tui_handler, only: perform_tui_analysis
+    use coverage_tui_impl, only: perform_tui_analysis
     use iso_fortran_env, only: output_unit
     implicit none
     

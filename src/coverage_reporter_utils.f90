@@ -3,8 +3,8 @@ module coverage_reporter_utils
     !! 
     !! Extracted from coverage_reporter_impl for Issue #182 module size compliance.
     !! Contains shared utility functions for calculating coverage statistics.
-    use coverage_model
-    use coverage_statistics, only: stats_t => coverage_stats_t
+    use coverage_model_core
+    use coverage_stats_core, only: stats_t => coverage_stats_t
     use string_utils, only: int_to_string
     implicit none
     private

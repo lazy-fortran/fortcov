@@ -5,8 +5,8 @@ program test_memory_stress
     !! proper error handling with stat= and errmsg= parameters.
     
     use iso_fortran_env, only: error_unit
-    use coverage_file_processor
-    use config_defaults
+    use coverage_processor_file
+    use config_defaults_core
     use config_types
     
     implicit none

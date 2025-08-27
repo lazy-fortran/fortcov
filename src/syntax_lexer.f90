@@ -1,6 +1,6 @@
 module syntax_lexer
-    use syntax_tokens_module
-    use language_rules_module
+    use syntax_tokens_core
+    use language_rules_core
     implicit none
     private
     

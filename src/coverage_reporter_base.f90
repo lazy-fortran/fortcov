@@ -3,7 +3,7 @@ module coverage_reporter_base
     !! 
     !! Extracted from coverage_reporter_impl for Issue #182 module size compliance.
     !! Defines the abstract interface that all reporters must implement.
-    use coverage_model
+    use coverage_model_core
     implicit none
     private
     

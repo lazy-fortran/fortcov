@@ -8,7 +8,7 @@ program test_issue_395_fork_bomb
     !! SOLUTION: When manual coverage files are provided, auto_test_execution
     !! should be automatically disabled.
     
-    use fortcov_config, only: parse_config, config_t
+    use config_core, only: parse_config, config_t
     implicit none
     
     logical :: all_tests_pass = .true.

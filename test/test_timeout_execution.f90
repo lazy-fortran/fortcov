@@ -4,9 +4,9 @@ program test_timeout_execution
     !! Tests the execute_tests_with_timeout subroutine to ensure proper
     !! timeout handling for test commands
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_auto_test_executor, only: execute_tests_with_timeout
+    use coverage_test_executor_impl, only: execute_tests_with_timeout
     use config_types, only: config_t
-    use config_defaults, only: initialize_default_config
+    use config_defaults_core, only: initialize_default_config
     implicit none
 
     integer :: total_tests = 0
@@ -95,7 +95,7 @@ contains
 
     subroutine test_timeout_format_message()
         !! Test timeout message formatting
-        use coverage_auto_test_executor, only: format_timeout_message
+        use coverage_test_executor_impl, only: format_timeout_message
         character(len=64) :: message
         
         write(output_unit, '(A)') 'Test 4: Timeout message formatting'

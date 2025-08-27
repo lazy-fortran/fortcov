@@ -9,13 +9,13 @@ program test_auto_discovery_core_validation
     !! - Complete end-to-end workflow integration
     
     use iso_fortran_env, only: output_unit, error_unit
-    use build_system_detector, only: detect_build_system, build_system_info_t
-    use coverage_workflows, only: execute_auto_test_workflow
-    use zero_config_auto_discovery_integration, only: &
+    use build_detector_core, only: detect_build_system, build_system_info_t
+    use coverage_workflows_impl, only: execute_auto_test_workflow
+    use zero_config_discovery_impl, only: &
         enhance_zero_config_with_auto_discovery, &
         execute_zero_config_complete_workflow
-    use fortcov_config, only: config_t, parse_config
-    use fortcov, only: run_coverage_analysis
+    use config_core, only: config_t, parse_config
+    use fortcov_core, only: run_coverage_analysis
     use test_auto_discovery_shared_utilities
     implicit none
     
@@ -108,7 +108,7 @@ contains
         logical, intent(out) :: detected
         
         block
-            use error_handling, only: error_context_t
+            use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
             call detect_build_system(workspace_path, build_info, error_ctx)
             detected = (error_ctx%error_code == 0)

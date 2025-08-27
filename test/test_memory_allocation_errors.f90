@@ -6,11 +6,11 @@ program test_memory_allocation_errors
     !! error handling logic.
 
     use iso_fortran_env, only: error_unit
-    use config_defaults
-    use coverage_file_processor
-    use zero_configuration_manager
-    use gcda_file_discovery
-    use gcov_file_generator
+    use config_defaults_core
+    use coverage_processor_file
+    use zero_config_manager
+    use gcda_discovery_impl
+    use gcov_generator_impl
     use config_types
     
     implicit none

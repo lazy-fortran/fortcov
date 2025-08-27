@@ -4,7 +4,7 @@ program test_cli_flag_parsing_issue_472
     !! Tests both --source value and --source=value syntax to ensure compatibility
     !! with documented examples
     use config_types, only: config_t
-    use fortcov_config, only: parse_config
+    use config_core, only: parse_config
     use test_framework_utilities
     implicit none
     
