@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Code Quality & Defect Resolution - Sprint 3)
 
 ### EPIC: Technical Debt Reduction (HIGH PRIORITY)
-- [ ] #506: cleanup: implement gcov auto-processing functionality
 - [ ] #507: style: optimize module imports to use specific symbols
 
 ### EPIC: Bug Fixes & Stability (CRITICAL PRIORITY)
@@ -14,7 +13,7 @@
 - [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality
 
 ## DOING (Current Work)
-- [ ] #505: cleanup: resolve TODO comments in coverage_auto_test_executor.f90 [EPIC: Technical Debt Reduction]
+- [ ] #506: cleanup: implement gcov auto-processing functionality [EPIC: Technical Debt Reduction]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
