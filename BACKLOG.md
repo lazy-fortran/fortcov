@@ -3,9 +3,6 @@
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
 ### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
-- [ ] #559: build: new CLI test modules missing from fpm.toml registration
-- [ ] #560: refactor: extract duplicate assert_test utilities in CLI test modules
-- [ ] #540: architecture: test_sprint_2_validation_comprehensive.f90 exceeds 500-line limit (528 lines)
 - [ ] #518: defect: file exceeds QADS size limit - test_auto_discovery_end_to_end_validation.f90 (601 lines)
 - [ ] #548: code: source files exceed recommended size limits
 - [ ] #543: architecture: inconsistent module naming patterns violate architectural standards
@@ -42,7 +39,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #539: architecture: test_cli_consistency_validation.f90 exceeds 500-line limit (553 lines) (branch: arch-539) [EPIC: Architecture Compliance Recovery]
+- [ ] #540: architecture: test_sprint_2_validation_comprehensive.f90 exceeds 500-line limit (528 lines) (branch: arch-540) [EPIC: Architecture Compliance Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
