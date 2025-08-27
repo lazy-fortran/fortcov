@@ -48,7 +48,8 @@ contains
         character(len=:), allocatable :: gcda_files(:)
         character(len=:), allocatable :: temp_files(:), app_files(:), test_files(:)
         logical :: dir_exists
-        integer :: total_files, app_count, test_count
+        integer :: total_files, app_count, test_count, stat
+        character(len=512) :: errmsg
         
         total_files = 0
         
