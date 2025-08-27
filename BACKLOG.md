@@ -17,7 +17,6 @@
 - [x] #597: Move test modules incorrectly located in src/ directory - COMPLETED
 
 ### EPIC: Infrastructure Stabilization
-- [ ] #620: Build system evaluation shows Sprint 7 SUCCESS, not failure
 - [ ] #619: Fix help text argument order inconsistencies
 - [ ] #588: Fix FPM integration examples validation patterns
 - [ ] #584: Fix incorrect XML well-formed validation logic
@@ -38,6 +37,9 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
+
+### EPIC: Infrastructure Stabilization
+- [ ] #620: Build system evaluation shows Sprint 7 SUCCESS, not failure - DOING
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
