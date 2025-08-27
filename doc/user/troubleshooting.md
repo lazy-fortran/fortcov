@@ -44,7 +44,9 @@ fortcov --output coverage.md  # ✅ Good
 
 **No Coverage Data:**
 ```bash
-# Ensure coverage flags
+# Ensure coverage flags (FPM doesn't have a --coverage flag, use --flag)
+# INCORRECT: fpm test --coverage  ❌ This flag doesn't exist
+# CORRECT: Use --flag with compiler options:
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Generate gcov files
