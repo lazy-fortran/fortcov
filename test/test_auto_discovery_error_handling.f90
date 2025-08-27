@@ -278,7 +278,10 @@ contains
             use error_handling, only: error_context_t
             type(error_context_t) :: error_ctx
             call detect_build_system(workspace_path, build_info, error_ctx)
-            detected = (error_ctx%error_code == 0)
+            ! Fixed: Check if build system was actually detected, not just if no error occurred
+            ! 'unknown' means no build system was found (SUCCESS but no detection)
+            detected = (error_ctx%error_code == 0 .and. &
+                       trim(build_info%system_type) /= 'unknown')
         end block
     end subroutine detect_build_system_with_error_handling
 

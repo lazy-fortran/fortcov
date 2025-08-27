@@ -34,14 +34,13 @@ program test_bugfix_469
     
     print '(A,I0,A)', "  Found ", num_found, " files"
     
-    ! The bug: it should find our 3 test files, but it won't because it only
-    ! checks for hardcoded names like "test.gcov", "main.gcov", etc.
+    ! Fixed: The auto-discovery should find all 3 test .gcov files using globbing
     if (num_found /= 3) then
-        print *, "  ❌ BUG CONFIRMED: Auto-discovery did not find all 3 gcov files"
-        print *, "     This is the root cause of Issue #469"
+        print *, "  ❌ FAIL: Auto-discovery did not find all 3 gcov files"
+        print *, "     Expected 3 files but found", num_found
         all_tests_passed = .false.
     else
-        print *, "  ✅ Found expected number of files"
+        print *, "  ✅ PASS: Found expected number of files - globbing works correctly"
     end if
     
     ! Clean up first set of files
@@ -69,15 +68,13 @@ program test_bugfix_469
     
     print *, ""
     if (all_tests_passed) then
-        print *, "=== Test completed - Bug reproduced as expected ==="
-        print *, "The fix should implement proper .gcov file globbing"
+        print *, "=== Test completed - Bug #469 is FIXED ==="
+        print *, "Auto-discovery properly uses .gcov file globbing"
+        call exit(0)  ! Success - test passes
     else
-        print *, "=== Test identified the Issue #469 bug ==="
-        print *, "Next: Fix auto-discovery to use proper globbing"
-    end if
-    
-    if (.not. all_tests_passed) then
-        call exit(1)  ! Expected failure to demonstrate bug
+        print *, "=== Test FAILED - Issue #469 regression detected ==="
+        print *, "Auto-discovery is not finding all .gcov files correctly"
+        call exit(1)  ! Failure - bug has reappeared
     end if
     
 contains
