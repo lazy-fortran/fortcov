@@ -61,7 +61,7 @@ gfortran *.o -o run_tests -fprofile-arcs -ftest-coverage
 ./run_tests
 
 # 5. Generate .gcov files
-gcov *.f90
+gcov *.gcda
 
 # 6. Analyze with fortcov
 fortcov --source=src *.gcov
