@@ -7,10 +7,9 @@
 ### EPIC: Bug Fixes & Stability (CRITICAL PRIORITY)
 
 ### EPIC: Sprint Validation & Quality Assurance (MEDIUM PRIORITY)
-- [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality
 
 ## DOING (Current Work)
-- [ ] #495: critical: PR #494 has misleading description - immediate fix required [EPIC: Bug Fixes & Stability]
+- [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality [EPIC: Sprint Validation & Quality Assurance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
