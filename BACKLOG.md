@@ -37,9 +37,7 @@
 
 ## DOING (Current Work)
 
-### EPIC: Infrastructure Stabilization
-- [ ] #620: Build system evaluation shows Sprint 7 SUCCESS, not failure - DOING
-- [ ] #619: Fix help text argument order inconsistencies - DOING
+*No items currently in progress*
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
