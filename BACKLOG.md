@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 9: CRITICAL DEFECT RESOLUTION)
 
 ### EPIC: CRITICAL ARCHITECTURAL VIOLATIONS (URGENT)
-- [ ] #665: CATASTROPHIC - config_parser.f90 at 1534 lines (300% over limit)
 - [ ] #666: CRITICAL - coverage/ directory has 33 files (violates 30-file limit)
 - [ ] #641: CRITICAL - config_parser.f90 size violation (duplicate of #665)
 - [ ] #643: CRITICAL - json_core.f90 at 966 lines (approaching limit)
@@ -26,7 +25,7 @@
 
 ## DOING (Current Work)
 
-*No items currently in progress*
+- [ ] #665: CATASTROPHIC - config_parser.f90 at 1534 lines (300% over limit) - **EPIC: CRITICAL ARCHITECTURAL VIOLATIONS**
 
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
