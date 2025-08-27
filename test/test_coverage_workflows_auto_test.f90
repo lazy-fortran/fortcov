@@ -5,7 +5,7 @@ program test_coverage_workflows_auto_test
     !! execution in coverage workflows. Verifies timeout handling, error
     !! management, and configuration integration.
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_workflows_impl
+    use coverage_workflows
     use config_core
     use config_defaults_core, only: initialize_default_config
     use build_detector_core

@@ -5,7 +5,7 @@ program test_realistic_coverage_simulation_issue_304
     !! gcov output patterns that reflect real-world coverage scenarios.
     !! Tests validate edge cases, complex patterns, and calculation accuracy.
     
-    use coverage_parser_impl
+    use coverage_parser_factory
     use coverage_model_core
     use file_utils_core
     implicit none

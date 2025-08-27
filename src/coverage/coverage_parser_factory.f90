@@ -107,7 +107,7 @@ contains
 
     ! GCov parser implementation - delegates to gcov_file_processor
     function gcov_parse(this, path, error_flag) result(coverage_data)
-        use gcov_file_processor_impl
+        use gcov_file_processor
         class(gcov_parser_t), intent(in) :: this
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag

@@ -14,7 +14,7 @@ module auto_discovery_utils
     use config_types, only: config_t
     use build_discovery_core, only: test_build_result_t, auto_discover_test_build
     use gcov_processor_auto, only: gcov_result_t, auto_process_gcov_files
-    use coverage_workflows_impl, only: execute_auto_test_workflow
+    use coverage_workflows, only: execute_auto_test_workflow
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
     use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
     implicit none

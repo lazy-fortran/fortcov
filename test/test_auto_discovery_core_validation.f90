@@ -10,8 +10,8 @@ program test_auto_discovery_core_validation
     
     use iso_fortran_env, only: output_unit, error_unit
     use build_detector_core, only: detect_build_system, build_system_info_t
-    use coverage_workflows_impl, only: execute_auto_test_workflow
-    use zero_config_discovery_impl, only: &
+    use coverage_workflows, only: execute_auto_test_workflow
+    use zero_config_core, only: &
         enhance_zero_config_with_auto_discovery, &
         execute_zero_config_complete_workflow
     use config_core, only: config_t, parse_config

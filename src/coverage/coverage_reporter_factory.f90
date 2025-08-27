@@ -4,11 +4,11 @@ module coverage_reporter_factory
     !! Extracted from coverage_reporter_impl for Issue #182 module size compliance.
     !! Handles creation of different reporter types based on format string.
     use coverage_reporter_base
-    use coverage_reporter_md_impl
-    use coverage_reporter_json_impl
-    use coverage_reporter_xml_impl
-    use coverage_reporter_text_impl
-    use coverage_reporter_html_impl
+    use coverage_reporter_md
+    use coverage_reporter_json
+    use coverage_reporter_xml
+    use coverage_reporter_text
+    use coverage_reporter_html
     implicit none
     private
     

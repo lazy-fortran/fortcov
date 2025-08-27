@@ -6,16 +6,16 @@ module coverage_analysis_core
     use constants_core
     use coverage_model_core
     use config_core
-    use coverage_validation_impl
+    use coverage_validation
     use coverage_processor_file
-    use coverage_stats_reporter_impl, only: calculate_and_display_statistics, &
+    use coverage_stats_reporter, only: calculate_and_display_statistics, &
                                        generate_coverage_reports, &
                                        apply_threshold_validation, &
                                        report_auto_test_failure, &
                                        line_coverage_stats_t
     use coverage_json_io
-    use coverage_tui_impl
-    use coverage_workflows_impl, only: execute_auto_test_workflow
+    use coverage_tui
+    use coverage_workflows, only: execute_auto_test_workflow
     use error_handling_core
     use file_utils_core, only: file_exists
     

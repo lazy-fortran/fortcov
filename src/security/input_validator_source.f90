@@ -1,6 +1,6 @@
 module input_validator_source
     use config_types, only: config_t
-    use config_validators_impl
+    use config_validators
     implicit none
     private
     

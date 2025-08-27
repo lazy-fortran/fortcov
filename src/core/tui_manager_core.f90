@@ -4,9 +4,10 @@ module tui_manager_core
     !! Handles terminal display and interactive TUI operations.
     !! Extracted from report_engine_impl.f90 for SRP compliance.
     use iso_fortran_env, only: real64
-    use data_transformer_impl
+    use data_transformer_core
+    use data_transformer_types
     use theme_manager_core
-    use tui_main_loop_impl
+    use tui_main_loop
     use report_config_core
     use string_utils, only: int_to_str, real_to_str
     implicit none

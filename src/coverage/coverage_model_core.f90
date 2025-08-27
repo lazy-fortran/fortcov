@@ -9,7 +9,7 @@ module coverage_model_core
     use coverage_data_core
     use coverage_operations_core
     use coverage_stats_core, only: coverage_stats_t, extended_coverage_stats_t
-    use coverage_diff_impl, only: diff_thresholds_t, DIFF_UNCHANGED, DIFF_ADDED, &
+    use coverage_diff, only: diff_thresholds_t, DIFF_UNCHANGED, DIFF_ADDED, &
                             DIFF_REMOVED, DIFF_CHANGED, &
                             UNCHANGED_COVERAGE, MINOR_IMPROVEMENT, MAJOR_IMPROVEMENT, &
                             CRITICAL_IMPROVEMENT, MINOR_DEGRADATION, MAJOR_DEGRADATION, &

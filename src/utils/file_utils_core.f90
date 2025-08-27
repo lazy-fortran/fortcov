@@ -1,9 +1,9 @@
 module file_utils_core
-    use file_finder_impl, only: find_files, find_files_with_glob
+    use file_finder, only: find_files, find_files_with_glob
     use file_io_binary, only: read_binary_file, read_binary_file_safe
     use file_io_text, only: write_text_file, write_text_file_safe, read_file_content, read_file_content_enhanced
     use directory_ops_core, only: ensure_directory, ensure_directory_safe
-    use path_resolver_impl, only: resolve_path, file_exists, basename
+    use path_resolver, only: resolve_path, file_exists, basename
     implicit none
     private
     

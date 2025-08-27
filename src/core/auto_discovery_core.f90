@@ -10,8 +10,8 @@ module auto_discovery_core
     !! - Coordinate gcov file generation from gcda files
     use coverage_discovery_core, only: discover_coverage_files
     use file_utils_core, only: find_files, find_files_with_glob
-    use gcda_discovery_impl, only: discover_gcda_files_priority
-    use gcov_generator_impl, only: generate_gcov_files_from_gcda, &
+    use gcda_discovery, only: discover_gcda_files_priority
+    use gcov_generator, only: generate_gcov_files_from_gcda, &
                                    check_gcov_availability
     implicit none
     private
