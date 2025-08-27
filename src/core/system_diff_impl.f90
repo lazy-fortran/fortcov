@@ -2,7 +2,7 @@ module system_diff_impl
     use coverage_model_core
     use coverage_json_io
     use string_utils, only: real_to_string, int_to_string
-    use json_parser_utils
+    use json_core
     use xml_utils
     implicit none
     private
