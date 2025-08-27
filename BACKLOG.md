@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
 ### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
-- [ ] #518: defect: file exceeds QADS size limit - test_auto_discovery_end_to_end_validation.f90 (601 lines)
 - [ ] #548: code: source files exceed recommended size limits
 - [ ] #543: architecture: inconsistent module naming patterns violate architectural standards
 
@@ -39,7 +38,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #540: architecture: test_sprint_2_validation_comprehensive.f90 exceeds 500-line limit (528 lines) (branch: arch-540) [EPIC: Architecture Compliance Recovery]
+- [ ] #518: defect: file exceeds QADS size limit - test_auto_discovery_end_to_end_validation.f90 (601 lines) (branch: arch-518) [EPIC: Architecture Compliance Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
