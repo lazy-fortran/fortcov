@@ -5,13 +5,12 @@
 ### EPIC: Technical Debt Reduction (HIGH PRIORITY)
 
 ### EPIC: Bug Fixes & Stability (CRITICAL PRIORITY)
-- [ ] #495: critical: PR #494 has misleading description - immediate fix required
 
 ### EPIC: Sprint Validation & Quality Assurance (MEDIUM PRIORITY)
 - [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality
 
 ## DOING (Current Work)
-- [ ] #508: bug: missing error handling for memory allocation failures [EPIC: Bug Fixes & Stability]
+- [ ] #495: critical: PR #494 has misleading description - immediate fix required [EPIC: Bug Fixes & Stability]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
