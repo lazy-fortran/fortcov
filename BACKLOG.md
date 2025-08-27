@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 9: CRITICAL DEFECT RESOLUTION)
 
 ### EPIC: CRITICAL ARCHITECTURAL VIOLATIONS (URGENT)
-- [ ] #643: CRITICAL - json_core.f90 at 966 lines (approaching limit)
 - [ ] #642: CRITICAL - coverage_types.f90 at 960 lines (approaching limit)
 
 ### EPIC: CORE FUNCTIONALITY DEFECTS (HIGH)
@@ -23,7 +22,7 @@
 
 ## DOING (Current Work)
 
-- [ ] #641: CRITICAL - config_parser.f90 size violation (duplicate of #665) - **EPIC: CRITICAL ARCHITECTURAL VIOLATIONS**
+- [ ] #643: CRITICAL - json_core.f90 at 966 lines (approaching limit) - **EPIC: CRITICAL ARCHITECTURAL VIOLATIONS**
 
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
