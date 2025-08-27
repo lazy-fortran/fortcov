@@ -14,6 +14,7 @@ module coverage_auto_test_executor
     private
 
     public :: execute_auto_test_workflow
+    public :: execute_tests_with_timeout, format_timeout_message
 
 contains
 
@@ -124,16 +125,15 @@ contains
         ! Build timeout command with proper escaping
         write(timeout_str, '(I0)') config%test_timeout_seconds
         
-        ! For now, execute directly without timeout to fix CLI tests
-        ! TODO: Fix timeout command execution issue
-        full_command = test_command
+        ! Build full timeout command
+        full_command = 'timeout ' // trim(timeout_str) // 's ' // trim(test_command)
         
         if (.not. config%quiet) then
             print *, "🔧 Executing: " // trim(test_command)
-            print *, "⏱️  Timeout: " // trim(timeout_str) // " seconds (disabled)"
+            print *, "⏱️  Timeout: " // trim(timeout_str) // " seconds"
         end if
         
-        ! Execute the command directly (timeout disabled for now)
+        ! Execute the command with timeout
         call execute_command_line(full_command, exitstat=exit_code)
         
         ! Check results
