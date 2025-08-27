@@ -203,3 +203,28 @@ main = "test_gcov_auto_processing_runner.f90"
 name = "test_portable_temp_utils"
 source-dir = "test"
 main = "test_portable_temp_utils.f90"
+
+[[test]]
+name = "test_cli_basic_usage"
+source-dir = "test"
+main = "test_cli_basic_usage.f90"
+
+[[test]]
+name = "test_cli_consistency_validation"
+source-dir = "test"
+main = "test_cli_consistency_validation.f90"
+
+[[test]]
+name = "test_cli_flags_options"
+source-dir = "test"
+main = "test_cli_flags_options.f90"
+
+[[test]]
+name = "test_cli_integration"
+source-dir = "test"
+main = "test_cli_integration.f90"
+
+[[test]]
+name = "test_cli_validation"
+source-dir = "test"
+main = "test_cli_validation.f90"

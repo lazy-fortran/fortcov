@@ -3,7 +3,8 @@
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
 ### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
-- [ ] #539: architecture: test_cli_consistency_validation.f90 exceeds 500-line limit (553 lines)
+- [ ] #559: build: new CLI test modules missing from fpm.toml registration
+- [ ] #560: refactor: extract duplicate assert_test utilities in CLI test modules
 - [ ] #540: architecture: test_sprint_2_validation_comprehensive.f90 exceeds 500-line limit (528 lines)
 - [ ] #518: defect: file exceeds QADS size limit - test_auto_discovery_end_to_end_validation.f90 (601 lines)
 - [ ] #548: code: source files exceed recommended size limits
@@ -41,8 +42,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #244: CRITICAL: File deletion error in secure command executor - SECURITY VULNERABILITY (branch: arch-529) [EPIC: Critical Security Fixes]
-- [ ] #529: architecture: zero_configuration_manager.f90 exceeds 500-line QADS limit (556 lines) (branch: arch-529) [EPIC: Architecture Compliance Recovery] - READY FOR MERGE PENDING SECURITY FIX
+- [ ] #539: architecture: test_cli_consistency_validation.f90 exceeds 500-line limit (553 lines) (branch: arch-539) [EPIC: Architecture Compliance Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
