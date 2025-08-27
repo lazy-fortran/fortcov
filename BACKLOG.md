@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Code Quality & Defect Resolution - Sprint 3)
 
 ### EPIC: Technical Debt Reduction (HIGH PRIORITY)
-- [ ] #507: style: optimize module imports to use specific symbols
 
 ### EPIC: Bug Fixes & Stability (CRITICAL PRIORITY)
 - [ ] #508: bug: missing error handling for memory allocation failures
@@ -13,7 +12,7 @@
 - [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality
 
 ## DOING (Current Work)
-- [ ] #506: cleanup: implement gcov auto-processing functionality [EPIC: Technical Debt Reduction]
+- [ ] #507: style: optimize module imports to use specific symbols [EPIC: Technical Debt Reduction]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
