@@ -30,9 +30,12 @@ contains
         end if
         
         ! Core infrastructure stability tests
-        call test_command_execution_stability(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_file_io_reliability(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_memory_management_stability(test_count, passed_tests, all_tests_passed)
+        call test_command_execution_stability(temp_dir, test_count, &
+                                              passed_tests, all_tests_passed)
+        call test_file_io_reliability(temp_dir, test_count, passed_tests, &
+                                      all_tests_passed)
+        call test_memory_management_stability(test_count, passed_tests, &
+                                              all_tests_passed)
         call test_error_handling_robustness(test_count, passed_tests, all_tests_passed)
         
         ! Cleanup test environment
@@ -40,7 +43,8 @@ contains
         
     end subroutine run_core_infrastructure_tests
 
-    subroutine assert_test(condition, test_name, details, test_count, passed_tests, all_tests_passed)
+    subroutine assert_test(condition, test_name, details, test_count, &
+                           passed_tests, all_tests_passed)
         logical, intent(in) :: condition
         character(len=*), intent(in) :: test_name, details
         integer, intent(inout) :: test_count
@@ -59,7 +63,8 @@ contains
         end if
     end subroutine assert_test
 
-    subroutine test_command_execution_stability(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_command_execution_stability(temp_dir, test_count, &
+                                                passed_tests, all_tests_passed)
         !! Tests that command execution is stable and reliable
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -91,7 +96,8 @@ contains
         ! Test 3: Multiple rapid commands
         do i = 1, 5
             call execute_command_line('touch "' // trim(temp_dir) // '/rapid_' // &
-                                     char(48 + i) // '.txt"', wait=.true., exitstat=exit_status)
+                                     char(48 + i) // '.txt"', &
+                                     wait=.true., exitstat=exit_status)
             if (exit_status /= 0) exit
         end do
         call assert_test(exit_status == 0, "Rapid command execution", &
@@ -107,7 +113,8 @@ contains
         
     end subroutine test_command_execution_stability
 
-    subroutine test_file_io_reliability(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_file_io_reliability(temp_dir, test_count, &
+                                        passed_tests, all_tests_passed)
         !! Tests file I/O operations for reliability
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -165,7 +172,8 @@ contains
         
     end subroutine test_file_io_reliability
 
-    subroutine test_memory_management_stability(test_count, passed_tests, all_tests_passed)
+    subroutine test_memory_management_stability(test_count, &
+                                                passed_tests, all_tests_passed)
         !! Tests memory management stability
         integer, intent(inout) :: test_count
         integer, intent(inout) :: passed_tests  
@@ -212,7 +220,8 @@ contains
         
     end subroutine test_memory_management_stability
 
-    subroutine test_error_handling_robustness(test_count, passed_tests, all_tests_passed)
+    subroutine test_error_handling_robustness(test_count, passed_tests, &
+                                              all_tests_passed)
         !! Tests error handling mechanisms for robustness
         integer, intent(inout) :: test_count
         integer, intent(inout) :: passed_tests  

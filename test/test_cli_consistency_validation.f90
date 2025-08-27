@@ -2,7 +2,8 @@ program test_cli_consistency_validation
     !! CLI Consistency Validation Test (Issue #509)
     !!
     !! Validates that all documented CLI examples from README.md work correctly.
-    !! This ensures Sprint 2 success criteria #3: "CLI consistency - all documented examples work"
+    !! This ensures Sprint 2 success criteria #3: "CLI consistency - all
+    !! documented examples work"
     !!
     !! Tests every example from the documentation to ensure they parse correctly
     !! and produce expected configuration results.
@@ -539,8 +540,10 @@ contains
         
         if (success1 .and. success2) then
             call assert_test(config1%verbose .eqv. config2%verbose .and. &
-                           size(config1%source_paths) > 0 .and. size(config2%source_paths) > 0 .and. &
-                           trim(config1%source_paths(1)) == trim(config2%source_paths(1)) .and. &
+                           size(config1%source_paths) > 0 .and. &
+                           size(config2%source_paths) > 0 .and. &
+                           trim(config1%source_paths(1)) == &
+                           trim(config2%source_paths(1)) .and. &
                            trim(config1%output_path) == trim(config2%output_path), &
                            "Flag ordering independence", &
                            "Results should be identical regardless of order")

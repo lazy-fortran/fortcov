@@ -13,7 +13,8 @@ program test_sprint_2_validation_comprehensive
     use iso_fortran_env, only: output_unit, error_unit
     use fortcov_config, only: parse_config, config_t
     use fortcov, only: run_coverage_analysis
-    use zero_config_auto_discovery_integration, only: execute_zero_config_complete_workflow
+    use zero_config_auto_discovery_integration, only: &
+        execute_zero_config_complete_workflow
     use build_system_detector, only: detect_build_system, build_system_info_t
     ! Test environment detection handled internally
     implicit none
@@ -160,7 +161,8 @@ contains
             temp_dir = get_temp_dir()
             gcov_files_list = temp_dir // '/gcov_files.txt'
             
-            call execute_command_line('find . -name "*.gcov" > "' // trim(gcov_files_list) // '" 2>/dev/null')
+            call execute_command_line('find . -name "*.gcov" > "' // &
+                                      trim(gcov_files_list) // '" 2>/dev/null')
             
             open(newunit=unit_number, file=trim(gcov_files_list), status='old', &
                  iostat=iostat, action='read')
@@ -192,7 +194,8 @@ contains
                         "Should not always show 0.00%")
         
         ! Cleanup
-            call execute_command_line('rm -f "' // trim(gcov_files_list) // '" mock_coverage_test.f90.gcov')
+            call execute_command_line('rm -f "' // trim(gcov_files_list) // &
+                                      '" mock_coverage_test.f90.gcov')
         end block
         
     end subroutine test_criterion_2_coverage_parsing_accuracy
@@ -271,13 +274,15 @@ contains
         write(output_unit, '(A)') "=== CRITERION 4: Test Infrastructure Stability ==="
         
         ! Test 4.1: Fork bomb prevention mechanism
-        call execute_command_line('touch .fortcov_execution_marker', wait=.true., exitstat=exit_status)
+        call execute_command_line('touch .fortcov_execution_marker', &
+                                  wait=.true., exitstat=exit_status)
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(marker_exists, "Fork bomb marker creation", &
                         "Should be able to create marker file")
         
         ! Test 4.2: Marker cleanup functionality
-        call execute_command_line('rm -f .fortcov_execution_marker', wait=.true., exitstat=exit_status)
+        call execute_command_line('rm -f .fortcov_execution_marker', &
+                                  wait=.true., exitstat=exit_status)
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(.not. marker_exists, "Fork bomb marker cleanup", &
                         "Should be able to remove marker file")
@@ -328,7 +333,8 @@ contains
                         "Should detect created marker")
         
         ! Test 5.3: Automatic cleanup on startup (simulate main.f90 behavior)
-        call execute_command_line('rm -f .fortcov_execution_marker', wait=.true., exitstat=exit_status)
+        call execute_command_line('rm -f .fortcov_execution_marker', &
+                                  wait=.true., exitstat=exit_status)
         call assert_test(exit_status == 0, "Automatic marker cleanup", &
                         "Should clean up stale markers")
         
@@ -385,7 +391,8 @@ contains
         call assert_test(success, "Mixed arguments parsing", &
                         "Should handle multiple args")
         if (success) then
-            call assert_test(config%verbose .and. index(config%output_path, "test.md") > 0, &
+            call assert_test(config%verbose .and. &
+                            index(config%output_path, "test.md") > 0, &
                             "Multiple flags preserved", "All flags should be set")
         end if
         
@@ -512,7 +519,8 @@ contains
 
     function test_environment_detected() result(is_test_env)
         !! Use consistent test environment detection
-        use test_environment_utils, only: test_environment_detected_util => test_environment_detected
+        use test_environment_utils, only: &
+            test_environment_detected_util => test_environment_detected
         logical :: is_test_env
         
         is_test_env = test_environment_detected_util()
