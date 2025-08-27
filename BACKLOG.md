@@ -5,14 +5,13 @@
 ### EPIC: Coverage Infrastructure Recovery (CRITICAL - BLOCKS ALL)
 
 ### EPIC: Source Organization (CRITICAL - 118 FILES!)
-- [ ] #592: refactor: src/ directory flat structure with 118 files needs organization
 
 ### EPIC: Core Functionality Recovery
 - [ ] #595: fix: file output formats do not generate actual files
 - [ ] #596: fix: auto-discovery fails to find existing gcov files
 
 ## DOING (Current Work)
-- [ ] #591: fix: coverage instrumentation generates gcno but no gcda files [EPIC: Coverage Infrastructure Recovery]
+- [ ] #592: refactor: src/ directory flat structure with 118 files needs organization [EPIC: Source Organization]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
