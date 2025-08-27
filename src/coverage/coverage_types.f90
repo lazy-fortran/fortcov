@@ -15,8 +15,9 @@ module coverage_types
     ! ============================================================================
     
     ! Maximum lengths for various strings
-    integer, parameter, public :: MAX_FILENAME_LENGTH = 512
-    integer, parameter, public :: MAX_NAME_LENGTH = 256
+    ! Using COV_ prefix to avoid conflicts with constants_core
+    integer, parameter, public :: COV_MAX_FILENAME_LENGTH = 512
+    integer, parameter, public :: COV_MAX_NAME_LENGTH = 256
     
     ! Diff status enumeration
     integer, parameter, public :: DIFF_UNCHANGED = 0
@@ -31,7 +32,7 @@ module coverage_types
     
     ! Source location type
     type, public :: source_location_t
-        character(len=MAX_FILENAME_LENGTH) :: filename = ""
+        character(len=COV_MAX_FILENAME_LENGTH) :: filename = ""
         integer :: line_number = 0
         integer :: column_start = 0
         integer :: column_end = 0
@@ -48,7 +49,7 @@ module coverage_types
         logical :: is_branch = .false.
         ! Additional fields for compatibility
         integer :: line_number = 0
-        character(len=MAX_FILENAME_LENGTH) :: filename = ""
+        character(len=COV_MAX_FILENAME_LENGTH) :: filename = ""
     contains
         procedure :: init => line_init
         procedure :: is_covered => line_is_covered
@@ -64,7 +65,7 @@ module coverage_types
         logical :: is_covered = .false.
         ! Additional fields for compatibility  
         integer :: line_number = 0
-        character(len=MAX_FILENAME_LENGTH) :: filename = ""
+        character(len=COV_MAX_FILENAME_LENGTH) :: filename = ""
     contains
         procedure :: init => branch_init
         procedure :: is_partially_covered => branch_is_partially_covered

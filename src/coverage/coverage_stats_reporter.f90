@@ -62,7 +62,8 @@ contains
 
     subroutine generate_coverage_reports(coverage_data, stats, config, report_error)
         !! Generate coverage reports in specified formats
-        use coverage_reporter, only: create_reporter, coverage_reporter_t
+        use coverage_reporter, only: coverage_reporter_t
+        use coverage_reporter_factory, only: create_reporter
         use report_engine_core, only: report_engine_t
         type(coverage_data_t), intent(in) :: coverage_data
         type(line_coverage_stats_t), intent(in) :: stats
