@@ -41,7 +41,8 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #529: architecture: zero_configuration_manager.f90 exceeds 500-line QADS limit (556 lines) (branch: arch-529) [EPIC: Architecture Compliance Recovery]
+- [ ] #244: CRITICAL: File deletion error in secure command executor - SECURITY VULNERABILITY (branch: arch-529) [EPIC: Critical Security Fixes]
+- [ ] #529: architecture: zero_configuration_manager.f90 exceeds 500-line QADS limit (556 lines) (branch: arch-529) [EPIC: Architecture Compliance Recovery] - READY FOR MERGE PENDING SECURITY FIX
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
