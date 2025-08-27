@@ -1,32 +1,51 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Architecture Compliance & User Experience - Sprint 4)
+## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
-### EPIC: Architecture Compliance (CRITICAL PRIORITY)
+### EPIC: Critical Build Failure Resolution (URGENT - BLOCKS ALL WORK)
+- [ ] #534: fix: INQUIRE DIRECTORY syntax error in portable_temp_utils.f90
+- [ ] #535: fix: compilation error in portable_temp_utils.f90 INQUIRE statement
+- [ ] #536: fix: invalid inquire syntax in portable_temp_utils.f90 causes compilation error
+- [ ] #538: architecture: portable_temp_utils.f90 uses non-portable INQUIRE(DIRECTORY=) syntax
+
+### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
 - [ ] #529: architecture: zero_configuration_manager.f90 exceeds 500-line QADS limit (556 lines)
-- [ ] #530: architecture: test file exceeds 500-line QADS limit - requires decomposition
-- [ ] #531: architecture: 6 modules approaching 500-line limit risk future violations
+- [ ] #539: architecture: test_cli_consistency_validation.f90 exceeds 500-line limit (553 lines)
+- [ ] #540: architecture: test_sprint_2_validation_comprehensive.f90 exceeds 500-line limit (528 lines)
+- [ ] #518: defect: file exceeds QADS size limit - test_auto_discovery_end_to_end_validation.f90 (601 lines)
+- [ ] #548: code: source files exceed recommended size limits
+- [ ] #543: architecture: inconsistent module naming patterns violate architectural standards
 
-### EPIC: User Experience & Documentation (HIGH PRIORITY)
-- [ ] #532: docs: consolidate and fix documentation defects identified in Sprint 3 review
+### EPIC: User Experience & Documentation Defects (HIGH PRIORITY)
+- [ ] #550: docs: GitHub Actions example tries to upload non-existent coverage.json
+- [ ] #547: docs: configuration guide references non-existent --validate option
+- [ ] #546: docs: incorrect CLI option names in usage-guide.md
+- [ ] #541: docs: getting-started guide function mismatch with default fpm template
+- [ ] #537: docs: incorrect fpm command in getting-started guide
 - [ ] #526: bug: getting started guide creates broken workflow due to function name mismatch
 - [ ] #527: bug: README example output does not match actual CLI behavior
 - [ ] #528: bug: example scripts assume fortcov is in PATH without verification
+- [ ] #551: bug: --exclude option does not filter files from coverage report
 
-### EPIC: Technical Debt Reduction (MEDIUM PRIORITY)
+### EPIC: Code Quality & Technical Debt (MEDIUM PRIORITY)
 - [ ] #520: defect: consolidate duplicate MAX_PATH constants across modules
 - [ ] #521: defect: consolidate duplicate MAX_FILES constants
 - [ ] #522: defect: consolidate duplicate MAX_FILENAME_LENGTH constants
 - [ ] #523: defect: consolidate duplicate MAX_COMMAND_LENGTH constants
 - [ ] #524: defect: missing error handling for memory allocation in main.f90
 - [ ] #525: defect: missing error handling for memory allocations in gcov_line_parser.f90
-- [ ] #519: defect: remove commented-out code in coverage_analysis.f90
+- [ ] #542: defect: commented-out code in coverage_analysis.f90
+- [ ] #544: defect: duplicate assert functions across test files
+- [ ] #549: defect: excessive return statements indicating complex control flow
+- [ ] #552: defect: facade modules that only re-export functionality
+- [ ] #553: defect: unsafe execute_command_line usage in tests
 
-### EPIC: Code Style Compliance (LOW PRIORITY)
-- [ ] #515: style: fix minor line length violations in validation test files
+### EPIC: Dead Code & Cleanup (LOW PRIORITY)
+- [ ] #545: defect: placeholder test file check.f90 with no implementation
+- [ ] #554: defect: PLAY workflow dead code audit summary
 
 ### EPIC: Sprint Completion & Documentation (FINAL)
-- [ ] #533: docs: Sprint 4 final documentation consolidation and validation
+- [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
 
@@ -44,6 +63,7 @@
 - [x] Code Cleanup (Sprint 2 Phase 5 - All cleanup tasks completed including final style fixes)
 - [x] Critical Functionality Recovery (Sprint 2 - Core fortcov functionality restored and auto-discovery working)
 - [x] Code Quality & Defect Resolution (Sprint 3 - Architecture compliance progress, style fixes, test improvements)
+- [x] Architecture Compliance & User Experience (Sprint 4 - FAILED due to build system regression)
 
 ## FUTURE SPRINTS (High-level Planning)
 
