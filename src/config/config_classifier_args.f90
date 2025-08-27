@@ -5,8 +5,8 @@ module config_classifier_args
     !! flags and positional arguments, with proper value association.
 
     use config_types, only: MAX_ARRAY_SIZE
-    use config_parser, only: is_flag_argument, get_long_form_option, &
-                                    flag_requires_value
+    use config_parser_utils, only: is_flag_argument, get_long_form_option, &
+                                           flag_requires_value
     implicit none
     private
 
