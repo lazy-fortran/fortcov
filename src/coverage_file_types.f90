@@ -4,7 +4,7 @@ module coverage_file_types
     !! Provides types and operations for file-level coverage tracking.
     !! Extracted from coverage_types to maintain SRP and size limits.
     
-    use foundation_constants
+    use constants_core
     use coverage_location_types
     use coverage_function_types
     

@@ -1,6 +1,6 @@
 module syntax_formatter
-    use syntax_tokens_module
-    use coverage_model, only: coverage_line_t
+    use syntax_tokens_core
+    use coverage_model_core, only: coverage_line_t
     implicit none
     private
     

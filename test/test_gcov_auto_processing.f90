@@ -6,11 +6,11 @@ module test_gcov_auto_processing
     !! including directory validation, file discovery, and bulk processing.
     
     use test_framework_utilities
-    use gcov_auto_processor, only: gcov_result_t, auto_process_gcov_files, &
+    use gcov_processor_auto, only: gcov_result_t, auto_process_gcov_files, &
                                    gcov_file_summary_t
     use config_types, only: config_t
-    use directory_operations, only: ensure_directory_safe
-    use error_handling, only: error_context_t, clear_error_context
+    use directory_ops_core, only: ensure_directory_safe
+    use error_handling_core, only: error_context_t, clear_error_context
     implicit none
     private
     

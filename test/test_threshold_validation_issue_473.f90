@@ -6,7 +6,7 @@ program test_threshold_validation_issue_473
     !! - --fail-under
     !! - --diff-threshold
     use config_types, only: config_t
-    use fortcov_config, only: parse_config
+    use config_core, only: parse_config
     use test_framework_utilities
     implicit none
     

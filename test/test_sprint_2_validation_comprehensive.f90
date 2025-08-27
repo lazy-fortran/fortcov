@@ -11,11 +11,11 @@ program test_sprint_2_validation_comprehensive
     !! 5. Fork bomb prevention marker cleanup
     
     use iso_fortran_env, only: output_unit, error_unit
-    use fortcov_config, only: parse_config, config_t
-    use fortcov, only: run_coverage_analysis
-    use zero_config_auto_discovery_integration, only: &
+    use config_core, only: parse_config, config_t
+    use fortcov_core, only: run_coverage_analysis
+    use zero_config_discovery_impl, only: &
         execute_zero_config_complete_workflow
-    use build_system_detector, only: detect_build_system, build_system_info_t
+    use build_detector_core, only: detect_build_system, build_system_info_t
     use sprint2_test_utils, only: assert_test, create_mock_gcov_with_coverage, &
                                   test_environment_detected, check_gcov_files_exist
     implicit none
@@ -86,7 +86,7 @@ contains
         
         ! Test 1.2: Build system detection capability
         block
-            use error_handling, only: error_context_t
+            use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
             call detect_build_system(".", build_info, error_ctx)
             build_detected = (error_ctx%error_code == 0)
@@ -473,7 +473,7 @@ contains
             type(build_system_info_t) :: build_info
             logical :: detected
             block
-                use error_handling, only: error_context_t
+                use error_handling_core, only: error_context_t
                 type(error_context_t) :: error_ctx
                 call detect_build_system(".", build_info, error_ctx)
                 detected = (error_ctx%error_code == 0)

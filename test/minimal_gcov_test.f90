@@ -1,6 +1,6 @@
 program minimal_gcov_test
     !! Minimal test to reproduce the gcov processing issue
-    use gcov_auto_processor
+    use gcov_processor_auto
     use config_types, only: config_t
     use iso_fortran_env, only: output_unit
     implicit none

@@ -4,7 +4,7 @@ program test_complete_workflow
     !! Tests for the auto_discovery_utilities module focusing on
     !! complete workflow orchestration and integration.
 
-    use auto_discovery_utilities
+    use auto_discovery_utils
     use config_types, only: config_t
     use iso_fortran_env, only: output_unit
     implicit none

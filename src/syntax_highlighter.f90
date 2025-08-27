@@ -1,9 +1,9 @@
 module syntax_highlighter
-    use syntax_tokens_module
-    use language_rules_module
+    use syntax_tokens_core
+    use language_rules_core
     use syntax_lexer
     use syntax_formatter
-    use coverage_model, only: coverage_line_t
+    use coverage_model_core, only: coverage_line_t
     implicit none
     private
     

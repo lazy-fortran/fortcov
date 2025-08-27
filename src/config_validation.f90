@@ -1,8 +1,8 @@
 module config_validation
     use config_validation_core
     use config_validators_impl
-    use config_format_validators
-    use input_source_validator, only: validate_input_sources
+    use config_validators_format
+    use input_validator_source, only: validate_input_sources
     implicit none
     private
 

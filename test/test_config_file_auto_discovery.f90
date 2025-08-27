@@ -4,8 +4,8 @@ program test_config_file_auto_discovery
     !! Tests config file namelist parsing for auto-discovery options
 
     use config_types, only: config_t
-    use config_defaults, only: initialize_default_config
-    use config_file_parser, only: process_config_file_option
+    use config_defaults_core, only: initialize_default_config
+    use config_parser_file, only: process_config_file_option
     implicit none
 
     integer :: total_tests = 0

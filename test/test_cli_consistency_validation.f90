@@ -16,8 +16,8 @@ program test_cli_consistency_validation
     !! This coordinator runs core integration tests to verify decomposition success.
     
     use iso_fortran_env, only: output_unit, error_unit
-    use fortcov_config, only: config_t, parse_config
-    use test_utils, only: assert_test, reset_test_counters, &
+    use config_core, only: config_t, parse_config
+    use test_utils_core, only: assert_test, reset_test_counters, &
                           print_test_summary, test_count, passed_tests
     implicit none
     

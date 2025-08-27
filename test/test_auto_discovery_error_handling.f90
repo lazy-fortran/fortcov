@@ -13,7 +13,7 @@ program test_auto_discovery_error_handling
     !! provides meaningful error reporting for troubleshooting.
     
     use iso_fortran_env, only: output_unit, error_unit
-    use build_system_detector, only: detect_build_system, build_system_info_t
+    use build_detector_core, only: detect_build_system, build_system_info_t
     use test_auto_discovery_shared_utilities
     implicit none
     
@@ -275,7 +275,7 @@ contains
         logical, intent(out) :: detected
         
         block
-            use error_handling, only: error_context_t
+            use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
             call detect_build_system(workspace_path, build_info, error_ctx)
             ! Fixed: Check if build system was actually detected, not just if no error occurred

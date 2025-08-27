@@ -1,7 +1,7 @@
 program test_config_validation_433
     !! Test for issue #433 - Configuration validation always fails for valid CLI
     !! arguments
-    use fortcov_config
+    use config_core
     use config_types
     implicit none
     

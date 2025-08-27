@@ -6,7 +6,7 @@ program test_bugfix_469
     !! The root cause is that the discovery mechanism uses hardcoded filenames
     !! instead of proper file globbing to discover ALL .gcov files in the directory.
     use iso_fortran_env, only: error_unit
-    use zero_configuration_manager, only: auto_discover_coverage_files_priority
+    use zero_config_manager, only: auto_discover_coverage_files_priority
     implicit none
     
     character(len=256), parameter :: test_dir = "build/gcov"

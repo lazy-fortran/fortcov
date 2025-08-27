@@ -4,8 +4,8 @@ program test_branch_coverage_accuracy_issue_304
     !! Tests specific branch coverage scenarios to ensure accurate parsing
     !! and calculation of branch coverage statistics from gcov output.
     
-    use coverage_parser
-    use coverage_model  
+    use coverage_parser_impl
+    use coverage_model_core  
     use realistic_coverage_generator
     implicit none
     

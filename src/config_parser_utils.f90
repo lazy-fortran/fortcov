@@ -5,7 +5,7 @@ module config_parser_utils
     !! and managing configuration arrays.
 
     use config_types, only: config_t, MAX_ARRAY_SIZE
-    use foundation_constants
+    use constants_core
     use string_utils
 
     implicit none

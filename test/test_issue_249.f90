@@ -6,13 +6,13 @@ program test_issue_249
     !! - Sets correct default paths
     !! - Attempts coverage analysis with auto-discovery
     
-    use fortcov_config
-    use zero_configuration_manager
-    use error_handling
-    use file_utils
-    use secure_file_operations, only: safe_find_files, safe_mkdir
-    use path_validation, only: validate_path_security, validate_executable_path
-    use shell_utils, only: escape_shell_argument
+    use config_core
+    use zero_config_manager
+    use error_handling_core
+    use file_utils_core
+    use file_ops_secure, only: safe_find_files, safe_mkdir
+    use path_validation_core, only: validate_path_security, validate_executable_path
+    use shell_utils_core, only: escape_shell_argument
     implicit none
     
     type(config_t) :: config

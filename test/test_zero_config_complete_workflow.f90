@@ -9,8 +9,8 @@ program test_zero_config_complete_workflow
     
     use iso_fortran_env, only: error_unit
     use config_types, only: config_t
-    use fortcov_config, only: parse_config, initialize_config
-    use fortcov, only: run_coverage_analysis
+    use config_core, only: parse_config, initialize_config
+    use fortcov_core, only: run_coverage_analysis
     implicit none
     
     integer :: test_count = 0

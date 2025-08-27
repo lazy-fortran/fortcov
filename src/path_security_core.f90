@@ -1,9 +1,9 @@
 module path_security_core
-    use error_handling
+    use error_handling_core
     use string_utils, only: int_to_string
-    use path_pattern_scanner
-    use system_file_protection
-    use windows_security_validator
+    use path_scanner_impl
+    use system_protection_impl
+    use security_validator_win
     implicit none
     private
     

@@ -8,9 +8,9 @@ program test_config_auto_discovery
     !! Tests CLI parsing, defaults, and namelist support.
 
     use config_types, only: config_t
-    use config_defaults, only: initialize_default_config
-    use config_command_parser, only: parse_command_line_config
-    use config_file_parser, only: parse_config_file
+    use config_defaults_core, only: initialize_default_config
+    use config_parser_command, only: parse_command_line_config
+    use config_parser_file, only: parse_config_file
     implicit none
 
     integer :: total_tests = 0

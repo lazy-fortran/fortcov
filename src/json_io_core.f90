@@ -3,13 +3,13 @@ module json_io_core
     !! 
     !! Focused on core JSON import/export operations for coverage data.
     !! Separated from parsing and validation for better separation of concerns.
-    use foundation_constants
-    use coverage_model
-    use coverage_operations, only: calculate_coverage_statistics
-    use json_parser
-    use json_validator
-    use input_validation
-    use error_handling
+    use constants_core
+    use coverage_model_core
+    use coverage_operations_core, only: calculate_coverage_statistics
+    use json_parser_core
+    use json_validator_impl
+    use input_validation_core
+    use error_handling_core
     implicit none
     private
     

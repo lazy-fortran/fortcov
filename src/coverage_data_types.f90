@@ -4,7 +4,7 @@ module coverage_data_types
     !! Provides the main coverage data container type and operations.
     !! Extracted from coverage_types to maintain SRP and size limits.
     
-    use foundation_constants
+    use constants_core
     use coverage_file_types
     use coverage_location_types, only: file_coverage_t
     
