@@ -1,37 +1,18 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Critical Functionality Recovery - Sprint 2)
+## SPRINT_BACKLOG (Code Quality & Defect Resolution - Sprint 3)
 
-### EPIC: Infrastructure Stabilization (HIGH - Sprint 2 Phase 2) ✅ COMPLETED
-- [x] #464: Security bug: URL-encoded attack validation test failing  
-- [x] #465: Permission denied error when creating test directories
-- [x] #467: Fork bomb prevention marker file not cleaned up, blocking normal operation
-- [x] #473: Input validation bug: minimum threshold accepts invalid values (-1, 999999)
+### EPIC: Technical Debt Reduction (HIGH PRIORITY)
+- [ ] #505: cleanup: resolve TODO comments in coverage_auto_test_executor.f90
+- [ ] #506: cleanup: implement gcov auto-processing functionality
+- [ ] #507: style: optimize module imports to use specific symbols
 
-### EPIC: User Experience & Documentation (MEDIUM - Sprint 2 Phase 3) ✅ COMPLETED
-- [x] #474: Documentation consolidation: Fix all CLI help mismatches and example errors (consolidates #466, #468, #471)
-- [x] #475: Sprint 2 final documentation consolidation and validation
+### EPIC: Bug Fixes & Stability (CRITICAL PRIORITY)
+- [ ] #508: bug: missing error handling for memory allocation failures
+- [ ] #495: critical: PR #494 has misleading description - immediate fix required
 
-### EPIC: Architecture Compliance (LOW - Sprint 2 Phase 4 - Only after Critical fixes) ✅ COMPLETED
-- [x] #457: refactor: split zero_configuration_manager.f90 to reduce file size (646 lines)
-- [x] #461: refactor: reduce function size in zero_configuration_manager.f90
-- [x] #478: fix: QADS line length violations in zero_configuration_manager.f90
-
-### EPIC: Critical Bugs (URGENT - Must be fixed immediately) ✅ COMPLETED
-- [x] #491: Cannot build on Windows - C interface file compilation errors
-
-### EPIC: Documentation Defects (HIGH - Documentation fixes) ✅ COMPLETED
-- [x] #468: Default format 'terminal' not supported, contradicting help documentation
-- [x] #471: Default fortcov.nml configuration references non-existent lib/ directory
-
-### EPIC: Code Cleanup (LOWEST - Sprint 2 Phase 5 - Only after Core Recovery) ✅ COMPLETED
-- [x] #458: cleanup: remove dead C interface files (~2000+ lines unused)
-- [x] #459: cleanup: remove obsolete documentation and investigation files
-- [x] #460: refactor: implement stub functionality in test_build_auto_discovery.f90
-- [x] #462: refactor: evaluate wrapper modules for dead code elimination
-- [x] #482: style: fix line length violation in test_cli_flag_parsing_issue_472.f90
-- [x] #500: critical: scope mismatch between issue 459 requirements and PR 499 implementation
-- [x] #480: style: fix line length violations in coverage_file_processor.f90
+### EPIC: Sprint Validation & Quality Assurance (MEDIUM PRIORITY)
+- [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality
 
 ## DOING (Current Work)
 
@@ -47,6 +28,7 @@
 - [x] Architecture Compliance (Sprint 2 Phase 4 - All architecture violations resolved and compliance verified)
 - [x] Documentation Defects (HIGH - All documentation fixes completed)
 - [x] Code Cleanup (Sprint 2 Phase 5 - All cleanup tasks completed including final style fixes)
+- [x] Critical Functionality Recovery (Sprint 2 - Core fortcov functionality restored and auto-discovery working)
 
 ## FUTURE SPRINTS (High-level Planning)
 
