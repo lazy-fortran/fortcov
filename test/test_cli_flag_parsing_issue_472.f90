@@ -225,7 +225,8 @@ contains
         else if (.not. allocated(config%source_paths) .or. &
                  size(config%source_paths) < 2) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: Multiple source directories parsed but array size incorrect"
+            print *, "  ❌ FAIL: Multiple source directories parsed but &
+                     &array size incorrect"
         else if (trim(config%source_paths(1)) /= "src" .or. &
                  trim(config%source_paths(2)) /= "lib") then
             call increment_fail(counter)
