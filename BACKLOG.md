@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
 ### EPIC: Critical Build Failure Resolution (URGENT - BLOCKS ALL WORK)
-- [ ] #534: fix: INQUIRE DIRECTORY syntax error in portable_temp_utils.f90
 - [ ] #535: fix: compilation error in portable_temp_utils.f90 INQUIRE statement
 - [ ] #536: fix: invalid inquire syntax in portable_temp_utils.f90 causes compilation error
 - [ ] #538: architecture: portable_temp_utils.f90 uses non-portable INQUIRE(DIRECTORY=) syntax
@@ -48,6 +47,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
+- [ ] #534: fix: INQUIRE DIRECTORY syntax error in portable_temp_utils.f90 (branch: fix-534) [EPIC: Critical Build Failure Resolution]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
