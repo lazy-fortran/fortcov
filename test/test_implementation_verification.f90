@@ -2,7 +2,7 @@ program test_implementation_verification
     !! Verification test for test_build_auto_discovery implementation
     !! This replaces the stub with actual functionality testing
     
-    use test_build_discovery, only: test_build_result_t, auto_discover_test_build
+    use build_discovery_core, only: test_build_result_t, auto_discover_test_build
     use config_types, only: config_t
     implicit none
     

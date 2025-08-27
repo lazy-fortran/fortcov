@@ -1,4 +1,4 @@
-module test_build_discovery
+module build_discovery_core
     !! Test Build Auto-Discovery Module
     !!
     !! Provides comprehensive test build detection and configuration for
@@ -267,4 +267,4 @@ contains
         
     end subroutine handle_unknown_build_system
     
-end module test_build_discovery
+end module build_discovery_core
