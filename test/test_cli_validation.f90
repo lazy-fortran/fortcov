@@ -9,52 +9,22 @@ program test_cli_validation
 
     use iso_fortran_env, only: output_unit, error_unit
     use fortcov_config, only: config_t, parse_config
+    use test_utils, only: assert_test, reset_test_counters, &
+                          print_test_header, print_test_summary
     implicit none
 
-    integer :: test_count = 0
-    integer :: passed_tests = 0
-    logical :: all_tests_passed = .true.
-
-    write(output_unit, '(A)') "======================================================="
-    write(output_unit, '(A)') "             CLI Validation Test Suite                 "
-    write(output_unit, '(A)') "======================================================="
-    write(output_unit, '(A)') ""
+    call reset_test_counters()
+    call print_test_header("CLI Validation")
 
     ! Test validation and error handling
     call test_error_message_consistency()
     call test_threshold_validation_examples()
     call test_argument_parsing_edge_cases()
 
-    write(output_unit, '(A)') ""
-    write(output_unit, '(A)') "======================================================="
-    write(*, '(A,I0,A,I0,A)') "CLI VALIDATION: ", passed_tests, "/", &
-                              test_count, " tests passed"
-
-    if (all_tests_passed) then
-        write(output_unit, '(A)') "✅ ALL CLI VALIDATION TESTS PASSED"
-        call exit(0)
-    else
-        write(output_unit, '(A)') "❌ CLI VALIDATION TESTS FAILED"
-        call exit(1)
-    end if
+    call print_test_summary("CLI VALIDATION")
 
 contains
 
-    subroutine assert_test(condition, test_name, details)
-        logical, intent(in) :: condition
-        character(len=*), intent(in) :: test_name, details
-        
-        test_count = test_count + 1
-        
-        if (condition) then
-            passed_tests = passed_tests + 1
-            write(output_unit, '(A)') "✅ PASS: " // trim(test_name)
-        else
-            all_tests_passed = .false.
-            write(output_unit, '(A)') "❌ FAIL: " // trim(test_name)
-            write(output_unit, '(A)') "   Details: " // trim(details)
-        end if
-    end subroutine assert_test
 
     subroutine test_error_message_consistency()
         !! Tests that error messages are consistent and helpful

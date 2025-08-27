@@ -17,11 +17,11 @@ program test_cli_consistency_validation
     
     use iso_fortran_env, only: output_unit, error_unit
     use fortcov_config, only: config_t, parse_config
+    use test_utils, only: assert_test, reset_test_counters, &
+                          print_test_summary, test_count, passed_tests
     implicit none
     
-    integer :: test_count = 0
-    integer :: passed_tests = 0
-    logical :: all_tests_passed = .true.
+    call reset_test_counters()
     
     write(output_unit, '(A)') "======================================================="
     write(output_unit, '(A)') "         CLI Consistency Validation Test Suite         "
@@ -41,38 +41,13 @@ program test_cli_consistency_validation
     call test_decomposition_integration_core()
     call test_architecture_compliance_verification()
     
-    write(output_unit, '(A)') ""
-    write(output_unit, '(A)') "======================================================="
-    write(*, '(A,I0,A,I0,A)') "CLI CONSISTENCY VALIDATION: ", passed_tests, "/", &
-                              test_count, " tests passed"
-    
-    if (all_tests_passed) then
-        write(output_unit, '(A)') "✅ CLI CONSISTENCY VALIDATION SUCCESSFUL"
-        write(output_unit, '(A)') "   Architecture decomposition: QADS compliant"
-        write(output_unit, '(A)') "   Original 553 lines → distributed <500 line modules"
-        call exit(0)
-    else
-        write(output_unit, '(A)') "❌ CLI CONSISTENCY VALIDATION FAILED"
-        call exit(1)
-    end if
+    call print_test_summary("CLI CONSISTENCY VALIDATION", .false.)
+    if (.not. passed_tests == test_count) call exit(1)
+    write(output_unit, '(A)') "   Architecture decomposition: QADS compliant"
+    write(output_unit, '(A)') "   Original 553 lines → distributed <500 line modules"
 
 contains
 
-    subroutine assert_test(condition, test_name, details)
-        logical, intent(in) :: condition
-        character(len=*), intent(in) :: test_name, details
-        
-        test_count = test_count + 1
-        
-        if (condition) then
-            passed_tests = passed_tests + 1
-            write(output_unit, '(A)') "✅ PASS: " // trim(test_name)
-        else
-            all_tests_passed = .false.
-            write(output_unit, '(A)') "❌ FAIL: " // trim(test_name)
-            write(output_unit, '(A)') "   Details: " // trim(details)
-        end if
-    end subroutine assert_test
 
     subroutine test_decomposition_integration_core()
         !! Core integration test to verify the decomposition preserves functionality
