@@ -220,6 +220,8 @@ contains
                         "Should parse successfully: " // trim(error_message), &
                         test_count, passed_tests, all_tests_passed)
         
+        deallocate(args)
+        
         ! Test 3.4: Zero-config mode (no arguments)
         allocate(character(len=64) :: args(0))
         
@@ -230,6 +232,8 @@ contains
         call assert_test(config%zero_configuration_mode, &
                         "Zero-config mode enabled", "Should be .true.", &
                         test_count, passed_tests, all_tests_passed)
+        
+        deallocate(args)
         
     end subroutine test_criterion_3_cli_consistency
 
@@ -381,6 +385,8 @@ contains
                             test_count, passed_tests, all_tests_passed)
         end if
         
+        deallocate(args)
+        
     end subroutine test_end_to_end_workflow_scenarios
 
     subroutine test_error_handling_robustness()
@@ -429,6 +435,8 @@ contains
         call assert_test(success, "Missing file parsing", &
                         "Config parsing should succeed, analysis handles missing files", &
                         test_count, passed_tests, all_tests_passed)
+        
+        deallocate(args)
         
     end subroutine test_error_handling_robustness
 
