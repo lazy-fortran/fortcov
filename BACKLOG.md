@@ -10,7 +10,6 @@
 ### EPIC: Sprint Validation & Quality Assurance (MEDIUM PRIORITY)
 
 ## DOING (Current Work)
-- [ ] #509: enhancement: validate Sprint 2 auto-discovery workflow functionality [EPIC: Sprint Validation & Quality Assurance]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
