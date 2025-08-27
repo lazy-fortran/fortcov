@@ -277,8 +277,8 @@ contains
         if (allocated(config%coverage_files)) then
             ! Use explicitly specified coverage files
             files = config%coverage_files
-        else if (config%zero_configuration_mode) then
-            ! Use zero-configuration auto-discovery
+        else if (config%zero_configuration_mode .or. config%auto_discovery) then
+            ! Use zero-configuration or auto-discovery mode
             files = auto_discover_coverage_files_priority()
         else
             ! Delegate to gcov processor for discovery
