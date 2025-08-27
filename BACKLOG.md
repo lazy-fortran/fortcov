@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
 ### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
-- [ ] #543: architecture: inconsistent module naming patterns violate architectural standards
 
 ### EPIC: User Experience & Documentation Defects (HIGH PRIORITY)
 - [ ] #550: docs: GitHub Actions example tries to upload non-existent coverage.json
@@ -37,7 +36,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #548: code: source files exceed recommended size limits (branch: arch-548) [EPIC: Architecture Compliance Recovery]
+- [ ] #543: architecture: inconsistent module naming patterns violate architectural standards (branch: arch-543) [EPIC: Architecture Compliance Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
