@@ -58,6 +58,13 @@ done
 ls -la *.gcov || echo "No coverage data generated"
 ```
 
+**Coverage Generation Issues (gcno/gcda mismatch):**
+See the detailed [Coverage Workflow Guide](coverage-workflow.md) for solutions to:
+- "No executable lines" errors from gcov
+- Missing .gcda or .gcno files  
+- FPM coverage instrumentation problems
+- Alternative compilation methods
+
 **Permission Errors:**
 ```bash
 # Install to user directory instead
