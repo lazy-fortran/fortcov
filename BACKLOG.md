@@ -14,8 +14,7 @@
 - [x] #600: Remove duplicate namelist parser modules - COMPLETED (resolved by config parser consolidation)
 - [x] #601: Remove unused modules (syntax_token_types, system_diff_impl) - COMPLETED
 - [x] #599: Remove dead code - main.f90 stub in src/ directory - COMPLETED
-
-- [ ] #597: Move test modules incorrectly located in src/ directory
+- [x] #597: Move test modules incorrectly located in src/ directory - COMPLETED
 
 ### EPIC: Infrastructure Stabilization
 - [ ] #620: Build system evaluation shows Sprint 7 SUCCESS, not failure
@@ -39,9 +38,6 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
-
-### EPIC: Architectural Debt Resolution  
-- [ ] #597: Move test modules incorrectly located in src/ directory - DOING
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
