@@ -768,87 +768,72 @@ Sprint 5 recovery establishes critical foundation:
 ## Sprint 7: Critical Infrastructure Recovery (CURRENT)
 
 ### Sprint Goal
-**PRIMARY OBJECTIVE**: Restore coverage infrastructure and organize 118-file directory explosion
+**PRIMARY OBJECTIVE**: Fix critical infrastructure failures - coverage workflow and file organization
 
-**SPRINT 7 DEFINITION OF DONE**:
-1. **Coverage workflow functional**: FPM coverage instrumentation produces gcda files
-2. **Directory organization**: 118 files organized into logical subdirectories (<30 per directory)
-3. **Documentation accuracy**: Coverage workflow documentation matches implementation
-4. **Dead code removal**: Clean main entry point without Hello World artifact
+**SPRINT 7 DEFINITION OF DONE** (5 ISSUES ONLY):
+1. **Coverage workflow functional**: fortcov works after coverage instrumentation (#590, #591)
+2. **Source organization complete**: 118 files organized into subdirectories (#592)
+3. **File output working**: All output formats generate actual files (#595)
+4. **Auto-discovery operational**: Find existing gcov files correctly (#596)
 
 ### Key Architectural Decisions (Sprint 7)
 
-#### Decision 1: Coverage Infrastructure Priority
-**Choice**: Fix coverage workflow before any other work
-**Rationale**: Core product functionality broken - no value without coverage
-**Implementation Approach**:
-- Investigate fpm test --flag instrumentation failure
-- Debug gcda file generation issues
-- Document working coverage workflow
+#### Decision 1: Infrastructure Recovery First
+**Choice**: Fix coverage and file output before any other work
+**Rationale**: Core product completely broken - fortcov produces no output
+**Implementation Priority**:
+1. Fix FPM coverage instrumentation (gcno → gcda generation)
+2. Restore file output generation for all formats
+3. Fix auto-discovery to locate gcov files
+4. Organize source files into subdirectories
 
-#### Decision 2: Subdirectory Organization Strategy
-**Choice**: Organize 118 files into logical subdirectories by functional area
-**Rationale**: Current flat structure violates 30-file architectural limit by 4x
-**Organization Pattern**:
+#### Decision 2: Minimal Subdirectory Organization
+**Choice**: Simple functional grouping to meet 30-file limit
+**Rationale**: 118 files in one directory is unmaintainable (4x violation)
+**Organization Strategy**:
 ```
 src/
-├── core/           # Core fortcov functionality (~15 files)
-├── config/         # Configuration management (~20 files)
-├── coverage/       # Coverage analysis engine (~30 files)
-├── reporters/      # Report generation (~15 files)
-├── utils/          # Utility modules (~20 files)
-├── security/       # Security validation (~10 files)
-└── integration/    # Build system integration (~8 files)
+├── core/         # Main orchestration and workflow (~20 files)
+├── coverage/     # Coverage analysis modules (~30 files)
+├── config/       # Configuration and parsers (~25 files)
+├── reporters/    # Output formatters (~20 files)
+├── utils/        # Utilities and helpers (~23 files)
 ```
 
-#### Decision 3: Minimal Sprint Scope
-**Choice**: ONLY critical infrastructure fixes - defer all enhancements
-**Rationale**: Sprint 6 failure shows need for focused recovery
-**Deferred**: All user experience, code quality, and technical debt to Sprint 8
+#### Decision 3: SHORT FOCUSED SPRINT
+**Choice**: ONLY 5 critical issues - NO scope expansion
+**Rationale**: Sprint 6 failure due to trying too much
+**Strictly Deferred**:
+- All dead code removal (defer #594, #599-607)
+- All documentation fixes (defer #593, #602, #606)
+- All over-modularization issues (defer to Sprint 8)
+- All code quality improvements (defer all)
 
 ### Implementation Strategy (Sprint 7)
 
-#### Phase 1: Coverage Infrastructure Recovery (CRITICAL)
-1. Debug fpm coverage flag availability and alternatives
-2. Fix gcda file generation from gcno instrumentation
-3. Document complete working coverage workflow
-
-#### Phase 2: Directory Reorganization (CRITICAL)
-1. Create logical subdirectory structure
-2. Move 118 files into appropriate subdirectories
-3. Update build configuration for new structure
-4. Verify compilation and tests after reorganization
-
-#### Phase 3: Validation (FINAL)
-1. End-to-end coverage workflow testing
-2. Build system validation with new directory structure
-3. Documentation accuracy verification
+#### Critical Path (5 Issues ONLY):
+1. **#590**: Fix FPM coverage flag - use correct instrumentation approach
+2. **#591**: Debug gcda generation - ensure test execution creates coverage data
+3. **#592**: Organize 118 files into 5 subdirectories
+4. **#595**: Fix file output - ensure all formats write to disk
+5. **#596**: Fix auto-discovery - locate gcov files in correct directories
 
 ### Success Metrics (Sprint 7)
 
-#### Infrastructure Recovery
-- **Primary**: Coverage workflow generates accurate coverage data
-- **Secondary**: FPM instrumentation produces both gcno and gcda files
-- **Tertiary**: Documentation accurately describes working workflow
-
-#### Architectural Compliance
-- **Primary**: No directory contains more than 30 files
-- **Secondary**: Logical organization improves navigation
-- **Tertiary**: Build times improve with organized structure
+#### Must Work
+- fortcov command produces coverage reports
+- All output formats generate actual files
+- Source code organized (<30 files per directory)
+- Tests pass after reorganization
 
 ### Risk Assessment (Sprint 7)
 
-#### Critical Risk: Coverage Infrastructure Complexity
-- **Mitigation**: Systematic debugging of instrumentation pipeline
-- **Validation**: Test with multiple example projects
-- **Fallback**: Document manual workaround if automation fails
+#### Critical Risk: Module Dependencies During Move
+- **Mitigation**: Move files in logical groups, test after each group
+- **Validation**: Full build and test after each subdirectory creation
+- **Fallback**: Revert if compilation breaks
 
-#### High Risk: Directory Reorganization Impact
-- **Mitigation**: Careful module dependency tracking during move
-- **Testing**: Full build and test validation after each phase
-- **Rollback**: Git history allows reverting if reorganization breaks
-
-#### Medium Risk: Scope Creep
-- **Mitigation**: STRICT focus on 5 critical issues only
-- **Enforcement**: Defer all non-critical issues to Sprint 8
-- **Monitoring**: Daily scope review to prevent expansion
+#### High Risk: Coverage Workflow Complexity
+- **Mitigation**: Test with simple example first, then scale up
+- **Validation**: Manual verification of gcno/gcda generation
+- **Documentation**: Clear instructions for manual workflow if needed
