@@ -16,7 +16,8 @@ program test_sprint_2_validation_comprehensive
     use zero_config_auto_discovery_integration, only: &
         execute_zero_config_complete_workflow
     use build_system_detector, only: detect_build_system, build_system_info_t
-    ! Test environment detection handled internally
+    use sprint2_test_utils, only: assert_test, create_mock_gcov_with_coverage, &
+                                  test_environment_detected, check_gcov_files_exist
     implicit none
     
     integer :: test_count = 0
@@ -58,23 +59,6 @@ program test_sprint_2_validation_comprehensive
 
 contains
 
-    subroutine assert_test(condition, test_name, details)
-        logical, intent(in) :: condition
-        character(len=*), intent(in) :: test_name, details
-        
-        test_count = test_count + 1
-        
-        if (condition) then
-            passed_tests = passed_tests + 1
-            write(output_unit, '(A)') "✅ PASS: " // trim(test_name)
-        else
-            all_tests_passed = .false.
-            write(output_unit, '(A)') "❌ FAIL: " // trim(test_name)
-            write(output_unit, '(A)') "   Details: " // trim(details)
-        end if
-        
-    end subroutine assert_test
-
     subroutine test_criterion_1_auto_discovery_workflow()
         !! SUCCESS CRITERIA 1: Auto-discovery workflow functional
         !! Validates that 'fortcov' command works end-to-end without manual intervention
@@ -94,9 +78,11 @@ contains
         allocate(no_args(0))
         call parse_config(no_args, config, success, error_message)
         call assert_test(success, "Config parsing with no arguments", &
-                        "Expected success, got: " // trim(error_message))
+                        "Expected success, got: " // trim(error_message), &
+                        test_count, passed_tests, all_tests_passed)
         call assert_test(config%zero_configuration_mode, &
-                        "Zero-config mode activated", "Should be .true.")
+                        "Zero-config mode activated", "Should be .true.", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 1.2: Build system detection capability
         block
@@ -106,11 +92,13 @@ contains
             build_detected = (error_ctx%error_code == 0)
         end block
         call assert_test(build_detected, "Build system detection functional", &
-                        "Should detect fpm.toml in project root")
+                        "Should detect fpm.toml in project root", &
+                        test_count, passed_tests, all_tests_passed)
         if (build_detected) then
             call assert_test(trim(build_info%system_type) == "fpm", &
                             "Correct build system detected", &
-                            "Expected fpm, got: " // trim(build_info%system_type))
+                            "Expected fpm, got: " // trim(build_info%system_type), &
+                            test_count, passed_tests, all_tests_passed)
         end if
         
         ! Test 1.3: Complete workflow execution (with fork bomb safety)
@@ -118,11 +106,13 @@ contains
             call execute_zero_config_complete_workflow(config, exit_code)
             call assert_test(exit_code >= 0 .and. exit_code <= 3, &
                             "Auto-discovery workflow completes", &
-                            "Exit codes 0-3 are valid, got: ")
+                            "Exit codes 0-3 are valid, got: ", &
+                            test_count, passed_tests, all_tests_passed)
         else
             ! Skip workflow execution inside test to prevent recursion
             call assert_test(.true., "Auto-discovery workflow skipped", &
-                            "Skipped due to test environment safety")
+                            "Skipped due to test environment safety", &
+                            test_count, passed_tests, all_tests_passed)
         end if
         
     end subroutine test_criterion_1_auto_discovery_workflow
@@ -135,8 +125,6 @@ contains
         character(len=32), allocatable :: args(:)
         logical :: success
         character(len=256) :: error_message
-        integer :: unit_number, iostat
-        character(len=1000) :: line
         logical :: found_coverage_data = .false.
         logical :: found_nonzero_coverage = .false.
         
@@ -150,53 +138,29 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "Config parsing with source arg", &
-                        "Expected success, got: " // trim(error_message))
+                        "Expected success, got: " // trim(error_message), &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 2.2: Check for existing gcov files or ability to generate them
-        block
-            use portable_temp_utils, only: get_temp_dir
-            character(len=:), allocatable :: temp_dir
-            character(len=512) :: gcov_files_list
-            
-            temp_dir = get_temp_dir()
-            gcov_files_list = temp_dir // '/gcov_files.txt'
-            
-            call execute_command_line('find . -name "*.gcov" > "' // &
-                                      trim(gcov_files_list) // '" 2>/dev/null')
-            
-            open(newunit=unit_number, file=trim(gcov_files_list), status='old', &
-                 iostat=iostat, action='read')
-        if (iostat == 0) then
-            do
-                read(unit_number, '(A)', iostat=iostat) line
-                if (iostat /= 0) exit
-                if (len_trim(line) > 0) then
-                    found_coverage_data = .true.
-                    exit
-                end if
-            end do
-            close(unit_number)
-        end if
-        
+        found_coverage_data = check_gcov_files_exist()
         call assert_test(found_coverage_data .or. config%zero_configuration_mode, &
                         "Coverage data available or auto-discoverable", &
-                        "Should find gcov files or have auto-discovery")
+                        "Should find gcov files or have auto-discovery", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 2.3: Verify parsing produces non-zero results (when data exists)
         if (found_coverage_data) then
-            ! Create a simple mock gcov file with actual coverage data
             call create_mock_gcov_with_coverage()
             found_nonzero_coverage = .true.
         end if
         
         call assert_test(found_nonzero_coverage .or. .not. found_coverage_data, &
                         "Coverage parsing shows real percentages", &
-                        "Should not always show 0.00%")
+                        "Should not always show 0.00%", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Cleanup
-            call execute_command_line('rm -f "' // trim(gcov_files_list) // &
-                                      '" mock_coverage_test.f90.gcov')
-        end block
+        call execute_command_line('rm -f mock_coverage_test.f90.gcov')
         
     end subroutine test_criterion_2_coverage_parsing_accuracy
 
@@ -219,12 +183,14 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "README example: --source=src *.gcov", &
-                        "Should parse successfully: " // trim(error_message))
+                        "Should parse successfully: " // trim(error_message), &
+                        test_count, passed_tests, all_tests_passed)
         if (success) then
             call assert_test(size(config%source_paths) > 0 .and. &
                            trim(config%source_paths(1)) == "src", &
                             "Source directory correctly set", &
-                            "Expected src in source_paths")
+                            "Expected src in source_paths", &
+                            test_count, passed_tests, all_tests_passed)
         end if
         
         deallocate(args)
@@ -235,10 +201,12 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "README example: --fail-under 80", &
-                        "Should parse successfully: " // trim(error_message))
+                        "Should parse successfully: " // trim(error_message), &
+                        test_count, passed_tests, all_tests_passed)
         if (success) then
             call assert_test(config%fail_under_threshold == 80.0, &
-                            "Threshold correctly set", "Expected 80.0")
+                            "Threshold correctly set", "Expected 80.0", &
+                            test_count, passed_tests, all_tests_passed)
         end if
         
         deallocate(args)
@@ -249,16 +217,23 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "Output format example", &
-                        "Should parse successfully: " // trim(error_message))
+                        "Should parse successfully: " // trim(error_message), &
+                        test_count, passed_tests, all_tests_passed)
+        
+        deallocate(args)
         
         ! Test 3.4: Zero-config mode (no arguments)
         allocate(character(len=64) :: args(0))
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "Zero-config mode (no args)", &
-                        "Should parse successfully: " // trim(error_message))
+                        "Should parse successfully: " // trim(error_message), &
+                        test_count, passed_tests, all_tests_passed)
         call assert_test(config%zero_configuration_mode, &
-                        "Zero-config mode enabled", "Should be .true.")
+                        "Zero-config mode enabled", "Should be .true.", &
+                        test_count, passed_tests, all_tests_passed)
+        
+        deallocate(args)
         
     end subroutine test_criterion_3_cli_consistency
 
@@ -268,7 +243,6 @@ contains
         
         integer :: exit_status
         logical :: marker_exists
-        character(len=256) :: test_output
         
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== CRITERION 4: Test Infrastructure Stability ==="
@@ -278,18 +252,21 @@ contains
                                   wait=.true., exitstat=exit_status)
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(marker_exists, "Fork bomb marker creation", &
-                        "Should be able to create marker file")
+                        "Should be able to create marker file", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 4.2: Marker cleanup functionality
         call execute_command_line('rm -f .fortcov_execution_marker', &
                                   wait=.true., exitstat=exit_status)
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(.not. marker_exists, "Fork bomb marker cleanup", &
-                        "Should be able to remove marker file")
+                        "Should be able to remove marker file", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 4.3: Test execution environment validation
         call assert_test(test_environment_detected(), "Test environment detection", &
-                        "Should detect we're running inside tests")
+                        "Should detect we're running inside tests", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 4.4: Command execution stability
         block
@@ -303,7 +280,8 @@ contains
             call execute_command_line('echo "test" > "' // trim(test_output_file) // '"', &
                                       wait=.true., exitstat=exit_status)
         call assert_test(exit_status == 0, "Command execution stability", &
-                        "Basic commands should execute successfully")
+                        "Basic commands should execute successfully", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Cleanup
             call execute_command_line('rm -f "' // trim(test_output_file) // '"')
@@ -324,28 +302,33 @@ contains
         ! Test 5.1: Initial state clean
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(.not. marker_exists, "Clean initial state", &
-                        "No stale marker should exist")
+                        "No stale marker should exist", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 5.2: Marker creation and detection
         call execute_command_line('touch .fortcov_execution_marker', wait=.true.)
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(marker_exists, "Fork bomb marker detection", &
-                        "Should detect created marker")
+                        "Should detect created marker", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 5.3: Automatic cleanup on startup (simulate main.f90 behavior)
         call execute_command_line('rm -f .fortcov_execution_marker', &
                                   wait=.true., exitstat=exit_status)
         call assert_test(exit_status == 0, "Automatic marker cleanup", &
-                        "Should clean up stale markers")
+                        "Should clean up stale markers", &
+                        test_count, passed_tests, all_tests_passed)
         
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         call assert_test(.not. marker_exists, "Cleanup effectiveness", &
-                        "Marker should be removed")
+                        "Marker should be removed", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test 5.4: Normal operation not blocked
         ! This is validated by the fact that this test is running at all
         call assert_test(.true., "Normal operation not blocked", &
-                        "Tests can run without marker blocking")
+                        "Tests can run without marker blocking", &
+                        test_count, passed_tests, all_tests_passed)
         
     end subroutine test_criterion_5_fork_bomb_prevention
 
@@ -366,8 +349,10 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "Quiet mode configuration", &
-                        "Should parse successfully")
-        call assert_test(config%quiet, "Quiet flag properly set", "Should be .true.")
+                        "Should parse successfully", &
+                        test_count, passed_tests, all_tests_passed)
+        call assert_test(config%quiet, "Quiet flag properly set", "Should be .true.", &
+                        test_count, passed_tests, all_tests_passed)
         
         deallocate(args)
         
@@ -377,8 +362,10 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "Verbose mode configuration", &
-                        "Should parse successfully")
-        call assert_test(config%verbose, "Verbose flag properly set", "Should be .true.")
+                        "Should parse successfully", &
+                        test_count, passed_tests, all_tests_passed)
+        call assert_test(config%verbose, "Verbose flag properly set", "Should be .true.", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test E2E.3: Mixed argument workflow
         deallocate(args)
@@ -389,12 +376,16 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(success, "Mixed arguments parsing", &
-                        "Should handle multiple args")
+                        "Should handle multiple args", &
+                        test_count, passed_tests, all_tests_passed)
         if (success) then
             call assert_test(config%verbose .and. &
                             index(config%output_path, "test.md") > 0, &
-                            "Multiple flags preserved", "All flags should be set")
+                            "Multiple flags preserved", "All flags should be set", &
+                            test_count, passed_tests, all_tests_passed)
         end if
+        
+        deallocate(args)
         
     end subroutine test_end_to_end_workflow_scenarios
 
@@ -415,7 +406,8 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(.not. success, "Invalid threshold rejection", &
-                        "Should reject negative thresholds")
+                        "Should reject negative thresholds", &
+                        test_count, passed_tests, all_tests_passed)
         
         deallocate(args)
         
@@ -425,11 +417,13 @@ contains
         
         call parse_config(args, config, success, error_message)
         call assert_test(.not. success, "Invalid threshold over 100 rejection", &
-                        "Should reject thresholds over 100")
+                        "Should reject thresholds over 100", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test ERR.3: Helpful error messages
         call assert_test(len_trim(error_message) > 0, "Error message provided", &
-                        "Should provide helpful error message")
+                        "Should provide helpful error message", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test ERR.4: Graceful handling of missing files
         deallocate(args)
@@ -439,7 +433,10 @@ contains
         call parse_config(args, config, success, error_message)
         ! Parsing should succeed, but analysis will handle missing files gracefully
         call assert_test(success, "Missing file parsing", &
-                        "Config parsing should succeed, analysis handles missing files")
+                        "Config parsing should succeed, analysis handles missing files", &
+                        test_count, passed_tests, all_tests_passed)
+        
+        deallocate(args)
         
     end subroutine test_error_handling_robustness
 
@@ -466,7 +463,8 @@ contains
         elapsed_time = real(end_time - start_time) / real(count_rate)
         
         call assert_test(elapsed_time < 1.0, "Config parsing performance", &
-                        "Should parse config in <1 second")
+                        "Should parse config in <1 second", &
+                        test_count, passed_tests, all_tests_passed)
         
         ! Test PERF.2: Build system detection performance
         call system_clock(start_time)
@@ -486,44 +484,9 @@ contains
         elapsed_time = real(end_time - start_time) / real(count_rate)
         
         call assert_test(elapsed_time < 0.1, "Build detection performance", &
-                        "Should detect build system in <0.1 seconds")
+                        "Should detect build system in <0.1 seconds", &
+                        test_count, passed_tests, all_tests_passed)
         
     end subroutine test_performance_requirements
-
-    subroutine create_mock_gcov_with_coverage()
-        !! Creates a mock gcov file with realistic coverage data for testing
-        
-        integer :: unit_number
-        
-        open(newunit=unit_number, file='mock_coverage_test.f90.gcov', &
-             status='replace', action='write')
-        
-        write(unit_number, '(A)') "        -:    0:Source:mock_coverage_test.f90"
-        write(unit_number, '(A)') "        -:    0:Graph:mock_coverage_test.gcno"
-        write(unit_number, '(A)') "        -:    0:Data:mock_coverage_test.gcda"
-        write(unit_number, '(A)') "        -:    0:Runs:1"
-        write(unit_number, '(A)') "        -:    0:Programs:1"
-        write(unit_number, '(A)') "        -:    1:program mock_test"
-        write(unit_number, '(A)') "        1:    2:  print *, ""Hello World"""
-        write(unit_number, '(A)') "        1:    3:  call test_function()"
-        write(unit_number, '(A)') "    #####:    4:  print *, ""Never executed"""
-        write(unit_number, '(A)') "        1:    5:end program"
-        write(unit_number, '(A)') "        -:    6:"
-        write(unit_number, '(A)') "        -:    7:subroutine test_function()"
-        write(unit_number, '(A)') "        1:    8:  integer :: x = 42"
-        write(unit_number, '(A)') "        1:    9:end subroutine"
-        
-        close(unit_number)
-        
-    end subroutine create_mock_gcov_with_coverage
-
-    function test_environment_detected() result(is_test_env)
-        !! Use consistent test environment detection
-        use test_environment_utils, only: &
-            test_environment_detected_util => test_environment_detected
-        logical :: is_test_env
-        
-        is_test_env = test_environment_detected_util()
-    end function test_environment_detected
 
 end program test_sprint_2_validation_comprehensive
