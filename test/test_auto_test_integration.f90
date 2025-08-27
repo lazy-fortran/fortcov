@@ -4,8 +4,8 @@ program test_auto_test_integration
     !! Creates a real test scenario with an FPM project structure
     !! and demonstrates the auto-test execution functionality
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_workflows
-    use fortcov_config
+    use coverage_workflows, only: execute_auto_test_workflow
+    use fortcov_config, only: config_t
     use config_defaults, only: initialize_default_config
     implicit none
 

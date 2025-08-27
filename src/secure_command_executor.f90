@@ -25,7 +25,9 @@ module secure_command_executor
     !! - Output redirection with properly escaped filenames
     !! - Exit status validation for command success verification
     use iso_fortran_env, only: error_unit
-    use error_handling
+    use error_handling, only: error_context_t, handle_missing_source, ERROR_INVALID_CONFIG, &
+                                  clear_error_context, ERROR_SUCCESS, safe_write_message, &
+                                  safe_write_suggestion, safe_write_context
     use string_utils, only: int_to_string
     use shell_utils, only: escape_shell_argument
     implicit none

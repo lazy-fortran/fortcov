@@ -1,7 +1,9 @@
 program main
-  use fortcov
-  use fortcov_config, only: validate_config, validate_config_with_context
-  use error_handling
+  use fortcov, only: run_coverage_analysis
+  use fortcov_config, only: config_t, parse_config, show_help, show_version, &
+                                   validate_config, validate_config_with_context
+  use error_handling, only: error_context_t, ERROR_SUCCESS
+  use foundation_constants, only: EXIT_SUCCESS, EXIT_FAILURE
   use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
   use coverage_workflows, only: launch_coverage_tui_mode

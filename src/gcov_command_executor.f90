@@ -6,8 +6,10 @@ module gcov_command_executor
     !! failures gracefully, supports gcov options, and manages temporary files.
     !! All command execution is performed securely to prevent injection attacks.
     use iso_fortran_env, only: error_unit
-    use error_handling
-    use file_utils
+    use error_handling, only: error_context_t, ERROR_SUCCESS, ERROR_INVALID_CONFIG, &
+                                  ERROR_INCOMPLETE_COVERAGE, clear_error_context, handle_missing_source, &
+                                  safe_write_message, safe_write_suggestion, safe_write_context
+    use file_utils, only: file_exists
     use secure_command_executor, only: safe_execute_gcov
     use secure_file_operations, only: safe_mkdir
     use shell_utils, only: escape_shell_argument

@@ -1,5 +1,4 @@
 module data_transformer_types
-    use coverage_model
     implicit none
     private
     
