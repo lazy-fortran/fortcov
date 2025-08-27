@@ -51,7 +51,8 @@ contains
         !! Properly escape shell arguments to prevent injection attacks
         character(len=*), intent(in) :: arg
         character(len=:), allocatable :: escaped_arg
-        integer :: i, len_arg, escape_count
+        integer :: i, len_arg, escape_count, stat
+        character(len=512) :: errmsg
         character :: c
         
         len_arg = len_trim(arg)
@@ -70,7 +71,13 @@ contains
         end do
         
         ! Allocate escaped string with extra space for escape characters
-        allocate(character(len=len_arg + escape_count + 2) :: escaped_arg)
+        allocate(character(len=len_arg + escape_count + 2) :: escaped_arg, &
+            stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for escaped_arg: " // &
+                trim(errmsg)
+            return
+        end if
         
         ! Build escaped string with single quotes
         escaped_arg = "'" // replace_single_quotes(arg(1:len_arg)) // "'"
@@ -80,7 +87,8 @@ contains
         !! Replace single quotes with '\'' sequence for shell safety
         character(len=*), intent(in) :: str
         character(len=:), allocatable :: escaped_str
-        integer :: i, len_str, quote_count, pos
+        integer :: i, len_str, quote_count, pos, stat
+        character(len=512) :: errmsg
         
         len_str = len_trim(str)
         quote_count = 0
@@ -91,7 +99,13 @@ contains
         end do
         
         ! Allocate space for replacement (each ' becomes '\'' - 3 extra chars)
-        allocate(character(len=len_str + quote_count*3) :: escaped_str)
+        allocate(character(len=len_str + quote_count*3) :: escaped_str, &
+            stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for escaped_str: " // &
+                trim(errmsg)
+            return
+        end if
         
         pos = 1
         do i = 1, len_str
@@ -127,13 +141,22 @@ contains
         character(len=:), allocatable, intent(out) :: input_format
         character(len=:), allocatable, intent(out) :: exclude_patterns(:)
         
+        integer :: stat
+        character(len=512) :: errmsg
+        
         ! Set smart defaults for zero-configuration mode
         output_path = "build/coverage/coverage.md"
         output_format = "markdown"
         input_format = "gcov"
         
         ! Default exclusion patterns for common build and test directories
-        allocate(character(len=32) :: exclude_patterns(2))
+        allocate(character(len=32) :: exclude_patterns(2), &
+            stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for exclude_patterns: " // &
+                trim(errmsg)
+            return
+        end if
         exclude_patterns(1) = "build/*"
         exclude_patterns(2) = "test/*"
         
@@ -145,7 +168,8 @@ contains
         character(len=:), allocatable :: coverage_files(:)
         character(len=:), allocatable :: temp_files(:), gcda_files(:)
         logical :: dir_exists, gcov_available
-        integer :: i
+        integer :: i, stat
+        character(len=512) :: errmsg
         
         ! Phase 1: Check for existing .gcov files (fast path)
         coverage_files = discover_existing_gcov_files()
@@ -157,7 +181,13 @@ contains
         call check_gcov_availability(gcov_available)
         if (.not. gcov_available) then
             if (allocated(coverage_files)) deallocate(coverage_files)
-            allocate(character(len=256) :: coverage_files(0))
+            allocate(character(len=256) :: coverage_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for coverage_files: " // &
+                    trim(errmsg)
+                return
+            end if
             return
         end if
         
@@ -171,7 +201,13 @@ contains
         
         ! Phase 3: No coverage data found
         if (allocated(coverage_files)) deallocate(coverage_files)
-        allocate(character(len=256) :: coverage_files(0))
+        allocate(character(len=256) :: coverage_files(0), &
+            stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for coverage_files: " // &
+                trim(errmsg)
+            return
+        end if
         
     end function auto_discover_coverage_files_priority
     
@@ -180,7 +216,8 @@ contains
         character(len=:), allocatable :: source_paths(:)
         character(len=:), allocatable :: temp_files(:)
         logical :: dir_exists
-        integer :: file_count
+        integer :: file_count, stat
+        character(len=512) :: errmsg
         
         ! Priority 1: Check if src/ directory exists and has Fortran files
         inquire(file="src", exist=dir_exists)
@@ -193,14 +230,26 @@ contains
             end if
             
             if (file_count > 0) then
-                allocate(character(len=3) :: source_paths(1))
+                allocate(character(len=3) :: source_paths(1), &
+                    stat=stat, errmsg=errmsg)
+                if (stat /= 0) then
+                    write(*, '(A)') "Error: Memory allocation failed for source_paths: " // &
+                        trim(errmsg)
+                    return
+                end if
                 source_paths(1) = "src"
                 return
             end if
         end if
         
         ! Priority 2: Use current directory as fallback
-        allocate(character(len=1) :: source_paths(1))
+        allocate(character(len=1) :: source_paths(1), &
+            stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for source_paths: " // &
+                trim(errmsg)
+            return
+        end if
         source_paths(1) = "."
         
     end function auto_discover_source_files_priority
@@ -284,6 +333,8 @@ contains
         character(len=:), allocatable :: coverage_files(:)
         character(len=:), allocatable :: temp_files(:)
         logical :: dir_exists
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Priority 1: Check build/gcov/*.gcov (Issue #203 standard location)
         inquire(file="build/gcov", exist=dir_exists)
@@ -313,7 +364,13 @@ contains
         end if
         
         ! No existing .gcov files found
-        allocate(character(len=256) :: coverage_files(0))
+        allocate(character(len=256) :: coverage_files(0), &
+            stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for coverage_files: " // &
+                trim(errmsg)
+            return
+        end if
     end function discover_existing_gcov_files
     
     function validate_directory_exists(directory) result(exists)
@@ -357,14 +414,21 @@ contains
         character(len=:), allocatable :: gcov_files(:)
         
         character(len=256) :: line
-        integer :: unit, iostat, file_count
+        integer :: unit, iostat, file_count, stat
+        character(len=512) :: errmsg
         character(len=256), allocatable :: temp_results(:)
         
         ! Execute find command
         call execute_command_line(command)
         
         ! Read results from temporary file
-        allocate(temp_results(max_results))
+        allocate(temp_results(max_results), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for temp_results: " // &
+                trim(errmsg)
+            allocate(character(len=256) :: gcov_files(0))
+            return
+        end if
         file_count = 0
         
         open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, &
@@ -386,10 +450,23 @@ contains
         
         ! Allocate final result
         if (file_count > 0) then
-            allocate(character(len=256) :: gcov_files(file_count))
+            allocate(character(len=256) :: gcov_files(file_count), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
+                    trim(errmsg)
+                allocate(character(len=256) :: gcov_files(0))
+                return
+            end if
             gcov_files(1:file_count) = temp_results(1:file_count)
         else
-            allocate(character(len=256) :: gcov_files(0))
+            allocate(character(len=256) :: gcov_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
+                    trim(errmsg)
+                return
+            end if
         end if
         
         deallocate(temp_results)
@@ -402,10 +479,18 @@ contains
         character(len=*), intent(in) :: directory
         character(len=:), allocatable :: gcov_files(:)
         character(len=512) :: command, temp_file
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Validate directory exists
         if (.not. validate_directory_exists(directory)) then
-            allocate(character(len=256) :: gcov_files(0))
+            allocate(character(len=256) :: gcov_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
+                    trim(errmsg)
+                return
+            end if
             return
         end if
         
@@ -446,10 +531,18 @@ contains
         character(len=*), intent(in) :: base_directory
         character(len=:), allocatable :: gcov_files(:)
         character(len=512) :: command, temp_file
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Validate directory exists
         if (.not. validate_directory_exists(base_directory)) then
-            allocate(character(len=256) :: gcov_files(0))
+            allocate(character(len=256) :: gcov_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
+                    trim(errmsg)
+                return
+            end if
             return
         end if
         

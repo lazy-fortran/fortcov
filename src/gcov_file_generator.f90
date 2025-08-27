@@ -39,7 +39,8 @@ contains
         
         type(gcov_executor_t) :: executor
         type(error_context_t) :: error_ctx
-        integer :: i, success_count
+        integer :: i, success_count, stat
+        character(len=512) :: errmsg
         character(len=256), allocatable :: temp_generated_files(:)
         character(len=:), allocatable :: temp_files(:)
         character(len=256) :: source_file
@@ -54,7 +55,14 @@ contains
         
         success_count = 0
         allocate(character(len=256) :: &
-            temp_generated_files(size(gcda_files) * 10))  ! Estimate
+            temp_generated_files(size(gcda_files) * 10), &
+            stat=stat, errmsg=errmsg)  ! Estimate
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for temp_generated_files: " // &
+                trim(errmsg)
+            allocate(character(len=256) :: generated_gcov_files(0))
+            return
+        end if
         
         do i = 1, size(gcda_files)
             source_file = extract_source_from_gcda(gcda_files(i))
@@ -70,11 +78,24 @@ contains
         
         ! Return successfully generated .gcov files
         if (success_count > 0) then
-            allocate(character(len=256) :: generated_gcov_files(success_count))
+            allocate(character(len=256) :: generated_gcov_files(success_count), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for generated_gcov_files: " // &
+                    trim(errmsg)
+                allocate(character(len=256) :: generated_gcov_files(0))
+                return
+            end if
             generated_gcov_files(1:success_count) = &
                 temp_generated_files(1:success_count)
         else
-            allocate(character(len=256) :: generated_gcov_files(0))
+            allocate(character(len=256) :: generated_gcov_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for generated_gcov_files: " // &
+                    trim(errmsg)
+                return
+            end if
         end if
     end subroutine generate_gcov_files_from_gcda
     

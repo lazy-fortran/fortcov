@@ -175,6 +175,8 @@ contains
         type(config_t), intent(inout) :: config
         
         logical :: has_source_paths
+        integer :: stat
+        character(len=512) :: errmsg
 
         ! Check if source paths are already set
         has_source_paths = allocated(config%source_paths) .and. &
@@ -184,7 +186,13 @@ contains
         if (.not. has_source_paths) then
             ! Use current directory if no source paths specified
             if (allocated(config%source_paths)) deallocate(config%source_paths)
-            allocate(character(len=1) :: config%source_paths(1))
+            allocate(character(len=1) :: config%source_paths(1), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for source_paths: " // &
+                    trim(errmsg)
+                return
+            end if
             config%source_paths(1) = "."
         end if
 

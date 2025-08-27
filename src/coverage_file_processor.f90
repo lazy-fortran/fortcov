@@ -32,7 +32,8 @@ contains
             intent(out) :: filtered_files(:)
         
         character(len=MAX_FILE_PATH_LENGTH) :: temp_files(MAX_ARRAY_SIZE)
-        integer :: num_files, i, filtered_count
+        integer :: num_files, i, filtered_count, stat
+        character(len=512) :: errmsg
         logical :: include_file
         
         ! Initialize arrays
@@ -44,7 +45,13 @@ contains
         
         if (.not. allocated(coverage_files) .or. size(coverage_files) == 0) then
             ! No files found - allocate empty arrays
-            allocate(character(len=MAX_FILE_PATH_LENGTH) :: filtered_files(0))
+            allocate(character(len=MAX_FILE_PATH_LENGTH) :: filtered_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for filtered_files: " // &
+                    trim(errmsg)
+                return
+            end if
             return
         end if
         
@@ -63,14 +70,24 @@ contains
             
             ! Allocate and copy filtered results
             allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
-                filtered_files(filtered_count))
+                filtered_files(filtered_count), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for filtered_files: " // &
+                    trim(errmsg)
+                return
+            end if
             if (filtered_count > 0) then
                 filtered_files(1:filtered_count) = temp_files(1:filtered_count)
             end if
         else
             ! No filtering needed - copy all files
             allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
-                filtered_files(size(coverage_files)))
+                filtered_files(size(coverage_files)), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for filtered_files: " // &
+                    trim(errmsg)
+                return
+            end if
             filtered_files = coverage_files
         end if
         
@@ -84,7 +101,8 @@ contains
         type(coverage_data_t), intent(out) :: merged_coverage
         logical, intent(out) :: parse_error
         
-        integer :: i, j, parse_count, file_count
+        integer :: i, j, parse_count, file_count, stat
+        character(len=512) :: errmsg
         type(coverage_data_t) :: file_coverage
         type(coverage_file_t), allocatable :: all_files(:), temp_files(:)
         logical :: file_parse_error
@@ -97,7 +115,13 @@ contains
         call merged_coverage%init()
         
         ! Allocate initial storage for files
-        allocate(all_files(size(files)))
+        allocate(all_files(size(files)), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for all_files: " // &
+                trim(errmsg)
+            parse_error = .true.
+            return
+        end if
         
         ! Parse each coverage file
         do i = 1, size(files)
@@ -134,7 +158,13 @@ contains
                     
                     ! Expand all_files array if needed
                     if (file_count > size(all_files)) then
-                        allocate(temp_files(file_count * 2))
+                        allocate(temp_files(file_count * 2), stat=stat, errmsg=errmsg)
+                        if (stat /= 0) then
+                            write(*, '(A)') "Error: Memory allocation failed for temp_files: " // &
+                                trim(errmsg)
+                            parse_error = .true.
+                            return
+                        end if
                         temp_files(1:size(all_files)) = all_files
                         call move_alloc(temp_files, all_files)
                     end if
@@ -158,7 +188,13 @@ contains
         if (file_count > 0) then
             ! Deallocate first since init() already allocated empty array
             if (allocated(merged_coverage%files)) deallocate(merged_coverage%files)
-            allocate(merged_coverage%files(file_count))
+            allocate(merged_coverage%files(file_count), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for merged_coverage files: " // &
+                    trim(errmsg)
+                parse_error = .true.
+                return
+            end if
             merged_coverage%files = all_files(1:file_count)
         end if
         
