@@ -70,11 +70,11 @@ FortCov uses **Fortran namelist format** (`fortcov.nml`) for configuration:
 # Use specific config
 fortcov --config=ci.nml
 
-# Override config values
+# Override config values  
 fortcov --config=dev.nml --fail-under=85
 
-# Validate config without running
-fortcov --config=prod.nml --validate
+# Run with verbose output
+fortcov --config=prod.nml --verbose
 ```
 
 ## Configuration Best Practices
@@ -92,7 +92,7 @@ fortcov --config=prod.nml --validate
 **Current Implementation Status:**
 - Coverage analysis and terminal display fully functional
 - File output formats display "would be generated" but do not create actual files
-- Configuration validation and all CLI options fully functional
+- Configuration files and CLI options fully functional
 
 **CI/CD Integration:**
 - Terminal output provides coverage statistics for parsing
