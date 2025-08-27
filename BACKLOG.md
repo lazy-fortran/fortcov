@@ -40,7 +40,6 @@
 
 ### EPIC: Architectural Debt Resolution  
 - [ ] #597: Move test modules incorrectly located in src/ directory - DOING
-- [ ] #594: Remove dead code - unused Hello World program in src/main.f90 - DOING
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
