@@ -22,6 +22,7 @@ module coverage_stats_reporter_impl
     public :: apply_threshold_validation
     public :: report_auto_test_failure
     public :: line_coverage_stats_t
+    public :: suppress_unused_warning_stats
     
     ! Type for combined line/branch stats
     type :: line_coverage_stats_t
@@ -61,29 +62,93 @@ contains
 
     subroutine generate_coverage_reports(coverage_data, stats, config, report_error)
         !! Generate coverage reports in specified formats
+        use coverage_reporter_factory, only: create_reporter
+        use coverage_reporter_base, only: coverage_reporter_t
+        use report_engine_core, only: report_engine_t
         type(coverage_data_t), intent(in) :: coverage_data
         type(line_coverage_stats_t), intent(in) :: stats
         type(config_t), intent(in) :: config
         logical, intent(out) :: report_error
         
+        class(coverage_reporter_t), allocatable :: reporter
+        type(report_engine_t) :: engine
+        logical :: success, factory_error, engine_success
+        character(len=:), allocatable :: error_message
+        
         report_error = .false.
         
-        ! For now, just provide a simple success message
-        ! Full report generation will be implemented separately
-        if (.not. config%quiet) then
-            select case (config%output_format)
-            case ("html")
-                write(*,'(A)') "HTML coverage report would be generated: " // trim(config%output_path)
-            case ("markdown", "md")
-                write(*,'(A)') "Markdown coverage report would be generated: " // trim(config%output_path)
-            case ("json")
-                write(*,'(A)') "JSON coverage report would be generated: " // trim(config%output_path)
-            case ("terminal")
+        ! Handle terminal output specially
+        if (trim(config%output_format) == "terminal") then
+            if (.not. config%quiet) then
                 write(*,'(A)') "Coverage report displayed in terminal"
-            case default
-                write(*,'(A)') "Coverage report would be generated"
-            end select
+            end if
+            return
         end if
+        
+        ! Handle HTML format using report engine
+        if (trim(config%output_format) == "html") then
+            call engine%init(engine_success, error_message)
+            if (.not. engine_success) then
+                if (.not. config%quiet) then
+                    write(*,'(A)') "Error initializing HTML report engine: " // error_message
+                end if
+                report_error = .true.
+                return
+            end if
+            
+            ! Set the source data
+            engine%source_data = coverage_data
+            
+            call engine%generate_html_report(config%output_path, engine_success, error_message)
+            if (.not. engine_success) then
+                if (.not. config%quiet) then
+                    write(*,'(A)') "Error generating HTML report: " // error_message
+                end if
+                report_error = .true.
+            else
+                if (.not. config%quiet) then
+                    write(*,'(A)') "HTML coverage report generated: " // trim(config%output_path)
+                end if
+            end if
+            return
+        end if
+        
+        ! Handle other formats using factory
+        call create_reporter(config%output_format, reporter, factory_error)
+        if (factory_error) then
+            if (.not. config%quiet) then
+                write(*,'(A)') "Error: Unsupported output format '" // &
+                              trim(config%output_format) // "'"
+            end if
+            report_error = .true.
+            return
+        end if
+        
+        ! Generate the report
+        call reporter%generate_report(coverage_data, config%output_path, success, error_message)
+        if (.not. success) then
+            if (.not. config%quiet) then
+                write(*,'(A)') "Error generating " // trim(config%output_format) // &
+                              " report: " // error_message
+            end if
+            report_error = .true.
+        else
+            if (.not. config%quiet) then
+                select case (trim(config%output_format))
+                case ("markdown", "md")
+                    write(*,'(A)') "Markdown coverage report generated: " // trim(config%output_path)
+                case ("json")
+                    write(*,'(A)') "JSON coverage report generated: " // trim(config%output_path)
+                case ("xml")
+                    write(*,'(A)') "XML coverage report generated: " // trim(config%output_path)
+                case default
+                    write(*,'(A)') trim(config%output_format) // " coverage report generated: " // trim(config%output_path)
+                end select
+            end if
+        end if
+        
+        ! Suppress unused parameter warning
+        call suppress_unused_warning_stats(stats)
         
     end subroutine generate_coverage_reports
 
@@ -162,5 +227,13 @@ contains
         write(*,'(A)') ""
         
     end subroutine report_auto_test_failure
+
+    subroutine suppress_unused_warning_stats(stats)
+        !! Suppress unused parameter warning for stats
+        type(line_coverage_stats_t), intent(in) :: stats
+        ! This subroutine exists only to suppress compiler warnings
+        ! The stats parameter is intentionally unused
+        continue  ! Explicit no-op
+    end subroutine suppress_unused_warning_stats
 
 end module coverage_stats_reporter_impl
