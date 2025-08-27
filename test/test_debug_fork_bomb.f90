@@ -1,7 +1,7 @@
 program test_debug_fork_bomb
     !! Debug the fork bomb issue by tracing the exact logic
     
-    use config_parser_command, only: has_input_related_arguments, has_output_related_arguments
+    use config_parser, only: has_input_related_arguments, has_output_related_arguments
     use config_core, only: parse_config, config_t
     implicit none
     

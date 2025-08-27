@@ -9,10 +9,8 @@ module config_core
     !! - config_types.f90: Type definitions (~50 lines)
     !! - config_defaults.f90: Default values and initialization (~170 lines)
     !! - config_validation.f90: Validation logic (~400 lines)
-    !! - config_parser_utils.f90: Parser utilities (~250 lines)
     !! - config_help.f90: Help/version display (~90 lines)
-    !! - config_file_parser.f90: File parsing (~180 lines)
-    !! - config_command_parser.f90: Command-line parsing (~450 lines)
+    !! - config_parser.f90: Consolidated parser (~900 lines)
     !! - fortcov_config.f90: Orchestration layer (~150 lines)
     !!
     !! This addresses Issue #298 - module size violation while maintaining
@@ -21,10 +19,8 @@ module config_core
     use config_types
     use config_defaults_core
     use config_validation
-    use config_parser_utils
     use config_help_core
-    use config_parser_file
-    use config_parser_command
+    use config_parser
     use error_handling_core
 
     implicit none
@@ -39,6 +35,7 @@ module config_core
     public :: validate_config
     public :: load_config_file
     public :: validate_config_with_context
+    ! Command-line and file parsing now in config_parser module
     public :: parse_command_line_config
     public :: parse_config_file
     public :: MAX_ARRAY_SIZE

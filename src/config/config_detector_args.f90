@@ -4,7 +4,7 @@ module config_detector_args
     !! This module provides utilities to detect different types of arguments
     !! including input-related, output-related, and diff mode arguments.
 
-    use config_parser_utils, only: is_flag_argument
+    use config_parser, only: is_flag_argument
     implicit none
     private
 
