@@ -2,9 +2,6 @@
 
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
-### EPIC: Critical Build Failure Resolution (URGENT - BLOCKS ALL WORK)
-- [ ] #536: fix: invalid inquire syntax in portable_temp_utils.f90 causes compilation error
-
 ### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
 - [ ] #529: architecture: zero_configuration_manager.f90 exceeds 500-line QADS limit (556 lines)
 - [ ] #539: architecture: test_cli_consistency_validation.f90 exceeds 500-line limit (553 lines)
