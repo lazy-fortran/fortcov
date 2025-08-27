@@ -19,6 +19,8 @@ cd your-fortran-project
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Manual gcov file generation (if needed)
+# Note: Due to FPM limitations, coverage may not always work correctly.
+# See doc/user/coverage-workflow.md for troubleshooting.
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
@@ -94,6 +96,16 @@ fortcov --source=src *.gcov  # Analyze gcov files with terminal output
 ```bash
 fortcov --source=src *.gcov --fail-under 80  # Fail if coverage < 80%
 ```
+
+## Known Issues
+
+### FPM Coverage Instrumentation
+FPM's coverage support has limitations that may prevent proper `.gcda` file generation:
+- `.gcno` files may be cleaned or become incompatible during test execution
+- Build artifacts may be modified between compilation and testing
+- Coverage data may show "No executable lines" errors
+
+**Workaround**: See the [Coverage Workflow Guide](doc/user/coverage-workflow.md) for alternative approaches and troubleshooting steps.
 
 ## Contributing
 

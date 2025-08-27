@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 7: Critical Infrastructure Recovery)
 
 ### EPIC: Coverage Infrastructure Recovery (CRITICAL - BLOCKS ALL)
-- [ ] #591: fix: coverage instrumentation generates gcno but no gcda files
 
 ### EPIC: Source Organization (CRITICAL - 118 FILES!)
 - [ ] #592: refactor: src/ directory flat structure with 118 files needs organization
@@ -13,7 +12,7 @@
 - [ ] #596: fix: auto-discovery fails to find existing gcov files
 
 ## DOING (Current Work)
-- [ ] #541: docs: getting-started guide function mismatch with default fpm template [EPIC: User Experience & Documentation Defects]
+- [ ] #591: fix: coverage instrumentation generates gcno but no gcda files [EPIC: Coverage Infrastructure Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
