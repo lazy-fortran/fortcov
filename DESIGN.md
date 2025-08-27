@@ -387,3 +387,107 @@ Sprint 2 successfully established a solid foundation:
 - **Quality gates** prevent breaking changes from reaching users
 
 **RECOMMENDATION**: Sprint 3 can safely proceed with architecture compliance work, as all critical functionality is verified working.
+
+## Sprint 4: Architecture Compliance & User Experience (CURRENT)
+
+### Sprint Goal
+**PRIMARY OBJECTIVE**: Complete architectural compliance and eliminate user experience barriers
+
+**SPRINT 4 DEFINITION OF DONE**:
+1. **Architecture Compliance**: All modules comply with QADS 500-line limit with safety buffer (<400 lines target)
+2. **User Experience Excellence**: All documentation workflows work copy-paste without errors
+3. **Technical Debt Resolution**: Consolidated constants and comprehensive error handling
+4. **Code Quality**: All style violations resolved and architectural patterns consistent
+
+### Key Architectural Decisions (Sprint 4)
+
+#### Decision 1: SRP-Driven Module Decomposition Strategy
+**Choice**: Extract specialized modules from zero_configuration_manager.f90 following Single Responsibility Principle
+**Rationale**: 556 lines indicates multiple concerns mixed - auto-discovery, command execution, file processing, error handling
+**Implementation Approach**:
+- Extract auto-discovery logic → dedicated discovery module (~150-200 lines)
+- Extract command execution utilities → shared utility module (~100-150 lines)  
+- Extract file processing logic → specialized processor module (~100-150 lines)
+- Retain core orchestration in zero_configuration_manager.f90 (target <200 lines)
+
+#### Decision 2: Proactive Architecture Maintenance
+**Choice**: Refactor 6 modules approaching 500-line limit to 300-400 line target range
+**Rationale**: Provides safety buffer for future development without reactive crisis refactoring
+**Priority**: LOW - Complete after critical violations resolved
+
+#### Decision 3: User Experience First Approach  
+**Choice**: Prioritize documentation fixes as HIGH priority alongside architecture compliance
+**Rationale**: Broken user onboarding blocks adoption regardless of technical excellence
+**Focus Areas**:
+- Getting started guide workflow repair
+- README example accuracy with CLI behavior
+- Example script PATH handling and error recovery
+
+#### Decision 4: Technical Debt Systematic Consolidation
+**Choice**: Consolidate all duplicate constants to foundation_constants.f90 with consistent naming
+**Rationale**: DRY violation cleanup improves maintainability and prevents behavioral inconsistencies
+**Standards**:
+- MAX_PATH_LENGTH = 4096 (most conservative)
+- MAX_FILES = 10000 (foundation_constants.f90 value)
+- MAX_FILENAME_LENGTH = 512 (most conservative)
+- MAX_COMMAND_LENGTH = 8192 (consistent security module value)
+
+### Implementation Strategy (Sprint 4)
+
+#### Phase 1: Critical Architecture Compliance (CRITICAL)
+- **Issue #529**: zero_configuration_manager.f90 decomposition using SRP extraction
+- **Issue #530**: test_auto_discovery_end_to_end_validation.f90 split by test phases
+
+#### Phase 2: User Experience Excellence (HIGH PRIORITY)
+- **Issue #532**: Comprehensive documentation defect consolidation  
+- **Issue #526-528**: Getting started guide repair, README accuracy, PATH handling
+
+#### Phase 3: Technical Debt Resolution (MEDIUM PRIORITY)
+- **Issues #520-525**: Constant consolidation and error handling completion
+- **Issue #519**: Remove commented-out code
+
+#### Phase 4: Architecture Maintenance (LOW PRIORITY)
+- **Issue #531**: Proactive refactoring of 6 modules approaching limits
+- **Issue #515**: Minor style compliance fixes
+
+### Success Metrics (Sprint 4)
+
+#### Architecture Compliance
+- **Primary**: zero_configuration_manager.f90 < 400 lines (556 → <400)
+- **Secondary**: All test files < 500 lines with logical decomposition
+- **Tertiary**: All modules have >100 line safety buffer from QADS limits
+
+#### User Experience  
+- **Primary**: All documentation examples work copy-paste from clean environment
+- **Secondary**: Getting started guide completes without errors
+- **Tertiary**: Example scripts handle missing fortcov gracefully
+
+#### Quality Assurance
+- **Primary**: All QADS architectural violations resolved
+- **Secondary**: No duplicate constants or missing error handling
+- **Tertiary**: Consistent code style and patterns across codebase
+
+### Risk Assessment (Sprint 4)
+
+#### High Risk: Module Decomposition Complexity
+- **Mitigation**: Incremental refactoring with comprehensive test validation after each extraction
+- **Monitoring**: Maintain API compatibility and ensure no functional regression
+- **Fallback**: Revert to working state if decomposition introduces instability
+
+#### Medium Risk: Documentation-Implementation Synchronization  
+- **Mitigation**: Test all documentation examples as part of CI pipeline
+- **Validation**: End-to-end workflow testing from clean environment
+- **Quality Gate**: No PR merge until all examples work copy-paste
+
+#### Low Risk: Technical Debt Consolidation
+- **Mitigation**: Systematic approach with single constant source of truth
+- **Testing**: Verify no behavioral changes during constant consolidation  
+- **Monitoring**: Build system validation after each constant migration
+
+### Integration with Future Sprints
+
+Sprint 4 establishes architectural foundation for advanced features:
+- **Clean module structure** enables safe feature additions
+- **Comprehensive documentation** supports user adoption and contribution
+- **Technical debt resolution** prevents accumulation during feature development
+- **Quality standards** maintain codebase health as complexity grows
