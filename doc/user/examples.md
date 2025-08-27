@@ -151,12 +151,8 @@ jobs:
           gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
         done
         fortcov --source=src *.gcov --fail-under=80
-    
-    - name: Upload Coverage
-      uses: actions/upload-artifact@v3
-      with:
-        name: coverage-report
-        path: coverage.json
+        # Note: FortCov outputs coverage analysis to stdout by default
+        # File output formats are not yet implemented in current version
 ```
 
 **GitLab CI:**
@@ -180,13 +176,8 @@ coverage_analysis:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --source=src *.gcov --fail-under=75
-  artifacts:
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: coverage.xml
-    paths:
-      - coverage.xml
+  # Note: File output formats not yet implemented in current version
+  # FortCov outputs coverage analysis to stdout for now
 ```
 
 ## Advanced Usage Patterns
@@ -215,9 +206,9 @@ echo "Coverage check passed"
 &fortcov_config
     source_paths = 'src/', 'lib/'
     exclude_patterns = '*.mod', 'test/*'
-    output_format = 'json'
     verbose = .true.
     minimum_coverage = 70.0
+    ! Note: output_format not yet implemented
 /
 ```
 
@@ -227,10 +218,9 @@ echo "Coverage check passed"
 &fortcov_config
     source_paths = 'src/'
     exclude_patterns = '*.mod', 'test/*', 'vendor/*', 'build/*'
-    output_format = 'xml'
-    output_path = 'coverage.xml'
     quiet = .true.
     minimum_coverage = 90.0
+    ! Note: output_format and output_path not yet implemented
 /
 ```
 
