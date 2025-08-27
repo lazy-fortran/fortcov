@@ -14,7 +14,8 @@ module test_infrastructure_extended_validation
     
 contains
 
-    subroutine run_extended_infrastructure_tests(test_count, passed_tests, all_tests_passed)
+    subroutine run_extended_infrastructure_tests(test_count, passed_tests, &
+                                                  all_tests_passed)
         !! Run extended infrastructure validation tests
         integer, intent(inout) :: test_count
         integer, intent(inout) :: passed_tests  
@@ -31,21 +32,30 @@ contains
         end if
         
         ! Extended infrastructure tests
-        call test_test_isolation_guarantees(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_concurrent_execution_safety(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_framework_assertion_reliability(test_count, passed_tests, all_tests_passed)
-        call test_cleanup_mechanisms(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_resource_leak_prevention(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_environment_detection_accuracy(test_count, passed_tests, all_tests_passed)
-        call test_temporary_file_management(temp_dir, test_count, passed_tests, all_tests_passed)
-        call test_system_interaction_stability(temp_dir, test_count, passed_tests, all_tests_passed)
+        call test_test_isolation_guarantees(temp_dir, test_count, &
+                                            passed_tests, all_tests_passed)
+        call test_concurrent_execution_safety(temp_dir, test_count, &
+                                              passed_tests, all_tests_passed)
+        call test_framework_assertion_reliability(test_count, &
+                                                  passed_tests, all_tests_passed)
+        call test_cleanup_mechanisms(temp_dir, test_count, passed_tests, &
+                                     all_tests_passed)
+        call test_resource_leak_prevention(temp_dir, test_count, &
+                                           passed_tests, all_tests_passed)
+        call test_environment_detection_accuracy(test_count, &
+                                                 passed_tests, all_tests_passed)
+        call test_temporary_file_management(temp_dir, test_count, &
+                                            passed_tests, all_tests_passed)
+        call test_system_interaction_stability(temp_dir, test_count, &
+                                               passed_tests, all_tests_passed)
         
         ! Cleanup test environment
         call execute_command_line('rm -rf "' // temp_dir // '"')
         
     end subroutine run_extended_infrastructure_tests
 
-    subroutine assert_test(condition, test_name, details, test_count, passed_tests, all_tests_passed)
+    subroutine assert_test(condition, test_name, details, test_count, &
+                           passed_tests, all_tests_passed)
         logical, intent(in) :: condition
         character(len=*), intent(in) :: test_name, details
         integer, intent(inout) :: test_count
@@ -64,7 +74,8 @@ contains
         end if
     end subroutine assert_test
 
-    subroutine test_test_isolation_guarantees(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_test_isolation_guarantees(temp_dir, test_count, &
+                                              passed_tests, all_tests_passed)
         !! Tests that tests are properly isolated from each other
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -113,7 +124,8 @@ contains
         
     end subroutine test_test_isolation_guarantees
 
-    subroutine test_concurrent_execution_safety(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_concurrent_execution_safety(temp_dir, test_count, &
+                                                passed_tests, all_tests_passed)
         !! Tests safety of concurrent operations
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -140,7 +152,8 @@ contains
         
     end subroutine test_concurrent_execution_safety
 
-    subroutine test_framework_assertion_reliability(test_count, passed_tests, all_tests_passed)
+    subroutine test_framework_assertion_reliability(test_count, &
+                                                    passed_tests, all_tests_passed)
         !! Tests that the test framework assertions work reliably
         integer, intent(inout) :: test_count
         integer, intent(inout) :: passed_tests  
@@ -174,7 +187,8 @@ contains
         
     end subroutine test_framework_assertion_reliability
 
-    subroutine test_cleanup_mechanisms(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_cleanup_mechanisms(temp_dir, test_count, &
+                                       passed_tests, all_tests_passed)
         !! Tests that cleanup mechanisms work properly
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -212,7 +226,8 @@ contains
         
     end subroutine test_cleanup_mechanisms
 
-    subroutine test_resource_leak_prevention(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_resource_leak_prevention(temp_dir, test_count, &
+                                             passed_tests, all_tests_passed)
         !! Tests that resources are properly managed to prevent leaks
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -241,7 +256,8 @@ contains
         
     end subroutine test_resource_leak_prevention
 
-    subroutine test_environment_detection_accuracy(test_count, passed_tests, all_tests_passed)
+    subroutine test_environment_detection_accuracy(test_count, &
+                                                   passed_tests, all_tests_passed)
         !! Tests accuracy of environment detection
         integer, intent(inout) :: test_count
         integer, intent(inout) :: passed_tests  
@@ -260,7 +276,8 @@ contains
         
     end subroutine test_environment_detection_accuracy
 
-    subroutine test_temporary_file_management(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_temporary_file_management(temp_dir, test_count, &
+                                              passed_tests, all_tests_passed)
         !! Tests temporary file management capabilities
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count
@@ -305,13 +322,15 @@ contains
 
     function test_environment_detected() result(is_test_env)
         !! Use consistent test environment detection  
-        use test_environment_utils, only: test_environment_detected_util => test_environment_detected
+        use test_environment_utils, only: &
+            test_environment_detected_util => test_environment_detected
         logical :: is_test_env
         
         is_test_env = test_environment_detected_util()
     end function test_environment_detected
 
-    subroutine test_system_interaction_stability(temp_dir, test_count, passed_tests, all_tests_passed)
+    subroutine test_system_interaction_stability(temp_dir, test_count, &
+                                                 passed_tests, all_tests_passed)
         !! Tests stability of system interactions
         character(len=*), intent(in) :: temp_dir
         integer, intent(inout) :: test_count

@@ -63,12 +63,12 @@ program test_security_validation_only
     print *, "======================================================================"
     if (total_failures == 0) then
         print *, "✅ ALL SECURITY VALIDATION TESTS PASSED"
-        print *, "======================================================================"
+        print *, "==============================================================="
         call exit(0)
     else
         write(error_unit, '(A,I0,A)') "❌ ", total_failures, &
             " SECURITY TEST SUITES FAILED"
-        print *, "======================================================================"
+        print *, "==============================================================="
         call exit(1)
     end if
     

@@ -10,8 +10,9 @@ program test_auto_discovery_end_to_end_validation
     use build_system_detector, only: detect_build_system, build_system_info_t
     use coverage_workflows, only: execute_auto_test_workflow
     ! Test environment detection handled internally
-    use zero_config_auto_discovery_integration, only: enhance_zero_config_with_auto_discovery, &
-                                                      execute_zero_config_complete_workflow
+    use zero_config_auto_discovery_integration, only: &
+        enhance_zero_config_with_auto_discovery, &
+        execute_zero_config_complete_workflow
     use fortcov_config, only: config_t, parse_config
     use fortcov, only: run_coverage_analysis
     implicit none
@@ -146,7 +147,8 @@ contains
         
         ! Clean and test Make detection
         call execute_command_line('rm -f ' // trim(workspace_path) // '/CMakeLists.txt')
-        call execute_command_line('echo "all:" > ' // trim(workspace_path) // '/Makefile')
+        call execute_command_line('echo "all:" > ' // &
+                                  trim(workspace_path) // '/Makefile')
         
         block
             use error_handling, only: error_context_t
@@ -245,7 +247,8 @@ contains
             found_gcov_file = temp_dir // '/found_gcov.txt'
             
             call execute_command_line('find ' // trim(workspace_path) // &
-                                     ' -name "*.gcov" > "' // trim(found_gcov_file) // '"')
+                                     ' -name "*.gcov" > "' // &
+                                     trim(found_gcov_file) // '"')
             
             open(newunit=unit_number, file=trim(found_gcov_file), &
                  status='old', iostat=iostat, action='read')
@@ -589,7 +592,8 @@ contains
 
     function test_environment_detected() result(is_test_env)
         !! Use consistent test environment detection
-        use test_environment_utils, only: test_environment_detected_util => test_environment_detected
+        use test_environment_utils, only: &
+            test_environment_detected_util => test_environment_detected
         logical :: is_test_env
         
         is_test_env = test_environment_detected_util()

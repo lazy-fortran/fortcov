@@ -1,11 +1,13 @@
 program test_infrastructure_stability_validation
     !! Test Infrastructure Stability Validation (Issue #509)
     !!
-    !! Validates Sprint 2 success criteria #4: "Test infrastructure stable (all tests pass)"
+    !! Validates Sprint 2 success criteria #4: "Test infrastructure stable
+    !! (all tests pass)"
     !! This test checks that the testing infrastructure is reliable and can be used
     !! to validate all other functionality without introducing instability.
     !!
-    !! This main program coordinates modular infrastructure tests to meet size requirements.
+    !! This main program coordinates modular infrastructure tests to meet
+    !! size requirements.
     
     use iso_fortran_env, only: output_unit
     use test_infrastructure_core_validation, only: run_core_infrastructure_tests
