@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 8: Architectural Recovery & Core Functionality Restoration)
 
 ### EPIC: Critical Functionality Recovery 
-- [ ] #614: Fix markdown report generation with empty output file path
 - [ ] #613: Fix test suite failures (directory removal and missing executable errors)
 
 ### EPIC: Architectural Debt Resolution  
@@ -31,7 +30,7 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
-- [ ] #618: Fix format inconsistencies and missing output file handling (branch: fix-618) [EPIC: Critical Functionality Recovery]
+- [ ] #614: Fix markdown report generation with empty output file path (branch: fix-614) [EPIC: Critical Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
