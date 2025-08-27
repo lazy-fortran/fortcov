@@ -203,7 +203,7 @@ contains
     end subroutine finalize_gcov_file_result
     
     subroutine generate_gcov_from_build_dirs(config, build_dirs, success)
-        !! Generate gcov files from build directories
+        !! Generate gcov files from build directories with gcno/gcda compatibility checking
         type(config_t), intent(in) :: config
         character(len=*), intent(in) :: build_dirs(:)
         logical, intent(out) :: success
@@ -211,7 +211,8 @@ contains
         character(len=300) :: command
         character(len=1000) :: build_path
         character(len=:), allocatable :: gcov_exe
-        integer :: i, exit_status
+        integer :: i, exit_status, gcno_count, gcda_count
+        logical :: has_compatible_files
         
         success = .false.
         
@@ -230,13 +231,24 @@ contains
         do i = 1, size(build_dirs)
             build_path = trim(build_dirs(i))
             
-            ! Generate gcov files for this directory (check if .gcno files exist)
-            write(command, '(A)') 'find ' // escape_shell_argument(trim(build_path)) // ' -name "src_*.f90.gcno" -execdir ' // &
-                                  escape_shell_argument(trim(gcov_exe)) // ' {} \; 2>/dev/null'
-            call execute_command_line(command, exitstat=exit_status)
+            ! Check for gcno/gcda file compatibility before running gcov
+            call check_coverage_file_compatibility(build_path, has_compatible_files, gcno_count, gcda_count)
             
-            if (exit_status == 0) then
-                success = .true.
+            if (has_compatible_files) then
+                ! Generate gcov files for this directory with compatible gcno/gcda files
+                write(command, '(A)') 'cd ' // escape_shell_argument(trim(build_path)) // ' && ' // &
+                                      escape_shell_argument(trim(gcov_exe)) // ' *.gcno 2>/dev/null'
+                call execute_command_line(command, exitstat=exit_status)
+                
+                if (exit_status == 0) then
+                    success = .true.
+                end if
+            else
+                ! Report incompatibility issue for debugging
+                if (.not. config%quiet) then
+                    print *, "⚠️  Skipping directory due to gcno/gcda incompatibility: ", trim(build_path)
+                    print *, "   .gcno files: ", gcno_count, ", .gcda files: ", gcda_count
+                end if
             end if
         end do
     end subroutine generate_gcov_from_build_dirs
@@ -310,5 +322,38 @@ contains
         call move_alloc(temp_files, all_files)
         
     end subroutine expand_file_array
+
+    subroutine check_coverage_file_compatibility(build_path, has_compatible_files, gcno_count, gcda_count)
+        !! Check if gcno and gcda files are present and compatible in build directory
+        character(len=*), intent(in) :: build_path
+        logical, intent(out) :: has_compatible_files
+        integer, intent(out) :: gcno_count, gcda_count
+        
+        character(len=:), allocatable :: gcno_files(:), gcda_files(:)
+        character(len=300) :: search_pattern
+        
+        has_compatible_files = .false.
+        gcno_count = 0
+        gcda_count = 0
+        
+        ! Find .gcno files in build directory
+        write(search_pattern, '(A)') trim(build_path) // "/*.gcno"
+        gcno_files = find_files(trim(search_pattern))
+        if (allocated(gcno_files)) then
+            gcno_count = size(gcno_files)
+        end if
+        
+        ! Find .gcda files in build directory
+        write(search_pattern, '(A)') trim(build_path) // "/*.gcda"
+        gcda_files = find_files(trim(search_pattern))
+        if (allocated(gcda_files)) then
+            gcda_count = size(gcda_files)
+        end if
+        
+        ! Files are compatible if both types exist
+        ! Note: We don't require exact count matching since some files might not be executed
+        has_compatible_files = (gcno_count > 0 .and. gcda_count > 0)
+        
+    end subroutine check_coverage_file_compatibility
 
 end module coverage_processor_gcov
