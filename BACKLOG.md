@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 7: Critical Infrastructure Recovery)
 
 ### EPIC: Coverage Infrastructure Recovery (CRITICAL - BLOCKS ALL)
-- [ ] #590: fix: fpm coverage workflow broken - no --coverage flag exists
 - [ ] #591: fix: coverage instrumentation generates gcno but no gcda files
 
 ### EPIC: Source Organization (CRITICAL - 118 FILES!)

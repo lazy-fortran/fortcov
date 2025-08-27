@@ -7,6 +7,7 @@ Advanced usage patterns and workflows. For basic usage, see [README.md](../../RE
 **Manual coverage analysis:**
 ```bash
 cd your-fortran-project
+# IMPORTANT: FPM does not have a --coverage flag. Use --flag with compiler options:
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate .gcov files manually:
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
@@ -76,6 +77,7 @@ fortcov --source=src *.gcov --tui
 **Pre-commit Hook:**
 ```bash
 #!/bin/bash
+# NOTE: Use --flag, not --coverage (which doesn't exist in FPM)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate .gcov files
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
@@ -87,6 +89,7 @@ fortcov --source=src *.gcov --fail-under=80 --quiet
 **CI/CD Pipeline:**
 ```bash
 # Generate coverage for CI (file output shows format but doesn't create files)
+# CORRECT: Use --flag with compiler options (FPM has no --coverage flag)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate .gcov files
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do

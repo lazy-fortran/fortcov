@@ -34,6 +34,7 @@ end program
 EOF
 
 # Generate coverage
+# IMPORTANT: FPM does not have a --coverage flag. Always use --flag with compiler options:
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate .gcov files manually:
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
@@ -47,6 +48,7 @@ fortcov --source=src *.gcov
 **Explicit gcov file processing:**
 ```bash
 # After building with coverage flags
+# NOTE: Do not use "fpm test --coverage" - this flag does not exist
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Generate gcov files manually
@@ -80,6 +82,7 @@ fortcov --source=src *.gcov --quiet
 # coverage.sh - FPM coverage helper
 set -e
 echo "Building with coverage..."
+# CORRECT: Use --flag, not --coverage (FPM doesn't have --coverage)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 echo "Generating .gcov files..."
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do

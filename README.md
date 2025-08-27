@@ -15,6 +15,7 @@ sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 
 # Manual coverage generation
 cd your-fortran-project
+# IMPORTANT: FPM does not have a --coverage flag. Use --flag with compiler options:
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Manual gcov file generation (if needed)
@@ -73,6 +74,7 @@ Coverage Statistics:
 
 **Basic usage:**
 ```bash
+# NOTE: Use --flag, not --coverage (which doesn't exist in FPM)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 # Generate .gcov files manually:
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
