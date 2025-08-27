@@ -3,6 +3,7 @@
 ## SPRINT_BACKLOG (Code Quality & Defect Resolution - Sprint 3)
 
 ### EPIC: Technical Debt Reduction (HIGH PRIORITY)
+- [ ] #516: style: fix minor line length violations in validation test files
 
 ### EPIC: Bug Fixes & Stability (CRITICAL PRIORITY)
 
