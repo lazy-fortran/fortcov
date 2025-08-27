@@ -7,11 +7,10 @@
 ### EPIC: Source Organization (CRITICAL - 118 FILES!)
 
 ### EPIC: Core Functionality Recovery
-- [ ] #595: fix: file output formats do not generate actual files
 - [ ] #596: fix: auto-discovery fails to find existing gcov files
 
 ## DOING (Current Work)
-- [ ] #592: refactor: src/ directory flat structure with 118 files needs organization [EPIC: Source Organization]
+- [ ] #595: fix: file output formats do not generate actual files [EPIC: Core Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
