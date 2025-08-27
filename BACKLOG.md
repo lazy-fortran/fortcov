@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 8: Architectural Recovery & Core Functionality Restoration)
 
 ### EPIC: Critical Functionality Recovery
-- [ ] #617: Fix coverage workflow gcda/gcno file compatibility issues
 - [ ] #616: Fix broken reference to non-existent test file
 - [ ] #615: Move misplaced test file from src/utils to test directory
 
@@ -41,6 +40,7 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
+- [ ] #617: Fix coverage workflow gcda/gcno file compatibility issues (branch: fix-617) [EPIC: Critical Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting

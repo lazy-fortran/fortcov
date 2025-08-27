@@ -72,9 +72,49 @@ generate_simple_coverage() {
     # Remove .gcno files from project root but NOT from build directories (needed for gcov)
     find . -maxdepth 1 -name "*.gcno" -delete 2>/dev/null || true
     
-    # Step 2: Build with coverage flags
+    # Step 2: Build with coverage flags - use separated approach to ensure both file types exist
     print_info "Building with coverage instrumentation..."
+    print_info "Using staged build approach to ensure gcno/gcda compatibility..."
+    
+    # First clean any stale coverage files to prevent timestamp mismatches
+    find build -name "*.gcno" -delete 2>/dev/null || true
+    find build -name "*.gcda" -delete 2>/dev/null || true
+    
+    # Stage 1: Build to generate .gcno files
+    print_info "Stage 1: Building to generate .gcno files..."
+    fpm build --flag "-fprofile-arcs -ftest-coverage"
+    
+    # Check if .gcno files were generated
+    local gcno_count
+    gcno_count=$(find build -name "*.gcno" | wc -l)
+    print_info "Generated $gcno_count .gcno files during build stage"
+    
+    # Stage 2: Test to generate .gcda files - handle FPM rebuild behavior
+    print_info "Stage 2: Running tests to generate .gcda files..."
+    
+    # If .gcno files exist, back them up before running tests
+    if [ "$gcno_count" -gt 0 ]; then
+        print_info "Backing up .gcno files to prevent FPM test rebuild loss..."
+        find build -name "*.gcno" -exec cp {} {}.backup \; 2>/dev/null || true
+    fi
+    
+    # Run tests which may rebuild and destroy .gcno files
     fpm test --flag "-fprofile-arcs -ftest-coverage"
+    
+    # Check if .gcno files survived the test run
+    local gcno_after_test
+    gcno_after_test=$(find build -name "*.gcno" | wc -l)
+    
+    if [ "$gcno_after_test" -eq 0 ] && [ "$gcno_count" -gt 0 ]; then
+        print_info "FPM test destroyed .gcno files - restoring from backup..."
+        find build -name "*.gcno.backup" -exec sh -c 'mv "$1" "${1%.backup}"' _ {} \; 2>/dev/null || true
+    fi
+    
+    # Verify both file types exist after staged approach
+    local gcno_final gcda_final
+    gcno_final=$(find build -name "*.gcno" | wc -l)
+    gcda_final=$(find build -name "*.gcda" | wc -l)
+    print_info "Final file counts: $gcno_final .gcno files, $gcda_final .gcda files"
     
     # Step 3: Handle the complex FPM build directory structure
     print_info "Extracting coverage data from FPM build directories..."
@@ -102,10 +142,24 @@ generate_simple_coverage() {
             # Check for .gcno files in the build directory
             if ls "$build_dir"/*.gcno >/dev/null 2>&1; then
                 print_info "Found .gcno files in $build_dir"
-                # Run gcov from project root with object-directory pointing to build dir
-                gcov --object-directory="$build_dir" "$build_dir"/*.gcno 2>/dev/null || true
+                
+                # Verify gcno/gcda compatibility before running gcov
+                local gcno_count gcda_count
+                gcno_count=$(ls "$build_dir"/*.gcno 2>/dev/null | wc -l)
+                gcda_count=$(ls "$build_dir"/*.gcda 2>/dev/null | wc -l)
+                
+                print_info "Coverage file counts: $gcno_count .gcno files, $gcda_count .gcda files"
+                
+                if [ "$gcno_count" -gt 0 ] && [ "$gcda_count" -gt 0 ]; then
+                    # Run gcov from project root with object-directory pointing to build dir
+                    print_info "Running gcov with compatible gcno/gcda files..."
+                    gcov --object-directory="$build_dir" "$build_dir"/*.gcno 2>/dev/null || true
+                else
+                    print_warning "Incomplete coverage data: missing gcno or gcda files"
+                fi
             else
-                print_warning "No .gcno files found in $build_dir"
+                print_warning "No .gcno files found in $build_dir - check coverage instrumentation"
+                print_warning "gcda files present: $(ls "$build_dir"/*.gcda 2>/dev/null | wc -l)"
             fi
         fi
     done
