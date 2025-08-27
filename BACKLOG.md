@@ -39,6 +39,7 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
+- [ ] #607: Remove unnecessary interface/implementation separation (42 _impl modules) [EPIC: Architectural Debt Resolution]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
