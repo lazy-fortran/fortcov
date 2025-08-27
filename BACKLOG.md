@@ -7,10 +7,9 @@
 ### EPIC: Source Organization (CRITICAL - 118 FILES!)
 
 ### EPIC: Core Functionality Recovery
-- [ ] #596: fix: auto-discovery fails to find existing gcov files
 
 ## DOING (Current Work)
-- [ ] #595: fix: file output formats do not generate actual files [EPIC: Core Functionality Recovery]
+- [ ] #596: fix: auto-discovery fails to find existing gcov files [EPIC: Core Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
