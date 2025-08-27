@@ -2,10 +2,7 @@
 
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
-### EPIC: Architecture Compliance Recovery (HIGH PRIORITY)
-
 ### EPIC: User Experience & Documentation Defects (HIGH PRIORITY)
-- [ ] #550: docs: GitHub Actions example tries to upload non-existent coverage.json
 - [ ] #547: docs: configuration guide references non-existent --validate option
 - [ ] #546: docs: incorrect CLI option names in usage-guide.md
 - [ ] #541: docs: getting-started guide function mismatch with default fpm template
@@ -36,7 +33,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #543: architecture: inconsistent module naming patterns violate architectural standards (branch: arch-543) [EPIC: Architecture Compliance Recovery]
+- [ ] #550: docs: GitHub Actions example tries to upload non-existent coverage.json [EPIC: User Experience & Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
@@ -53,6 +50,8 @@
 - [x] Critical Functionality Recovery (Sprint 2 - Core fortcov functionality restored and auto-discovery working)
 - [x] Code Quality & Defect Resolution (Sprint 3 - Architecture compliance progress, style fixes, test improvements)
 - [x] Architecture Compliance & User Experience (Sprint 4 - FAILED due to build system regression)
+- [x] Critical Build Recovery (Sprint 5 Phase 1 - All critical build failures resolved)
+- [x] Architecture Compliance Recovery (Sprint 5 Phase 2 - Consistent module naming patterns implemented, 108 modules renamed)
 
 ## FUTURE SPRINTS (High-level Planning)
 
