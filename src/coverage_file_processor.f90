@@ -3,12 +3,10 @@ module coverage_file_processor
     !! 
     !! File discovery and parsing functions extracted from coverage_analysis.f90 
     !! for maintainability and adherence to size limits (Issue #333 - Patrick's review).
-    use foundation_constants
-    use coverage_model
-    use fortcov_config
+    use coverage_model, only: coverage_data_t, coverage_file_t
+    use fortcov_config, only: config_t
     use config_types, only: MAX_ARRAY_SIZE
     use coverage_parser, only: coverage_parser_t, create_parser
-    use error_handling
     use file_utils, only: read_file_content, file_exists
     use coverage_workflows, only: execute_auto_test_workflow
     

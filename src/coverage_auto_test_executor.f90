@@ -4,10 +4,10 @@ module coverage_auto_test_executor
     !! Focused on automatic test workflow execution with build system 
     !! detection and timeout handling. Provides specialized test execution
     !! separated from other workflow operations.
-    use foundation_constants
-    use fortcov_config
-    use build_system_detector
-    use error_handling
+    use foundation_constants, only: EXIT_SUCCESS, EXIT_FAILURE
+    use fortcov_config, only: config_t
+    use build_system_detector, only: build_system_info_t, detect_build_system
+    use error_handling, only: error_context_t, ERROR_SUCCESS
     use shell_utils, only: escape_shell_argument
     use string_utils, only: int_to_string
     implicit none

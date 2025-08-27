@@ -1,6 +1,6 @@
 module system_file_protection
-    use error_handling
-    use path_string_utils
+    use error_handling, only: error_context_t, ERROR_INVALID_PATH, safe_write_message
+    use path_string_utils, only: starts_with_ignore_case
     implicit none
     private
     
