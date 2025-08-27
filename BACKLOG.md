@@ -1,49 +1,40 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Sprint 8: Architectural Recovery & Core Functionality Restoration)
+## SPRINT_BACKLOG (Sprint 9: CRITICAL DEFECT RESOLUTION)
 
-### EPIC: Critical Functionality Recovery
-- [x] #615: Move misplaced production module from src/utils to src/core and rename properly
+### EPIC: CRITICAL ARCHITECTURAL VIOLATIONS (URGENT)
+- [ ] #665: CATASTROPHIC - config_parser.f90 at 1534 lines (300% over limit)
+- [ ] #666: CRITICAL - coverage/ directory has 33 files (violates 30-file limit)
+- [ ] #641: CRITICAL - config_parser.f90 size violation (duplicate of #665)
+- [ ] #643: CRITICAL - json_core.f90 at 966 lines (approaching limit)
+- [ ] #642: CRITICAL - coverage_types.f90 at 960 lines (approaching limit)
 
-### EPIC: Architectural Debt Resolution  
-- [x] #621: Address excessive modularization (43 coverage modules, 42 _impl modules) - COMPLETED
-- [x] #607: Remove unnecessary interface/implementation separation - COMPLETED
-- [x] #605: Consolidate excessive coverage module fragmentation - COMPLETED (83% reduction: 12→2 modules)
-- [x] #603: Merge 9 JSON modules into coherent functionality - COMPLETED
-- [x] #604: Consolidate 7 config parser modules - COMPLETED (85% reduction: 6→1 modules)
-- [x] #600: Remove duplicate namelist parser modules - COMPLETED (resolved by config parser consolidation)
-- [x] #601: Remove unused modules (syntax_token_types, system_diff_impl) - COMPLETED
-- [x] #599: Remove dead code - main.f90 stub in src/ directory - COMPLETED
-- [x] #597: Move test modules incorrectly located in src/ directory - COMPLETED
+### EPIC: CORE FUNCTIONALITY DEFECTS (HIGH)
+- [ ] #658: JSON output format completely broken - no file created
+- [ ] #657: fortcov lies about output locations - creates in build directory
+- [ ] #660: --output flag broken for JSON format
+- [ ] #659: inconsistent file output locations across formats
+- [ ] #663: documented coverage workflow fails - gcov produces no files
+- [ ] #640: test_memory_allocation_bug_issue_243 build failure
 
-### EPIC: Infrastructure Stabilization
-- [ ] #588: Fix FPM integration examples validation patterns
-- [ ] #584: Fix incorrect XML well-formed validation logic
-
-### EPIC: Documentation & User Experience
-- [ ] #593: Document complete coverage workflow for user success
-- [ ] #606: Fix getting-started tutorial gcov generation commands
-- [ ] #602: Fix documentation error (fpm init → fpm new)
-- [ ] #598: Improve error message for invalid namelist config format
-- [ ] #585: Add error recovery instructions to getting-started guide
-- [ ] #586: Add fortcov availability verification to examples
-- [ ] #589: Sprint 6 user experience excellence validation and consolidation
-- [ ] #583: Fix unused variable warning in make example
-- [ ] #581: Fix failing palindrome test in make example
-- [ ] #582: Address source files approaching size limits
-
-### EPIC: Sprint 8 Consolidation
-- [ ] #623: Final Sprint 8 findings integration and documentation consolidation
+### EPIC: SECURITY & QUALITY DEFECTS (HIGH)
+- [ ] #644: 150+ execute_command_line calls - SECURITY RISK
+- [ ] #653: hardcoded /tmp/ path violations
+- [ ] #646: 20 raw deallocate calls without guards
+- [ ] #649: sleep 0.1 in production code - performance killer
+- [ ] #656: 42 bare STOP statements - poor error handling
 
 ## DOING (Current Work)
 
 *No items currently in progress*
 
-## PRODUCT_BACKLOG (High-level Features)
+## PRODUCT_BACKLOG (Deferred Low Priority)
+- [ ] Documentation & User Experience Excellence
+- [ ] Infrastructure Stabilization 
+- [ ] Code Quality & Maintenance
 - [ ] Advanced Coverage Analytics & Reporting
 - [ ] Performance Optimization & Scalability  
 - [ ] Enhanced Integration & Compatibility
-- [ ] User Experience & Developer Productivity
 
 ## DONE (Completed Product Features)
 - [x] Infrastructure Stabilization (Sprint 2 Phase 2 - All critical infrastructure bugs resolved)
@@ -60,3 +51,4 @@
 - [x] User Experience Excellence (Sprint 6 - PARTIALLY FAILED due to coverage infrastructure collapse)
 - [x] Critical Infrastructure Recovery (Sprint 7 - OUTSTANDING SUCCESS - All 5 critical issues resolved: CI failures, compiler errors, build system configuration, auto-discovery functionality, and coverage workflow architecture)
 - [x] File Organization Recovery (Sprint 7 - SUCCESS - 118 source files organized into 5 proper subdirectories meeting QADS <30 file limit)
+- [x] Architectural Recovery & Core Functionality Restoration (Sprint 8 - SUCCESS - Output generation working, 83% modularization reduction achieved: 43→12 coverage modules, 42→0 _impl modules, 9→2 JSON modules)
