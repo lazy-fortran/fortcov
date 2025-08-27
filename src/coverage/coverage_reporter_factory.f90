@@ -7,6 +7,8 @@ module coverage_reporter_factory
     use coverage_reporter_md_impl
     use coverage_reporter_json_impl
     use coverage_reporter_xml_impl
+    use coverage_reporter_text_impl
+    use coverage_reporter_html_impl
     implicit none
     private
     
@@ -23,10 +25,14 @@ contains
         error_flag = .false.
         
         select case (trim(format))
+        case ("text")
+            allocate(text_reporter_t :: reporter)
         case ("markdown", "md")
             allocate(markdown_reporter_t :: reporter)
         case ("json")
             allocate(json_reporter_t :: reporter)
+        case ("html")
+            allocate(html_reporter_t :: reporter)
         case ("xml")
             allocate(xml_reporter_t :: reporter)
         case default
