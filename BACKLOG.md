@@ -2,8 +2,7 @@
 
 ## SPRINT_BACKLOG (Sprint 8: Architectural Recovery & Core Functionality Restoration)
 
-### EPIC: Critical Functionality Recovery 
-- [ ] #613: Fix test suite failures (directory removal and missing executable errors)
+### EPIC: Critical Functionality Recovery
 
 ### EPIC: Architectural Debt Resolution  
 - [ ] #621: Address excessive modularization (43 coverage modules, 42 _impl modules)
@@ -30,7 +29,7 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
-- [ ] #614: Fix markdown report generation with empty output file path (branch: fix-614) [EPIC: Critical Functionality Recovery]
+- [ ] #613: Fix test suite failures (directory removal and missing executable errors) (branch: fix-613) [EPIC: Critical Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
