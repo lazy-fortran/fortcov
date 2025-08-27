@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Critical Build Fix & Architecture Recovery - Sprint 5)
 
 ### EPIC: User Experience & Documentation Defects (HIGH PRIORITY)
-- [ ] #546: docs: incorrect CLI option names in usage-guide.md
 - [ ] #541: docs: getting-started guide function mismatch with default fpm template
 - [ ] #537: docs: incorrect fpm command in getting-started guide
 - [ ] #526: bug: getting started guide creates broken workflow due to function name mismatch
@@ -32,7 +31,7 @@
 - [ ] #555: docs: Sprint 5 final documentation consolidation and validation
 
 ## DOING (Current Work)
-- [ ] #547: docs: configuration guide references non-existent --validate option [EPIC: User Experience & Documentation Defects]
+- [ ] #546: docs: incorrect CLI option names in usage-guide.md [EPIC: User Experience & Documentation Defects]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
