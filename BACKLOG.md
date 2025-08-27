@@ -41,7 +41,6 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
-- [ ] #587: Fix test suite failures with missing test executable (branch: fix-587) [EPIC: Critical Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting
