@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 8: Architectural Recovery & Core Functionality Restoration)
 
 ### EPIC: Critical Functionality Recovery
-- [ ] #615: Move misplaced test file from src/utils to test directory
 
 ### EPIC: Architectural Debt Resolution  
 - [ ] #621: Address excessive modularization (43 coverage modules, 42 _impl modules)
@@ -39,6 +38,7 @@
 - [ ] #623: Final Sprint 8 findings integration and documentation consolidation
 
 ## DOING (Current Work)
+- [ ] #615: Move misplaced test file from src/utils to test directory (branch: fix-615) [EPIC: Critical Functionality Recovery]
 
 ## PRODUCT_BACKLOG (High-level Features)
 - [ ] Advanced Coverage Analytics & Reporting

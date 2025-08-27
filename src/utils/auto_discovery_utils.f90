@@ -12,7 +12,7 @@ module auto_discovery_utils
     !! - Comprehensive error handling and user guidance
 
     use config_types, only: config_t
-    use test_build_discovery, only: test_build_result_t, auto_discover_test_build
+    use build_discovery_core, only: test_build_result_t, auto_discover_test_build
     use gcov_processor_auto, only: gcov_result_t, auto_process_gcov_files
     use coverage_workflows_impl, only: execute_auto_test_workflow
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
