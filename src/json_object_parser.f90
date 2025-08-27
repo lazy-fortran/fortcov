@@ -1,16 +1,26 @@
 module json_object_parser
     !! JSON object and array parsing module
+    !!
+    !! This module provides parsing for JSON coverage objects and their
+    !! nested structures. It delegates array management and value parsing
+    !! to specialized modules for better separation of concerns.
     use json_token_types
     use coverage_model
+    use json_array_parser, only: grow_files_array, grow_lines_array
+    use json_value_parser, only: parse_string_value, parse_number_value, &
+                                 skip_value, expect_token_type
     implicit none
     private
     
+    ! Public interfaces for object parsing
     public :: parse_coverage_object_from_tokens
     public :: parse_files_array_from_tokens
     public :: parse_file_object_from_tokens
     public :: parse_lines_array_from_tokens
     public :: parse_line_object
     public :: parse_key_value_pair
+    
+    ! Re-export from specialized modules for API compatibility
     public :: parse_string_value
     public :: parse_number_value
     public :: skip_value
@@ -334,153 +344,16 @@ contains
         
     end subroutine parse_key_value_pair
     
-    subroutine parse_string_value(tokens, current_pos, output_string, parse_error)
-        !! Parses a string value from JSON tokens
-        type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        character(len=:), allocatable, intent(out) :: output_string
-        logical, intent(out) :: parse_error
-        
-        parse_error = .false.
-        
-        if (tokens(current_pos)%type /= JSON_STRING) then
-            parse_error = .true.
-            return
-        end if
-        
-        output_string = tokens(current_pos)%value
-        current_pos = current_pos + 1
-        
-    end subroutine parse_string_value
+    ! Removed - now in json_value_parser module
+    ! parse_string_value is imported and re-exported for API compatibility
+    ! Removed - now in json_value_parser module
+    ! parse_number_value is imported and re-exported for API compatibility
+    ! Removed - now in json_value_parser module
+    ! skip_value is imported and re-exported for API compatibility
     
-    subroutine parse_number_value(tokens, current_pos, output_number, parse_error)
-        !! Parses a number value from JSON tokens
-        type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        integer, intent(out) :: output_number
-        logical, intent(out) :: parse_error
-        
-        integer :: iostat_value
-        
-        parse_error = .false.
-        
-        if (tokens(current_pos)%type /= JSON_NUMBER) then
-            parse_error = .true.
-            return
-        end if
-        
-        read(tokens(current_pos)%value, *, iostat=iostat_value) output_number
-        parse_error = (iostat_value /= 0)
-        
-        if (.not. parse_error) then
-            current_pos = current_pos + 1
-        end if
-        
-    end subroutine parse_number_value
-    
-    subroutine skip_value(tokens, current_pos, token_count, parse_error)
-        !! Skips a JSON value (string, number, object, array, literal)
-        type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        integer, intent(in) :: token_count
-        logical, intent(out) :: parse_error
-        
-        integer :: depth
-        
-        parse_error = .false.
-        
-        if (current_pos > token_count) then
-            parse_error = .true.
-            return
-        end if
-        
-        select case (tokens(current_pos)%type)
-        case (JSON_STRING, JSON_NUMBER, JSON_BOOLEAN, JSON_NULL)
-            ! Simple values - just skip
-            current_pos = current_pos + 1
-        case (JSON_OBJECT)
-            if (tokens(current_pos)%value == "{") then
-                depth = 1
-                current_pos = current_pos + 1
-                do while (current_pos <= token_count .and. depth > 0)
-                    if (tokens(current_pos)%value == "{") then
-                        depth = depth + 1
-                    else if (tokens(current_pos)%value == "}") then
-                        depth = depth - 1
-                    end if
-                    current_pos = current_pos + 1
-                end do
-            end if
-        case (JSON_ARRAY)
-            if (tokens(current_pos)%value == "[") then
-                depth = 1
-                current_pos = current_pos + 1
-                do while (current_pos <= token_count .and. depth > 0)
-                    if (tokens(current_pos)%value == "[") then
-                        depth = depth + 1
-                    else if (tokens(current_pos)%value == "]") then
-                        depth = depth - 1
-                    end if
-                    current_pos = current_pos + 1
-                end do
-            end if
-        case default
-            current_pos = current_pos + 1
-        end select
-        
-    end subroutine skip_value
-    
-    subroutine grow_files_array(temp_files, capacity)
-        !! Grows the files array by doubling capacity
-        type(file_coverage_t), allocatable, intent(inout) :: temp_files(:)
-        integer, intent(inout) :: capacity
-        
-        type(file_coverage_t), allocatable :: new_files(:)
-        integer :: old_capacity
-        
-        old_capacity = capacity
-        capacity = capacity * 2
-        
-        allocate(new_files(capacity))
-        new_files(1:old_capacity) = temp_files(1:old_capacity)
-        call move_alloc(new_files, temp_files)
-        
-    end subroutine grow_files_array
-    
-    subroutine grow_lines_array(temp_lines, capacity)
-        !! Grows the lines array by doubling capacity
-        type(line_coverage_t), allocatable, intent(inout) :: temp_lines(:)
-        integer, intent(inout) :: capacity
-        
-        type(line_coverage_t), allocatable :: new_lines(:)
-        integer :: old_capacity
-        
-        old_capacity = capacity
-        capacity = capacity * 2
-        
-        allocate(new_lines(capacity))
-        new_lines(1:old_capacity) = temp_lines(1:old_capacity)
-        call move_alloc(new_lines, temp_lines)
-        
-    end subroutine grow_lines_array
-    
-    function expect_token_type(tokens, current_pos, token_count, expected_value) result(matches)
-        !! Checks if current token matches expected value
-        type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        integer, intent(in) :: token_count
-        character(len=*), intent(in) :: expected_value
-        logical :: matches
-        
-        matches = .false.
-        
-        if (current_pos <= token_count) then
-            if (tokens(current_pos)%value == expected_value) then
-                matches = .true.
-                current_pos = current_pos + 1
-            end if
-        end if
-        
-    end function expect_token_type
+    ! Removed - now in json_array_parser module  
+    ! grow_files_array and grow_lines_array are imported and re-exported for API compatibility
+    ! Removed - now in json_value_parser module
+    ! expect_token_type is imported and re-exported for API compatibility
 
 end module json_object_parser
