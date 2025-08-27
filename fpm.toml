@@ -198,3 +198,8 @@ main = "minimal_gcov_test.f90"
 name = "test_gcov_auto_processing_runner"
 source-dir = "test"
 main = "test_gcov_auto_processing_runner.f90"
+
+[[test]]
+name = "test_portable_temp_utils"
+source-dir = "test"
+main = "test_portable_temp_utils.f90"

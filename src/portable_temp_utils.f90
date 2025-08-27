@@ -31,7 +31,7 @@ contains
         ! Try TMPDIR (Unix/Linux standard)
         call get_environment_variable('TMPDIR', env_value, status=status)
         if (status == 0 .and. len_trim(env_value) > 0) then
-            inquire(directory=trim(env_value), exist=dir_exists)
+            call check_directory_exists(trim(env_value), dir_exists)
             if (dir_exists) then
                 temp_dir = trim(env_value)
                 return
@@ -41,7 +41,7 @@ contains
         ! Try TEMP (Windows)
         call get_environment_variable('TEMP', env_value, status=status)
         if (status == 0 .and. len_trim(env_value) > 0) then
-            inquire(directory=trim(env_value), exist=dir_exists)
+            call check_directory_exists(trim(env_value), dir_exists)
             if (dir_exists) then
                 temp_dir = trim(env_value)
                 return
@@ -51,7 +51,7 @@ contains
         ! Try TMP (Windows fallback)
         call get_environment_variable('TMP', env_value, status=status)
         if (status == 0 .and. len_trim(env_value) > 0) then
-            inquire(directory=trim(env_value), exist=dir_exists)
+            call check_directory_exists(trim(env_value), dir_exists)
             if (dir_exists) then
                 temp_dir = trim(env_value)
                 return
@@ -59,7 +59,7 @@ contains
         end if
         
         ! Unix/Linux fallback
-        inquire(directory='/tmp', exist=dir_exists)
+        call check_directory_exists('/tmp', dir_exists)
         if (dir_exists) then
             temp_dir = '/tmp'
             return
@@ -94,5 +94,25 @@ contains
         success = (exit_status == 0)
         
     end subroutine create_temp_subdir
+    
+    subroutine check_directory_exists(path, exists)
+        !! Portable directory existence check using standard Fortran
+        !!
+        !! This uses the portable approach of checking if we can inquire
+        !! about the path. Directories can be inquired about as file paths
+        !! in standard Fortran, avoiding the need for Fortran 2018 features.
+        !!
+        !! Args:
+        !!   path: Directory path to check
+        !!   exists: Returns true if directory exists and is accessible
+        
+        character(len=*), intent(in) :: path
+        logical, intent(out) :: exists
+        
+        ! Use standard inquire with file parameter
+        ! This works for directories in all Fortran standards
+        inquire(file=trim(path), exist=exists)
+        
+    end subroutine check_directory_exists
 
 end module portable_temp_utils
