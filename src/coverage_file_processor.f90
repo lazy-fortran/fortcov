@@ -28,8 +28,10 @@ contains
         ! Import at procedure level to avoid circular dependency (Issue #281)
         use coverage_workflows, only: discover_coverage_files
         type(config_t), intent(in) :: config
-        character(len=MAX_FILE_PATH_LENGTH), allocatable, intent(out) :: coverage_files(:)
-        character(len=MAX_FILE_PATH_LENGTH), allocatable, intent(out) :: filtered_files(:)
+        character(len=MAX_FILE_PATH_LENGTH), allocatable, &
+            intent(out) :: coverage_files(:)
+        character(len=MAX_FILE_PATH_LENGTH), allocatable, &
+            intent(out) :: filtered_files(:)
         
         character(len=MAX_FILE_PATH_LENGTH) :: temp_files(MAX_ARRAY_SIZE)
         integer :: num_files, i, filtered_count
@@ -62,13 +64,15 @@ contains
             end do
             
             ! Allocate and copy filtered results
-            allocate(character(len=MAX_FILE_PATH_LENGTH) :: filtered_files(filtered_count))
+            allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
+                filtered_files(filtered_count))
             if (filtered_count > 0) then
                 filtered_files(1:filtered_count) = temp_files(1:filtered_count)
             end if
         else
             ! No filtering needed - copy all files
-            allocate(character(len=MAX_FILE_PATH_LENGTH) :: filtered_files(size(coverage_files)))
+            allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
+                filtered_files(size(coverage_files)))
             filtered_files = coverage_files
         end if
         
@@ -103,7 +107,8 @@ contains
             
             if (.not. file_exists(files(i))) then
                 if (.not. config%quiet) then
-                    write(*,'(A)') "Warning: Coverage file not found: " // trim(files(i))
+                    write(*,'(A)') "Warning: Coverage file not found: " // &
+                        trim(files(i))
                 end if
                 cycle
             end if
