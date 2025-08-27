@@ -1,0 +1,98 @@
+module portable_temp_utils
+    !! Portable temporary directory utilities for cross-platform compatibility
+    !!
+    !! This module provides portable temporary directory and file operations
+    !! that work across different operating systems and environments.
+    
+    use iso_fortran_env, only: int32
+    implicit none
+    private
+    
+    public :: get_temp_dir
+    public :: create_temp_subdir
+    
+contains
+
+    function get_temp_dir() result(temp_dir)
+        !! Get portable temporary directory path
+        !! 
+        !! Returns the appropriate temporary directory for the current platform:
+        !! - TMPDIR environment variable (Unix/Linux)
+        !! - TEMP environment variable (Windows)
+        !! - TMP environment variable (Windows fallback) 
+        !! - /tmp (Unix/Linux fallback)
+        !! - . (final fallback for current directory)
+        
+        character(len=:), allocatable :: temp_dir
+        character(len=256) :: env_value
+        integer :: status
+        logical :: dir_exists
+        
+        ! Try TMPDIR (Unix/Linux standard)
+        call get_environment_variable('TMPDIR', env_value, status=status)
+        if (status == 0 .and. len_trim(env_value) > 0) then
+            inquire(directory=trim(env_value), exist=dir_exists)
+            if (dir_exists) then
+                temp_dir = trim(env_value)
+                return
+            end if
+        end if
+        
+        ! Try TEMP (Windows)
+        call get_environment_variable('TEMP', env_value, status=status)
+        if (status == 0 .and. len_trim(env_value) > 0) then
+            inquire(directory=trim(env_value), exist=dir_exists)
+            if (dir_exists) then
+                temp_dir = trim(env_value)
+                return
+            end if
+        end if
+        
+        ! Try TMP (Windows fallback)
+        call get_environment_variable('TMP', env_value, status=status)
+        if (status == 0 .and. len_trim(env_value) > 0) then
+            inquire(directory=trim(env_value), exist=dir_exists)
+            if (dir_exists) then
+                temp_dir = trim(env_value)
+                return
+            end if
+        end if
+        
+        ! Unix/Linux fallback
+        inquire(directory='/tmp', exist=dir_exists)
+        if (dir_exists) then
+            temp_dir = '/tmp'
+            return
+        end if
+        
+        ! Final fallback - current directory
+        temp_dir = '.'
+        
+    end function get_temp_dir
+
+    subroutine create_temp_subdir(subdir_name, full_path, success)
+        !! Create a temporary subdirectory with given name
+        !!
+        !! Args:
+        !!   subdir_name: Name of subdirectory to create
+        !!   full_path: Returns full path to created directory
+        !!   success: Returns true if directory created successfully
+        
+        character(len=*), intent(in) :: subdir_name
+        character(len=:), allocatable, intent(out) :: full_path
+        logical, intent(out) :: success
+        
+        character(len=:), allocatable :: base_temp_dir
+        integer :: exit_status
+        
+        base_temp_dir = get_temp_dir()
+        full_path = base_temp_dir // '/' // trim(subdir_name)
+        
+        call execute_command_line('mkdir -p "' // full_path // '"', &
+                                  wait=.true., exitstat=exit_status)
+        
+        success = (exit_status == 0)
+        
+    end subroutine create_temp_subdir
+
+end module portable_temp_utils

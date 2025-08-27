@@ -48,12 +48,19 @@ contains
         
         ! Use absolute path for mock gcov so it works when cd is used
         block
-            character(len=512) :: abs_path
+            use portable_temp_utils, only: get_temp_dir
+            character(len=512) :: abs_path, mock_gcov_path_file
+            character(len=:), allocatable :: temp_dir
             integer :: unit_num, iostat
-            call execute_command_line('realpath test_build/mock_gcov > /tmp/mock_gcov_path.txt')
-            open(newunit=unit_num, file='/tmp/mock_gcov_path.txt', status='old', action='read')
+            
+            temp_dir = get_temp_dir()
+            mock_gcov_path_file = temp_dir // '/mock_gcov_path.txt'
+            
+            call execute_command_line('realpath test_build/mock_gcov > "' // trim(mock_gcov_path_file) // '"')
+            open(newunit=unit_num, file=trim(mock_gcov_path_file), status='old', action='read')
             read(unit_num, '(A)', iostat=iostat) abs_path
             close(unit_num)
+            call execute_command_line('rm -f "' // trim(mock_gcov_path_file) // '"')
             config%gcov_executable = trim(abs_path)
         end block
         
@@ -120,12 +127,19 @@ contains
         
         ! Use absolute path for mock gcov so it works when cd is used
         block
-            character(len=512) :: abs_path
+            use portable_temp_utils, only: get_temp_dir
+            character(len=512) :: abs_path, mock_gcov_path_file
+            character(len=:), allocatable :: temp_dir
             integer :: unit_num, iostat
-            call execute_command_line('realpath test_build/mock_gcov > /tmp/mock_gcov_path.txt')
-            open(newunit=unit_num, file='/tmp/mock_gcov_path.txt', status='old', action='read')
+            
+            temp_dir = get_temp_dir()
+            mock_gcov_path_file = temp_dir // '/mock_gcov_path.txt'
+            
+            call execute_command_line('realpath test_build/mock_gcov > "' // trim(mock_gcov_path_file) // '"')
+            open(newunit=unit_num, file=trim(mock_gcov_path_file), status='old', action='read')
             read(unit_num, '(A)', iostat=iostat) abs_path
             close(unit_num)
+            call execute_command_line('rm -f "' // trim(mock_gcov_path_file) // '"')
             config%gcov_executable = trim(abs_path)
         end block
         
@@ -157,12 +171,19 @@ contains
         
         ! Use absolute path for mock gcov so it works when cd is used
         block
-            character(len=512) :: abs_path
+            use portable_temp_utils, only: get_temp_dir
+            character(len=512) :: abs_path, mock_gcov_path_file
+            character(len=:), allocatable :: temp_dir
             integer :: unit_num, iostat
-            call execute_command_line('realpath test_build/mock_gcov > /tmp/mock_gcov_path.txt')
-            open(newunit=unit_num, file='/tmp/mock_gcov_path.txt', status='old', action='read')
+            
+            temp_dir = get_temp_dir()
+            mock_gcov_path_file = temp_dir // '/mock_gcov_path.txt'
+            
+            call execute_command_line('realpath test_build/mock_gcov > "' // trim(mock_gcov_path_file) // '"')
+            open(newunit=unit_num, file=trim(mock_gcov_path_file), status='old', action='read')
             read(unit_num, '(A)', iostat=iostat) abs_path
             close(unit_num)
+            call execute_command_line('rm -f "' // trim(mock_gcov_path_file) // '"')
             config%gcov_executable = trim(abs_path)
         end block
         

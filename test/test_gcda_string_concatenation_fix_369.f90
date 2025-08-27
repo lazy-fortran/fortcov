@@ -60,15 +60,22 @@ contains
 
     subroutine test_temp_filename_concatenation()
         !! Test that temp filename string concatenation works correctly
-        character(len=256) :: temp_filename
+        character(len=256) :: temp_filename, expected
         character(len=8) :: date_str = '20250101'
         character(len=10) :: time_str = '1234567890'
-        character(len=*), parameter :: expected = '/tmp/fortcov_gcov_20250101_123456'
+        character(len=:), allocatable :: temp_dir
+        
+        ! Get portable temp directory
+        block
+            use portable_temp_utils, only: get_temp_dir
+            temp_dir = get_temp_dir()
+            expected = temp_dir // '/fortcov_gcov_20250101_123456'
+        end block
         
         write(output_unit, '(A)') 'Test: Temp filename string concatenation'
         
-        ! Direct concatenation optimization
-        temp_filename = "/tmp/fortcov_gcov_" // trim(date_str) // "_" // time_str(1:6)
+        ! Direct concatenation optimization using portable temp directory
+        temp_filename = temp_dir // "/fortcov_gcov_" // trim(date_str) // "_" // time_str(1:6)
         
         call assert_equals(trim(temp_filename), expected, 'Temp filename concatenated correctly')
     end subroutine test_temp_filename_concatenation
