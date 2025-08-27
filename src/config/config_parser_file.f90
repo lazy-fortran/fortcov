@@ -10,7 +10,7 @@ module config_parser_file
     use string_utils
     use file_utils_core
     use config_detector_format, only: detect_config_format
-    use config_parser_namelist_impl, only: parse_namelist_config_file
+    use config_parser_namelist, only: parse_namelist_config_file
 
     implicit none
     private

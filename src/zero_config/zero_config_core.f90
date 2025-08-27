@@ -1,7 +1,7 @@
 module zero_config_core
     use config_types, only: config_t
     use build_detector_core, only: build_system_info_t, detect_build_system
-    use coverage_test_executor_impl, only: execute_auto_test_workflow
+    use coverage_test_executor, only: execute_auto_test_workflow
     use zero_config_manager
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
     use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE

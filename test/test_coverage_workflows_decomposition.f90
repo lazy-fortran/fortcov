@@ -4,7 +4,7 @@ program test_coverage_workflows_decomposition
     !! Tests all existing public interfaces before and after decomposition
     !! to ensure no regressions occur during the refactoring process.
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_workflows_impl
+    use coverage_workflows
     use config_core
     use config_defaults_core, only: initialize_default_config
     use constants_core

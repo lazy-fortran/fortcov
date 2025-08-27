@@ -6,9 +6,9 @@ module coverage_processor_file
     use coverage_model_core, only: coverage_data_t, coverage_file_t
     use config_core, only: config_t
     use config_types, only: MAX_ARRAY_SIZE
-    use coverage_parser_impl, only: coverage_parser_t, create_parser
+    use coverage_parser_factory, only: coverage_parser_t, create_parser
     use file_utils_core, only: read_file_content, file_exists
-    use coverage_workflows_impl, only: execute_auto_test_workflow
+    use coverage_workflows, only: execute_auto_test_workflow
     
     implicit none
     private
@@ -24,7 +24,7 @@ contains
     subroutine find_and_filter_coverage_files(config, coverage_files, filtered_files)
         !! Find and filter coverage files based on configuration
         ! Import at procedure level to avoid circular dependency (Issue #281)
-        use coverage_workflows_impl, only: discover_coverage_files
+        use coverage_workflows, only: discover_coverage_files
         type(config_t), intent(in) :: config
         character(len=MAX_FILE_PATH_LENGTH), allocatable, &
             intent(out) :: coverage_files(:)
@@ -95,7 +95,7 @@ contains
 
     subroutine parse_coverage_files(files, config, merged_coverage, parse_error)
         !! Parse coverage files and merge into single coverage model
-        use gcov_file_processor_impl, only: process_gcov_file
+        use gcov_file_processor, only: process_gcov_file
         character(len=*), intent(in) :: files(:)
         type(config_t), intent(in) :: config
         type(coverage_data_t), intent(out) :: merged_coverage

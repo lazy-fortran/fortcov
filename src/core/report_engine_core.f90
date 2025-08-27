@@ -7,7 +7,7 @@ module report_engine_core
     !! 
     !! Original module size: 871 lines → Now: ~60 lines
     !! Implementation moved to: report_engine_impl.f90
-    use report_engine_impl
+    use report_engine
     implicit none
 
     ! Re-export all public types for backward compatibility

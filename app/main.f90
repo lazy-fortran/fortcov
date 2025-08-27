@@ -4,9 +4,9 @@ program main
                                    validate_config, validate_config_with_context
   use error_handling_core, only: error_context_t, ERROR_SUCCESS
   use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
-  use zero_config_discovery_impl, only: enhance_zero_config_with_auto_discovery, &
+  use zero_config_core, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
-  use coverage_workflows_impl, only: launch_coverage_tui_mode
+  use coverage_workflows, only: launch_coverage_tui_mode
   implicit none
   
   type(config_t) :: config

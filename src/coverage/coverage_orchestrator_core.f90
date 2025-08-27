@@ -8,7 +8,7 @@ module coverage_orchestrator_core
     use foundation_utils
     use architectural_core
     use coverage_analysis_core
-    use coverage_workflows_impl
+    use coverage_workflows
     use coverage_integration_core
     use coverage_model_core
     use config_core

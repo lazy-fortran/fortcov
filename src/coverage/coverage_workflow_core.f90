@@ -6,10 +6,10 @@ module coverage_workflow_core
     !! separation of concerns between different workflow responsibilities.
     use constants_core
     use config_core
-    use coverage_test_executor_impl
+    use coverage_test_executor
     use coverage_processor_gcov
-    use coverage_build_impl
-    use coverage_diff_impl
+    use coverage_build
+    use coverage_diff
     use coverage_types, only: coverage_diff_t
     use build_detector_core
     use error_handling_core

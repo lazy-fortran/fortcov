@@ -1,10 +1,10 @@
 module data_transformer_core
     use coverage_model_core
     use data_transformer_types
-    use coverage_file_loader_impl
-    use coverage_annotator_impl
-    use navigation_builder_impl
-    use coverage_summary_impl
+    use coverage_file_loader
+    use coverage_annotator
+    use navigation_builder
+    use coverage_summary
     implicit none
     private
     

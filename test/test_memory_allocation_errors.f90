@@ -9,8 +9,8 @@ program test_memory_allocation_errors
     use config_defaults_core
     use coverage_processor_file
     use zero_config_manager
-    use gcda_discovery_impl
-    use gcov_generator_impl
+    use gcda_discovery
+    use gcov_generator
     use config_types
     
     implicit none

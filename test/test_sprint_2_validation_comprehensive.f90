@@ -13,7 +13,7 @@ program test_sprint_2_validation_comprehensive
     use iso_fortran_env, only: output_unit, error_unit
     use config_core, only: parse_config, config_t
     use fortcov_core, only: run_coverage_analysis
-    use zero_config_discovery_impl, only: &
+    use zero_config_core, only: &
         execute_zero_config_complete_workflow
     use build_detector_core, only: detect_build_system, build_system_info_t
     use sprint2_test_utils, only: assert_test, create_mock_gcov_with_coverage, &

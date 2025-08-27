@@ -14,8 +14,8 @@ module gcov_processor_auto
     
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context, &
                               safe_write_message, safe_write_suggestion, safe_write_context
-    use file_finder_impl, only: find_files_with_glob
-    use gcov_file_processor_impl, only: process_gcov_file
+    use file_finder, only: find_files_with_glob
+    use gcov_file_processor, only: process_gcov_file
     use coverage_model_core, only: coverage_data_t
     use directory_ops_core, only: ensure_directory_safe
     use path_validation_core, only: validate_path_security

@@ -8,8 +8,8 @@ module coverage_reporter_core
     !! Original module size: 944 lines → Now: ~40 lines
     !! Implementation decomposed into focused modules for better maintainability.
     use coverage_reporter_base
-    use coverage_reporter_md_impl
-    use coverage_reporter_json_impl
+    use coverage_reporter_md
+    use coverage_reporter_json
     use coverage_reporter_factory
     implicit none
 
