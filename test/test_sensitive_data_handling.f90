@@ -13,19 +13,23 @@ contains
     subroutine test_sensitive_data_in_temp_files(counter)
         type(test_counter_t), intent(inout) :: counter
         logical :: file_exists = .true.
+        logical :: file_existed_before
         
         print *, "Test: Sensitive data in temp files"
         
         ! Create temp file with sensitive data
         call execute_command_line('echo "password123" > sensitive_temp.tmp')
         
-        ! Proper secure deletion
-        call execute_command_line('shred -vfz -n 3 sensitive_temp.tmp 2>/dev/null || rm -f sensitive_temp.tmp')
+        ! Verify file was created
+        inquire(file='sensitive_temp.tmp', exist=file_existed_before)
+        
+        ! Proper secure deletion - shred with unlink (-u) to actually delete file
+        call execute_command_line('shred -vfzu -n 3 sensitive_temp.tmp 2>/dev/null || rm -f sensitive_temp.tmp')
         
         ! Verify removal
         inquire(file='sensitive_temp.tmp', exist=file_exists)
         
-        if (.not. file_exists) then
+        if (file_existed_before .and. .not. file_exists) then
             call increment_pass(counter)
             print *, "  ✅ PASS: Sensitive data properly removed"
         else

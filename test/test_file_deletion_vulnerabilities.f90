@@ -16,24 +16,30 @@ contains
     subroutine test_temp_file_deletion_failure(counter)
         type(test_counter_t), intent(inout) :: counter
         logical :: test_passed = .false.
+        logical :: file_exists_before, file_exists_after
         
         print *, "Test: Temp file deletion failure scenarios"
         
-        ! Create test temp file
-        call execute_command_line('touch temp_delete_test.tmp')
+        ! Create test temp file in readonly directory to simulate deletion failure
+        call execute_command_line('mkdir -p readonly_test_dir')
+        call execute_command_line('echo "sensitive_data" > readonly_test_dir/temp_delete_test.tmp')
         
-        ! Simulate deletion failure by removing write permissions
-        call execute_command_line('chmod 444 temp_delete_test.tmp')
+        ! Make directory readonly to prevent file deletion
+        call execute_command_line('chmod 555 readonly_test_dir')
         
-        ! Test deletion attempt
-        call execute_command_line('rm -f temp_delete_test.tmp 2>/dev/null', wait=.true.)
+        ! Verify file exists before deletion attempt
+        inquire(file='readonly_test_dir/temp_delete_test.tmp', exist=file_exists_before)
         
-        ! Check if file still exists (deletion should fail)
-        inquire(file='temp_delete_test.tmp', exist=test_passed)
+        ! Test deletion attempt (should fail due to readonly directory)
+        call execute_command_line('rm -f readonly_test_dir/temp_delete_test.tmp 2>/dev/null', wait=.true.)
         
-        ! Cleanup
-        call execute_command_line('chmod 644 temp_delete_test.tmp 2>/dev/null || true')
-        call execute_command_line('rm -f temp_delete_test.tmp')
+        ! Check if file still exists (deletion should have failed)
+        inquire(file='readonly_test_dir/temp_delete_test.tmp', exist=file_exists_after)
+        test_passed = file_exists_before .and. file_exists_after
+        
+        ! Cleanup - restore permissions and remove files
+        call execute_command_line('chmod 755 readonly_test_dir')
+        call execute_command_line('rm -rf readonly_test_dir')
         
         if (test_passed) then
             call increment_pass(counter)
