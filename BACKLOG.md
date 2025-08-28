@@ -22,6 +22,8 @@
 
 ## DOING (Current Work)
 
+- [ ] #642: CRITICAL - coverage_types.f90 at 960 lines (approaching limit) - **EPIC: CRITICAL ARCHITECTURAL VIOLATIONS**
+
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
 - [ ] Infrastructure Stabilization 
