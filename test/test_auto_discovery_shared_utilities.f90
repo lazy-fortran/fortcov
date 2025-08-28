@@ -167,9 +167,20 @@ contains
 
     subroutine create_complete_project_scenario()
         !! Creates a complete realistic project for end-to-end testing
+        !! Uses a temporary directory to avoid contaminating project directory
         
-        call create_fpm_test_project(".")
-        call create_mock_gcov_files(".")
+        block
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            character(len=256) :: scenario_workspace
+            
+            temp_dir = get_temp_dir()
+            scenario_workspace = temp_dir // "/scenario_workspace"
+            
+            call execute_command_line('mkdir -p ' // trim(scenario_workspace))
+            call create_fpm_test_project(scenario_workspace)
+            call create_mock_gcov_files(scenario_workspace)
+        end block
         
     end subroutine create_complete_project_scenario
 
