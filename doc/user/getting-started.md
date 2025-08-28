@@ -30,7 +30,7 @@ contains
         real, intent(in) :: a, b
         real :: c
         c = a + b
-    end function
+    end function add_numbers
 end module
 EOF
 
@@ -39,7 +39,10 @@ cat > test/test_hello.f90 << 'EOF'
 program test_hello
     use hello
     implicit none
-    if (abs(add_numbers(2.0, 3.0) - 5.0) > 1e-6) stop 1
+    real :: result
+    
+    result = add_numbers(2.0, 3.0)
+    if (abs(result - 5.0) > 1e-6) stop 1
     print *, 'OK'
 end program
 EOF

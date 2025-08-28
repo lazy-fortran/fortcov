@@ -12,12 +12,16 @@ mkdir demo && cd demo && fpm init demo
 cat > src/demo.f90 << 'EOF'
 module demo
     implicit none
-    public :: calculate
+    public :: calculate, say_hello
 contains
+    subroutine say_hello
+        print *, "Hello, demo!"
+    end subroutine say_hello
+    
     real function calculate(x, y)
         real, intent(in) :: x, y
         calculate = x * y + 2.0
-    end function
+    end function calculate
 end module
 EOF
 
