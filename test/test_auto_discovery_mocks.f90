@@ -54,16 +54,36 @@ contains
         type(mock_build_system_info_t), intent(out) :: build_info
         type(error_context_t), intent(out) :: error_ctx
         
+        ! Local variables for file existence checks  
+        logical :: fpm_file_exists, cmake_file_exists, make_file_exists
+        
         call clear_error_context(error_ctx)
         
-        ! Mock detection logic based on known test patterns
-        if (index(project_path, 'fpm') > 0 .or. &
-            len_trim(project_path) > 0) then
+        ! Check for actual build system files
+        inquire(file=trim(project_path) // '/fpm.toml', exist=fpm_file_exists)
+        inquire(file=trim(project_path) // '/CMakeLists.txt', exist=cmake_file_exists)  
+        inquire(file=trim(project_path) // '/Makefile', exist=make_file_exists)
+        
+        if (fpm_file_exists .or. index(project_path, 'fpm') > 0) then
+            ! FPM project detected
             build_info%system_type = 'fpm'
             build_info%test_command = 'fpm test'
             build_info%build_file = 'fpm.toml'
             build_info%tool_available = .true.
+        else if (cmake_file_exists .or. index(project_path, 'cmake') > 0) then
+            ! CMake project detected
+            build_info%system_type = 'cmake'
+            build_info%test_command = 'ctest'
+            build_info%build_file = 'CMakeLists.txt'
+            build_info%tool_available = .true.
+        else if (make_file_exists .or. index(project_path, 'make') > 0) then
+            ! Make project detected
+            build_info%system_type = 'make'
+            build_info%test_command = 'make test'
+            build_info%build_file = 'Makefile'
+            build_info%tool_available = .true.
         else
+            ! No recognizable build system found
             build_info%system_type = 'unknown'
             build_info%test_command = ''
             build_info%build_file = ''
