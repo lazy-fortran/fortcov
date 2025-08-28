@@ -78,7 +78,7 @@ contains
             case ("xml")
                 config%output_path = "coverage.xml"
             case ("markdown", "md")
-                config%output_path = "build/coverage/coverage.md"
+                config%output_path = "coverage.md"
             case ("text")
                 config%output_path = "coverage.txt"
             case default
@@ -108,7 +108,7 @@ contains
             case ("xml")
                 config%output_path = "coverage.xml"
             case ("markdown", "md")
-                config%output_path = "build/coverage/coverage.md"
+                config%output_path = "coverage.md"
             case ("text")
                 config%output_path = "coverage.txt"
             case default
