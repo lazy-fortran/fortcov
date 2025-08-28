@@ -3,8 +3,11 @@ module test_execution_core
     !! 
     !! Handles test command execution with timeout management.
     !! Extracted from coverage_test_executor.f90 for SRP compliance (Issue #718).
+    !! 
+    !! SECURITY: Uses shell_utils_core for command injection prevention (Issue #751)
     use config_core, only: config_t
     use string_utils, only: int_to_string
+    use shell_utils_core, only: escape_shell_argument
     implicit none
     private
     
@@ -39,12 +42,12 @@ contains
         ! Build timeout command with proper escaping
         write(timeout_str, '(I0)') config%test_timeout_seconds
         
-        ! Build full timeout command
-        full_command = 'timeout ' // trim(timeout_str) // 's ' // trim(test_command)
+        ! Build full timeout command with shell injection protection (Issue #751)
+        full_command = 'timeout ' // trim(timeout_str) // 's ' // escape_shell_argument(test_command)
         
         if (.not. config%quiet) then
-            print *, "🔧 Executing: " // trim(test_command)
-            print *, "⏱️  Timeout: " // trim(timeout_str) // " seconds"
+            print *, "Executing: " // trim(test_command)
+            print *, "Timeout: " // trim(timeout_str) // " seconds"
         end if
         
         ! Execute the command with timeout
