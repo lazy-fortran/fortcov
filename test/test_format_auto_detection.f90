@@ -35,13 +35,13 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.html")
-        call assert_test(format == "html", "Should detect HTML from .html")
+        call assert_test(format == "html", "HTML from .html", "Detection from .html extension")
         
         format = detect_format_from_extension("/path/to/coverage.html")
-        call assert_test(format == "html", "Should detect HTML from path with .html")
+        call assert_test(format == "html", "HTML from path", "Detection from path with .html")
         
         format = detect_format_from_extension("report.htm")
-        call assert_test(format == "html", "Should detect HTML from .htm")
+        call assert_test(format == "html", "HTML from .htm", "Detection from .htm extension")
     end subroutine test_detect_format_from_extension_html
     
     subroutine test_detect_format_from_extension_json()
@@ -49,10 +49,10 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.json")
-        call assert_test(format == "json", "Should detect JSON from .json")
+        call assert_test(format == "json", "JSON from .json", "Detection from .json extension")
         
         format = detect_format_from_extension("/some/path/data.json")
-        call assert_test(format == "json", "Should detect JSON from path with .json")
+        call assert_test(format == "json", "JSON from path", "Detection from path with .json")
     end subroutine test_detect_format_from_extension_json
     
     subroutine test_detect_format_from_extension_xml()
@@ -60,10 +60,10 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.xml")
-        call assert_test(format == "xml", "Should detect XML from .xml")
+        call assert_test(format == "xml", "XML from .xml", "Detection from .xml extension")
         
         format = detect_format_from_extension("cobertura.xml")
-        call assert_test(format == "xml", "Should detect XML from cobertura.xml")
+        call assert_test(format == "xml", "XML from cobertura", "Detection from cobertura.xml")
     end subroutine test_detect_format_from_extension_xml
     
     subroutine test_detect_format_from_extension_markdown()
@@ -71,10 +71,10 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.md")
-        call assert_test(format == "markdown", "Should detect Markdown from .md")
+        call assert_test(format == "markdown", "Markdown from .md", "Detection from .md extension")
         
         format = detect_format_from_extension("README.markdown")
-        call assert_test(format == "markdown", "Should detect Markdown from .markdown")
+        call assert_test(format == "markdown", "Markdown from .markdown", "Detection from .markdown extension")
     end subroutine test_detect_format_from_extension_markdown
     
     subroutine test_detect_format_from_extension_text()
@@ -82,10 +82,10 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.txt")
-        call assert_test(format == "text", "Should detect text from .txt")
+        call assert_test(format == "text", "Text from .txt", "Detection from .txt extension")
         
         format = detect_format_from_extension("report.text")
-        call assert_test(format == "text", "Should detect text from .text")
+        call assert_test(format == "text", "Text from .text", "Detection from .text extension")
     end subroutine test_detect_format_from_extension_text
     
     subroutine test_detect_format_from_extension_unknown()
@@ -93,10 +93,10 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.pdf")
-        call assert_test(format == "", "Should return empty for unknown extension")
+        call assert_test(format == "", "Unknown extension", "Empty for .pdf extension")
         
         format = detect_format_from_extension("file.xyz")
-        call assert_test(format == "", "Should return empty for .xyz")
+        call assert_test(format == "", "Unknown .xyz", "Empty for .xyz extension")
     end subroutine test_detect_format_from_extension_unknown
     
     subroutine test_detect_format_from_extension_no_extension()
@@ -104,10 +104,10 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage")
-        call assert_test(format == "", "Should return empty for no extension")
+        call assert_test(format == "", "No extension", "Empty when no extension")
         
         format = detect_format_from_extension("/path/to/file")
-        call assert_test(format == "", "Should return empty for path without extension")
+        call assert_test(format == "", "Path no extension", "Empty for path without extension")
     end subroutine test_detect_format_from_extension_no_extension
     
     subroutine test_detect_format_case_insensitive()
@@ -115,13 +115,13 @@ contains
         character(len=:), allocatable :: format
         
         format = detect_format_from_extension("coverage.HTML")
-        call assert_test(format == "html", "Should detect HTML from .HTML (uppercase)")
+        call assert_test(format == "html", "Uppercase HTML", "Detection from .HTML uppercase")
         
         format = detect_format_from_extension("data.JSON")
-        call assert_test(format == "json", "Should detect JSON from .JSON (uppercase)")
+        call assert_test(format == "json", "Uppercase JSON", "Detection from .JSON uppercase")
         
         format = detect_format_from_extension("report.Xml")
-        call assert_test(format == "xml", "Should detect XML from .Xml (mixed case)")
+        call assert_test(format == "xml", "Mixed case XML", "Detection from .Xml mixed case")
     end subroutine test_detect_format_case_insensitive
     
     subroutine test_apply_format_auto_detection_basic()
@@ -175,6 +175,7 @@ contains
         call apply_format_auto_detection(config)
         
         call assert_test(config%output_format == "markdown", &
+                          "Default kept", &
                           "Should keep default format when no output path")
     end subroutine test_apply_format_no_output_path
     
@@ -194,8 +195,10 @@ contains
         
         ! Verify HTML format was auto-detected
         call assert_test(config%output_format == "html", &
+                          "HTML scenario", &
                           "Should auto-detect HTML format from .html extension")
         call assert_test(config%output_path == "coverage.html", &
+                          "Path unchanged", &
                           "Output path should remain unchanged")
         
         ! This fixes Issue #703: Users expect coverage.html to generate HTML
@@ -216,6 +219,7 @@ contains
         call apply_format_auto_detection(config)
         
         call assert_test(config%output_format == "json", &
+                          "JSON scenario", &
                           "Should auto-detect JSON format from .json extension")
     end subroutine test_user_scenario_json_output
     
@@ -232,6 +236,7 @@ contains
         call apply_format_auto_detection(config)
         
         call assert_test(config%output_format == "xml", &
+                          "XML override", &
                           "Explicit XML should override .dat extension")
         
         ! Scenario 2: User specifies path without extension
@@ -242,6 +247,7 @@ contains
         call apply_format_auto_detection(config)
         
         call assert_test(config%output_format == "markdown", &
+                          "Markdown default", &
                           "Should keep default markdown for no extension")
         
         ! Scenario 3: User specifies .md extension
@@ -252,6 +258,7 @@ contains
         call apply_format_auto_detection(config)
         
         call assert_test(config%output_format == "markdown", &
+                          "Markdown from .md", &
                           "Should detect markdown from .md extension")
     end subroutine test_user_scenario_mixed_flags
 

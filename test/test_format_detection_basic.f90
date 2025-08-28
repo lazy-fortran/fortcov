@@ -13,44 +13,44 @@ program test_format_detection_basic
     
     ! Test HTML detection
     format = detect_format_from_extension("coverage.html")
-    call assert_test(format == "html", "Should detect HTML from .html")
+    call assert_test(format == "html", "HTML detection", "Should detect HTML from .html extension")
     
     format = detect_format_from_extension("report.htm")
-    call assert_test(format == "html", "Should detect HTML from .htm")
+    call assert_test(format == "html", "HTM detection", "Should detect HTML from .htm extension")
     
     ! Test JSON detection
     format = detect_format_from_extension("data.json")
-    call assert_test(format == "json", "Should detect JSON from .json")
+    call assert_test(format == "json", "JSON detection", "Should detect JSON from .json extension")
     
     ! Test XML detection
     format = detect_format_from_extension("coverage.xml")
-    call assert_test(format == "xml", "Should detect XML from .xml")
+    call assert_test(format == "xml", "XML detection", "Should detect XML from .xml extension")
     
     ! Test Markdown detection
     format = detect_format_from_extension("README.md")
-    call assert_test(format == "markdown", "Should detect Markdown from .md")
+    call assert_test(format == "markdown", "Markdown detection", "Should detect Markdown from .md extension")
     
     ! Test text detection
     format = detect_format_from_extension("report.txt")
-    call assert_test(format == "text", "Should detect text from .txt")
+    call assert_test(format == "text", "Text detection", "Should detect text from .txt extension")
     
     ! Test unknown extension
     format = detect_format_from_extension("file.xyz")
-    call assert_test(format == "", "Should return empty for unknown extension")
+    call assert_test(format == "", "Unknown extension", "Should return empty for unknown .xyz extension")
     
     ! Test no extension
     format = detect_format_from_extension("coverage")
-    call assert_test(format == "", "Should return empty for no extension")
+    call assert_test(format == "", "No extension", "Should return empty when no extension present")
     
     ! Test case insensitive
     format = detect_format_from_extension("COVERAGE.HTML")
-    call assert_test(format == "html", "Should detect HTML case-insensitive")
+    call assert_test(format == "html", "Case insensitive HTML", "Should detect HTML from uppercase .HTML")
     
     format = detect_format_from_extension("Data.JSON")
-    call assert_test(format == "json", "Should detect JSON case-insensitive")
+    call assert_test(format == "json", "Case insensitive JSON", "Should detect JSON from mixed case .JSON")
     
     ! Print summary
-    call print_test_summary()
+    call print_test_summary("format_detection_basic")
     
     ! Exit with appropriate code
     if (.not. all_tests_passed) then
