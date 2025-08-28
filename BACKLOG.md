@@ -4,13 +4,12 @@
 
 **SPRINT FOCUS**: Critical infrastructure failures exposed after Sprint 14 fraud detection
 
-### CRITICAL ISSUES (6 FOCUSED ISSUES)
+### CRITICAL ISSUES (5 FOCUSED ISSUES)
 
 **SPRINT GOAL**: Restore basic functionality and deployment reliability after systematic failure detection
 
 #### EPIC: Infrastructure Recovery (System Stability)
 **#758**: TEST INFRASTRUCTURE COLLAPSE - FPM discovers 75 tests but execution fails (CI-BLOCKING)
-**#751**: SECURITY VULNERABILITY - Command injection in test_execution_core.f90 (CRITICAL)
 
 #### EPIC: User Experience Recovery (Deployment Critical)
 **#757**: SPRINT GOAL FAILURE - Documentation examples still broken despite #739 claims (UX-BLOCKING)
@@ -22,9 +21,7 @@
 
 **SPRINT 15 EMERGENCY RECOVERY - PRIORITIZED BY SEVERITY**
 
-**#751**: SECURITY VULNERABILITY - Command injection in test_execution_core.f90 (CRITICAL)
-- Ready for implementation: fix command injection via proper shell escaping
-- Previous work: Issue #758 test infrastructure resolved (CI operational)
+**Continue SPRINT_BACKLOG** - Moving to next critical infrastructure issue
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
