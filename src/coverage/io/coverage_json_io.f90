@@ -17,6 +17,7 @@ module coverage_json_io
                        json_token_t, JSON_NULL, JSON_STRING, JSON_NUMBER, JSON_OBJECT, &
                        JSON_ARRAY, JSON_BOOLEAN
     implicit none
+    private
     
     ! Re-export public interface for backward compatibility
     public :: import_json_coverage
