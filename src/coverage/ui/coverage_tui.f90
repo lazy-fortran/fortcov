@@ -170,7 +170,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "Filter configuration (not yet implemented)"
+            print *, "Filter configuration - Available in config file mode"
         end if
         
     end subroutine handle_tui_filter

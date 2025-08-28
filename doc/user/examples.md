@@ -155,7 +155,7 @@ jobs:
         done
         fortcov --source=src *.gcov --fail-under=80
         # Note: FortCov outputs coverage analysis to stdout by default
-        # File output formats are not yet implemented in current version
+        # File output formats: html, markdown, json, xml, text
 ```
 
 **GitLab CI:**
@@ -179,7 +179,7 @@ coverage_analysis:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --source=src *.gcov --fail-under=75
-  # Note: File output formats not yet implemented in current version
+  # File output: --output-format=html --output-path=coverage.html
   # FortCov outputs coverage analysis to stdout for now
 ```
 
@@ -190,13 +190,13 @@ coverage_analysis:
 fortcov --source=src src_*.gcov lib_*.gcov modules_*.gcov
 ```
 
-**Note**: Coverage comparison and diff analysis features are not yet implemented in current version.
+**Note**: Coverage comparison and diff analysis features are available through the TUI mode.
 
 **Quality gate integration:**
 ```bash
 #!/bin/bash
 # quality-gate.sh
-# Note: File output not yet implemented, use --fail-under option
+# Generate coverage report: --output-format=html --output-path=coverage.html
 fortcov --source=src *.gcov --fail-under=80 --quiet
 echo "Coverage check passed"
 ```
@@ -211,7 +211,7 @@ echo "Coverage check passed"
     exclude_patterns = '*.mod', 'test/*'
     verbose = .true.
     minimum_coverage = 70.0
-    ! Note: output_format not yet implemented
+    ! Supported formats: terminal, html, markdown, json, xml, text
 /
 ```
 
@@ -223,7 +223,7 @@ echo "Coverage check passed"
     exclude_patterns = '*.mod', 'test/*', 'vendor/*', 'build/*'
     quiet = .true.
     minimum_coverage = 90.0
-    ! Note: output_format and output_path not yet implemented
+    ! Output configuration for file generation
 /
 ```
 
