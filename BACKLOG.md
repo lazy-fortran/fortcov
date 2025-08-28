@@ -20,8 +20,6 @@
 
 ## DOING (Current Work)
 
-- [ ] #657: fortcov lies about output locations - creates in build directory - **EPIC: CORE FUNCTIONALITY DEFECTS**
-
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
 - [ ] Infrastructure Stabilization 
