@@ -25,7 +25,7 @@ fpm test --flag "-fprofile-arcs -ftest-coverage"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
-fortcov --source=src *.gcov
+fortcov --source=src *.gcov --output=coverage.md
 ```
 
 ## Documentation
@@ -60,7 +60,7 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 ## Example Output
 
 ```bash
-$ fortcov --source=src *.gcov
+$ fortcov --source=src *.gcov --output=coverage.md
 📊 Analyzing coverage...
 Found coverage file 1: demo_calculator.f90.gcov
 Found coverage file 2: main.f90.gcov
@@ -85,16 +85,18 @@ done
 fortcov --source=src *.gcov  # Shows terminal coverage output
 ```
 
-**Manual file specification:**
+**Generate markdown report:**
 ```bash
-fortcov --source=src *.gcov  # Analyze gcov files with terminal output
+fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown report
 ```
 
-**Current Implementation Status**: Text coverage analysis is fully functional. File output formats (markdown, json, html, xml) display "would be generated" but do not create actual files yet.
+**Current Implementation Status**: Coverage analysis and markdown output are fully functional. Other formats (json, html, xml) are supported with basic implementations.
 
 **CI/CD integration:**
 ```bash
-fortcov --source=src *.gcov --fail-under 80  # Fail if coverage < 80%
+# Note: Exit code fix pending in PR #741
+fortcov --source=src *.gcov --fail-under 80 --output=coverage.md
+echo "Exit code: $?"  # Will be 2 for threshold failures after fix
 ```
 
 ## Known Issues
