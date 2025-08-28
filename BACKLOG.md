@@ -15,7 +15,7 @@
 #### EPIC: Sprint 12 Completion (Foundation)
 **#725**: FPM test discovery - Test module imports breaking autodiscovery (HIGH - now unblocked) 
 **#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud (HIGH)
-**#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation (MEDIUM)
+~~**#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation~~ (RESOLVED - PR #745)
 
 ## DOING (Current Work)
 
