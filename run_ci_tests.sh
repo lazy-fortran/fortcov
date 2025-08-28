@@ -17,8 +17,17 @@ EXCLUDE_TESTS=(
 # Skip the "Matched names:" header and extract test names  
 # Strip ANSI color codes and filter properly
 RAW_OUTPUT=$(fpm test --list 2>&1)
-# Remove ANSI escape sequences, then filter for test names
-ALL_TESTS=$(echo "$RAW_OUTPUT" | sed 's/\x1b\[[0-9;]*m//g' | grep -v "Matched names:" | grep -E "(test_|check|minimal_)" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+# Remove ANSI escape sequences, compilation progress, and filter for actual test names
+# Test names start with test_, check, or minimal_ and don't contain dots or percentages
+ALL_TESTS=$(echo "$RAW_OUTPUT" | \
+    sed 's/\x1b\[[0-9;]*m//g' | \
+    grep -v "Matched names:" | \
+    grep -v "%" | \
+    grep -v "\.f90" | \
+    grep -v "done\." | \
+    grep -E "^[[:space:]]*(test_|check|minimal_)[a-zA-Z0-9_]*[[:space:]]*$" | \
+    sed 's/^[[:space:]]*//' | \
+    sed 's/[[:space:]]*$//')
 
 # Debug: Show what we extracted (only in CI for debugging)
 if [ -n "$CI" ]; then
