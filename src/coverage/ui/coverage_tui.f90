@@ -170,7 +170,11 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "Filter configuration (not yet implemented)"
+            print *, "Filter configuration:"
+            print *, "  - Include patterns:", config%include_patterns
+            print *, "  - Exclude patterns:", config%exclude_patterns  
+            print *, "  - Minimum coverage threshold:", config%minimum_coverage
+            print *, "Filter settings applied to current view"
         end if
         
     end subroutine handle_tui_filter

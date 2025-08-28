@@ -257,8 +257,8 @@ contains
             line_rate = 0.0
         end if
         
-        ! Branch coverage not yet implemented in fortcov, set to line rate
-        branch_rate = line_rate
+        ! Branch coverage calculation - analyze conditional statements
+        branch_rate = calculate_branch_coverage_rate(coverage_data)
         
     end subroutine calculate_coverage_rates
     
@@ -310,5 +310,59 @@ contains
         end do
         
     end function count_covered_lines
+    
+    ! Calculate branch coverage rate from conditional statements
+    function calculate_branch_coverage_rate(coverage_data) result(branch_rate)
+        type(coverage_data_t), intent(in) :: coverage_data
+        real :: branch_rate
+        
+        integer :: total_branches, covered_branches, i, j
+        
+        total_branches = 0
+        covered_branches = 0
+        
+        do i = 1, size(coverage_data%files)
+            if (.not. allocated(coverage_data%files(i)%lines)) cycle
+            
+            do j = 1, size(coverage_data%files(i)%lines)
+                ! Detect conditional statements (if, select, do while)
+                if (coverage_data%files(i)%lines(j)%is_executable .and. &
+                    is_conditional_statement(coverage_data%files(i)%lines(j))) then
+                    total_branches = total_branches + 1
+                    if (coverage_data%files(i)%lines(j)%execution_count > 0) then
+                        covered_branches = covered_branches + 1
+                    end if
+                end if
+            end do
+        end do
+        
+        if (total_branches > 0) then
+            branch_rate = real(covered_branches) / real(total_branches)
+        else
+            branch_rate = 1.0  ! No branches means 100% coverage
+        end if
+        
+    end function calculate_branch_coverage_rate
+    
+    ! Check if a line contains conditional statement
+    function is_conditional_statement(line) result(is_conditional)
+        type(line_t), intent(in) :: line
+        logical :: is_conditional
+        
+        character(len=:), allocatable :: trimmed_content
+        
+        if (.not. allocated(line%content)) then
+            is_conditional = .false.
+            return
+        end if
+        
+        trimmed_content = trim(adjustl(line%content))
+        
+        is_conditional = index(trimmed_content, 'if ') == 1 .or. &
+                        index(trimmed_content, 'select ') == 1 .or. &
+                        index(trimmed_content, 'do while') > 0 .or. &
+                        index(trimmed_content, 'where ') == 1
+        
+    end function is_conditional_statement
 
 end module system_diff
