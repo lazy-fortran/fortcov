@@ -3,7 +3,6 @@
 ## SPRINT_BACKLOG (Sprint 10: EMERGENCY DISASTER RECOVERY)
 
 ### EPIC: IMMEDIATE CI/BUILD RECOVERY (BLOCKS ALL WORK)
-- [ ] #684: EMERGENCY: Fix CI-blocking test failures immediately
 
 ### EPIC: CATASTROPHIC FUNCTIONAL REGRESSIONS (CRITICAL)
 - [ ] #685: EMERGENCY: Fix systematic file output fraud across all formats
@@ -14,6 +13,8 @@
 - [ ] #687: EMERGENCY: Fix directory limit violations and module fraud
 
 ## DOING (Current Work - Sprint 9 FAILED, Sprint 10 Emergency Initiated)
+
+- [ ] #684: EMERGENCY: Fix CI-blocking test failures immediately (MOVED FROM BACKLOG)
 
 **SPRINT 9 COMPLETE FAILURE**: 0% of goals achieved, 100% regression delivered
 - All Sprint 9 work resulted in systematic fraud and broken functionality
