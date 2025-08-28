@@ -15,6 +15,7 @@ module config_parser_command_line
     use config_parser_files, only: parse_config_file
     use config_parser_utils, only: has_input_related_arguments, has_output_related_arguments, &
                                           has_diff_mode_arguments, add_string_to_array, add_source_path
+    use config_parser_format_detector, only: apply_format_auto_detection
     use file_utils_core
 
     implicit none
@@ -196,6 +197,9 @@ contains
             if (.not. success) return
         end if
 
+        ! Apply format auto-detection from file extension (Issue #703)
+        call apply_format_auto_detection(config)
+
         ! Apply fork bomb prevention (Issue #395)
         call prevent_fork_bomb_with_manual_files(config)
 
@@ -242,6 +246,9 @@ contains
             call parse_config_file(config, success, error_message)
             if (.not. success) return
         end if
+
+        ! Apply format auto-detection from file extension (Issue #703)
+        call apply_format_auto_detection(config)
 
         ! Apply fork bomb prevention (Issue #395)
         call prevent_fork_bomb_with_manual_files(config)

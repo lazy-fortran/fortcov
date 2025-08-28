@@ -136,6 +136,7 @@ contains
             config%output_path = value
         case ("--format", "-f")
             config%output_format = value
+            config%format_explicitly_set = .true.
         case ("--config", "-c")
             config%config_file = value
         case ("--import")

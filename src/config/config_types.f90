@@ -49,6 +49,7 @@ module config_types
         logical :: auto_discovery  ! Enable auto-discovery of source files/tests
         logical :: auto_test_execution  ! Enable automatic test execution
         integer :: test_timeout_seconds  ! Timeout for test execution in seconds
+        logical :: format_explicitly_set  ! Track if --format was explicitly provided
     end type config_t
 
 end module config_types

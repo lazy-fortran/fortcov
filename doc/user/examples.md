@@ -155,7 +155,10 @@ jobs:
         done
         fortcov --source=src *.gcov --fail-under=80
         # Note: FortCov outputs coverage analysis to stdout by default
-        # File output formats are fully implemented: --output=coverage.html, --output=coverage.json, etc.
+        # File output formats are fully implemented with auto-detection:
+        # --output=coverage.html (generates HTML, no --format needed)
+        # --output=coverage.json (generates JSON, no --format needed)
+        # --output=coverage.xml  (generates XML, no --format needed)
 ```
 
 **GitLab CI:**
@@ -179,8 +182,9 @@ coverage_analysis:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --source=src *.gcov --fail-under=75
-  # File output formats are fully implemented: --output=coverage.html, --output=coverage.json, etc.
-  # FortCov outputs coverage analysis to stdout by default, or to files when --output specified
+  # File output formats are fully implemented with auto-detection:
+  # FortCov outputs to stdout by default, or to files when --output specified
+  # Format is auto-detected from extension: .html→HTML, .json→JSON, .xml→XML
 ```
 
 ## Advanced Usage Patterns
