@@ -1,4 +1,5 @@
 program main
+  use iso_fortran_env, only: error_unit
   use fortcov_core, only: run_coverage_analysis
   use config_core, only: config_t, parse_config, show_help, show_version, &
                                    validate_config, validate_config_with_context
@@ -15,7 +16,7 @@ program main
   character(len=:), allocatable :: enhancement_error
   type(error_context_t) :: error_ctx
   logical :: success, enhancement_success
-  integer :: exit_code, argc, i
+  integer :: exit_code, argc, i, stat
   
   ! CRITICAL: Clean up any stale fork bomb prevention markers from previous runs
   ! This ensures that crashed or killed previous executions don't block current runs
@@ -26,13 +27,21 @@ program main
   argc = command_argument_count()
   
   if (argc > 0) then
-    allocate(character(len=256) :: args(argc))
+    allocate(character(len=256) :: args(argc), stat=stat)
+    if (stat /= 0) then
+      write(error_unit, '(A)') "FATAL: Memory allocation failed for command arguments"
+      stop 1
+    end if
     ! get_command_argument(i, ...) with i=1,2,... gets user arguments (not argv(0))
     do i = 1, argc
       call get_command_argument(i, args(i))
     end do
   else
-    allocate(character(len=256) :: args(0))
+    allocate(character(len=256) :: args(0), stat=stat)
+    if (stat /= 0) then
+      write(error_unit, '(A)') "FATAL: Memory allocation failed for empty arguments"
+      stop 1
+    end if
   end if
   
   ! Parse configuration

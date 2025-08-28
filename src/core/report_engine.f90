@@ -52,6 +52,7 @@ contains
         
         logical :: component_success
         character(len=:), allocatable :: component_error
+        integer :: stat
         
         success = .false.
         error_msg = ""
@@ -61,13 +62,25 @@ contains
         call this%config%init()
         
         ! Initialize foundation components
-        allocate(this%transformer)
+        allocate(this%transformer, stat=stat)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate data transformer"
+            return
+        end if
         call this%transformer%init()
         
-        allocate(this%theme_manager)
+        allocate(this%theme_manager, stat=stat)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate theme manager"
+            return
+        end if
         call this%theme_manager%init()
         
-        allocate(this%highlighter)
+        allocate(this%highlighter, stat=stat)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate syntax highlighter"
+            return
+        end if
         call this%highlighter%init()
         
         ! Load Fortran rules for syntax highlighting
@@ -79,10 +92,18 @@ contains
         end if
         
         ! Initialize specialized components
-        allocate(this%generator)
+        allocate(this%generator, stat=stat)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate report generator"
+            return
+        end if
         call this%generator%init()
         
-        allocate(this%formatter)
+        allocate(this%formatter, stat=stat)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate report formatter"
+            return
+        end if
         call this%formatter%init()
         
         ! Initialize coverage data

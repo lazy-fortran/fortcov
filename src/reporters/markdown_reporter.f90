@@ -129,7 +129,7 @@ contains
     function calculate_file_coverage(file) result(stats)
         type(coverage_file_t), intent(in) :: file
         type(coverage_stats_t) :: stats
-        integer :: total_lines, covered_lines, line_idx
+        integer :: total_lines, covered_lines, line_idx, stat
         integer, allocatable :: uncovered_lines(:)
         integer :: uncovered_count
         
@@ -142,7 +142,12 @@ contains
         
         ! Collect uncovered line numbers
         if (uncovered_count > 0) then
-            allocate(uncovered_lines(uncovered_count))
+            allocate(uncovered_lines(uncovered_count), stat=stat)
+            if (stat /= 0) then
+                ! Memory allocation failed - return error stats
+                call stats%init(-1.0, 0, 0, "MEMORY_ERROR")
+                return
+            end if
             uncovered_count = 0  ! Reset for collection
             do line_idx = 1, size(file%lines)
                 if (file%lines(line_idx)%is_executable .and. &
@@ -152,7 +157,12 @@ contains
                 end if
             end do
         else
-            allocate(uncovered_lines(0))
+            allocate(uncovered_lines(0), stat=stat)
+            if (stat /= 0) then
+                ! Memory allocation failed - return error stats
+                call stats%init(-1.0, 0, 0, "MEMORY_ERROR")
+                return
+            end if
         end if
         
         ! Calculate statistics
@@ -173,11 +183,16 @@ contains
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: sort_by
         integer, allocatable :: indices(:)
-        integer :: n, i, j, min_idx
+        integer :: n, i, j, min_idx, stat
         character(len=:), allocatable :: temp_filename
         
         n = size(coverage_data%files)
-        allocate(indices(n))
+        allocate(indices(n), stat=stat)
+        if (stat /= 0) then
+            ! Return empty array on allocation failure
+            allocate(indices(0))
+            return
+        end if
         
         ! Initialize indices
         do i = 1, n
