@@ -109,6 +109,8 @@ contains
     subroutine markdown_generate_report(this, coverage_data, output_path, &
                                       success, error_message, &
                                       diff_data, threshold)
+        use markdown_reporter, only: generate_markdown_report, markdown_report_options_t
+        use file_utils_core, only: write_text_file
         class(markdown_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
@@ -117,8 +119,32 @@ contains
         type(coverage_diff_t), intent(in), optional :: diff_data
         real, intent(in), optional :: threshold
         
-        success = .true.
-        error_message = ""
+        character(len=:), allocatable :: markdown_content
+        type(markdown_report_options_t) :: options
+        logical :: write_error
+        
+        ! Initialize markdown options with defaults
+        call options%init()
+        
+        ! Generate markdown content
+        markdown_content = generate_markdown_report(coverage_data, options)
+        
+        if (.not. allocated(markdown_content)) then
+            success = .false.
+            error_message = "Failed to generate markdown content"
+            return
+        end if
+        
+        ! Write markdown content to file
+        call write_text_file(output_path, markdown_content, write_error)
+        
+        if (write_error) then
+            success = .false.
+            error_message = "Failed to write markdown file: " // trim(output_path)
+        else
+            success = .true.
+            error_message = ""
+        end if
     end subroutine markdown_generate_report
     
     function markdown_get_format_name(this) result(format_name)
