@@ -10,7 +10,9 @@
 
 ## DOING (Current Work)
 
-**#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation
+**#718**: BLOCKED - PR #731 failing tests due to sergei's incompetent module interface (missing execute_tests_with_timeout export)
+
+**CRITICAL BLOCKER**: PR #731 must be fixed before any Sprint 12 progress possible
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
