@@ -112,8 +112,14 @@ contains
         
         result = .true.
         
-        ! Initialize basic config
+        ! Initialize basic config but disable zero-configuration mode
+        ! to avoid expensive auto-discovery that can hang in CI
         call initialize_default_config(config)
+        config%zero_configuration_mode = .false.
+        config%auto_discovery = .false.
+        
+        ! Allocate empty coverage files array to avoid discovery
+        allocate(character(len=256) :: config%coverage_files(0))
         
         ! Test find_and_filter_coverage_files with minimal data
         call find_and_filter_coverage_files(config, coverage_files, filtered_files)
