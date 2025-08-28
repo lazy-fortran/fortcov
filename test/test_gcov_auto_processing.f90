@@ -33,7 +33,12 @@ contains
         
         ! Initialize test configuration
         call initialize_test_config(config)
-        test_directory = "."
+        block
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            temp_dir = get_temp_dir()
+            test_directory = temp_dir // "/gcov_test_workspace"
+        end block
         
         ! Execute auto-processing
         call auto_process_gcov_files(test_directory, config, result)
@@ -119,7 +124,12 @@ contains
         print *, "Test: GCov bulk processing capabilities"
         
         call initialize_test_config(config)
-        test_directory = "."
+        block
+            use portable_temp_utils, only: get_temp_dir
+            character(len=:), allocatable :: temp_dir
+            temp_dir = get_temp_dir()
+            test_directory = temp_dir // "/gcov_bulk_test_workspace"
+        end block
         
         ! Execute bulk processing
         call auto_process_gcov_files(test_directory, config, result)
