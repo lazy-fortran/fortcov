@@ -22,8 +22,6 @@
 
 ## DOING (Current Work)
 
-- [ ] #643: CRITICAL - json_core.f90 at 966 lines (approaching limit) - **EPIC: CRITICAL ARCHITECTURAL VIOLATIONS**
-
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
 - [ ] Infrastructure Stabilization 
