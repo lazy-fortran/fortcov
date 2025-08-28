@@ -121,9 +121,8 @@ contains
                                        lines, success)
             if (.not. success) return
             
-            ! Initialize and populate file
-            call files(i)%init()
-            files(i)%filename = filename
+            ! Initialize file with filename
+            call files(i)%init(filename)
             if (allocated(lines)) then
                 files(i)%lines = lines
                 deallocate(lines)
@@ -198,11 +197,8 @@ contains
                                         line_number, hits, line_success)
             if (.not. line_success) return
             
-            ! Initialize line
-            call lines(i)%init()
-            lines(i)%line_number = line_number
-            lines(i)%execution_count = hits
-            lines(i)%is_executable = .true.
+            ! Initialize line with filename placeholder
+            call lines(i)%init("parsed.f90", line_number, hits, .true.)
             
             pos = line_start + 14  ! Move past '<line number="'
         end do

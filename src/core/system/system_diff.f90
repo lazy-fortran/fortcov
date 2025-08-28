@@ -16,6 +16,7 @@ module system_diff
     public :: validate_structural_equivalence
     public :: check_numerical_tolerance
     public :: calculate_coverage_rates
+    public :: calculate_branch_coverage_rate
     public :: parse_cobertura_xml
     
     ! XML namespace and schema constants
@@ -311,58 +312,48 @@ contains
         
     end function count_covered_lines
     
-    ! Calculate branch coverage rate from conditional statements
+    ! Calculate branch coverage rate using proper branch data
     function calculate_branch_coverage_rate(coverage_data) result(branch_rate)
         type(coverage_data_t), intent(in) :: coverage_data
         real :: branch_rate
         
-        integer :: total_branches, covered_branches, i, j
+        integer :: total_branches, covered_branches
+        integer :: file_idx, func_idx, branch_idx
         
         total_branches = 0
         covered_branches = 0
         
-        do i = 1, size(coverage_data%files)
-            if (.not. allocated(coverage_data%files(i)%lines)) cycle
-            
-            do j = 1, size(coverage_data%files(i)%lines)
-                ! Detect conditional statements (if, select, do while)
-                if (coverage_data%files(i)%lines(j)%is_executable .and. &
-                    is_conditional_statement(coverage_data%files(i)%lines(j))) then
-                    total_branches = total_branches + 1
-                    if (coverage_data%files(i)%lines(j)%execution_count > 0) then
-                        covered_branches = covered_branches + 1
-                    end if
+        ! Count actual branch coverage from gcov branch data
+        if (allocated(coverage_data%files)) then
+            do file_idx = 1, size(coverage_data%files)
+                if (allocated(coverage_data%files(file_idx)%functions)) then
+                    do func_idx = 1, size(coverage_data%files(file_idx)%functions)
+                        if (allocated(coverage_data%files(file_idx) &
+                                          %functions(func_idx)%branches)) then
+                            do branch_idx = 1, size(coverage_data%files(file_idx) &
+                                                  %functions(func_idx) &
+                                                  %branches)
+                                total_branches = total_branches + 1
+                                ! Branch is covered if taken path has been executed
+                                if (coverage_data%files(file_idx)%functions(func_idx) &
+                                    %branches(branch_idx)%taken_count > 0) then
+                                    covered_branches = covered_branches + 1
+                                end if
+                            end do
+                        end if
+                    end do
                 end if
             end do
-        end do
+        end if
         
+        ! Use safe percentage calculation (returns 0.0 for 0/0 case)
         if (total_branches > 0) then
             branch_rate = real(covered_branches) / real(total_branches)
         else
-            branch_rate = 0.0  ! No branches means no coverage to report
+            branch_rate = 0.0  ! No branches means 0% coverage (mathematical correctness)
         end if
         
     end function calculate_branch_coverage_rate
     
-    ! Check if a line contains conditional statement
-    function is_conditional_statement(line) result(is_conditional)
-        type(line_t), intent(in) :: line
-        logical :: is_conditional
-        
-        character(len=:), allocatable :: trimmed_content
-        
-        if (.not. allocated(line%content)) then
-            is_conditional = .false.
-            return
-        end if
-        
-        trimmed_content = trim(adjustl(line%content))
-        
-        is_conditional = index(trimmed_content, 'if ') == 1 .or. &
-                        index(trimmed_content, 'select ') == 1 .or. &
-                        index(trimmed_content, 'do while') > 0 .or. &
-                        index(trimmed_content, 'where ') == 1
-        
-    end function is_conditional_statement
 
 end module system_diff
