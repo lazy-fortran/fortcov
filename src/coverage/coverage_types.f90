@@ -5,7 +5,9 @@ module coverage_types
     !! 1000-line hard limit (92% capacity). Now properly decomposed into 
     !! focused, cohesive modules following the same pattern used in json_core:
     !! - coverage_basic_types: Basic types and constants
-    !! - coverage_complex_types: Complex aggregation types  
+    !! - coverage_function_types: Function-level coverage types (125 lines)
+    !! - coverage_file_types: File-level coverage types (219 lines)
+    !! - coverage_data_types: Data container types (155 lines)
     !! - coverage_diff_types: Coverage comparison types
     !!
     !! This architecture prevents hard limit violations while maintaining
@@ -17,9 +19,13 @@ module coverage_types
         source_location_t, coverage_line_t, coverage_branch_t, &
         line_coverage_t, file_coverage_t, &
         line_constructor, branch_constructor, line_is_covered
-    use coverage_complex_types, only: &
-        coverage_function_t, coverage_file_t, coverage_data_t, &
-        file_init_simple, file_init_with_lines, file_calculate_coverage, &
+    use coverage_function_types, only: &
+        coverage_function_t
+    use coverage_file_types, only: &
+        coverage_file_t, &
+        file_init_simple, file_init_with_lines, file_calculate_coverage
+    use coverage_data_types, only: &
+        coverage_data_t, &
         data_init_simple, data_init_with_files, data_calculate_overall_coverage
     use coverage_diff_types, only: &
         DIFF_UNCHANGED, DIFF_IMPROVED, DIFF_DEGRADED, DIFF_NEW_LINE, DIFF_REMOVED_LINE, &
