@@ -1103,93 +1103,177 @@ Sprint 8 establishes mature architectural foundation:
 - **Validated architecture decisions** guide future development trade-offs
 - **Quality standards enforcement** prevents technical debt accumulation
 
-## Sprint 11: ARCHITECTURAL DISASTER RECOVERY PROTOCOL (CURRENT)
+## Sprint 12: ARCHITECTURAL STABILITY & DEFENSIVE PROGRAMMING (CURRENT)
 
-### Emergency Sprint Goal
-**PRIMARY OBJECTIVE**: IMMEDIATE architectural disaster recovery and fraud elimination
+### Sprint Goal
+**PRIMARY OBJECTIVE**: Establish proactive architectural stability and defensive programming standards
 
-**SPRINT 11 EMERGENCY DEFINITION OF DONE**:
-1. **File Size Violations ELIMINATED**: coverage_complex_types.f90 decomposed to <400 lines (#702)
-2. **File Output Fraud ELIMINATED**: All "not yet implemented" messages replaced with actual functionality (#703)  
-3. **CI Fraud ELIMINATED**: 0% test failure rate achieved (fix all 11 failing tests) (#704)
-4. **Architectural Violations PREVENTED**: config_parser_utils.f90 decomposed before violation (#705)
-5. **Test Infrastructure RESTORED**: Fix test chaos, discovery failures, and fmp.toml corruption (#706)
+**SPRINT 12 DEFINITION OF DONE** (5 FOCUSED ISSUES):
+1. **Proactive Size Management**: Decompose 9 files approaching 500-line limit to <400 lines (#718)
+2. **Module Encapsulation**: Add private statement to 114 modules for proper API boundaries (#729)
+3. **Error Handling Standards**: Fix silent failure patterns - all functions return error codes (#727)
+4. **Mathematical Correctness**: Fix branch coverage calculation (0/0 ≠ 100%) (#724)
+5. **Test Discovery Fix**: Resolve FPM autodiscovery failures from module imports (#725)
 
-### Key Emergency Decisions (Sprint 11)
+### Key Architectural Decisions (Sprint 12)
 
-#### Decision 1: ZERO TOLERANCE FOR FRAUD
-**Choice**: IMMEDIATE rejection of any work containing fraud or architectural violations
-**Rationale**: Sprint 10 demonstrated team will systematically lie about deliverables
-**Implementation**: Every deliverable must be independently verified against actual evidence
+#### Decision 1: PROACTIVE ARCHITECTURE MANAGEMENT
+**Choice**: Decompose files at 440+ lines BEFORE they violate 500-line limit
+**Rationale**: Crisis-mode decomposition under emergency pressure leads to poor design decisions
+**Implementation**: Systematic SRP-based decomposition with 100-line safety buffer
+**Target Structure**:
+- Files approaching limit: Decompose to <350 lines
+- Maintain logical cohesion during splits
+- Document module responsibilities clearly
 
-#### Decision 2: ARCHITECTURAL VIOLATION PRIORITY
-**Choice**: File size violations take ABSOLUTE priority over all other work
-**Rationale**: coverage_complex_types.f90 at 508 lines represents CATASTROPHIC architectural failure
-**Protocol**: No other work proceeds until all size violations resolved
+#### Decision 2: PRIVATE-BY-DEFAULT MODULE DESIGN
+**Choice**: ALL modules must declare private as first statement after module declaration
+**Rationale**: 92% of modules expose all internals - violates encapsulation and security principles
+**Implementation Standards**:
+```fortran
+module example_module
+    use iso_fortran_env
+    implicit none
+    private  ! MANDATORY - default visibility
+    
+    ! Explicit public API
+    public :: necessary_function
+    public :: required_type
+```
+**Security Benefits**: Prevents unintended API usage and coupling
 
-#### Decision 3: CI-FIRST VALIDATION PROTOCOL  
-**Choice**: Fix ALL test failures before any other development work
-**Rationale**: 14.7% failure rate makes validation impossible
-**Standard**: 0% failure rate required - no compromises or excuses
+#### Decision 3: DEFENSIVE ERROR HANDLING PATTERNS
+**Choice**: Every function that can fail MUST return error codes
+**Rationale**: Silent failures create debugging nightmares and corrupt results
+**Implementation Pattern**:
+```fortran
+function process_data(data, error_code) result(success)
+    type(data_t), intent(inout) :: data
+    integer, intent(out) :: error_code
+    logical :: success
+    
+    error_code = 0
+    success = .false.
+    
+    if (.not. allocated(data%array)) then
+        error_code = ERROR_NOT_ALLOCATED  ! Named constant
+        return  ! Early return WITH error code set
+    end if
+    
+    ! Process data...
+    success = .true.
+end function
+```
 
-#### Decision 4: PROACTIVE SIZE MANAGEMENT
-**Choice**: config_parser_utils.f90 decomposition BEFORE violation occurs
-**Rationale**: Prevent repeating coverage_complex_types.f90 disaster pattern
-**Target**: <400 lines (100-line safety buffer from 500-line limit)
+#### Decision 4: MATHEMATICAL CORRECTNESS IN CALCULATIONS
+**Choice**: Fix 0/0 = 100% branch coverage fraud with proper mathematical handling
+**Rationale**: Incorrect calculations erode user trust and provide misleading metrics
+**Implementation**:
+```fortran
+if (total_branches == 0) then
+    branch_coverage = 0.0_dp  ! No branches = no coverage
+    coverage_status = "No branches found"
+else
+    branch_coverage = real(covered_branches, dp) / real(total_branches, dp) * 100.0_dp
+end if
+```
 
-#### Decision 5: BRUTAL OVERSIGHT PROTOCOL
-**Choice**: PERSONAL ACCOUNTABILITY for every architectural violation
-**Rationale**: Team demonstrated systematic fraud in Sprint 10
-**Implementation**: Name responsible individuals for each failure, demand corrections
+#### Decision 5: TEST INFRASTRUCTURE COMPATIBILITY
+**Choice**: Tests must be pure executables for FPM autodiscovery
+**Rationale**: Module imports in test files break FPM test discovery
+**Implementation Standards**:
+- Test files must be programs, not modules
+- No production module imports in test files
+- Use program-based test structure:
+```fortran
+program test_example
+    use test_framework
+    implicit none
+    
+    call run_tests()
+    
+contains
+    subroutine run_tests()
+        ! Test implementation
+    end subroutine
+end program
+```
 
-### Implementation Strategy (Sprint 11)
+### Implementation Strategy (Sprint 12)
 
-#### EMERGENCY SEQUENCE (NO DEVIATION ALLOWED)
-1. **#704**: Fix CI fraud - BLOCKS ALL OTHER WORK (0% test failure rate required)
-2. **#702**: Fix file size violation - CATASTROPHIC architectural failure
-3. **#703**: Fix file output fraud - Core product functionality lies
-4. **#705**: Prevent size violations - Proactive architectural discipline
-5. **#706**: Fix test infrastructure - Foundation for validation
+#### PRIORITIZED SEQUENCE
+1. **#718**: Proactive file decomposition (CRITICAL - prevents future emergencies)
+2. **#729**: Module encapsulation standards (HIGH - security/maintainability)
+3. **#727**: Error handling patterns (HIGH - reliability/debugging)
+4. **#724**: Coverage calculation fix (MEDIUM - user trust)
+5. **#725**: Test discovery repair (MEDIUM - development velocity)
 
-#### Success Metrics (Sprint 11)
-- **Primary**: All 5 emergency issues resolved completely with ZERO fraud
-- **Secondary**: 100% test success rate achieved and maintained
-- **Tertiary**: No file exceeds 400 lines (safety buffer established)
-- **Quaternary**: All success messages match actual delivered functionality
+#### Success Metrics (Sprint 12)
+- **Primary**: Zero files exceed 450 lines (safety buffer maintained)
+- **Secondary**: 100% of modules have private statement (encapsulation achieved)
+- **Tertiary**: All functions with failure modes return error codes
+- **Quaternary**: Branch coverage calculation mathematically correct
+- **Quinary**: FPM discovers and runs all test files
 
-### Risk Assessment (Sprint 11)
+### Risk Assessment (Sprint 12)
 
-**CRITICAL RISK**: Team has demonstrated systematic fraud and professional collapse
-- **Mitigation**: BRUTAL oversight, zero tolerance, immediate work rejection
-- **Monitoring**: Independent verification of every claim against actual evidence
-- **Accountability**: Personal responsibility assignment for all failures
-- **Fallback**: Immediate rollback and team accountability measures
+#### Medium Risk: File Decomposition Complexity
+- **Mitigation**: Use SRP to guide logical splits, maintain API compatibility
+- **Monitoring**: Test suite validates functionality after each decomposition
+- **Fallback**: Revert if decomposition introduces regression
 
-### Architectural Emergency Standards (Sprint 11)
+#### Low Risk: Private Statement Migration
+- **Mitigation**: Systematic module-by-module migration with testing
+- **Validation**: Ensure public APIs remain accessible
+- **Benefit**: Improved encapsulation and security
 
-#### File Size Discipline (NON-NEGOTIABLE)
+### Architectural Standards (Sprint 12 and Beyond)
+
+#### File Size Discipline (PROACTIVE MANAGEMENT)
 - **Hard Limit**: 500 lines (QADS standard)
-- **Target**: <400 lines (safety buffer)
-- **Violation Protocol**: IMMEDIATE emergency decomposition required
-- **Prevention**: Proactive management before limits approached
+- **Warning Threshold**: 450 lines (triggers proactive decomposition)
+- **Target**: <400 lines (comfortable operating range)
+- **Best Practice**: <350 lines (optimal maintainability)
+- **Decomposition Triggers**:
+  - File exceeds 450 lines
+  - Function exceeds 80 lines
+  - Module has >3 distinct responsibilities
 
-#### Quality Validation (ZERO TOLERANCE)
-- **Success Messages**: Must match actual delivered functionality
-- **Test Requirements**: 0% failure rate - no compromises
-- **File Output**: Actual file creation required for all claimed formats
-- **CI Status**: Green pipeline required before any PR merge
+#### Defensive Programming Standards
+- **Error Handling**: All functions that can fail must return error codes
+- **Module Encapsulation**: Private by default, explicit public API
+- **Resource Management**: Always check allocation status before use
+- **Mathematical Operations**: Handle edge cases (division by zero, overflow)
+- **Input Validation**: Verify all user inputs and external data
 
-#### Team Accountability (ABSOLUTE REQUIREMENT)
-- **Individual Responsibility**: Name responsible parties for all failures
-- **Professional Standards**: No tolerance for fraud or misrepresentation  
-- **Work Quality**: Every deliverable independently verified
-- **Immediate Correction**: All fraud must be corrected immediately
+#### Code Quality Standards
+- **Module Design**: Clear single responsibility per module
+- **API Design**: Minimal public interface, maximum encapsulation
+- **Error Messages**: Actionable messages with resolution guidance
+- **Testing**: Comprehensive error path coverage
+- **Documentation**: Clear module purpose and API contracts
 
-### Foundation for Genuine Recovery
+### Foundation for Sustainable Architecture
 
-Sprint 11 establishes REAL foundation through architectural discipline:
-- **Honest CI pipeline** with 0% failure rate enables genuine validation
-- **Truth in file output** with actual functionality delivery
-- **QADS compliance** through proactive size management
-- **Professional integrity** through zero tolerance for fraud
-- **Team accountability** through personal responsibility assignment
+Sprint 12 establishes preventive practices for long-term stability:
+- **Proactive management** prevents emergency decomposition crises
+- **Defensive programming** prevents silent failures and corrupted results
+- **Proper encapsulation** prevents unintended coupling and API misuse
+- **Mathematical correctness** maintains user trust in metrics
+- **Test compatibility** ensures smooth development workflow
+
+### Lessons Learned from Sprint 11
+
+#### Success Patterns
+1. **Short focused sprints** (5 issues max) enable complete delivery
+2. **Proactive decomposition** at 450+ lines prevents emergencies
+3. **Clear architectural standards** guide consistent implementation
+4. **Error handling patterns** prevent silent failures
+
+#### Anti-Patterns to Avoid
+1. **Crisis-mode decomposition** leads to poor design decisions
+2. **Missing error codes** create debugging nightmares
+3. **Public-by-default modules** violate encapsulation
+4. **Mathematical shortcuts** erode user trust
+
+## Sprint 11: ARCHITECTURAL DISASTER RECOVERY PROTOCOL (COMPLETE)
