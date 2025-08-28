@@ -36,12 +36,19 @@ for test in $ALL_TESTS; do
         ((SKIPPED++))
     else
         echo "▶️  RUNNING: $test"
-        if timeout 10 fpm test "$test" > /dev/null 2>&1; then
+        # Create temporary file for capturing output
+        TEMP_OUTPUT=$(mktemp)
+        if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
             echo "✅ PASSED: $test"
             ((PASSED++))
+            rm -f "$TEMP_OUTPUT"
         else
             echo "❌ FAILED: $test"
+            echo "--- Error Output for $test ---"
+            cat "$TEMP_OUTPUT"
+            echo "--- End Error Output ---"
             ((FAILED++))
+            rm -f "$TEMP_OUTPUT"
         fi
     fi
 done
