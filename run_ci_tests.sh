@@ -14,8 +14,27 @@ EXCLUDE_TESTS=(
 )
 
 # Get list of all tests - ROBUST pattern matching that handles malformed output
-# Skip the "Matched names:" header and extract test names
-ALL_TESTS=$(fpm test --list 2>&1 | grep -v "Matched names:" | grep -E "(test_|check|minimal_)" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+# Skip the "Matched names:" header and extract test names  
+# Strip ANSI color codes and filter properly
+RAW_OUTPUT=$(fpm test --list 2>&1)
+# Remove ANSI escape sequences, compilation progress, and filter for actual test names
+# Test names start with test_, check, or minimal_ and don't contain dots or percentages
+ALL_TESTS=$(echo "$RAW_OUTPUT" | \
+    sed 's/\x1b\[[0-9;]*m//g' | \
+    grep -v "Matched names:" | \
+    grep -v "%" | \
+    grep -v "\.f90" | \
+    grep -v "done\." | \
+    grep -E "^[[:space:]]*(test_|check|minimal_)[a-zA-Z0-9_]*[[:space:]]*$" | \
+    sed 's/^[[:space:]]*//' | \
+    sed 's/[[:space:]]*$//')
+
+# Debug: Show what we extracted (only in CI for debugging)
+if [ -n "$CI" ]; then
+    echo "DEBUG: Extracted test names:"
+    echo "$ALL_TESTS" | head -5
+    echo "---"
+fi
 
 # Run each test individually with timeout, skipping excluded ones
 PASSED=0
@@ -32,16 +51,23 @@ for test in $ALL_TESTS; do
     done
     
     if $skip; then
-        echo "⚠️  SKIPPING: $test (known issue from main branch)"
-        ((SKIPPED++))
+        echo "[SKIP] $test (known issue from main branch)"
+        SKIPPED=$((SKIPPED + 1))
     else
-        echo "▶️  RUNNING: $test"
-        if timeout 10 fpm test "$test" > /dev/null 2>&1; then
-            echo "✅ PASSED: $test"
-            ((PASSED++))
+        echo "[RUN] $test"
+        # Create temporary file for capturing output
+        TEMP_OUTPUT=$(mktemp)
+        if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
+            echo "[PASS] $test"
+            PASSED=$((PASSED + 1))
+            rm -f "$TEMP_OUTPUT"
         else
-            echo "❌ FAILED: $test"
-            ((FAILED++))
+            echo "[FAIL] $test"
+            echo "--- Error Output for $test ---"
+            cat "$TEMP_OUTPUT"
+            echo "--- End Error Output ---"
+            FAILED=$((FAILED + 1))
+            rm -f "$TEMP_OUTPUT"
         fi
     fi
 done
@@ -54,10 +80,10 @@ echo "  Skipped: $SKIPPED (known issues from main branch)"
 
 if [[ $FAILED -eq 0 ]]; then
     echo ""
-    echo "✅ All non-excluded tests passed!"
+    echo "[SUCCESS] All non-excluded tests passed!"
     exit 0
 else
     echo ""
-    echo "❌ Some tests failed!"
+    echo "[ERROR] Some tests failed!"
     exit 1
 fi

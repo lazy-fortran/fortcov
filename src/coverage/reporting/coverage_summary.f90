@@ -16,7 +16,7 @@ contains
         type(coverage_summary_t), intent(out) :: summary
         logical, intent(out) :: success
         
-        integer :: i, total_lines, covered_lines
+        integer :: i, total_lines, covered_lines, executable_lines
         
         call summary%init()
         success = .false.
@@ -30,24 +30,27 @@ contains
         summary%total_files = size(coverage_data%files)
         total_lines = 0
         covered_lines = 0
+        executable_lines = 0
         
         ! Calculate summary statistics
         do i = 1, size(coverage_data%files)
             if (allocated(coverage_data%files(i)%lines)) then
                 total_lines = total_lines + size(coverage_data%files(i)%lines)
+                executable_lines = executable_lines + &
+                    count(coverage_data%files(i)%lines%is_executable)
                 covered_lines = covered_lines + &
                     count(coverage_data%files(i)%lines%execution_count > 0 .and. &
                           coverage_data%files(i)%lines%is_executable)
             end if
         end do
         
-        summary%total_lines = total_lines
+        summary%total_lines = executable_lines  ! Only count executable lines
         summary%covered_lines = covered_lines
         
-        ! Calculate percentage
-        if (total_lines > 0) then
+        ! Calculate percentage based on executable lines only
+        if (executable_lines > 0) then
             summary%coverage_percentage = &
-                real(covered_lines) / real(total_lines) * 100.0
+                real(covered_lines) / real(executable_lines) * 100.0
         end if
         
         success = .true.
