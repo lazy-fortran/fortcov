@@ -13,8 +13,9 @@ EXCLUDE_TESTS=(
     "test_complete_workflow"               # Workflow test issue
 )
 
-# Get list of all tests (skip header, trim spaces)
-ALL_TESTS=$(fpm test --list | grep -E "^(test_|check|minimal_)" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+# Get list of all tests - ROBUST pattern matching that handles malformed output
+# Skip the "Matched names:" header and extract test names
+ALL_TESTS=$(fpm test --list 2>&1 | grep -v "Matched names:" | grep -E "(test_|check|minimal_)" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
 
 # Run each test individually with timeout, skipping excluded ones
 PASSED=0
