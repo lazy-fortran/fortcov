@@ -6,7 +6,6 @@
 *All issues resolved*
 
 ### EPIC: CORE FUNCTIONALITY DEFECTS (HIGH)
-- [ ] #658: JSON output format completely broken - no file created
 - [ ] #657: fortcov lies about output locations - creates in build directory
 - [ ] #660: --output flag broken for JSON format
 - [ ] #659: inconsistent file output locations across formats
@@ -22,7 +21,7 @@
 
 ## DOING (Current Work)
 
-*No active work items*
+- [ ] #658: JSON output format completely broken - no file created - **EPIC: CORE FUNCTIONALITY DEFECTS**
 
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
