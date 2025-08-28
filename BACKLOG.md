@@ -19,7 +19,7 @@
 
 ## DOING (Current Work)
 
-*No active work - ready for next SPRINT_BACKLOG item*
+**#740**: Exit code regression - All error conditions return 0 breaking CI/CD pipelines (CRITICAL) - ACTIVE IMPLEMENTATION IN PROGRESS
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
