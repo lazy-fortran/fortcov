@@ -22,9 +22,9 @@
 
 **SPRINT 15 EMERGENCY RECOVERY - PRIORITIZED BY SEVERITY**
 
-**#758**: TEST INFRASTRUCTURE COLLAPSE - FPM discovers 75 tests but execution fails (CI-BLOCKING)
-- XML module circular dependency resolved (commits fc810b2, 4a636ec)
-- Continuing test discovery investigation for remaining failures
+**#751**: SECURITY VULNERABILITY - Command injection in test_execution_core.f90 (CRITICAL)
+- Ready for implementation: fix command injection via proper shell escaping
+- Previous work: Issue #758 test infrastructure resolved (CI operational)
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
