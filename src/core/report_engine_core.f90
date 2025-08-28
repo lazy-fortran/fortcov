@@ -9,6 +9,7 @@ module report_engine_core
     !! Implementation moved to: report_engine_impl.f90
     use report_engine
     implicit none
+    private
 
     ! Re-export all public types for backward compatibility
     public :: report_engine_t

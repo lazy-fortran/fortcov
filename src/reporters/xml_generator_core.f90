@@ -1,20 +1,19 @@
 module xml_generator_core
-    !! XML Generation for Coverage Reports
+    !! XML Generation Functions
     !! 
+    !! Handles generation of XML sections for coverage reports.
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
-    !! Handles generation of XML sections for coverage data.
     use coverage_model_core
     use string_utils, only: int_to_string, real_to_string
-    use xml_utils_core, only: get_directory_path, get_base_name, &
-                              calculate_file_line_rate
+    use xml_utility_helpers, only: get_directory_path, get_base_name
     implicit none
     private
     
-    public :: generate_sources_section
-    public :: generate_packages_section
-    
+    public :: generate_sources_section, generate_packages_section
+    public :: calculate_file_line_rate
+
 contains
-    
+
     ! Generate sources section of XML
     function generate_sources_section(coverage_data) result(sources_xml)
         type(coverage_data_t), intent(in) :: coverage_data
@@ -96,5 +95,35 @@ contains
                       '</packages>'
         
     end function generate_packages_section
+    
+    ! Calculate line rate for a single file
+    subroutine calculate_file_line_rate(file_data, line_rate)
+        type(coverage_file_t), intent(in) :: file_data
+        real, intent(out) :: line_rate
+        
+        integer :: total_lines, covered_lines, i
+        
+        total_lines = 0
+        covered_lines = 0
+        
+        ! Memory safety: Check if lines array is allocated
+        if (allocated(file_data%lines)) then
+            do i = 1, size(file_data%lines)
+                if (file_data%lines(i)%is_executable) then
+                    total_lines = total_lines + 1
+                    if (file_data%lines(i)%execution_count > 0) then
+                        covered_lines = covered_lines + 1
+                    end if
+                end if
+            end do
+        end if
+        
+        if (total_lines > 0) then
+            line_rate = real(covered_lines) / real(total_lines)
+        else
+            line_rate = 0.0
+        end if
+        
+    end subroutine calculate_file_line_rate
     
 end module xml_generator_core

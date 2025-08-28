@@ -1,22 +1,18 @@
 module xml_parser_core
-    !! XML Parsing for Coverage Data
+    !! XML Parsing and Document Processing
     !! 
+    !! Handles parsing of XML documents into coverage data structures.
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
-    !! Handles parsing of XML coverage data files.
     use coverage_model_core
     implicit none
     private
     
-    public :: parse_cobertura_xml
-    public :: count_xml_elements
-    public :: parse_classes_from_xml
-    public :: extract_filename_from_class
-    public :: parse_lines_from_class
-    public :: extract_line_attributes
+    public :: parse_cobertura_xml, count_xml_elements, parse_classes_from_xml
     public :: is_well_formed_xml
-    
+
 contains
-    
+
+    ! Parse Cobertura XML into coverage data structure
     subroutine parse_cobertura_xml(xml_content, coverage_data, success)
         character(len=*), intent(in) :: xml_content
         type(coverage_data_t), intent(out) :: coverage_data
@@ -103,8 +99,8 @@ contains
             end if
             class_start = class_start + pos - 1
             
-            ! Extract filename - with bounds checking
-            call extract_filename_from_class(xml_content(class_start:), filename, &
+            ! Extract filename - inline implementation to avoid circular dependency
+            call extract_filename_inline(xml_content(class_start:), filename, &
                                               success)
             if (.not. success) return
             
@@ -116,25 +112,43 @@ contains
             end if
             class_end = class_end + class_start - 1
             
-            ! Parse lines within this class
-            call parse_lines_from_class(xml_content(class_start:class_end), &
-                                       lines, success)
-            if (.not. success) return
-            
-            ! Initialize and populate file
-            call files(i)%init()
-            files(i)%filename = filename
-            if (allocated(lines)) then
-                files(i)%lines = lines
-                deallocate(lines)
+            ! Validate bounds
+            if (class_start > len(xml_content) .or. class_end > len(xml_content)) then
+                success = .false.
+                return
             end if
             
-            pos = class_end + 1
+            ! Parse lines within this class - inline implementation to avoid circular dependency
+            call parse_lines_inline(xml_content(class_start:class_end), lines, &
+                                         success)
+            if (.not. success) return
+            
+            ! Create file object
+            call files(i)%init(filename)
+            if (allocated(lines)) deallocate(lines)
+            
+            ! Move position for next class
+            pos = class_end + 8  ! length of '</class>'
         end do
         
     end subroutine parse_classes_from_xml
     
-    subroutine extract_filename_from_class(class_xml, filename, success)
+    function is_well_formed_xml(xml_content) result(is_well_formed)
+        character(len=*), intent(in) :: xml_content
+        logical :: is_well_formed
+        integer :: open_tags, close_tags
+        
+        ! Basic well-formed check - count opening and closing tags
+        open_tags = count_xml_elements(xml_content, '<')
+        close_tags = count_xml_elements(xml_content, '</')
+        
+        ! Should have balanced tags (simplified check)
+        is_well_formed = (open_tags >= close_tags)
+        
+    end function is_well_formed_xml
+    
+    ! Inline implementations to avoid circular dependency with xml_attribute_parser
+    subroutine extract_filename_inline(class_xml, filename, success)
         character(len=*), intent(in) :: class_xml
         character(len=:), allocatable, intent(out) :: filename
         logical, intent(out) :: success
@@ -161,9 +175,9 @@ contains
         filename = class_xml(start_pos:end_pos)
         success = .true.
         
-    end subroutine extract_filename_from_class
+    end subroutine extract_filename_inline
     
-    subroutine parse_lines_from_class(class_xml, lines, success)
+    subroutine parse_lines_inline(class_xml, lines, success)
         character(len=*), intent(in) :: class_xml
         type(coverage_line_t), allocatable, intent(out) :: lines(:)
         logical, intent(out) :: success
@@ -194,24 +208,21 @@ contains
             line_start = line_start + pos - 1
             
             ! Extract line attributes
-            call extract_line_attributes(class_xml(line_start:), &
+            call extract_line_attributes_inline(class_xml(line_start:), &
                                         line_number, hits, line_success)
             if (.not. line_success) return
             
-            ! Initialize line
-            call lines(i)%init()
-            lines(i)%line_number = line_number
-            lines(i)%execution_count = hits
-            lines(i)%is_executable = .true.
+            ! Initialize line with filename placeholder
+            call lines(i)%init("parsed.f90", line_number, hits, .true.)
             
             pos = line_start + 14  ! Move past '<line number="'
         end do
         
         success = .true.
         
-    end subroutine parse_lines_from_class
+    end subroutine parse_lines_inline
     
-    subroutine extract_line_attributes(line_xml, line_number, hits, success)
+    subroutine extract_line_attributes_inline(line_xml, line_number, hits, success)
         character(len=*), intent(in) :: line_xml
         integer, intent(out) :: line_number, hits
         logical, intent(out) :: success
@@ -250,21 +261,6 @@ contains
         
         success = .true.
         
-    end subroutine extract_line_attributes
-    
-    function is_well_formed_xml(xml_content) result(well_formed)
-        character(len=*), intent(in) :: xml_content
-        logical :: well_formed
-        
-        ! Basic well-formedness check
-        integer :: open_count, close_count
-        
-        open_count = count_xml_elements(xml_content, '<')
-        close_count = count_xml_elements(xml_content, '</')
-        
-        ! Very simple check - should have balanced tags
-        well_formed = (open_count >= close_count)
-        
-    end function is_well_formed_xml
-    
+    end subroutine extract_line_attributes_inline
+
 end module xml_parser_core

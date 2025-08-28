@@ -205,7 +205,7 @@ contains
                                                  "% is below fail-under threshold of ", &
                                                  config%fail_under_threshold, "%"
                 end if
-                exit_code = EXIT_FAILURE
+                exit_code = EXIT_THRESHOLD_NOT_MET
             end if
         end if
         
