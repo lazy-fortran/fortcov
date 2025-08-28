@@ -10,9 +10,16 @@
 
 ## DOING (Current Work)
 
-**#718**: BLOCKED - PR #731 failing tests due to sergei's incompetent module interface (missing execute_tests_with_timeout export)
+**#718**: BLOCKED - PR #731 failing 7 tests due to sergei's pathetic implementation:
+- test_issue_249: Wrong output path
+- test_memory_allocation_errors: 10s timeout failure  
+- test_issue_433_comprehensive: Path validation broken
+- test_infrastructure_stability_validation: Runtime crashes
+- test_config_file_auto_discovery: Auto-discovery logic broken
+- test_issue_470_verification: Coverage parsing fails
+- test_cli_integration: Another timeout failure
 
-**CRITICAL BLOCKER**: PR #731 must be fixed before any Sprint 12 progress possible
+**CRITICAL BLOCKER**: sergei MUST fix ALL test failures before merge - ZERO TOLERANCE for broken code
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
