@@ -1,41 +1,29 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Sprint 15: EMERGENCY RECOVERY)
+## SPRINT_BACKLOG (Sprint 14: DEPLOYMENT RELIABILITY & USER ONBOARDING)
 
-**SPRINT FOCUS**: CRITICAL DISASTER RECOVERY - Product completely broken after Sprint 14 failure
+**SPRINT FOCUS**: Critical user-facing failures blocking deployment and onboarding
 
-### EMERGENCY RECOVERY ISSUES (5 MAXIMUM)
+### CRITICAL ISSUES (5 FOCUSED ISSUES)
 
-**SPRINT GOAL**: Restore basic product functionality after catastrophic Sprint 14 failure
+**SPRINT GOAL**: Restore deployment reliability and user onboarding success
 
-#### EPIC: Immediate Compilation Recovery (CRITICAL)
-**#755**: Compilation disaster - PR #745 breaks build with type interface corruption (BLOCKS ALL WORK)
-**#746**: Critical module decomposition breaks compilation - derived type interface corruption (CRITICAL)
+#### EPIC: Critical Deployment Reliability
+**#740**: Exit code regression - All error conditions return 0 breaking CI/CD pipelines (CRITICAL)
+**#739**: Documentation examples broken - Empty output file error and non-functional fail-under threshold (CRITICAL)
 
-#### EPIC: Core Functionality Recovery (HIGH) 
-**#750**: False testing claims - PR #745 claims passing tests with 0% actual test coverage (FRAUD)
-**#758**: Test infrastructure collapse - FPM discovers 75 tests but execution fails (BROKEN FOUNDATION)
-**#753**: Critical UX failure - Getting started tutorial completely broken (USER BLOCKING)
+#### EPIC: Sprint 12 Completion (Foundation)
+**#725**: FPM test discovery - Test module imports breaking autodiscovery (HIGH - now unblocked) 
+**#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud (HIGH)
+~~**#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation~~ (COMPLETED - PR #745)
 
 ## DOING (Current Work)
 
-*Emergency recovery mode - Sprint 14 catastrophic failure requires immediate disaster response*
+*No active work - Issue #718 implementation complete and merged successfully*
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
-**SPRINT 14 DISASTER RECOVERY DEFECTS** (Address after Sprint 15 emergency fixes):
-- **#760**: ARCHITECTURAL HYPOCRISY - Size enforcement tools exempt themselves from size limits
-- **#759**: Design drift - Sprint 14 implementation violates documented architecture decisions  
-- **#757**: Sprint goal failure - Documentation examples still broken despite Issue #739 claims
-- **#756**: Size violation - report_engine.f90 violates 500-line QADS limit (480 lines)
-- **#754**: Regression - Diff functionality advertised in help but not implemented (Issue #661 regression)
-- **#752**: Major README fraud - Contains false claims about file output functionality
-- **#751**: Security vulnerability - Command injection in test_execution_core.f90
-- **#749**: Directory organization violation - src/coverage exceeds 15-file soft limit (20 items)
-- **#748**: Duplicate functionality - Two size management modules with 926 total lines
-- **#747**: Architectural hypocrisy - Size validator violates its own 500-line rule (580 lines)
-
-**PRIOR SPRINT DEFERRED DEFECTS** (Lower priority after emergency recovery):
+**DEFERRED DEFECTS** (Address after Sprint 14 critical deployment fixes):
 - **#738**: Technical debt cleanup - Sprint 13 emergency fixes created maintenance burden
 - **#727**: Silent error handling patterns - Functions return without proper error codes
 - **#728**: Module naming cleanup - Remove redundant _core suffix from 46 modules
@@ -61,13 +49,12 @@
 - Performance Optimization & Scalability (DEFERRED)
 - Enhanced Integration & Compatibility (DEFERRED)
 
-**SPRINT 15 EMERGENCY NOTES**:
-- CRITICAL DISASTER RECOVERY ONLY - Product completely non-functional
-- Compilation must work before any other work can proceed
-- Test infrastructure must be restored before claiming any fixes
-- User experience completely blocked by broken core functionality
-- Sprint 14 claimed completions need forensic audit for actual status
-- Focus on IMMEDIATE restoration of basic product functionality only
+**SPRINT 14 NOTES**:
+- User-facing reliability takes absolute priority over internal architecture
+- Documentation examples must work as written - user onboarding cannot fail
+- Exit codes are deployment-critical - CI/CD pipelines depend on proper error propagation
+- Foundation work from Sprint 12 provides strategic completion opportunities
+- Balance critical fixes with architectural progress for sustainable development
 
 ## DONE (Sprint History - Previous Completed Sprints)
 

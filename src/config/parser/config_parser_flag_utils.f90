@@ -37,7 +37,8 @@ contains
               "--quiet", "-q", "--validate", "--keep-gcov-files", &
               "--tui", "--strict", "--include-unchanged", &
               "--auto-discovery", "--no-auto-discovery", &
-              "--auto-test", "--no-auto-test")
+              "--auto-test", "--no-auto-test", "--validate-architecture", &
+              "--fail-on-size-warnings")
             requires_value = .false.
         ! Flags that DO require values
         case ("--source", "-s", "--exclude", "-e", "--include", "-i", &
@@ -45,7 +46,7 @@ contains
               "--import", "--gcov-executable", "--gcov-args", &
               "--minimum", "-m", "--threshold", "--fail-under", &
               "--threads", "-t", "--diff", "--diff-threshold", &
-              "--test-timeout")
+              "--test-timeout", "--architecture-format")
             requires_value = .true.
         ! Unknown flags do not require values (will be caught as invalid later)
         case default

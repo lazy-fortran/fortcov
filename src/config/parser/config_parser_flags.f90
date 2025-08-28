@@ -108,6 +108,8 @@ contains
             config%show_version = .true.
         case ("--validate")
             config%validate_config_only = .true.
+        case ("--validate-architecture")
+            config%validate_architecture = .true.
         case default
             success = .false.
         end select
@@ -144,6 +146,8 @@ contains
             config%gcov_executable = value
         case ("--gcov-args")
             config%gcov_args = value
+        case ("--architecture-format")
+            config%architecture_output_format = value
         case default
             success = .false.
         end select
@@ -178,6 +182,8 @@ contains
             config%auto_test_execution = .true.
         case ("--no-auto-test")
             config%auto_test_execution = .false.
+        case ("--fail-on-size-warnings")
+            config%fail_on_size_warnings = .true.
         case default
             success = .false.
         end select

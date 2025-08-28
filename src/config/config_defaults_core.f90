@@ -56,6 +56,11 @@ contains
         config%auto_discovery = .true.
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 300
+        
+        ! Architectural size validation defaults (Issue #718)
+        config%validate_architecture = .false.
+        config%fail_on_size_warnings = .false.
+        config%architecture_output_format = "human"
 
         ! Get max files from environment, default to 1000
         call get_max_files_from_env(max_files_env)
