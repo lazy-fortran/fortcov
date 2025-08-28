@@ -28,9 +28,9 @@ module xml_utils
     public :: is_well_formed_xml
     
     ! Note: All implementation delegated to specialized modules:
-    ! - xml_generator_core: XML generation functions
+    ! - xml_generator_core: XML generation functions (includes calculate_file_line_rate)
     ! - xml_parser_core: XML parsing functions  
-    ! - xml_utils_core: Utility and helper functions
+    ! - xml_utils_core: Utility and helper functions (timestamp, paths)
     !
     ! This architecture provides:
     ! - Better separation of concerns (generation vs parsing vs utilities)

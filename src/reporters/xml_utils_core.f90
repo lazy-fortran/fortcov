@@ -8,42 +8,11 @@ module xml_utils_core
     implicit none
     private
     
-    public :: calculate_file_line_rate
     public :: get_current_timestamp
     public :: get_directory_path
     public :: get_base_name
     
 contains
-    
-    subroutine calculate_file_line_rate(file_data, line_rate)
-        type(coverage_file_t), intent(in) :: file_data
-        real, intent(out) :: line_rate
-        
-        integer :: total_lines, covered_lines, i
-        
-        total_lines = 0
-        covered_lines = 0
-        
-        ! Memory safety: Check if lines array is allocated
-        if (allocated(file_data%lines)) then
-            do i = 1, size(file_data%lines)
-                if (file_data%lines(i)%is_executable) then
-                    total_lines = total_lines + 1
-                    if (file_data%lines(i)%execution_count > 0) then
-                        covered_lines = covered_lines + 1
-                    end if
-                end if
-            end do
-        end if
-        
-        ! Calculate line rate
-        if (total_lines > 0) then
-            line_rate = real(covered_lines) / real(total_lines)
-        else
-            line_rate = 0.0
-        end if
-        
-    end subroutine calculate_file_line_rate
     
     function get_current_timestamp() result(timestamp)
         character(len=19) :: timestamp
