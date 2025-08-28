@@ -1103,17 +1103,40 @@ Sprint 8 establishes mature architectural foundation:
 - **Validated architecture decisions** guide future development trade-offs
 - **Quality standards enforcement** prevents technical debt accumulation
 
-## Sprint 11: ARCHITECTURAL DISASTER RECOVERY PROTOCOL (CURRENT)
+## Sprint 12: REPOSITORY COMPLEXITY REDUCTION (CURRENT)
 
-### Emergency Sprint Goal
-**PRIMARY OBJECTIVE**: IMMEDIATE architectural disaster recovery and fraud elimination
+### Sprint Goal
+**PRIMARY OBJECTIVE**: Eliminate catastrophic repository complexity through systematic simplification
 
-**SPRINT 11 EMERGENCY DEFINITION OF DONE**:
-1. **File Size Violations ELIMINATED**: coverage_complex_types.f90 decomposed to <400 lines (#702)
-2. **File Output Fraud ELIMINATED**: All "not yet implemented" messages replaced with actual functionality (#703)  
-3. **CI Fraud ELIMINATED**: 0% test failure rate achieved (fix all 11 failing tests) (#704)
-4. **Architectural Violations PREVENTED**: config_parser_utils.f90 decomposed before violation (#705)
-5. **Test Infrastructure RESTORED**: Fix test chaos, discovery failures, and fmp.toml corruption (#706)
+**SPRINT 12 DEFINITION OF DONE**:
+1. **Repository Trash ELIMINATED**: All 544 build artifacts removed, .gitignore updated (#713)
+2. **Directory Organization RESTORED**: src/coverage reorganized with subcategories under 15-file limit (#714)
+3. **Documentation Truth ESTABLISHED**: CLAUDE.md reduced from 206 lines of fiction to 50 lines of reality (#715)
+
+### Key Architectural Decisions (Sprint 12)
+
+#### Decision 1: TRASH ELIMINATION FIRST PRIORITY
+**Choice**: Remove all build artifacts before any development work
+**Rationale**: 425% trash ratio creates cognitive overload and blocks maintainability
+**Implementation**: Systematic deletion with .gitignore prevention
+
+#### Decision 2: DIRECTORY ORGANIZATION COMPLIANCE
+**Choice**: Create logical subcategories within src/coverage/
+**Rationale**: 17 files exceeds QADS 15-file limit, blocks navigation and comprehension
+**Target Structure**:
+```
+src/coverage/
+├── analysis/    (3-4 files)
+├── data/        (3-4 files) 
+├── io/          (3-4 files)
+├── processing/  (4-5 files)
+└── reporting/   (3-4 files)
+```
+
+#### Decision 3: DOCUMENTATION TRUTH RESTORATION
+**Choice**: Replace obsolete CLAUDE.md with minimal, accurate guidance
+**Rationale**: 206 lines of architectural fiction blocks team effectiveness
+**Target**: <50 lines covering current architecture, build commands, and fork bomb prevention
 
 ### Key Emergency Decisions (Sprint 11)
 
