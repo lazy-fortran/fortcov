@@ -19,7 +19,7 @@
 
 ## DOING (Current Work)
 
-*No active work - Sprint 14 planning complete*
+**#740**: Exit code regression - All error conditions return 0 breaking CI/CD pipelines (CRITICAL - max-devops)
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
