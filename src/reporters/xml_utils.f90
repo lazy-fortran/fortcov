@@ -7,6 +7,7 @@ module xml_utils
     use xml_generator_core
     use xml_parser_core
     use xml_utils_core
+    use xml_attribute_parser
     use string_utils, only: int_to_string, real_to_string
     implicit none
     private
@@ -31,6 +32,7 @@ module xml_utils
     ! - xml_generator_core: XML generation functions (includes calculate_file_line_rate)
     ! - xml_parser_core: XML parsing functions  
     ! - xml_utils_core: Utility and helper functions (timestamp, paths)
+    ! - xml_attribute_parser: XML attribute parsing functions
     !
     ! This architecture provides:
     ! - Better separation of concerns (generation vs parsing vs utilities)
