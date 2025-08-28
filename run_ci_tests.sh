@@ -52,21 +52,21 @@ for test in $ALL_TESTS; do
     
     if $skip; then
         echo "[SKIP] $test (known issue from main branch)"
-        ((SKIPPED++))
+        SKIPPED=$((SKIPPED + 1))
     else
         echo "[RUN] $test"
         # Create temporary file for capturing output
         TEMP_OUTPUT=$(mktemp)
         if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
             echo "[PASS] $test"
-            ((PASSED++))
+            PASSED=$((PASSED + 1))
             rm -f "$TEMP_OUTPUT"
         else
             echo "[FAIL] $test"
             echo "--- Error Output for $test ---"
             cat "$TEMP_OUTPUT"
             echo "--- End Error Output ---"
-            ((FAILED++))
+            FAILED=$((FAILED + 1))
             rm -f "$TEMP_OUTPUT"
         fi
     fi
