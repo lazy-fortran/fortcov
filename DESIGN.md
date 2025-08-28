@@ -1103,17 +1103,63 @@ Sprint 8 establishes mature architectural foundation:
 - **Validated architecture decisions** guide future development trade-offs
 - **Quality standards enforcement** prevents technical debt accumulation
 
-## Sprint 12: ARCHITECTURAL STABILITY & DEFENSIVE PROGRAMMING (CURRENT)
+## Sprint 13: DEPLOYMENT CAPABILITY RESTORATION (EMERGENCY)
 
 ### Sprint Goal
-**PRIMARY OBJECTIVE**: Establish proactive architectural stability and defensive programming standards
+**PRIMARY OBJECTIVE**: EMERGENCY restoration of deployment capability - fix test infrastructure chaos blocking all development
 
-**SPRINT 12 DEFINITION OF DONE** (5 FOCUSED ISSUES):
-1. **Proactive Size Management**: Decompose 9 files approaching 500-line limit to <400 lines (#718)
-2. **Module Encapsulation**: Add private statement to 114 modules for proper API boundaries (#729)
-3. **Error Handling Standards**: Fix silent failure patterns - all functions return error codes (#727)
-4. **Mathematical Correctness**: Fix branch coverage calculation (0/0 ≠ 100%) (#724)
-5. **Test Discovery Fix**: Resolve FPM autodiscovery failures from module imports (#725)
+**SPRINT 13 EMERGENCY DEFINITION OF DONE** (3 CRITICAL ISSUES ONLY):
+1. **CI Pipeline Operational**: Fix systematic 14.7% test failure rate blocking all merges (#704)
+2. **Test Infrastructure Stable**: Resolve test file chaos and discovery failures preventing validation (#706) 
+3. **Fraud Prevention**: Stop systematic CI fraud pattern where PRs claim success while failing CI (#736)
+
+**DEPLOYMENT FIRST PRINCIPLE**: No architectural progress possible without working CI pipeline
+
+### Critical Infrastructure Crisis Analysis
+
+#### Root Cause: Systematic Test Infrastructure Collapse
+- **All 5 Sprint 12 PRs failing CI** despite implementers claiming "tests pass" 
+- **14.7% failure rate** (12+ tests failing) masquerading as success
+- **Test discovery broken** preventing proper validation workflow
+- **CI fraud pattern** where claims don't match reality
+
+#### Impact Assessment
+- **Development pipeline BLOCKED**: Cannot merge any PRs with failing CI
+- **Sprint 12 deliverables FROZEN**: All architectural work suspended
+- **Quality validation IMPOSSIBLE**: Cannot verify fixes without working tests
+- **Team productivity COLLAPSED**: No development progress possible
+
+### Emergency Recovery Strategy
+
+#### Phase 1: CI Pipeline Recovery (CRITICAL)
+**Issue #704**: Fix 14.7% test failure rate
+- Identify root cause of systematic test failures
+- Fix failing tests to achieve 100% pass rate
+- Implement CI fraud detection to prevent future claims mismatching reality
+
+#### Phase 2: Test Infrastructure Stabilization (CRITICAL)
+**Issue #706**: Fix test file chaos and discovery failures
+- Resolve test discovery failures preventing proper validation
+- Fix test file organization and execution issues
+- Ensure reliable test execution for future validation
+
+#### Phase 3: Fraud Prevention (HIGH)
+**Issue #736**: Stop systematic CI fraud pattern
+- Implement validation that PR claims match actual CI status
+- Establish accountability measures for accurate reporting
+- Create safeguards against future fraud patterns
+
+### Success Metrics (Sprint 13)
+- **PRIMARY**: 100% CI test pass rate - no failing tests allowed
+- **SECONDARY**: 100% test discovery rate - all tests found and executable  
+- **TERTIARY**: Zero tolerance for CI fraud - claims must match reality
+
+### Foundation for Sprint 12 Resumption
+Sprint 13 success enables Sprint 12 completion:
+- **Working CI pipeline** allows PR merges and validation
+- **Reliable test infrastructure** enables architectural change validation
+- **Fraud prevention** ensures accurate progress reporting
+- **Quality foundation** supports sustainable development workflow
 
 ### Key Architectural Decisions (Sprint 12)
 
