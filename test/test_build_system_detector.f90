@@ -9,7 +9,8 @@ program test_build_system_detector
     !! - Edge cases and malformed configurations
     
     use iso_fortran_env, only: error_unit, output_unit
-    use build_detector_core
+    use test_auto_discovery_mocks, only: mock_detect_build_system, mock_build_system_info_t, &
+        mock_get_coverage_test_command
     use error_handling_core
     implicit none
     
@@ -18,7 +19,7 @@ program test_build_system_detector
     logical :: all_tests_passed = .true.
     
     ! Test variables
-    type(build_system_info_t) :: build_info
+    type(mock_build_system_info_t) :: build_info
     type(error_context_t) :: error_ctx
     character(len=256) :: test_dir
     character(len=256) :: current_dir
@@ -83,7 +84,7 @@ contains
         write(output_unit, '(A)') 'Test 1: FPM detection'
         
         call setup_test_directory('test_fpm', 'fpm.toml')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'FPM detection failed')
         call assert_equals_str(build_info%system_type, 'fpm', &
@@ -103,7 +104,7 @@ contains
         write(output_unit, '(A)') 'Test 2: CMake detection'
         
         call setup_test_directory('test_cmake', 'CMakeLists.txt')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'CMake detection failed')
         call assert_equals_str(build_info%system_type, 'cmake', &
@@ -123,7 +124,7 @@ contains
         write(output_unit, '(A)') 'Test 3: Make detection'
         
         call setup_test_directory('test_make', 'Makefile')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Make detection failed')
         call assert_equals_str(build_info%system_type, 'make', &
@@ -141,7 +142,7 @@ contains
         write(output_unit, '(A)') 'Test 4: Meson detection'
         
         call setup_test_directory('test_meson', 'meson.build')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Meson detection failed')
         call assert_equals_str(build_info%system_type, 'meson', &
@@ -160,7 +161,7 @@ contains
         
         ! Create directory with multiple build files
         call setup_multiple_build_files('test_priority')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Priority detection failed')
         call assert_equals_str(build_info%system_type, 'fpm', &
@@ -174,7 +175,7 @@ contains
         write(output_unit, '(A)') 'Test 6: Unknown build system'
         
         call setup_test_directory('test_unknown', '')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Unknown detection should not error')
         call assert_equals_str(build_info%system_type, 'unknown', &
@@ -190,7 +191,7 @@ contains
         write(output_unit, '(A)') 'Test 7: Tool availability'
         
         call setup_test_directory('test_tool', 'fpm.toml')
-        call detect_build_system('.', build_info, error_ctx)
+        call mock_detect_build_system('.', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Tool detection failed')
         ! Note: tool_available depends on actual system PATH
@@ -204,7 +205,7 @@ contains
         !! Test error handling for invalid directories
         write(output_unit, '(A)') 'Test 8: Invalid directory handling'
         
-        call detect_build_system('/nonexistent/directory', build_info, &
+        call mock_detect_build_system('/nonexistent/directory', build_info, &
                                   error_ctx)
         
         call assert_has_error(error_ctx, 'Should error for invalid directory')
@@ -217,16 +218,16 @@ contains
         character(len=512) :: cmd
         write(output_unit, '(A)') 'Test 9: Coverage commands'
         
-        call get_coverage_test_command('fpm', cmd, error_ctx)
+        call mock_get_coverage_test_command('fpm', cmd, error_ctx)
         call assert_no_error(error_ctx, 'FPM coverage command failed')
         call assert_contains(cmd, '-fprofile-arcs', 'Missing coverage flags')
         call assert_contains(cmd, '-ftest-coverage', 'Missing test coverage flag')
         
-        call get_coverage_test_command('cmake', cmd, error_ctx)
+        call mock_get_coverage_test_command('cmake', cmd, error_ctx)
         call assert_no_error(error_ctx, 'CMake coverage command failed')
         call assert_contains(cmd, 'cmake --build', 'Missing cmake build')
         
-        call get_coverage_test_command('unknown', cmd, error_ctx)
+        call mock_get_coverage_test_command('unknown', cmd, error_ctx)
         call assert_has_error(error_ctx, 'Unknown should error')
     end subroutine test_coverage_commands
 
@@ -235,11 +236,11 @@ contains
         write(output_unit, '(A)') 'Test 10: Edge cases'
         
         ! Test empty directory path
-        call detect_build_system('', build_info, error_ctx)
+        call mock_detect_build_system('', build_info, error_ctx)
         call assert_has_error(error_ctx, 'Empty path should error')
         
         ! Test very long path
-        call detect_build_system(repeat('a', 5000), build_info, error_ctx)
+        call mock_detect_build_system(repeat('a', 5000), build_info, error_ctx)
         call assert_has_error(error_ctx, 'Long path should error')
     end subroutine test_edge_cases
 

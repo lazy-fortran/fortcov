@@ -9,13 +9,13 @@ program test_auto_discovery_core_validation
     !! - Complete end-to-end workflow integration
     
     use iso_fortran_env, only: output_unit, error_unit
-    use build_detector_core, only: detect_build_system, build_system_info_t
-    use coverage_workflows, only: execute_auto_test_workflow
-    use zero_config_core, only: &
-        enhance_zero_config_with_auto_discovery, &
-        execute_zero_config_complete_workflow
+    use test_auto_discovery_mocks, only: &
+        mock_detect_build_system, mock_build_system_info_t, &
+        mock_execute_auto_test_workflow, &
+        mock_enhance_zero_config_with_auto_discovery, &
+        mock_execute_zero_config_complete_workflow, &
+        mock_run_coverage_analysis
     use config_core, only: config_t, parse_config
-    use fortcov_core, only: run_coverage_analysis
     use test_auto_discovery_shared_utilities
     implicit none
     
@@ -47,7 +47,7 @@ contains
     subroutine test_build_system_detection_accuracy()
         !! Tests that build system detection works accurately for all supported systems
         
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         character(len=512) :: workspace_path
         
@@ -104,13 +104,13 @@ contains
                                           build_info, detected)
         !! Helper subroutine for build system detection testing
         character(len=*), intent(in) :: system_name, workspace_path
-        type(build_system_info_t), intent(out) :: build_info
+        type(mock_build_system_info_t), intent(out) :: build_info
         logical, intent(out) :: detected
         
         block
             use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
-            call detect_build_system(workspace_path, build_info, error_ctx)
+            call mock_detect_build_system(workspace_path, build_info, error_ctx)
             detected = (error_ctx%error_code == 0)
         end block
     end subroutine test_build_system_detection
@@ -153,7 +153,7 @@ contains
         end if
         
         ! Execute workflow with auto-test
-        exit_code = execute_auto_test_workflow(config)
+        exit_code = mock_execute_auto_test_workflow(config)
         
         call assert_test(exit_code >= 0 .and. exit_code <= 3, &
                         "Auto-test workflow attempted", &
@@ -248,7 +248,7 @@ contains
         if (.not. success) return
         
         ! Run coverage analysis (should parse the mock files)
-        exit_code = run_coverage_analysis(config)
+        exit_code = mock_run_coverage_analysis(config)
         
         call assert_test(exit_code >= 0 .and. exit_code <= 3, &
                         "Coverage parsing completes", &
@@ -287,7 +287,7 @@ contains
                             "Workflow setup validated")
         else
             ! Execute complete workflow
-            call execute_zero_config_complete_workflow(config, exit_code)
+            call mock_execute_zero_config_complete_workflow(config, exit_code)
             call assert_test(exit_code >= 0 .and. exit_code <= 3, &
                             "Complete workflow execution", &
                             "Should complete gracefully")

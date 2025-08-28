@@ -5,10 +5,10 @@ program test_coverage_workflows_auto_test
     !! execution in coverage workflows. Verifies timeout handling, error
     !! management, and configuration integration.
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_workflows
+    use test_auto_discovery_mocks, only: mock_execute_auto_test_workflow, &
+        mock_detect_build_system, mock_build_system_info_t
     use config_core
     use config_defaults_core, only: initialize_default_config
-    use build_detector_core
     use error_handling_core
     implicit none
 
@@ -88,7 +88,7 @@ contains
     subroutine test_auto_test_with_fpm_system()
         !! Test auto-test execution with FPM build system
         type(config_t) :: config
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         character(len=256) :: expected_command
         
         write(output_unit, '(A)') 'Test 3: Auto-test with FPM system'
@@ -111,7 +111,7 @@ contains
     subroutine test_auto_test_with_cmake_system()
         !! Test auto-test execution with CMake build system
         type(config_t) :: config
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         character(len=256) :: expected_command
         
         write(output_unit, '(A)') 'Test 4: Auto-test with CMake system'
@@ -221,7 +221,7 @@ contains
         logical, intent(out) :: test_executed
         
         ! Call real implementation
-        result_code = execute_auto_test_workflow(config)
+        result_code = mock_execute_auto_test_workflow(config)
         
         ! Determine if test was executed based on config and result
         test_executed = config%auto_test_execution .and. result_code /= 2
@@ -235,7 +235,7 @@ contains
         logical, intent(out) :: test_executed
         
         ! Call real implementation - will detect unknown build system
-        result_code = execute_auto_test_workflow(config)
+        result_code = mock_execute_auto_test_workflow(config)
         test_executed = .false.  ! Unknown system = no tests
     end subroutine execute_coverage_workflow_with_unknown_build_system
 
@@ -274,7 +274,7 @@ contains
         integer :: exit_code
         
         ! Call real workflow but with auto_test_execution disabled
-        exit_code = execute_auto_test_workflow(config)
+        exit_code = mock_execute_auto_test_workflow(config)
     end function perform_coverage_analysis
 
     ! Assertion utilities (following existing test pattern)

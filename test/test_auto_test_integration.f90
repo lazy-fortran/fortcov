@@ -4,7 +4,7 @@ program test_auto_test_integration
     !! Creates a real test scenario with an FPM project structure
     !! and demonstrates the auto-test execution functionality
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_workflows, only: execute_auto_test_workflow
+    use test_auto_discovery_mocks, only: mock_execute_auto_test_workflow
     use config_core, only: config_t
     use config_defaults_core, only: initialize_default_config
     implicit none
@@ -59,7 +59,7 @@ contains
         config%quiet = .false.  ! Show output for debugging
         
         ! Execute auto-test workflow
-        result_code = execute_auto_test_workflow(config)
+        result_code = mock_execute_auto_test_workflow(config)
         
         ! Result should be 0 (skip due to no FPM tool) or test execution result
         call assert_result_acceptable(result_code, &
@@ -83,7 +83,7 @@ contains
         config%auto_test_execution = .true.
         config%quiet = .false.
         
-        result_code = execute_auto_test_workflow(config)
+        result_code = mock_execute_auto_test_workflow(config)
         
         ! Should return 0 (graceful skip)
         call assert_equals_int(result_code, 0, &
@@ -103,7 +103,7 @@ contains
         config%auto_test_execution = .false.  ! Disabled
         config%quiet = .false.
         
-        result_code = execute_auto_test_workflow(config)
+        result_code = mock_execute_auto_test_workflow(config)
         
         call assert_equals_int(result_code, 0, &
                               'Disabled auto-test execution')

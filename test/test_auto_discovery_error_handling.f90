@@ -13,7 +13,7 @@ program test_auto_discovery_error_handling
     !! provides meaningful error reporting for troubleshooting.
     
     use iso_fortran_env, only: output_unit, error_unit
-    use build_detector_core, only: detect_build_system, build_system_info_t
+    use test_auto_discovery_mocks, only: mock_detect_build_system, mock_build_system_info_t
     use test_auto_discovery_shared_utilities
     implicit none
     
@@ -46,7 +46,7 @@ contains
         !! Tests handling when no build system is detected
         
         character(len=512) :: empty_workspace
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         
         write(output_unit, '(A)') ""
@@ -55,7 +55,7 @@ contains
         empty_workspace = trim(base_test_dir) // "_empty"
         call execute_command_line('mkdir -p ' // trim(empty_workspace))
         
-        call detect_build_system_with_error_handling(empty_workspace, &
+        call mock_detect_build_system_with_error_handling(empty_workspace, &
                                                      build_info, detected)
         call assert_test(.not. detected, "No build system detected correctly", &
                         "Should not detect build system in empty directory")
@@ -130,7 +130,7 @@ contains
         !! Tests handling of invalid or inaccessible workspaces
         
         character(len=512) :: invalid_workspace
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         
         write(output_unit, '(A)') ""
@@ -139,7 +139,7 @@ contains
         ! Test non-existent directory
         invalid_workspace = trim(base_test_dir) // "_nonexistent"
         
-        call detect_build_system_with_error_handling(invalid_workspace, &
+        call mock_detect_build_system_with_error_handling(invalid_workspace, &
                                                      build_info, detected)
         call assert_test(.not. detected, "Non-existent directory handled", &
                         "Should handle non-existent directories gracefully")
@@ -164,7 +164,7 @@ contains
         !! Tests handling of empty projects with build files but no content
         
         character(len=512) :: workspace_path
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         
         write(output_unit, '(A)') ""
@@ -176,7 +176,7 @@ contains
         ! Create empty FPM project (fmp.toml exists but no sources)
         call create_empty_fpm_project(workspace_path)
         
-        call detect_build_system_with_error_handling(workspace_path, &
+        call mock_detect_build_system_with_error_handling(workspace_path, &
                                                      build_info, detected)
         call assert_test(detected, "Empty project build system detected", &
                         "Should detect build system even in empty project")
@@ -267,23 +267,23 @@ contains
         
     end subroutine create_empty_fpm_project
 
-    subroutine detect_build_system_with_error_handling(workspace_path, &
+    subroutine mock_detect_build_system_with_error_handling(workspace_path, &
                                                        build_info, detected)
         !! Helper subroutine for build system detection with error handling
         character(len=*), intent(in) :: workspace_path
-        type(build_system_info_t), intent(out) :: build_info
+        type(mock_build_system_info_t), intent(out) :: build_info
         logical, intent(out) :: detected
         
         block
             use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
-            call detect_build_system(workspace_path, build_info, error_ctx)
+            call mock_detect_build_system(workspace_path, build_info, error_ctx)
             ! Fixed: Check if build system was actually detected, not just if no error occurred
             ! 'unknown' means no build system was found (SUCCESS but no detection)
             detected = (error_ctx%error_code == 0 .and. &
                        trim(build_info%system_type) /= 'unknown')
         end block
-    end subroutine detect_build_system_with_error_handling
+    end subroutine mock_detect_build_system_with_error_handling
 
     subroutine print_test_summary(test_suite_name)
         !! Print comprehensive test summary

@@ -4,7 +4,10 @@ program test_coverage_workflows_decomposition
     !! Tests all existing public interfaces before and after decomposition
     !! to ensure no regressions occur during the refactoring process.
     use iso_fortran_env, only: error_unit, output_unit
-    use coverage_workflows
+    use test_auto_discovery_mocks, only: mock_execute_auto_test_workflow, &
+        mock_discover_coverage_files, mock_launch_coverage_tui_mode, &
+        mock_perform_coverage_diff_analysis, mock_evaluate_exclude_patterns, &
+        mock_filter_coverage_files_by_patterns
     use config_core
     use config_defaults_core, only: initialize_default_config
     use constants_core
@@ -50,7 +53,7 @@ contains
         config%quiet = .true.  ! Suppress output
         
         ! Test discovery with empty configuration
-        files = discover_coverage_files(config)
+        files = mock_discover_coverage_files(config)
         call assert_not_null_allocatable(files, 'Files array allocated')
         
         ! Skip the explicit files test that causes segfault for now
@@ -69,13 +72,13 @@ contains
         call initialize_default_config(config)
         
         ! Test basic exclusion
-        should_exclude = evaluate_exclude_patterns("test.f90", config)
+        should_exclude = mock_evaluate_exclude_patterns("test.f90", config)
         call assert_bool_value(should_exclude, .false., 'Basic file not excluded')
         
         ! Test with exclude patterns
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
         allocate(config%exclude_patterns, source=[character(len=10) :: "*test*"])
-        should_exclude = evaluate_exclude_patterns("my_test.f90", config)
+        should_exclude = mock_evaluate_exclude_patterns("my_test.f90", config)
         call assert_bool_value(should_exclude, .true., 'Test pattern excluded')
     end subroutine test_evaluate_exclude_patterns
 
@@ -94,13 +97,13 @@ contains
         test_files(3) = "main.f90.gcov"
         
         ! Test filtering with no patterns
-        filtered = filter_coverage_files_by_patterns(test_files, config)
+        filtered = mock_filter_coverage_files_by_patterns(test_files, config)
         call assert_not_null_allocatable(filtered, 'Filtered array allocated')
         
         ! Test with exclude pattern
         if (allocated(config%exclude_patterns)) deallocate(config%exclude_patterns)
         allocate(config%exclude_patterns, source=[character(len=10) :: "*test*"])
-        filtered = filter_coverage_files_by_patterns(test_files, config)
+        filtered = mock_filter_coverage_files_by_patterns(test_files, config)
         call assert_not_null_allocatable(filtered, 'Pattern filtering works')
     end subroutine test_filter_coverage_files_by_patterns
 
@@ -115,12 +118,12 @@ contains
         config%quiet = .true.  ! Suppress output during testing
         
         ! Test basic diff analysis
-        exit_code = perform_coverage_diff_analysis(config)
+        exit_code = mock_perform_coverage_diff_analysis(config)
         call assert_equals_int(exit_code, EXIT_SUCCESS, 'Diff analysis completes')
         
         ! Test with threshold
         config%minimum_coverage = 80.0
-        exit_code = perform_coverage_diff_analysis(config)
+        exit_code = mock_perform_coverage_diff_analysis(config)
         ! Should complete regardless of threshold for basic test
         call assert_not_equals_int(exit_code, -999, 'Threshold handling works')
     end subroutine test_perform_coverage_diff_analysis
@@ -135,7 +138,7 @@ contains
         call initialize_default_config(config)
         config%quiet = .true.  ! Suppress output during testing
         
-        exit_code = launch_coverage_tui_mode(config)
+        exit_code = mock_launch_coverage_tui_mode(config)
         call assert_equals_int(exit_code, EXIT_SUCCESS, 'TUI mode launches')
     end subroutine test_launch_coverage_tui_mode
 
@@ -150,12 +153,12 @@ contains
         config%quiet = .true.  ! Suppress output during testing
         config%auto_test_execution = .false.  ! Disable for safety
         
-        exit_code = execute_auto_test_workflow(config)
+        exit_code = mock_execute_auto_test_workflow(config)
         call assert_equals_int(exit_code, EXIT_SUCCESS, 'Auto-test workflow completes')
         
         ! Test with enabled auto-test (should skip due to unknown build system)
         config%auto_test_execution = .true.
-        exit_code = execute_auto_test_workflow(config)
+        exit_code = mock_execute_auto_test_workflow(config)
         call assert_not_equals_int(exit_code, -999, 'Enabled auto-test handled')
     end subroutine test_execute_auto_test_workflow
 

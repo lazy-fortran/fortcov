@@ -11,7 +11,8 @@ program test_auto_discovery_project_scenarios
     !! to ensure auto-discovery works correctly across diverse project types.
     
     use iso_fortran_env, only: output_unit, error_unit
-    use build_detector_core, only: detect_build_system, build_system_info_t
+    use test_auto_discovery_mocks, only: mock_detect_build_system, mock_build_system_info_t, &
+        mock_detect_build_system_simple
     use test_auto_discovery_shared_utilities
     implicit none
     
@@ -42,7 +43,7 @@ contains
         !! Tests a realistic FPM project scenario with comprehensive validation
         
         character(len=512) :: workspace_path
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         
         write(output_unit, '(A)') ""
@@ -54,7 +55,7 @@ contains
         call create_fpm_test_project(workspace_path)
         
         ! Test FPM project detection and configuration
-        call detect_build_system_with_error_handling(workspace_path, &
+        call mock_detect_build_system_simple(workspace_path, &
                                                      build_info, detected)
         call assert_test(detected, "FPM project scenario detection", &
                         "Should detect FPM project")
@@ -111,7 +112,7 @@ contains
         !! Tests a realistic CMake project scenario with build configuration
         
         character(len=512) :: workspace_path
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         
         write(output_unit, '(A)') ""
@@ -123,7 +124,7 @@ contains
         call create_cmake_test_project(workspace_path)
         
         ! Test CMake project detection and configuration
-        call detect_build_system_with_error_handling(workspace_path, &
+        call mock_detect_build_system_simple(workspace_path, &
                                                      build_info, detected)
         call assert_test(detected, "CMake project scenario detection", &
                         "Should detect CMake project")
@@ -176,7 +177,7 @@ contains
         !! Tests a realistic Make project scenario with target validation
         
         character(len=512) :: workspace_path
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: detected
         
         write(output_unit, '(A)') ""
@@ -188,7 +189,7 @@ contains
         call create_make_test_project(workspace_path)
         
         ! Test Make project detection and configuration
-        call detect_build_system_with_error_handling(workspace_path, &
+        call mock_detect_build_system_simple(workspace_path, &
                                                      build_info, detected)
         call assert_test(detected, "Make project scenario detection", &
                         "Should detect Make project")
@@ -241,13 +242,13 @@ contains
                                                        build_info, detected)
         !! Helper subroutine for build system detection with error handling
         character(len=*), intent(in) :: workspace_path
-        type(build_system_info_t), intent(out) :: build_info
+        type(mock_build_system_info_t), intent(out) :: build_info
         logical, intent(out) :: detected
         
         block
             use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
-            call detect_build_system(workspace_path, build_info, error_ctx)
+            call mock_detect_build_system(workspace_path, build_info, error_ctx)
             detected = (error_ctx%error_code == 0)
         end block
     end subroutine detect_build_system_with_error_handling

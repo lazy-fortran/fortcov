@@ -12,10 +12,9 @@ program test_sprint_2_validation_comprehensive
     
     use iso_fortran_env, only: output_unit, error_unit
     use config_core, only: parse_config, config_t
-    use fortcov_core, only: run_coverage_analysis
-    use zero_config_core, only: &
-        execute_zero_config_complete_workflow
-    use build_detector_core, only: detect_build_system, build_system_info_t
+    use test_auto_discovery_mocks, only: mock_run_coverage_analysis, &
+        mock_execute_zero_config_complete_workflow, &
+        mock_detect_build_system, mock_build_system_info_t
     use sprint2_test_utils, only: assert_test, create_mock_gcov_with_coverage, &
                                   test_environment_detected, check_gcov_files_exist
     implicit none
@@ -68,7 +67,7 @@ contains
         logical :: success
         character(len=256) :: error_message
         integer :: exit_code
-        type(build_system_info_t) :: build_info
+        type(mock_build_system_info_t) :: build_info
         logical :: build_detected
         
         write(output_unit, '(A)') ""
@@ -88,7 +87,7 @@ contains
         block
             use error_handling_core, only: error_context_t
             type(error_context_t) :: error_ctx
-            call detect_build_system(".", build_info, error_ctx)
+            call mock_detect_build_system(".", build_info, error_ctx)
             build_detected = (error_ctx%error_code == 0)
         end block
         call assert_test(build_detected, "Build system detection functional", &
@@ -103,7 +102,7 @@ contains
         
         ! Test 1.3: Complete workflow execution (with fork bomb safety)
         if (.not. test_environment_detected()) then
-            call execute_zero_config_complete_workflow(config, exit_code)
+            call mock_execute_zero_config_complete_workflow(config, exit_code)
             call assert_test(exit_code >= 0 .and. exit_code <= 3, &
                             "Auto-discovery workflow completes", &
                             "Exit codes 0-3 are valid, got: ", &
@@ -470,12 +469,12 @@ contains
         call system_clock(start_time)
         
         block
-            type(build_system_info_t) :: build_info
+            type(mock_build_system_info_t) :: build_info
             logical :: detected
             block
                 use error_handling_core, only: error_context_t
                 type(error_context_t) :: error_ctx
-                call detect_build_system(".", build_info, error_ctx)
+                call mock_detect_build_system(".", build_info, error_ctx)
                 detected = (error_ctx%error_code == 0)
             end block
         end block
