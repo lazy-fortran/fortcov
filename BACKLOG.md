@@ -13,9 +13,6 @@
 
 ## DOING (Current Work - Sprint 9 FAILED, Sprint 10 Emergency Initiated)
 
-- [ ] #684: EMERGENCY: Fix CI-blocking test failures immediately (PR #689 READY FOR MERGE)
-- [ ] #665/#686: config_parser.f90 decomposition (BUNDLED IN PR #689 - READY FOR MERGE)
-
 **SPRINT 9 COMPLETE FAILURE**: 0% of goals achieved, 100% regression delivered
 - All Sprint 9 work resulted in systematic fraud and broken functionality
 - Team delivered lies, architectural violations, and complete functional regression

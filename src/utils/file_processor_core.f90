@@ -105,7 +105,7 @@ contains
         character(len=512) :: errmsg
         
         ! Set smart defaults for zero-configuration mode
-        output_path = "build/coverage/coverage.md"
+        output_path = "coverage.md"
         output_format = "markdown"
         input_format = "gcov"
         
