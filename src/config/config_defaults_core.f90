@@ -19,6 +19,7 @@ module config_defaults_core
     public :: get_max_files_from_env
     public :: handle_zero_configuration_mode
     public :: apply_legacy_zero_config_defaults
+    public :: detect_format_from_output_path
 
 contains
 
@@ -77,7 +78,7 @@ contains
             case ("xml")
                 config%output_path = "coverage.xml"
             case ("markdown", "md")
-                config%output_path = "coverage.md"
+                config%output_path = "build/coverage/coverage.md"
             case ("text")
                 config%output_path = "coverage.txt"
             case default
@@ -107,7 +108,7 @@ contains
             case ("xml")
                 config%output_path = "coverage.xml"
             case ("markdown", "md")
-                config%output_path = "coverage.md"
+                config%output_path = "build/coverage/coverage.md"
             case ("text")
                 config%output_path = "coverage.txt"
             case default
@@ -227,7 +228,7 @@ contains
 
         ! Set default output path if not set
         if (len_trim(config%output_path) == 0) then
-            config%output_path = "coverage.md"
+            config%output_path = "build/coverage/coverage.md"
         end if
 
         ! Use auto-discovery for input format
@@ -242,5 +243,47 @@ contains
         end if
 
     end subroutine apply_legacy_zero_config_defaults
+
+    subroutine detect_format_from_output_path(config)
+        !! Detect output format from file extension if format not explicitly set
+        !! This ensures proper format detection when --output is provided without --format
+        type(config_t), intent(inout) :: config
+        
+        integer :: dot_pos
+        character(len=:), allocatable :: extension
+        
+        ! Only detect if output_path is set and output_format is default
+        if (len_trim(config%output_path) > 0 .and. &
+            (config%output_format == "markdown" .or. config%output_format == "")) then
+            
+            ! Find the last dot in the output path
+            dot_pos = index(config%output_path, '.', back=.true.)
+            
+            if (dot_pos > 0 .and. dot_pos < len_trim(config%output_path)) then
+                ! Extract the extension
+                extension = config%output_path(dot_pos+1:)
+                
+                ! Map extension to format
+                select case (trim(adjustl(extension)))
+                case ("html", "htm")
+                    config%output_format = "html"
+                case ("json")
+                    config%output_format = "json"
+                case ("xml")
+                    config%output_format = "xml"
+                case ("md", "markdown")
+                    config%output_format = "markdown"
+                case ("txt", "text")
+                    config%output_format = "text"
+                case default
+                    ! Keep the default format if extension is not recognized
+                    if (config%output_format == "") then
+                        config%output_format = "markdown"
+                    end if
+                end select
+            end if
+        end if
+        
+    end subroutine detect_format_from_output_path
 
 end module config_defaults_core

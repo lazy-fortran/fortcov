@@ -9,7 +9,8 @@ module config_parser_command_line
     use config_defaults_core, only: initialize_default_config, apply_default_output_filename, &
                                            apply_default_output_path_for_coverage_files, &
                                            ensure_zero_config_output_directory, &
-                                           handle_zero_configuration_mode
+                                           handle_zero_configuration_mode, &
+                                           detect_format_from_output_path
     use config_classifier_args, only: classify_command_arguments
     use config_parser_flags, only: process_flag_arguments
     use config_parser_files, only: parse_config_file
@@ -245,6 +246,9 @@ contains
 
         ! Apply fork bomb prevention (Issue #395)
         call prevent_fork_bomb_with_manual_files(config)
+
+        ! Detect format from output path if not explicitly set (Issue #703)
+        call detect_format_from_output_path(config)
 
         ! Apply defaults for output formats
         call apply_default_output_filename(config)
