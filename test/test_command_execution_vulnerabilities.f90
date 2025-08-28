@@ -1,12 +1,21 @@
-module test_command_execution_vulnerabilities
+program test_command_execution_vulnerabilities
     !! Command execution vulnerability tests
     !! Tests secure command execution and input validation
     
     use test_framework_utilities
     implicit none
-    private
     
-    public :: test_command_injection_prevention, test_privilege_escalation_prevention
+    type(test_counter_t) :: counter
+    
+    ! Initialize test counter
+    call init_test_counter(counter)
+    
+    ! Run all tests
+    call test_command_injection_prevention(counter)
+    call test_privilege_escalation_prevention(counter)
+    
+    ! Print summary
+    call print_test_summary(counter, "Command Execution Vulnerability Tests")
     
 contains
     
@@ -26,4 +35,4 @@ contains
         print *, "  ✅ PASS: Privilege escalation prevention works"
     end subroutine test_privilege_escalation_prevention
     
-end module test_command_execution_vulnerabilities
+end program test_command_execution_vulnerabilities

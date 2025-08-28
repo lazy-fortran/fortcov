@@ -1,13 +1,21 @@
-module test_auto_discovery_workflows
-    !! Auto-discovery workflow testing utilities
+program test_auto_discovery_workflows
+    !! Auto-discovery workflow testing program
     !! Tests automated discovery workflows and processes
     
     use test_framework_utilities
     implicit none
-    private
     
-    public :: test_basic_auto_discovery_workflow
-    public :: test_complex_auto_discovery_workflow
+    type(test_counter_t) :: counter
+    
+    ! Initialize test counter
+    call init_test_counter(counter)
+    
+    ! Run all tests
+    call test_basic_auto_discovery_workflow(counter)
+    call test_complex_auto_discovery_workflow(counter)
+    
+    ! Print summary
+    call print_test_summary(counter, "Auto-Discovery Workflow Tests")
     
 contains
     
@@ -27,4 +35,4 @@ contains
         print *, "  ✅ PASS: Complex workflow works"
     end subroutine test_complex_auto_discovery_workflow
     
-end module test_auto_discovery_workflows
+end program test_auto_discovery_workflows

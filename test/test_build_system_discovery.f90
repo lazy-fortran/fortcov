@@ -1,12 +1,21 @@
-module test_build_system_discovery
-    !! Build system discovery testing utilities
+program test_build_system_discovery
+    !! Build system discovery testing program
     !! Tests detection and validation of build systems
     
     use test_framework_utilities
     implicit none
-    private
     
-    public :: test_build_system_detection, test_build_system_validation
+    type(test_counter_t) :: counter
+    
+    ! Initialize test counter
+    call init_test_counter(counter)
+    
+    ! Run all tests
+    call test_build_system_detection(counter)
+    call test_build_system_validation(counter)
+    
+    ! Print summary
+    call print_test_summary(counter, "Build System Discovery Tests")
     
 contains
     
@@ -26,4 +35,4 @@ contains
         print *, "  ✅ PASS: Build system validation works"
     end subroutine test_build_system_validation
     
-end module test_build_system_discovery
+end program test_build_system_discovery

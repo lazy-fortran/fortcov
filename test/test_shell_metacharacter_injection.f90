@@ -1,12 +1,21 @@
-module test_shell_metacharacter_injection
+program test_shell_metacharacter_injection
     !! Shell metacharacter injection security tests
     !! Tests protection against shell injection attacks
     
     use test_framework_utilities
     implicit none
-    private
     
-    public :: test_shell_injection_protection, test_metacharacter_escaping
+    type(test_counter_t) :: counter
+    
+    ! Initialize test counter
+    call init_test_counter(counter)
+    
+    ! Run all tests
+    call test_shell_injection_protection(counter)
+    call test_metacharacter_escaping(counter)
+    
+    ! Print summary
+    call print_test_summary(counter, "Shell Metacharacter Injection Tests")
     
 contains
     
@@ -26,4 +35,4 @@ contains
         print *, "  ✅ PASS: Metacharacter escaping works"
     end subroutine test_metacharacter_escaping
     
-end module test_shell_metacharacter_injection
+end program test_shell_metacharacter_injection
