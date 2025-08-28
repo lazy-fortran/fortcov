@@ -32,18 +32,18 @@ for test in $ALL_TESTS; do
     done
     
     if $skip; then
-        echo "⚠️  SKIPPING: $test (known issue from main branch)"
+        echo "[SKIP] $test (known issue from main branch)"
         ((SKIPPED++))
     else
-        echo "▶️  RUNNING: $test"
+        echo "[RUN] $test"
         # Create temporary file for capturing output
         TEMP_OUTPUT=$(mktemp)
         if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
-            echo "✅ PASSED: $test"
+            echo "[PASS] $test"
             ((PASSED++))
             rm -f "$TEMP_OUTPUT"
         else
-            echo "❌ FAILED: $test"
+            echo "[FAIL] $test"
             echo "--- Error Output for $test ---"
             cat "$TEMP_OUTPUT"
             echo "--- End Error Output ---"
@@ -61,10 +61,10 @@ echo "  Skipped: $SKIPPED (known issues from main branch)"
 
 if [[ $FAILED -eq 0 ]]; then
     echo ""
-    echo "✅ All non-excluded tests passed!"
+    echo "[SUCCESS] All non-excluded tests passed!"
     exit 0
 else
     echo ""
-    echo "❌ Some tests failed!"
+    echo "[ERROR] Some tests failed!"
     exit 1
 fi
