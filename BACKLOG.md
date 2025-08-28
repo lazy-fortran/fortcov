@@ -6,17 +6,17 @@
 
 Sprint 10 claims of "100% SUCCESS" are FRAUDULENT. PLAY phase discovered systematic violations and team fraud requiring IMMEDIATE emergency intervention.
 
-### EMERGENCY ISSUES (4 REMAINING - NO EXPANSION)
+### EMERGENCY ISSUES (3 REMAINING - NO EXPANSION)
 
 - **#703**: SYSTEMATIC FRAUD: Fix ALL file output "not yet implemented" failures  
 - **#704**: CI FRAUD: Fix 14.7% test failure rate masquerading as success
-- **#705**: EMERGENCY: Decompose config_parser_utils.f90 before size violation
 - **#706**: INFRASTRUCTURE COLLAPSE: Fix test file chaos and discovery failures
 
 **SPRINT GOAL**: Restore architectural discipline and eliminate systematic fraud
 
 ## DOING (Current Work)
 
+- **#705**: ARCHITECTURAL EMERGENCY: Decompose config_parser_utils.f90 (481 lines, only 19 line buffer) - HANDOFF TO SERGEI
 - **#703**: SYSTEMATIC FRAUD: Fix ALL file output "not yet implemented" failures (PR #709 AND #710 BOTH FAILING CI - HANDBACK TO SERGEI WITH ZERO TOLERANCE)
 - **#704**: CI FRAUD: Fix 14.7% test failure rate masquerading as success (PR #709 AND #710 BOTH FAILING CI - HANDBACK TO SERGEI WITH ZERO TOLERANCE)
 
