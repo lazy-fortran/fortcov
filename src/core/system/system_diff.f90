@@ -339,7 +339,7 @@ contains
         if (total_branches > 0) then
             branch_rate = real(covered_branches) / real(total_branches)
         else
-            branch_rate = 1.0  ! No branches means 100% coverage
+            branch_rate = 0.0  ! No branches means no coverage to report
         end if
         
     end function calculate_branch_coverage_rate
