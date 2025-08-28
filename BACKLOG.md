@@ -10,7 +10,7 @@
 
 ## DOING (Current Work)
 
-(Empty - Sprint 12 starting)
+**#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
@@ -51,9 +51,8 @@
 - **Sprint 6**: User Experience Excellence (PARTIALLY FAILED - infrastructure collapse)  
 - **Sprint 9**: Critical Defect Resolution (COMPLETE FAILURE - 0% goals achieved, 100% regression)
 
-### Sprint 12: ARCHITECTURAL STABILITY (STARTING)
-- **#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation
-- **#729**: Module encapsulation - Add private statement to 114 modules (security/maintainability)
+### Sprint 12: ARCHITECTURAL STABILITY (IN PROGRESS)
+- **#729**: Module encapsulation - Add private statement to 114 modules (security/maintainability)  
 - **#727**: Error handling patterns - Fix silent failures returning without error codes
 - **#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud
 - **#725**: FPM test discovery - Fix test module imports breaking autodiscovery
