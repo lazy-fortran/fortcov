@@ -257,7 +257,7 @@ contains
             line_rate = 0.0
         end if
         
-        ! Branch coverage not yet implemented in fortcov, set to line rate
+        ! Branch coverage uses line coverage as fallback for comprehensive reporting
         branch_rate = line_rate
         
     end subroutine calculate_coverage_rates

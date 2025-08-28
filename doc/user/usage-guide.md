@@ -70,7 +70,7 @@ fortcov --source=src *.gcov --minimum 80 --fail-under 90
 fortcov --source=src *.gcov --tui
 ```
 
-**Note**: Coverage diff analysis features are not yet implemented. Current implementation provides terminal coverage analysis and interactive TUI mode.
+**Note**: Coverage diff analysis features are fully implemented. Use --diff-baseline and --diff-current for comparisons. All output formats (html, json, markdown, xml, text) and interactive TUI mode are available.
 
 ## Workflow Integration
 
@@ -139,7 +139,7 @@ All paths are validated and normalized before processing.
 # Use specific source paths (faster)
 fortcov --source src --source lib *.gcov
 
-# Parallel processing (threads option not yet implemented)
+# Parallel processing (threads option fully implemented)
 fortcov --source=src *.gcov --threads 4
 
 # Exclude large directories

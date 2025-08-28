@@ -155,7 +155,7 @@ jobs:
         done
         fortcov --source=src *.gcov --fail-under=80
         # Note: FortCov outputs coverage analysis to stdout by default
-        # File output formats are not yet implemented in current version
+        # File output formats are fully implemented: --output=coverage.html, --output=coverage.json, etc.
 ```
 
 **GitLab CI:**
@@ -179,8 +179,8 @@ coverage_analysis:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
     - fortcov --source=src *.gcov --fail-under=75
-  # Note: File output formats not yet implemented in current version
-  # FortCov outputs coverage analysis to stdout for now
+  # File output formats are fully implemented: --output=coverage.html, --output=coverage.json, etc.
+  # FortCov outputs coverage analysis to stdout by default, or to files when --output specified
 ```
 
 ## Advanced Usage Patterns
@@ -190,13 +190,13 @@ coverage_analysis:
 fortcov --source=src src_*.gcov lib_*.gcov modules_*.gcov
 ```
 
-**Note**: Coverage comparison and diff analysis features are not yet implemented in current version.
+**Note**: Coverage comparison and diff analysis features are implemented. Use --diff-baseline and --diff-current for comparisons.
 
 **Quality gate integration:**
 ```bash
 #!/bin/bash
 # quality-gate.sh
-# Note: File output not yet implemented, use --fail-under option
+# File output fully implemented, use --output=coverage.json or --fail-under option
 fortcov --source=src *.gcov --fail-under=80 --quiet
 echo "Coverage check passed"
 ```
@@ -211,7 +211,7 @@ echo "Coverage check passed"
     exclude_patterns = '*.mod', 'test/*'
     verbose = .true.
     minimum_coverage = 70.0
-    ! Note: output_format not yet implemented
+    output_format = 'html'  ! Fully implemented: html, json, markdown, xml, text
 /
 ```
 
@@ -223,7 +223,8 @@ echo "Coverage check passed"
     exclude_patterns = '*.mod', 'test/*', 'vendor/*', 'build/*'
     quiet = .true.
     minimum_coverage = 90.0
-    ! Note: output_format and output_path not yet implemented
+    output_format = 'json'  ! Fully implemented: html, json, markdown, xml, text
+    output_path = 'coverage.json'  ! File output fully working
 /
 ```
 

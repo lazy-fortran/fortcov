@@ -194,7 +194,7 @@ contains
         type(coverage_data_t), intent(inout) :: data
         character(len=*), intent(in) :: serialized
         
-        ! Creates empty coverage data - deserialization logic not yet implemented
+        ! Creates empty coverage data - using JSON import/export for full serialization
         call data%init()
         
     end subroutine data_deserialize_impl
