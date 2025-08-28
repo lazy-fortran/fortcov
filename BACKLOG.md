@@ -6,7 +6,6 @@
 *All issues resolved*
 
 ### EPIC: CORE FUNCTIONALITY DEFECTS (HIGH)
-- [ ] #657: fortcov lies about output locations - creates in build directory
 - [ ] #660: --output flag broken for JSON format
 - [ ] #659: inconsistent file output locations across formats
 - [ ] #663: documented coverage workflow fails - gcov produces no files
@@ -20,6 +19,8 @@
 - [ ] #656: 42 bare STOP statements - poor error handling
 
 ## DOING (Current Work)
+
+- [ ] #657: fortcov lies about output locations - creates in build directory - **EPIC: CORE FUNCTIONALITY DEFECTS**
 
 ## PRODUCT_BACKLOG (Deferred Low Priority)
 - [ ] Documentation & User Experience Excellence
