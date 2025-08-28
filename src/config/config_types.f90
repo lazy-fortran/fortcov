@@ -49,6 +49,11 @@ module config_types
         logical :: auto_discovery  ! Enable auto-discovery of source files/tests
         logical :: auto_test_execution  ! Enable automatic test execution
         integer :: test_timeout_seconds  ! Timeout for test execution in seconds
+        
+        ! Architectural size validation (Issue #718)
+        logical :: validate_architecture  ! Enable architectural size validation
+        logical :: fail_on_size_warnings  ! Should size warnings cause failure?
+        character(len=:), allocatable :: architecture_output_format  ! "human", "ci", "json"
     end type config_t
 
 end module config_types

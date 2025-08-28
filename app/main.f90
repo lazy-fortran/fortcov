@@ -2,11 +2,14 @@ program main
   use fortcov_core, only: run_coverage_analysis
   use config_core, only: config_t, parse_config, show_help, show_version, &
                                    validate_config, validate_config_with_context
-  use error_handling_core, only: error_context_t, ERROR_SUCCESS
+  use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
+                                    ERROR_INVALID_CONFIG, clear_error_context
   use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
   use zero_config_core, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
   use coverage_workflows, only: launch_coverage_tui_mode
+  use size_enforcement_core, only: enforce_size_limits_for_ci, &
+                                   size_enforcement_config_t, ci_enforcement_result_t
   implicit none
   
   type(config_t) :: config
@@ -85,6 +88,14 @@ program main
       print *, "Configuration is valid"
       call exit(EXIT_SUCCESS)
     end if
+  else if (config%validate_architecture) then
+    ! Only validate architectural size compliance, don't run coverage analysis
+    call handle_architectural_validation(config, error_ctx)
+    if (error_ctx%error_code /= ERROR_SUCCESS) then
+      call exit(EXIT_FAILURE)
+    else
+      call exit(EXIT_SUCCESS)
+    end if
   end if
   
   ! CRITICAL: Fork bomb prevention - check before validation (Issue #432)
@@ -127,4 +138,51 @@ program main
   end if
   
   call exit(exit_code)
+
+contains
+
+  subroutine handle_architectural_validation(config, error_ctx)
+    !! Handle architectural size validation and exit appropriately
+    type(config_t), intent(in) :: config
+    type(error_context_t), intent(out) :: error_ctx
+    
+    type(size_enforcement_config_t) :: enforcement_config
+    type(ci_enforcement_result_t) :: enforcement_result
+    
+    ! Initialize error context
+    call clear_error_context(error_ctx)
+    
+    ! Configure size enforcement based on user flags
+    enforcement_config%fail_on_warnings = config%fail_on_size_warnings
+    enforcement_config%fail_on_violations = .true.  ! Always fail on violations
+    enforcement_config%generate_github_annotations = &
+        (trim(config%architecture_output_format) == "ci")
+    enforcement_config%base_directory = "."
+    enforcement_config%output_format = config%architecture_output_format
+    enforcement_config%verbose_output = config%verbose
+    
+    ! Run architectural size enforcement
+    call enforce_size_limits_for_ci(enforcement_config, enforcement_result)
+    
+    ! Display results
+    if (.not. config%quiet) then
+      print *, trim(enforcement_result%summary_message)
+      if (config%verbose .and. len_trim(enforcement_result%detailed_report) > 0) then
+        print *, ""
+        print *, trim(enforcement_result%detailed_report)
+      end if
+      if (len_trim(enforcement_result%remediation_actions) > 0) then
+        print *, ""
+        print *, trim(enforcement_result%remediation_actions)
+      end if
+    end if
+    
+    ! Set appropriate error context based on results
+    if (enforcement_result%should_block_merge) then
+      error_ctx%error_code = ERROR_INVALID_CONFIG
+      error_ctx%message = "Architectural size violations detected"
+    end if
+    
+  end subroutine handle_architectural_validation
+
 end program main
