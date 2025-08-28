@@ -34,10 +34,8 @@ contains
         ! Clean up common test files
         call execute_command_line('rm -f *.tmp *.temp *.test *.gcov *.gcda *.gcno')
         ! Use find to only remove files, not directories
-        call execute_command_line( &
-            "find . -maxdepth 1 -type f " // &
-            "\\( -name 'test_*' -o -name 'temp_*' -o -name 'output_*' -o -name 'coverage_*' \\) " // &
-            "-exec rm -f {} \\; 2>/dev/null || true")
+        ! Remove test files with simple glob patterns (safer than find with parentheses)
+        call execute_command_line('rm -f test_* temp_* output_* coverage_* 2>/dev/null || true')
     end subroutine cleanup_basic_test_environment
     
     subroutine cleanup_test_files_pattern(patterns)
