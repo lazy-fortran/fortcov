@@ -1103,19 +1103,19 @@ Sprint 8 establishes mature architectural foundation:
 - **Validated architecture decisions** guide future development trade-offs
 - **Quality standards enforcement** prevents technical debt accumulation
 
-## Sprint 12: ARCHITECTURAL STABILITY & DEFENSIVE PROGRAMMING (CURRENT)
+## Sprint 14: DEPLOYMENT RELIABILITY & USER ONBOARDING (CURRENT)
 
 ### Sprint Goal
-**PRIMARY OBJECTIVE**: Establish proactive architectural stability and defensive programming standards
+**PRIMARY OBJECTIVE**: Restore deployment reliability and user onboarding success
 
-**SPRINT 12 DEFINITION OF DONE** (5 FOCUSED ISSUES):
-1. **Proactive Size Management**: Decompose 9 files approaching 500-line limit to <400 lines (#718)
-2. **Module Encapsulation**: Add private statement to 114 modules for proper API boundaries (#729)
-3. **Error Handling Standards**: Fix silent failure patterns - all functions return error codes (#727)
-4. **Mathematical Correctness**: Fix branch coverage calculation (0/0 ≠ 100%) (#724)
-5. **Test Discovery Fix**: Resolve FPM autodiscovery failures from module imports (#725)
+**SPRINT 14 DEFINITION OF DONE** (5 FOCUSED ISSUES):
+1. **Exit Code Reliability**: All error conditions return proper exit codes for CI/CD integration (#740)
+2. **Documentation Accuracy**: All examples work as written without workarounds (#739) 
+3. **Test Discovery Foundation**: Resolve FPM autodiscovery failures from module imports (#725)
+4. **Mathematical Correctness**: Fix branch coverage calculation fraud (0/0 ≠ 100%) (#724)
+5. **Proactive Architecture**: Decompose 9 files approaching 500-line limit to <400 lines (#718)
 
-### Key Architectural Decisions (Sprint 12)
+### Key Architectural Decisions (Sprint 14)
 
 #### Decision 1: PROACTIVE ARCHITECTURE MANAGEMENT
 **Choice**: Decompose files at 440+ lines BEFORE they violate 500-line limit
@@ -1199,23 +1199,76 @@ contains
 end program
 ```
 
-### Implementation Strategy (Sprint 12)
+#### Decision 6: USER-FIRST RELIABILITY PRIORITY
+**Choice**: Prioritize user-facing reliability over internal architecture improvements
+**Rationale**: Broken CI/CD integration and user onboarding failures create immediate business impact
+**Implementation**: Critical deployment fixes first, then strategic architecture completion
+**Priority Matrix**:
+- CRITICAL: Exit codes and documentation examples (user-blocking)
+- HIGH: Mathematical correctness and test discovery (foundation)
+- MEDIUM: Proactive architecture management (debt prevention)
+
+#### Decision 7: EXIT CODE SYSTEM REDESIGN
+**Choice**: Implement comprehensive exit code system for CI/CD reliability
+**Rationale**: ALL error conditions currently return 0, breaking CI/CD pipeline error detection
+**Implementation Standards**:
+```fortran
+! Exit code conventions
+! 0: Success
+! 1: Error conditions (missing files, invalid options)
+! 2: Coverage below threshold (fail-under)
+! 3: Partial success with warnings
+```
+**Integration Benefits**: Enables proper CI/CD quality gates and error handling
+
+#### Decision 8: DOCUMENTATION FIRST DEVELOPMENT
+**Choice**: All documentation examples must be tested and functional
+**Rationale**: Broken examples destroy user trust and create support burden
+**Implementation Pattern**:
+```bash
+# All examples must specify required parameters
+fortcov --source=src --output=report.md *.gcov
+
+# Threshold checking must return proper exit codes
+fortcov --source=src --output=report.md --fail-under=80 *.gcov
+echo $?  # Must return 2 when coverage < 80%
+```
+**Quality Benefits**: Ensures user onboarding success and reduces support overhead
+
+### Implementation Strategy (Sprint 14)
 
 #### PRIORITIZED SEQUENCE
-1. **#718**: Proactive file decomposition (CRITICAL - prevents future emergencies)
-2. **#729**: Module encapsulation standards (HIGH - security/maintainability)
-3. **#727**: Error handling patterns (HIGH - reliability/debugging)
-4. **#724**: Coverage calculation fix (MEDIUM - user trust)
-5. **#725**: Test discovery repair (MEDIUM - development velocity)
+1. **#740**: Exit code system repair (CRITICAL - unblocks CI/CD pipelines)
+2. **#739**: Documentation example fixes (CRITICAL - unblocks user onboarding)
+3. **#725**: Test discovery repair (HIGH - unblocked foundation work)
+4. **#724**: Coverage calculation fix (HIGH - prevents user trust erosion)
+5. **#718**: Proactive file decomposition (MEDIUM - prevents future emergencies)
 
-#### Success Metrics (Sprint 12)
-- **Primary**: Zero files exceed 450 lines (safety buffer maintained)
-- **Secondary**: 100% of modules have private statement (encapsulation achieved)
-- **Tertiary**: All functions with failure modes return error codes
+#### Success Metrics (Sprint 14)
+- **Primary**: All error conditions return proper exit codes (deployment unblocked)
+- **Secondary**: All documentation examples work as written (onboarding unblocked)
+- **Tertiary**: Test discovery functional and mathematical calculations correct
 - **Quaternary**: Branch coverage calculation mathematically correct
 - **Quinary**: FPM discovers and runs all test files
 
-### Risk Assessment (Sprint 12)
+### Risk Assessment (Sprint 14)
+
+#### HIGH RISK: Exit Code Implementation Complexity
+- **Risk**: Exit code changes touch core application flow
+- **Mitigation**: Implement with comprehensive test coverage and staged rollout
+- **Detection**: Test all documented use cases before declaring complete
+
+#### MEDIUM RISK: Documentation Example Dependencies
+- **Risk**: Examples depend on specific project structures and configurations
+- **Mitigation**: Test examples in clean environments matching user setup
+- **Detection**: Follow exact documentation steps in isolated test environment
+
+#### LOW RISK: Sprint 12 Completion Work
+- **Risk**: Deferred architectural work may have evolved dependencies
+- **Mitigation**: Issues #724, #725, #718 have clear requirements and test cases
+- **Detection**: Existing test suite validates correctness of all changes
+
+### Historical Context (Completed Sprints)
 
 #### Medium Risk: File Decomposition Complexity
 - **Mitigation**: Use SRP to guide logical splits, maintain API compatibility
