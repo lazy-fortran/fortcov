@@ -46,8 +46,8 @@ contains
         full_command = 'timeout ' // trim(timeout_str) // 's ' // escape_shell_argument(test_command)
         
         if (.not. config%quiet) then
-            print *, "🔧 Executing: " // trim(test_command)
-            print *, "⏱️  Timeout: " // trim(timeout_str) // " seconds"
+            print *, "Executing: " // trim(test_command)
+            print *, "Timeout: " // trim(timeout_str) // " seconds"
         end if
         
         ! Execute the command with timeout
