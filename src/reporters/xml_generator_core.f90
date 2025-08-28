@@ -5,6 +5,7 @@ module xml_generator_core
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
     use coverage_model_core
     use string_utils, only: int_to_string, real_to_string
+    use xml_utility_helpers, only: get_directory_path, get_base_name
     implicit none
     private
     
@@ -125,22 +126,4 @@ contains
         
     end subroutine calculate_file_line_rate
     
-    ! Helper function for directory path extraction
-    function get_directory_path(filename) result(dir_path)
-        use xml_utility_helpers, only: get_directory_path
-        character(len=*), intent(in) :: filename
-        character(len=:), allocatable :: dir_path
-        
-        dir_path = get_directory_path(filename)
-    end function get_directory_path
-    
-    ! Helper function for base name extraction
-    function get_base_name(filename) result(base_name)
-        use xml_utility_helpers, only: get_base_name
-        character(len=*), intent(in) :: filename
-        character(len=:), allocatable :: base_name
-        
-        base_name = get_base_name(filename)
-    end function get_base_name
-
 end module xml_generator_core
