@@ -29,12 +29,14 @@ ALL_TESTS=$(echo "$RAW_OUTPUT" | \
     sed 's/^[[:space:]]*//' | \
     sed 's/[[:space:]]*$//')
 
-# Debug: Show what we extracted (only in CI for debugging)
+# Debug: Show what we extracted (enhanced for CI debugging)
 if [ -n "$CI" ]; then
     echo "DEBUG: Extracted test names:"
     echo "$ALL_TESTS" | head -5
     echo "---"
 fi
+# Local debug: Show test count for verification
+echo "DEBUG: Found $(echo "$ALL_TESTS" | wc -l) tests to run"
 
 # Run each test individually with timeout, skipping excluded ones
 PASSED=0
