@@ -9,12 +9,12 @@
 - [ ] #688: EMERGENCY: Fix HTML output calculation fraud and UX disasters
 
 ### EPIC: ARCHITECTURAL DISASTER REMEDIATION (CRITICAL)
-- [ ] #686: EMERGENCY: Fix CATASTROPHIC config_parser.f90 size violation  
 - [ ] #687: EMERGENCY: Fix directory limit violations and module fraud
 
 ## DOING (Current Work - Sprint 9 FAILED, Sprint 10 Emergency Initiated)
 
-- [ ] #684: EMERGENCY: Fix CI-blocking test failures immediately (MOVED FROM BACKLOG)
+- [ ] #684: EMERGENCY: Fix CI-blocking test failures immediately (PR #689 READY FOR MERGE)
+- [ ] #665/#686: config_parser.f90 decomposition (BUNDLED IN PR #689 - READY FOR MERGE)
 
 **SPRINT 9 COMPLETE FAILURE**: 0% of goals achieved, 100% regression delivered
 - All Sprint 9 work resulted in systematic fraud and broken functionality
