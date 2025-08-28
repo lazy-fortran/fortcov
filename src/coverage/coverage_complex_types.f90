@@ -11,6 +11,12 @@ module coverage_complex_types
     implicit none
     private
     
+    ! Export required procedures for proper functionality
+    public :: file_init_simple, file_init_with_lines
+    public :: file_calculate_coverage
+    public :: data_init_simple, data_init_with_files
+    public :: data_calculate_overall_coverage
+    
     ! ============================================================================
     ! Complex Coverage Types
     ! ============================================================================

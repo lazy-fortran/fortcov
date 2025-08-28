@@ -86,6 +86,9 @@ module coverage_basic_types
     public :: line_constructor
     public :: branch_constructor
     
+    ! Public procedures
+    public :: line_is_covered
+    
 contains
     
     ! ============================================================================
