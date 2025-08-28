@@ -10,11 +10,11 @@
 
 #### EPIC: Critical Deployment Reliability
 ~~**#740**: Exit code regression - All error conditions return 0 breaking CI/CD pipelines (RESOLVED)~~
-**#739**: Documentation examples broken - Empty output file error and non-functional fail-under threshold (CRITICAL)
+~~**#739**: Documentation examples broken - Empty output file error and non-functional fail-under threshold (RESOLVED)~~
 
 #### EPIC: Sprint 12 Completion (Foundation)
-**#725**: FPM test discovery - Test module imports breaking autodiscovery (HIGH - now unblocked) 
-**#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud (HIGH)
+~~**#725**: FPM test discovery - Test module imports breaking autodiscovery (RESOLVED)~~ 
+~~**#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud (RESOLVED)~~
 **#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation (MEDIUM)
 
 ## DOING (Current Work)
