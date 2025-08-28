@@ -1,29 +1,31 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Sprint 12: ARCHITECTURAL STABILITY & DEFENSIVE PROGRAMMING)
+## SPRINT_BACKLOG (Sprint 14: DEPLOYMENT RELIABILITY & USER ONBOARDING)
 
-**SPRINT FOCUS**: Prevent future violations through proactive architecture management and proper error handling
+**SPRINT FOCUS**: Critical user-facing failures blocking deployment and onboarding
 
-### CRITICAL ISSUES (MAX 5 - SHORT FOCUSED SPRINT)
+### CRITICAL ISSUES (5 FOCUSED ISSUES)
 
-**SPRINT GOAL**: Establish architectural stability and defensive programming standards
+**SPRINT GOAL**: Restore deployment reliability and user onboarding success
+
+#### EPIC: Critical Deployment Reliability
+**#740**: Exit code regression - All error conditions return 0 breaking CI/CD pipelines (CRITICAL)
+**#739**: Documentation examples broken - Empty output file error and non-functional fail-under threshold (CRITICAL)
+
+#### EPIC: Sprint 12 Completion (Foundation)
+**#725**: FPM test discovery - Test module imports breaking autodiscovery (HIGH - now unblocked) 
+**#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud (HIGH)
+**#718**: Proactive size management - 9 files at 440-480 lines need decomposition BEFORE violation (MEDIUM)
 
 ## DOING (Current Work)
 
-**#718**: BLOCKED - PR #731 failing 7 tests due to sergei's pathetic implementation:
-- test_issue_249: Wrong output path
-- test_memory_allocation_errors: 10s timeout failure  
-- test_issue_433_comprehensive: Path validation broken
-- test_infrastructure_stability_validation: Runtime crashes
-- test_config_file_auto_discovery: Auto-discovery logic broken
-- test_issue_470_verification: Coverage parsing fails
-- test_cli_integration: Another timeout failure
-
-**CRITICAL BLOCKER**: sergei MUST fix ALL test failures before merge - ZERO TOLERANCE for broken code
+*No active work - Issue #718 implementation complete and ready for PR*
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
-**DEFERRED DEFECTS** (Address after Sprint 12 critical issues):
+**DEFERRED DEFECTS** (Address after Sprint 14 critical deployment fixes):
+- **#738**: Technical debt cleanup - Sprint 13 emergency fixes created maintenance burden
+- **#727**: Silent error handling patterns - Functions return without proper error codes
 - **#728**: Module naming cleanup - Remove redundant _core suffix from 46 modules
 - **#730**: Coverage workflow documentation - Complete user guide for gcov generation
 - **#714**: Directory organization - src/coverage exceeds 15-file soft limit
@@ -40,11 +42,12 @@
 - Performance Optimization & Scalability (DEFERRED)
 - Enhanced Integration & Compatibility (DEFERRED)
 
-**SPRINT 12 NOTES**:
-- Proactive architecture management prevents crisis-mode firefighting
-- Private-by-default module design improves security and maintainability
-- Proper error handling prevents silent failures and debugging nightmares
-- Mathematical correctness in calculations prevents user trust erosion
+**SPRINT 14 NOTES**:
+- User-facing reliability takes absolute priority over internal architecture
+- Documentation examples must work as written - user onboarding cannot fail
+- Exit codes are deployment-critical - CI/CD pipelines depend on proper error propagation
+- Foundation work from Sprint 12 provides strategic completion opportunities
+- Balance critical fixes with architectural progress for sustainable development
 
 ## DONE (Sprint History - Previous Completed Sprints)
 
@@ -60,11 +63,18 @@
 - **Sprint 6**: User Experience Excellence (PARTIALLY FAILED - infrastructure collapse)  
 - **Sprint 9**: Critical Defect Resolution (COMPLETE FAILURE - 0% goals achieved, 100% regression)
 
-### Sprint 12: ARCHITECTURAL STABILITY (IN PROGRESS)
-- **#729**: Module encapsulation - Add private statement to 114 modules (security/maintainability)  
-- **#727**: Error handling patterns - Fix silent failures returning without error codes
-- **#724**: Branch coverage calculation - Fix 0/0 = 100% mathematical fraud
-- **#725**: FPM test discovery - Fix test module imports breaking autodiscovery
+### Sprint 13: EMERGENCY DEPLOYMENT CAPABILITY RESTORATION (COMPLETE)
+- **Auto-discovery test failures**: ✅ RESOLVED - Fixed mock build system detection and module dependencies (PR #735)
+- **CI health**: ✅ RESOLVED - Fresh CI runs successful with auto-discovery fixes
+- **Test infrastructure**: ✅ RESOLVED - Module dependency architectural violations corrected
+- **Emergency capability**: ✅ RESTORED - Deployment capability fully operational
+
+### Sprint 12: ARCHITECTURAL STABILITY (PARTIAL - 4 ISSUES DEFERRED)
+- **#729**: ✅ RESOLVED - Module encapsulation completed (private statements added)
+- **#727**: DEFERRED - Silent error handling patterns (deferred to future sprint)
+- **#724**: DEFERRED - Branch coverage calculation mathematical fraud (moved to Sprint 14)
+- **#725**: DEFERRED - FPM test discovery issues (moved to Sprint 14)
+- **#718**: DEFERRED - Proactive size management (moved to Sprint 14)
 
 ### Sprint 11: ARCHITECTURAL DISASTER RECOVERY (COMPLETE)
 - **#702**: ✅ RESOLVED - coverage_complex_types.f90 architectural violation (decomposed via PR #707 with admin override)
