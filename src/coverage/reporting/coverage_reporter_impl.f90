@@ -133,10 +133,12 @@ contains
         supported = .true.
     end function markdown_supports_diff
     
-    ! JSON reporter stubs
+    ! JSON reporter implementation
     subroutine json_generate_report(this, coverage_data, output_path, &
                                   success, error_message, &
                                   diff_data, threshold)
+        use json_io, only: export_coverage_to_json
+        use file_utils_core, only: write_text_file
         class(json_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
@@ -145,8 +147,33 @@ contains
         type(coverage_diff_t), intent(in), optional :: diff_data
         real, intent(in), optional :: threshold
         
-        success = .true.
-        error_message = ""
+        character(len=:), allocatable :: json_content
+        logical :: write_error
+        
+        ! Convert coverage data to JSON
+        call export_coverage_to_json(coverage_data, json_content)
+        
+        if (.not. allocated(json_content)) then
+            success = .false.
+            error_message = "Failed to generate JSON content"
+            return
+        end if
+        
+        ! Write JSON content to file
+        call write_text_file(output_path, json_content, write_error)
+        
+        if (write_error) then
+            success = .false.
+            error_message = "Failed to write JSON file: " // trim(output_path)
+        else
+            success = .true.
+            error_message = ""
+        end if
+        
+        ! Suppress unused parameter warnings
+        if (present(diff_data)) continue
+        if (present(threshold)) continue
+        
     end subroutine json_generate_report
     
     function json_get_format_name(this) result(format_name)
