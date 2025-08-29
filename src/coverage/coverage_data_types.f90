@@ -23,7 +23,6 @@ module coverage_data_types
         character(len=:), allocatable :: tool
         character(len=:), allocatable :: timestamp
         type(coverage_file_t), allocatable :: files(:)
-        type(file_coverage_t), allocatable :: files_json(:)  ! JSON compatibility
         integer :: total_files = 0
         integer :: total_lines = 0
         integer :: covered_lines = 0

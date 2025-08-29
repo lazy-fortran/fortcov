@@ -75,7 +75,6 @@ contains
         
         if (num_files <= 0) then
             ! Handle empty files array - still need to allocate for validation
-            allocate(coverage_data%files_json(0))
             allocate(coverage_data%files(0))
             coverage_data%total_files = 0
             found = .true.
@@ -95,12 +94,9 @@ contains
         
         ! Assign to coverage data - populate BOTH fields for compatibility
         if (allocated(coverage_data%files)) deallocate(coverage_data%files)
-        if (allocated(coverage_data%files_json)) deallocate(coverage_data%files_json)
         
         ! Populate both arrays for validation compatibility
-        allocate(coverage_data%files_json(num_files))
         allocate(coverage_data%files(num_files))
-        coverage_data%files_json = temp_files
         
         ! Convert file_coverage_t to coverage_file_t for main files array
         do i = 1, num_files
@@ -226,9 +222,6 @@ contains
         end do
         
         ! Assign to coverage data - use proper files field during refactoring
-        if (allocated(coverage_data%files_json)) deallocate(coverage_data%files_json)
-        allocate(coverage_data%files_json(num_files))
-        coverage_data%files_json = files_array
         coverage_data%total_files = num_files
         
         found = .true.
