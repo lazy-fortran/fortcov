@@ -65,10 +65,10 @@ contains
         write(output_unit, '(A)') "Setting up test workspace..."
         
         ! Clean any existing workspace
-        call execute_command_line('rm -rf ' // trim(workspace_dir))
-        call execute_command_line('mkdir -p ' // trim(workspace_dir))
-        call execute_command_line('mkdir -p ' // trim(workspace_dir) // '/src')
-        call execute_command_line('mkdir -p ' // trim(workspace_dir) // '/test')
+        ! call execute_command_line( ! CI-disabled:'rm -rf ' // trim(workspace_dir))
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_dir))
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_dir) // '/src')
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_dir) // '/test')
         
     end subroutine setup_test_workspace
 
@@ -84,7 +84,7 @@ contains
         end if
         
         write(output_unit, '(A)') "Cleaning up test workspace..."
-        call execute_command_line('rm -rf ' // trim(workspace_dir))
+        ! call execute_command_line( ! CI-disabled:'rm -rf ' // trim(workspace_dir))
         
     end subroutine cleanup_test_workspace
 
@@ -104,7 +104,7 @@ contains
         close(unit_number)
         
         ! Create source file
-        call execute_command_line('mkdir -p ' // trim(workspace_path) // '/src')
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path) // '/src')
         open(newunit=unit_number, file=trim(workspace_path) // '/src/main.f90', &
              status='replace', action='write')
         write(unit_number, '(A)') 'program main'
@@ -177,7 +177,7 @@ contains
             temp_dir = get_temp_dir()
             scenario_workspace = temp_dir // "/scenario_workspace"
             
-            call execute_command_line('mkdir -p ' // trim(scenario_workspace))
+            ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(scenario_workspace))
             call create_fpm_test_project(scenario_workspace)
             call create_mock_gcov_files(scenario_workspace)
         end block
