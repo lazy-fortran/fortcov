@@ -221,6 +221,7 @@ contains
         !! Initialize test configuration with sensible defaults
         type(config_t), intent(out) :: config
         
+        config%gcov_executable = 'gcov'  ! Set the gcov executable
         config%auto_discovery = .true.
         config%auto_test_execution = .false.
         config%verbose = .false.
