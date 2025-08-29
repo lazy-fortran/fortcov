@@ -202,7 +202,8 @@ contains
                      '  "has_violations": ' // logical_to_json(report%has_violations) // ',' // new_line('') // &
                      '  "has_warnings": ' // logical_to_json(report%has_warnings) // ',' // new_line('') // &
                      '  "total_files_scanned": ' // int_to_string(report%total_files_scanned) // ',' // new_line('') // &
-                     '  "total_directories_scanned": ' // int_to_string(report%total_directories_scanned) // ',' // new_line('') // &
+                     '  "total_directories_scanned": ' // &
+                     int_to_string(report%total_directories_scanned) // ',' // new_line('') // &
                      '  "ci_exit_recommendation": "' // report%ci_exit_recommendation // '"'
         
         ! Add file violations array
