@@ -43,9 +43,9 @@ program test_threshold_validation_issue_473
     call print_test_summary(counter, "Threshold Validation Issue #473")
     
     if (counter%failed > 0) then
-        stop(1)
+        stop 1
     else
-        stop(0)
+        stop 0
     end if
     
 contains
