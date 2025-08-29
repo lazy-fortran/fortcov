@@ -156,7 +156,7 @@ contains
         call add_files_array_to_json(json, json_root, coverage_data)
         
         ! Convert to string with error handling
-        call json%print(json_root, json_output)
+        call json%print_to_string(json_root, json_output)
         call json%check_for_errors(status_ok)
         
         ! Handle errors with fallback
@@ -387,24 +387,31 @@ contains
         ! Get array size
         call json_parser%info(files_array, n_children=num_files)
         
-        if (num_files <= 0) return
-        
-        ! Allocate temporary array for file coverage data
-        allocate(temp_files(num_files))
-        
-        ! Parse each file object
-        do i = 1, num_files
-            call json_parser%get_child(files_array, i, file_obj)
-            if (associated(file_obj)) then
-                call parse_file_from_json_object(json_parser, file_obj, temp_files(i))
-            end if
-        end do
+        if (num_files <= 0) then
+            ! Allocate empty array for 0 files
+            allocate(temp_files(0))
+        else
+            ! Allocate temporary array for file coverage data
+            allocate(temp_files(num_files))
+            
+            ! Parse each file object
+            do i = 1, num_files
+                call json_parser%get_child(files_array, i, file_obj)
+                if (associated(file_obj)) then
+                    call parse_file_from_json_object(json_parser, file_obj, temp_files(i))
+                end if
+            end do
+        end if
         
         ! Assign to coverage data
         if (allocated(coverage_data%files_json)) deallocate(coverage_data%files_json)
         allocate(coverage_data%files_json(num_files))
         coverage_data%files_json = temp_files
         coverage_data%total_files = num_files
+        
+        ! Also allocate the main files array for validation
+        if (allocated(coverage_data%files)) deallocate(coverage_data%files)
+        allocate(coverage_data%files(num_files))
         
         found = .true.
     end subroutine parse_files_from_json_array
@@ -594,10 +601,7 @@ contains
             return
         end if
         
-        if (size(coverage_data%files) == 0) then
-            is_valid = .false.
-            return
-        end if
+        ! Empty coverage data (0 files) is valid
     end function is_coverage_data_valid
 
 end module json_io
