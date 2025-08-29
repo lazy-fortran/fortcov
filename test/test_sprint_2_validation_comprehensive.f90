@@ -34,7 +34,8 @@ program test_sprint_2_validation_comprehensive
     call test_criterion_2_coverage_parsing_accuracy() 
     call test_criterion_3_cli_consistency()
     call test_criterion_4_test_infrastructure_stability()
-    call test_criterion_5_fork_bomb_prevention()
+    ! Note: Fork bomb prevention testing moved to test_fork_bomb_prevention_validation.f90
+    ! for architectural compliance (Issue #842)
     
     ! Additional comprehensive scenarios
     call test_end_to_end_workflow_scenarios()
@@ -299,48 +300,6 @@ contains
         
     end subroutine test_criterion_4_test_infrastructure_stability
 
-    subroutine test_criterion_5_fork_bomb_prevention()
-        !! SUCCESS CRITERIA 5: Fork bomb prevention marker cleanup
-        !! Validates that fork bomb prevention works without blocking normal operation
-        
-        logical :: marker_exists
-        integer :: exit_status
-        
-        write(output_unit, '(A)') ""
-        write(output_unit, '(A)') "=== CRITERION 5: Fork Bomb Prevention ==="
-        
-        ! Test 5.1: Initial state clean
-        inquire(file='.fortcov_execution_marker', exist=marker_exists)
-        call assert_test(.not. marker_exists, "Clean initial state", &
-                        "No stale marker should exist", &
-                        test_count, passed_tests, all_tests_passed)
-        
-        ! Test 5.2: Marker creation and detection
-        call execute_command_line('touch .fortcov_execution_marker', wait=.true.)
-        inquire(file='.fortcov_execution_marker', exist=marker_exists)
-        call assert_test(marker_exists, "Fork bomb marker detection", &
-                        "Should detect created marker", &
-                        test_count, passed_tests, all_tests_passed)
-        
-        ! Test 5.3: Automatic cleanup on startup (simulate main.f90 behavior)
-        call execute_command_line('rm -f .fortcov_execution_marker', &
-                                  wait=.true., exitstat=exit_status)
-        call assert_test(exit_status == 0, "Automatic marker cleanup", &
-                        "Should clean up stale markers", &
-                        test_count, passed_tests, all_tests_passed)
-        
-        inquire(file='.fortcov_execution_marker', exist=marker_exists)
-        call assert_test(.not. marker_exists, "Cleanup effectiveness", &
-                        "Marker should be removed", &
-                        test_count, passed_tests, all_tests_passed)
-        
-        ! Test 5.4: Normal operation not blocked
-        ! This is validated by the fact that this test is running at all
-        call assert_test(.true., "Normal operation not blocked", &
-                        "Tests can run without marker blocking", &
-                        test_count, passed_tests, all_tests_passed)
-        
-    end subroutine test_criterion_5_fork_bomb_prevention
 
     subroutine test_end_to_end_workflow_scenarios()
         !! Additional end-to-end workflow validation scenarios
