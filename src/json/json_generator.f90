@@ -40,8 +40,6 @@ contains
         ! Process files array - use proper files field or JSON compatibility field
         if (allocated(coverage_data%files)) then
             call add_files_from_standard_array(json, files_array, coverage_data%files)
-        else if (allocated(coverage_data%files_json)) then
-            call add_files_from_json_array(json, files_array, coverage_data%files_json)
         end if
         
         ! Add files array to root
@@ -108,63 +106,5 @@ contains
         end do
     end subroutine add_files_from_standard_array
     
-    subroutine add_files_from_json_array(json, files_array, files_json)
-        !! Add files from JSON compatibility file_coverage_t array
-        type(json_core), intent(inout) :: json
-        type(json_value), pointer, intent(in) :: files_array
-        type(file_coverage_t), intent(in) :: files_json(:)
-        
-        type(json_value), pointer :: file_obj => null()
-        type(json_value), pointer :: lines_array => null()
-        type(json_value), pointer :: line_obj => null()
-        integer :: i, j
-        logical :: status_ok
-        
-        do i = 1, size(files_json)
-            ! Create file object with safe filename handling
-            call json%create_object(file_obj, '')
-            call json%check_for_errors(status_ok)
-            if (.not. status_ok .or. .not. associated(file_obj)) cycle
-            
-            ! Add filename with validation
-            if (len_trim(files_json(i)%filename) > 0) then
-                call json%add(file_obj, 'filename', trim(files_json(i)%filename))
-            else
-                call json%add(file_obj, 'filename', 'unknown')
-            end if
-            
-            ! Create lines array for this file
-            call json%create_array(lines_array, 'lines')
-            call json%check_for_errors(status_ok)
-            if (.not. status_ok .or. .not. associated(lines_array)) then
-                call json%destroy(file_obj)
-                cycle
-            end if
-            
-            if (allocated(files_json(i)%lines)) then
-                do j = 1, size(files_json(i)%lines)
-                    ! Create line object with validation
-                    call json%create_object(line_obj, '')
-                    call json%check_for_errors(status_ok)
-                    if (.not. status_ok .or. .not. associated(line_obj)) cycle
-                    
-                    call json%add(line_obj, 'line_number', files_json(i)%lines(j)%line_number)
-                    call json%add(line_obj, 'execution_count', files_json(i)%lines(j)%execution_count)
-                    
-                    ! Add line to lines array
-                    call json%add(lines_array, line_obj)
-                    nullify(line_obj)
-                end do
-            end if
-            
-            ! Add lines array to file object
-            call json%add(file_obj, lines_array)
-            nullify(lines_array)
-            
-            ! Add file to files array
-            call json%add(files_array, file_obj)
-            nullify(file_obj)
-        end do
-    end subroutine add_files_from_json_array
     
 end module json_generator

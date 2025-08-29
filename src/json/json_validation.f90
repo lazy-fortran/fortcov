@@ -52,8 +52,8 @@ contains
             if (size(coverage_data%files) == 0) then
                 is_valid = .false.
             end if
-        else if (allocated(coverage_data%files_json)) then
-            if (size(coverage_data%files_json) == 0) then
+        else
+            if (.false.) then
                 is_valid = .false.
             end if
         else
