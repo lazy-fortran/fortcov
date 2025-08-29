@@ -194,10 +194,12 @@ contains
                         test_count, passed_tests, all_tests_passed)
         
         if (allocation_status == 0) then
-            dynamic_string = "Test dynamic string allocation"
+            ! Check length immediately after allocation, before assignment
             call assert_test(len(dynamic_string) == 100, &
                             "Dynamic string length", "Should have correct length", &
                             test_count, passed_tests, all_tests_passed)
+            ! Now assign and test functionality
+            dynamic_string = "Test dynamic string allocation"
             deallocate(dynamic_string)
         end if
         
@@ -227,7 +229,7 @@ contains
         integer, intent(inout) :: passed_tests  
         logical, intent(inout) :: all_tests_passed
         
-        integer :: unit_number, iostat
+        integer :: unit_number, iostat, cmdstat_val
         character(len=256) :: error_message
         logical :: error_detected
         
@@ -251,8 +253,8 @@ contains
         ! Test 3: Graceful degradation
         error_detected = .false.
         call execute_command_line('invalid_command_that_does_not_exist', &
-                                  wait=.true., exitstat=iostat)
-        if (iostat /= 0) error_detected = .true.
+                                  wait=.true., exitstat=iostat, cmdstat=cmdstat_val)
+        if (iostat /= 0 .or. cmdstat_val /= 0) error_detected = .true.
         
         call assert_test(error_detected, "Command error handling", &
                         "Should handle invalid command gracefully", &
