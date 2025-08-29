@@ -8,16 +8,35 @@ module json_io
     use constants_core
     use coverage_model_core
     use coverage_operations_core, only: calculate_coverage_statistics
-    use json_core
-    use json_validator
     use input_validation_core
     use error_handling_core
+    ! Replace manual JSON parsing with json-fortran library
+    use json_module, only: json_file, json_value, json_core
+    use json_kinds, only: RK, IK
+    
+    ! Keep json_validator for format validation
+    use json_validator
     implicit none
     private
+    
+    ! Define token types for backward compatibility (now unused)
+    type :: json_token_t
+        character(len=:), allocatable :: value
+        character(len=:), allocatable :: token_type
+    end type json_token_t
+    
+    ! Token type constants for backward compatibility
+    integer, parameter :: JSON_NULL = 0
+    integer, parameter :: JSON_STRING = 1 
+    integer, parameter :: JSON_NUMBER = 2
+    integer, parameter :: JSON_OBJECT = 3
+    integer, parameter :: JSON_ARRAY = 4
+    integer, parameter :: JSON_BOOLEAN = 5
     
     public :: import_coverage_from_json
     public :: export_coverage_to_json
     public :: import_coverage_from_json_safe
+    public :: import_coverage_from_json_file
     public :: validate_json_coverage_format
     
     ! Compatibility exports for legacy interface
@@ -25,37 +44,46 @@ module json_io
     public :: export_json_coverage
     public :: import_json_coverage_safe
     
-    ! Re-export JSON token types for compatibility
+    ! Re-export token types for backward compatibility
     public :: json_token_t
     public :: JSON_NULL, JSON_STRING, JSON_NUMBER, JSON_OBJECT, JSON_ARRAY, JSON_BOOLEAN
     
 contains
     
     subroutine import_coverage_from_json(json_content, coverage_data)
-        !! Core JSON coverage import implementation
+        !! Core JSON coverage import implementation using json-fortran
         character(len=*), intent(in) :: json_content
         type(coverage_data_t), intent(out) :: coverage_data
         
-        type(json_token_t), allocatable :: tokens(:)
-        integer :: token_count, current_pos
-        logical :: parse_error
+        type(json_core) :: json_parser
+        type(json_value), pointer :: root_obj => null()
+        type(json_value), pointer :: files_array => null()
+        logical :: found
+        character(len=:), allocatable :: error_msg
         
         call initialize_coverage_data(coverage_data)
         
-        call tokenize_json_content(json_content, tokens, token_count, parse_error)
-        if (parse_error) then
-            print *, "❌ Failed to tokenize JSON content"
+        ! Parse JSON content using json-fortran
+        call json_parser%initialize()
+        call json_parser%deserialize(root_obj, json_content)
+        
+        ! Check for parsing errors
+        if (json_parser%failed()) then
+            call json_parser%print_error_message()
+            print *, "❌ Failed to parse JSON content with json-fortran"
+            if (associated(root_obj)) call json_parser%destroy(root_obj)
             return
         end if
         
-        current_pos = 1
-        call parse_coverage_data_from_tokens(tokens, current_pos, token_count, &
-                                           coverage_data, parse_error)
+        ! Extract coverage data from parsed JSON
+        call parse_coverage_from_json_value(json_parser, root_obj, coverage_data, found)
         
-        if (parse_error) then
-            print *, "❌ Failed to parse coverage data from JSON"
-            return
+        if (.not. found) then
+            print *, "❌ Failed to extract coverage data from JSON"
         end if
+        
+        ! Clean up
+        if (associated(root_obj)) call json_parser%destroy(root_obj)
     end subroutine import_coverage_from_json
     
     subroutine import_coverage_from_json_safe(json_content, coverage_data, error_caught)
@@ -116,11 +144,20 @@ contains
     end subroutine export_coverage_to_json
     
     function validate_json_coverage_format(json_content) result(is_valid)
-        !! Validates JSON format for coverage data
+        !! Validates JSON format for coverage data using json-fortran
         character(len=*), intent(in) :: json_content
         logical :: is_valid
         
-        is_valid = validate_coverage_json_structure(json_content)
+        type(json_core) :: json_parser
+        type(json_value), pointer :: root_obj => null()
+        
+        ! Use json-fortran to validate JSON structure
+        call json_parser%initialize()
+        call json_parser%deserialize(root_obj, json_content)
+        
+        is_valid = .not. json_parser%failed()
+        
+        if (associated(root_obj)) call json_parser%destroy(root_obj)
     end function validate_json_coverage_format
     
     ! === COMPATIBILITY WRAPPERS ===
@@ -150,20 +187,77 @@ contains
         call import_coverage_from_json_safe(json_content, coverage_data, error_caught)
     end subroutine import_json_coverage_safe
     
-    ! === HELPER FUNCTIONS ===
-    
-    subroutine parse_coverage_data_from_tokens(tokens, current_pos, token_count, &
-                                             coverage_data, parse_error)
-        !! Parses coverage data from JSON tokens
-        type(json_token_t), intent(in) :: tokens(:)
-        integer, intent(inout) :: current_pos
-        integer, intent(in) :: token_count
+    subroutine import_coverage_from_json_file(filename, coverage_data, error_caught)
+        !! Import coverage from JSON file using json-fortran
+        character(len=*), intent(in) :: filename
         type(coverage_data_t), intent(out) :: coverage_data
-        logical, intent(out) :: parse_error
+        logical, intent(out) :: error_caught
         
-        call parse_coverage_object_from_tokens(tokens, current_pos, token_count, &
-                                             coverage_data, parse_error)
-    end subroutine parse_coverage_data_from_tokens
+        type(json_file) :: json
+        logical :: found
+        
+        error_caught = .false.
+        call initialize_coverage_data(coverage_data)
+        
+        ! Load JSON file using json-fortran
+        call json%initialize()
+        call json%load(filename=filename)
+        
+        if (json%failed()) then
+            call json%print_error_message()
+            print *, "❌ Failed to load JSON file:", filename
+            error_caught = .true.
+            call json%destroy()
+            return
+        end if
+        
+        call parse_coverage_from_json_file(json, coverage_data, found)
+        
+        if (.not. found) then
+            print *, "❌ Failed to extract coverage data from JSON file:", filename
+            error_caught = .true.
+        end if
+        
+        call json%destroy()
+    end subroutine import_coverage_from_json_file
+    
+    ! === HELPER FUNCTIONS (json-fortran implementation) ===
+    
+    subroutine parse_coverage_from_json_value(json_parser, root_obj, coverage_data, found)
+        !! Parses coverage data from json-fortran JSON value
+        type(json_core), intent(inout) :: json_parser
+        type(json_value), pointer, intent(in) :: root_obj
+        type(coverage_data_t), intent(out) :: coverage_data
+        logical, intent(out) :: found
+        
+        type(json_value), pointer :: files_array => null()
+        type(json_value), pointer :: summary_obj => null()
+        character(len=:), allocatable :: version_str, tool_str, timestamp_str
+        
+        found = .false.
+        
+        if (.not. associated(root_obj)) return
+        
+        ! Extract version info if present
+        call json_parser%get(root_obj, 'version', version_str, found)
+        if (found) coverage_data%version = version_str
+        
+        call json_parser%get(root_obj, 'tool', tool_str, found)
+        if (found) coverage_data%tool = tool_str
+        
+        call json_parser%get(root_obj, 'timestamp', timestamp_str, found)
+        if (found) coverage_data%timestamp = timestamp_str
+        
+        ! Extract files array
+        call json_parser%get(root_obj, 'files', files_array, found)
+        if (found .and. associated(files_array)) then
+            call parse_files_from_json_array(json_parser, files_array, coverage_data, found)
+        else
+            print *, "Warning: No 'files' array found in JSON"
+        end if
+        
+        found = .true.
+    end subroutine parse_coverage_from_json_value
     
     subroutine format_summary_json(coverage_data, summary_json)
         !! Formats coverage summary as JSON
@@ -280,6 +374,111 @@ contains
         end do
     end function escape_json_string
     
+    subroutine parse_files_from_json_array(json_parser, files_array, coverage_data, found)
+        !! Parses files array from json-fortran array
+        type(json_core), intent(inout) :: json_parser
+        type(json_value), pointer, intent(in) :: files_array
+        type(coverage_data_t), intent(inout) :: coverage_data
+        logical, intent(out) :: found
+        
+        integer :: num_files, i
+        type(json_value), pointer :: file_obj => null()
+        type(file_coverage_t), allocatable :: temp_files(:)
+        
+        found = .false.
+        
+        if (.not. associated(files_array)) return
+        
+        ! Get array size
+        call json_parser%info(files_array, n_children=num_files)
+        
+        if (num_files <= 0) return
+        
+        ! Allocate temporary array for file coverage data
+        allocate(temp_files(num_files))
+        
+        ! Parse each file object
+        do i = 1, num_files
+            call json_parser%get_child(files_array, i, file_obj)
+            if (associated(file_obj)) then
+                call parse_file_from_json_object(json_parser, file_obj, temp_files(i))
+            end if
+        end do
+        
+        ! Assign to coverage data
+        if (allocated(coverage_data%files_json)) deallocate(coverage_data%files_json)
+        allocate(coverage_data%files_json(num_files))
+        coverage_data%files_json = temp_files
+        coverage_data%total_files = num_files
+        
+        found = .true.
+    end subroutine parse_files_from_json_array
+    
+    subroutine parse_file_from_json_object(json_parser, file_obj, file_coverage)
+        !! Parses single file coverage from JSON object
+        type(json_core), intent(inout) :: json_parser
+        type(json_value), pointer, intent(in) :: file_obj
+        type(file_coverage_t), intent(out) :: file_coverage
+        
+        character(len=:), allocatable :: filename
+        type(json_value), pointer :: lines_array => null()
+        logical :: found
+        
+        if (.not. associated(file_obj)) return
+        
+        ! Extract filename
+        call json_parser%get(file_obj, 'filename', filename, found)
+        if (found) then
+            file_coverage%filename = filename
+        end if
+        
+        ! Extract lines array
+        call json_parser%get(file_obj, 'lines', lines_array, found)
+        if (found .and. associated(lines_array)) then
+            call parse_lines_from_json_array(json_parser, lines_array, file_coverage)
+        end if
+    end subroutine parse_file_from_json_object
+    
+    subroutine parse_lines_from_json_array(json_parser, lines_array, file_coverage)
+        !! Parses lines array from JSON
+        type(json_core), intent(inout) :: json_parser
+        type(json_value), pointer, intent(in) :: lines_array
+        type(file_coverage_t), intent(inout) :: file_coverage
+        
+        integer :: num_lines, i
+        type(json_value), pointer :: line_obj => null()
+        type(line_coverage_t), allocatable :: temp_lines(:)
+        integer(IK) :: line_number, execution_count
+        logical :: found
+        
+        if (.not. associated(lines_array)) return
+        
+        ! Get array size
+        call json_parser%info(lines_array, n_children=num_lines)
+        
+        if (num_lines <= 0) return
+        
+        ! Allocate temporary array for line coverage data
+        allocate(temp_lines(num_lines))
+        
+        ! Parse each line object
+        do i = 1, num_lines
+            call json_parser%get_child(lines_array, i, line_obj)
+            if (associated(line_obj)) then
+                call json_parser%get(line_obj, 'line_number', line_number, found)
+                if (found) temp_lines(i)%line_number = int(line_number)
+                
+                call json_parser%get(line_obj, 'execution_count', execution_count, found)
+                if (found) temp_lines(i)%execution_count = int(execution_count)
+            end if
+        end do
+        
+        ! Assign to file coverage
+        if (allocated(file_coverage%lines)) deallocate(file_coverage%lines)
+        allocate(file_coverage%lines(num_lines))
+        file_coverage%lines = temp_lines
+    end subroutine parse_lines_from_json_array
+    
     function get_current_timestamp() result(timestamp)
         !! Gets current timestamp in ISO format
         character(len=:), allocatable :: timestamp
@@ -288,6 +487,97 @@ contains
         date_time = "2024-01-01T00:00:00"
         timestamp = date_time
     end function get_current_timestamp
+    
+    subroutine parse_coverage_from_json_file(json, coverage_data, found)
+        !! Parse coverage from JSON file object
+        type(json_file), intent(inout) :: json
+        type(coverage_data_t), intent(out) :: coverage_data
+        logical, intent(out) :: found
+        
+        character(len=:), allocatable :: version_str, tool_str, timestamp_str
+        type(file_coverage_t), allocatable :: files_array(:)
+        integer :: num_files, i
+        
+        found = .false.
+        
+        ! Extract version info
+        call json%get('version', version_str, found)
+        if (found) coverage_data%version = version_str
+        
+        call json%get('tool', tool_str, found)
+        if (found) coverage_data%tool = tool_str
+        
+        call json%get('timestamp', timestamp_str, found) 
+        if (found) coverage_data%timestamp = timestamp_str
+        
+        ! Get number of files
+        call json%info('files', n_children=num_files, found=found)
+        if (.not. found .or. num_files <= 0) then
+            print *, "Warning: No files array found or empty"
+            return
+        end if
+        
+        ! Allocate files array
+        allocate(files_array(num_files))
+        
+        ! Extract each file
+        do i = 1, num_files
+            call parse_file_from_json_file(json, i, files_array(i))
+        end do
+        
+        ! Assign to coverage data
+        if (allocated(coverage_data%files_json)) deallocate(coverage_data%files_json)
+        allocate(coverage_data%files_json(num_files))
+        coverage_data%files_json = files_array
+        coverage_data%total_files = num_files
+        
+        found = .true.
+    end subroutine parse_coverage_from_json_file
+    
+    subroutine parse_file_from_json_file(json, file_index, file_coverage)
+        !! Parse single file from JSON file
+        type(json_file), intent(inout) :: json
+        integer, intent(in) :: file_index
+        type(file_coverage_t), intent(out) :: file_coverage
+        
+        character(len=:), allocatable :: filename, path
+        character(len=64) :: index_str
+        integer :: num_lines, line_index
+        type(line_coverage_t), allocatable :: lines_array(:)
+        logical :: found
+        integer(IK) :: line_number, execution_count
+        
+        write(index_str, '(I0)') file_index
+        
+        ! Get filename
+        path = 'files(' // trim(index_str) // ').filename'
+        call json%get(path, filename, found)
+        if (found) file_coverage%filename = filename
+        
+        ! Get number of lines
+        path = 'files(' // trim(index_str) // ').lines'
+        call json%info(path, n_children=num_lines, found=found)
+        if (.not. found .or. num_lines <= 0) return
+        
+        ! Allocate lines array
+        allocate(lines_array(num_lines))
+        
+        ! Extract each line
+        do line_index = 1, num_lines
+            write(path, '(A,I0,A,I0,A)') 'files(', file_index, ').lines(', line_index, ').line_number'
+            call json%get(path, line_number, found)
+            if (found) lines_array(line_index)%line_number = int(line_number)
+            
+            write(path, '(A,I0,A,I0,A)') 'files(', file_index, ').lines(', line_index, ').execution_count' 
+            call json%get(path, execution_count, found)
+            if (found) lines_array(line_index)%execution_count = int(execution_count)
+        end do
+        
+        ! Assign lines to file coverage
+        if (allocated(file_coverage%lines)) deallocate(file_coverage%lines)
+        allocate(file_coverage%lines(num_lines))
+        file_coverage%lines = lines_array
+    end subroutine parse_file_from_json_file
     
     subroutine initialize_coverage_data(coverage_data)
         !! Initializes coverage data structure
