@@ -173,7 +173,7 @@ contains
         workspace_path = trim(base_test_dir) // "_empty_project"
         ! call execute_command_line('mkdir -p ' // trim(workspace_path)) ! CI-disabled for reliability
         
-        ! Create empty FPM project (fmp.toml exists but no sources)
+        ! Create empty FPM project (fpm.toml exists but no sources)
         call create_empty_fpm_project(workspace_path)
         
         call detect_build_system_with_error_handling(workspace_path, &

@@ -115,13 +115,21 @@ contains
     end subroutine process_single_argument
     
     subroutine add_flag_value(value, flags, flag_count, expecting_value, success, error_message)
-        !! Add flag value to flags array
+        !! Add flag value to flags array with validation
         character(len=*), intent(in) :: value
         character(len=1024), allocatable, intent(inout) :: flags(:)
         integer, intent(inout) :: flag_count
         logical, intent(inout) :: expecting_value
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
+        
+        ! Validate that the value is not another flag
+        if (is_flag_argument(value)) then
+            success = .false.
+            error_message = "Missing value for flag: " // trim(flags(flag_count)) // &
+                           " (received flag instead of value: " // trim(value) // ")"
+            return
+        end if
         
         flag_count = flag_count + 1
         if (flag_count > MAX_ARRAY_SIZE) then

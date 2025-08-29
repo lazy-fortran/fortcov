@@ -28,7 +28,7 @@ sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 **Windows (MSYS2):**
 ```bash
 pacman -S mingw-w64-x86_64-gcc-fortran git curl
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-windows.zip -o fmp.zip
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-windows.zip -o fpm.zip
 unzip fpm.zip && mv fpm.exe /usr/local/bin/
 git clone https://github.com/lazy-fortran/fortcov.git
 # json-fortran dependency automatically handled by FPM during build
