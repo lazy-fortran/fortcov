@@ -35,11 +35,11 @@ program test_memory_allocation_bug_issue_243
         print *, "  - test_memory_allocation_core (core patterns)"
         print *, "  - test_memory_error_paths (error handling)"
         print *, "============================================================="
-        call exit(0)
+        stop 0
     else
         write(error_unit, *) "❌ MEMORY SAFETY TESTS FAILED"
         print *, "============================================================="
-        call exit(1)
+        stop 1
     end if
     
 contains
