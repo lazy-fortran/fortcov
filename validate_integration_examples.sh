@@ -43,11 +43,11 @@ check_pattern "FPM standard workflow command" \
 
 check_pattern "FPM gcov command" \
     "$EXAMPLES_DIR/fpm/basic_example/generate_coverage.sh" \
-    "gcov src/\*.f90"
+    "gcov src/*.f90"
 
 check_pattern "FPM fortcov command" \
     "$EXAMPLES_DIR/fpm/basic_example/generate_coverage.sh" \
-    "fortcov --source . --exclude build/\* --exclude test/\*"
+    "fortcov --source . --exclude build/* --exclude test/*"
 
 # Georg's Test 2: FPM Build-Integrated Discovery Pattern  
 check_pattern "FPM build-integrated find command" \
@@ -61,7 +61,7 @@ check_pattern "FPM build-integrated copy command" \
 # Georg's Test 3: FPM In-Place Analysis Pattern
 check_pattern "FPM in-place analysis command" \
     "$EXAMPLES_DIR/fpm/in_place_analysis_example/generate_coverage_in_place.sh" \
-    'fortcov --source="build/gfortran_\*/fortcov"'
+    'fortcov --source="build/gfortran_*/fortcov"'
 
 # Georg's Test 4: CMake Integration Patterns
 echo
