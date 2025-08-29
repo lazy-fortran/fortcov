@@ -49,7 +49,7 @@ contains
         write(output_unit, '(A)') "=== FPM PROJECT SCENARIO ==="
         
         workspace_path = trim(base_test_dir) // "_fmp"
-        call execute_command_line('mkdir -p ' // trim(workspace_path))
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path))
         
         call create_fpm_test_project(workspace_path)
         
@@ -73,7 +73,7 @@ contains
         
         call test_fpm_project_structure_validation(workspace_path)
         
-        call execute_command_line('rm -rf ' // trim(workspace_path))
+        ! call execute_command_line( ! CI-disabled:'rm -rf ' // trim(workspace_path))
         
     end subroutine test_fpm_project_scenario
 
@@ -118,7 +118,7 @@ contains
         write(output_unit, '(A)') "=== CMAKE PROJECT SCENARIO ==="
         
         workspace_path = trim(base_test_dir) // "_cmake"
-        call execute_command_line('mkdir -p ' // trim(workspace_path))
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path))
         
         call create_cmake_test_project(workspace_path)
         
@@ -139,7 +139,7 @@ contains
         
         call test_cmake_project_structure_validation(workspace_path)
         
-        call execute_command_line('rm -rf ' // trim(workspace_path))
+        ! call execute_command_line( ! CI-disabled:'rm -rf ' // trim(workspace_path))
         
     end subroutine test_cmake_project_scenario
 
@@ -183,7 +183,7 @@ contains
         write(output_unit, '(A)') "=== MAKE PROJECT SCENARIO ==="
         
         workspace_path = trim(base_test_dir) // "_make"
-        call execute_command_line('mkdir -p ' // trim(workspace_path))
+        ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path))
         
         call create_make_test_project(workspace_path)
         
@@ -204,7 +204,7 @@ contains
         
         call test_make_project_structure_validation(workspace_path)
         
-        call execute_command_line('rm -rf ' // trim(workspace_path))
+        ! call execute_command_line( ! CI-disabled:'rm -rf ' // trim(workspace_path))
         
     end subroutine test_make_project_scenario
 

@@ -16,7 +16,7 @@ program test_config_validation_433
     
     ! Test 1: Valid source path with existing directory
     print *, "Test 1: Valid source path with existing directory"
-    args(1) = "--source=/home/ert/code/fortcov/src"
+    args(1) = "--source=src"
     args(2) = "--output=coverage.md"
     args(3) = ""
     call parse_config(args(1:2), config, success, error_message)
