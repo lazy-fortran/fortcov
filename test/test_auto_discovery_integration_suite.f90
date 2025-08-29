@@ -52,8 +52,8 @@ contains
         shared_passed_tests = 0
         shared_all_tests_passed = .true.
         
-        ! Execute the test module
-        call execute_command_line('./' // trim(executable_name), &
+        ! Execute the test module using fpm test to resolve paths correctly
+        call execute_command_line('fpm test ' // trim(executable_name), &
                                  exitstat=exit_code)
         
         if (exit_code == 0) then

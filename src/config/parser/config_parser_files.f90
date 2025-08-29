@@ -340,6 +340,21 @@ contains
             config%strict_mode = (trim(adjustl(value)) == "true")
         case ("keep_gcov_files")
             config%keep_gcov_files = (trim(adjustl(value)) == "true")
+        case ("auto_discovery")
+            config%auto_discovery = (trim(adjustl(value)) == "true")
+        case ("auto-test-execution")
+            config%auto_test_execution = (trim(adjustl(value)) == "yes")
+        case ("auto-test")
+            config%auto_test_execution = (trim(adjustl(value)) /= "no")
+        case ("test-timeout-seconds")
+            call parse_integer_with_error_local(value, config%test_timeout_seconds, &
+                                          "test timeout seconds", success, error_message)
+        case ("test_timeout_seconds")
+            call parse_integer_with_error_local(value, config%test_timeout_seconds, &
+                                          "test timeout seconds", success, error_message)
+        case ("test-timeout")
+            call parse_integer_with_error_local(value, config%test_timeout_seconds, &
+                                          "test timeout", success, error_message)
         case default
             ! Unknown option - warn but continue
             if (config%verbose) then
