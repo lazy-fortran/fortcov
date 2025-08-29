@@ -38,4 +38,5 @@ jobs:
     - name: Run unit tests
       run: |
         # Run test suite excluding known problematic tests from main branch
+        chmod +x run_ci_tests.sh
         ./run_ci_tests.sh
