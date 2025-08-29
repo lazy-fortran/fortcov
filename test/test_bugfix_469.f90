@@ -131,7 +131,7 @@ contains
     subroutine cleanup_test_environment()
         !! Remove test files and directory
         character(len=256) :: cmd
-        cmd = "rm -rf build"
+        cmd = "rm -rf " // trim(test_dir)
         call execute_command_line(cmd)
     end subroutine cleanup_test_environment
     
