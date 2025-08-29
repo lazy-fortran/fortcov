@@ -5,6 +5,8 @@ program main
   use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
                                     ERROR_INVALID_CONFIG, clear_error_context
   use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
+  use system_exit_handler, only: exit_success_clean, exit_failure_clean, &
+                                    exit_invalid_config_clean
   use zero_config_core, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
   use coverage_workflows, only: launch_coverage_tui_mode
@@ -49,7 +51,7 @@ program main
     print *, "   * Ensure source directory exists: ls -la <your_source_path>"
     print *, "   * Check if .gcov files are present: find . -name '*.gcov'"
     print *, "   * Try: fortcov --source=src --output=coverage.md"
-    stop 1
+    call exit_invalid_config_clean()
   end if
 
   ! Apply enhanced auto-discovery integration for zero-configuration mode (Issue #281)
@@ -66,35 +68,35 @@ program main
     call show_help()
     ! In quiet mode, help/version should exit with failure code
     if (config%quiet) then
-      stop 1
+      call exit_failure_clean()
     else
-      stop 0
+      call exit_success_clean()
     end if
   else if (config%show_version) then
     call show_version()
     ! In quiet mode, help/version should exit with failure code
     if (config%quiet) then
-      stop 1
+      call exit_failure_clean()
     else
-      stop 0
+      call exit_success_clean()
     end if
   else if (config%validate_config_only) then
     ! Only validate configuration, don't run analysis
     call validate_config_with_context(config, error_ctx)
     if (error_ctx%error_code /= ERROR_SUCCESS) then
       print *, "Configuration validation failed: " // trim(error_ctx%message)
-      stop 1
+      call exit_invalid_config_clean()
     else
       print *, "Configuration is valid"
-      stop 0
+      call exit_success_clean()
     end if
   else if (config%validate_architecture) then
     ! Only validate architectural size compliance, don't run coverage analysis
     call handle_architectural_validation(config, error_ctx)
     if (error_ctx%error_code /= ERROR_SUCCESS) then
-      stop 1
+      call exit_failure_clean()
     else
-      stop 0
+      call exit_success_clean()
     end if
   end if
   
@@ -107,7 +109,7 @@ program main
         print *, "🛡️  Fork bomb prevention: fortcov execution disabled"
         print *, "    (fortcov detected it's running within a test environment)"
       end if
-      stop 0
+      call exit_success_clean()
     end if
   end block
   
@@ -123,7 +125,7 @@ program main
     print *, "For configuration help:"
     print *, "   • See example: cat fortcov.nml.example"
     print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
-    stop 1
+    call exit_invalid_config_clean()
   end if
   
   ! Check for TUI mode
@@ -138,9 +140,9 @@ program main
   end if
   
   if (exit_code == 0) then
-    stop 0
+    call exit_success_clean()
   else
-    stop 1
+    call exit_failure_clean()
   end if
 
 contains
@@ -168,16 +170,24 @@ contains
     ! Run architectural size enforcement
     call enforce_size_limits_for_ci(enforcement_config, enforcement_result)
     
-    ! Display results
+    ! Display results - output format depends on architecture_output_format
     if (.not. config%quiet) then
-      print *, trim(enforcement_result%summary_message)
-      if (config%verbose .and. len_trim(enforcement_result%detailed_report) > 0) then
-        print *, ""
-        print *, trim(enforcement_result%detailed_report)
-      end if
-      if (len_trim(enforcement_result%remediation_actions) > 0) then
-        print *, ""
-        print *, trim(enforcement_result%remediation_actions)
+      if (trim(config%architecture_output_format) == "json") then
+        ! For JSON format, only output the detailed report which contains JSON
+        if (len_trim(enforcement_result%detailed_report) > 0) then
+          print '(A)', trim(enforcement_result%detailed_report)
+        end if
+      else
+        ! For human and CI formats, output the formatted messages
+        print *, trim(enforcement_result%summary_message)
+        if (config%verbose .and. len_trim(enforcement_result%detailed_report) > 0) then
+          print *, ""
+          print *, trim(enforcement_result%detailed_report)
+        end if
+        if (len_trim(enforcement_result%remediation_actions) > 0) then
+          print *, ""
+          print *, trim(enforcement_result%remediation_actions)
+        end if
       end if
     end if
     
