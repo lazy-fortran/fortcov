@@ -67,6 +67,8 @@ contains
         
         if (trim(output_format) == "ci") then
             call generate_ci_report(report, report_text)
+        else if (trim(output_format) == "json") then
+            call generate_json_report(report, report_text)
         else if (trim(output_format) == "human") then
             call generate_human_report(report, report_text)
         else
@@ -184,6 +186,164 @@ contains
         end if
         
     end subroutine append_detailed_violations
+    
+    subroutine generate_json_report(report, report_text)
+        !! Generates JSON format report for machine consumption
+        type(architectural_size_report_t), intent(in) :: report
+        character(len=:), allocatable, intent(out) :: report_text
+        
+        character(len=:), allocatable :: violations_json
+        integer :: i
+        logical :: first_violation
+        
+        ! Start JSON object
+        report_text = '{' // new_line('') // &
+                     '  "summary": "' // escape_json_string(report%summary_message) // '",' // new_line('') // &
+                     '  "has_violations": ' // logical_to_json(report%has_violations) // ',' // new_line('') // &
+                     '  "has_warnings": ' // logical_to_json(report%has_warnings) // ',' // new_line('') // &
+                     '  "total_files_scanned": ' // int_to_string(report%total_files_scanned) // ',' // new_line('') // &
+                     '  "total_directories_scanned": ' // &
+                     int_to_string(report%total_directories_scanned) // ',' // new_line('') // &
+                     '  "ci_exit_recommendation": "' // report%ci_exit_recommendation // '"'
+        
+        ! Add file violations array
+        if (allocated(report%file_violations) .and. size(report%file_violations) > 0) then
+            report_text = report_text // ',' // new_line('') // '  "file_violations": ['
+            first_violation = .true.
+            do i = 1, size(report%file_violations)
+                if (trim(report%file_violations(i)%severity_level) /= "") then
+                    if (.not. first_violation) then
+                        report_text = report_text // ','
+                    end if
+                    report_text = report_text // new_line('') // '    {' // new_line('') // &
+                        '      "filename": "' // &
+                        escape_json_string(report%file_violations(i)%filename) // '",' // new_line('') // &
+                        '      "current_lines": ' // &
+                        int_to_string(report%file_violations(i)%current_lines) // ',' // new_line('') // &
+                        '      "target_limit": ' // &
+                        int_to_string(report%file_violations(i)%target_limit) // ',' // new_line('') // &
+                        '      "severity_level": "' // &
+                        trim(report%file_violations(i)%severity_level) // '",' // new_line('') // &
+                        '      "remediation_hint": "' // &
+                        escape_json_string(report%file_violations(i)%remediation_hint) // '"' // &
+                        new_line('') // &
+                        '    }'
+                    first_violation = .false.
+                end if
+            end do
+            report_text = report_text // new_line('') // '  ]'
+        else
+            report_text = report_text // ',' // new_line('') // '  "file_violations": []'
+        end if
+        
+        ! Add directory violations array
+        if (allocated(report%directory_violations) .and. size(report%directory_violations) > 0) then
+            report_text = report_text // ',' // new_line('') // '  "directory_violations": ['
+            first_violation = .true.
+            do i = 1, size(report%directory_violations)
+                if (trim(report%directory_violations(i)%severity_level) /= "") then
+                    if (.not. first_violation) then
+                        report_text = report_text // ','
+                    end if
+                    report_text = report_text // new_line('') // '    {' // new_line('') // &
+                        '      "directory": "' // &
+                        escape_json_string(report%directory_violations(i)%directory_path) // &
+                        '",' // new_line('') // &
+                        '      "current_items": ' // &
+                        int_to_string(report%directory_violations(i)%current_items) // &
+                        ',' // new_line('') // &
+                        '      "soft_limit": ' // &
+                        int_to_string(report%directory_violations(i)%soft_limit) // &
+                        ',' // new_line('') // &
+                        '      "hard_limit": ' // &
+                        int_to_string(report%directory_violations(i)%hard_limit) // &
+                        ',' // new_line('') // &
+                        '      "severity_level": "' // &
+                        trim(report%directory_violations(i)%severity_level) // &
+                        '",' // new_line('') // &
+                        '      "remediation_hint": "' // &
+                        escape_json_string(report%directory_violations(i)%remediation_hint) // &
+                        '"' // new_line('') // &
+                        '    }'
+                    first_violation = .false.
+                end if
+            end do
+            report_text = report_text // new_line('') // '  ]'
+        else
+            report_text = report_text // ',' // new_line('') // '  "directory_violations": []'
+        end if
+        
+        ! Close JSON object
+        report_text = report_text // new_line('') // '}' // new_line('')
+        
+    end subroutine generate_json_report
+    
+    function escape_json_string(input_str) result(escaped)
+        !! Escapes special characters in JSON strings
+        character(len=*), intent(in) :: input_str
+        character(len=:), allocatable :: escaped
+        
+        integer :: i, j
+        character(len=1) :: ch
+        character(len=:), allocatable :: temp
+        
+        ! Allocate maximum possible size (each char could become 6 chars \uXXXX)
+        allocate(character(len=len(input_str)*6) :: temp)
+        
+        j = 0
+        do i = 1, len_trim(input_str)
+            ch = input_str(i:i)
+            select case (ch)
+            case ('"')
+                j = j + 1
+                temp(j:j+1) = '\"'
+                j = j + 1
+            case ('\\')
+                j = j + 1  
+                temp(j:j+1) = '\\\\'
+                j = j + 1
+            case (achar(8))  ! Backspace
+                j = j + 1
+                temp(j:j+1) = '\\b'
+                j = j + 1
+            case (achar(12))  ! Form feed
+                j = j + 1
+                temp(j:j+1) = '\\f'
+                j = j + 1
+            case (achar(10))  ! Newline
+                j = j + 1
+                temp(j:j+1) = '\\n'
+                j = j + 1
+            case (achar(13))  ! Carriage return
+                j = j + 1
+                temp(j:j+1) = '\\r'
+                j = j + 1
+            case (achar(9))  ! Tab
+                j = j + 1
+                temp(j:j+1) = '\\t'
+                j = j + 1
+            case default
+                j = j + 1
+                temp(j:j) = ch
+            end select
+        end do
+        
+        escaped = temp(1:j)
+        
+    end function escape_json_string
+    
+    function logical_to_json(val) result(json_str)
+        !! Converts logical value to JSON boolean string
+        logical, intent(in) :: val
+        character(len=:), allocatable :: json_str
+        
+        if (val) then
+            json_str = "true"
+        else
+            json_str = "false"
+        end if
+        
+    end function logical_to_json
     
     function count_file_violations_by_severity(violations, severity) result(count)
         !! Counts file violations matching specific severity level
