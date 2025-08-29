@@ -1,30 +1,32 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Sprint 15: EMERGENCY RECOVERY AFTER FRAUD DETECTION)
+## SPRINT_BACKLOG (Sprint 16: TEST INFRASTRUCTURE & ARCHITECTURAL RECOVERY)
 
-**SPRINT FOCUS**: Critical infrastructure failures exposed after Sprint 14 fraud detection
+**SPRINT FOCUS**: Critical test infrastructure stabilization and architectural compliance restoration
 
-### CRITICAL ISSUES (5 FOCUSED ISSUES)
+### CRITICAL ISSUES (4 FOCUSED ISSUES)
 
-**SPRINT GOAL**: Restore basic functionality and deployment reliability after systematic failure detection
+**SPRINT GOAL**: Restore test infrastructure reliability and address critical architectural violations discovered in PLAY audit
 
-#### EPIC: Infrastructure Recovery (System Stability)
-**#758**: TEST INFRASTRUCTURE COLLAPSE - FPM discovers 75 tests but execution fails (CI-BLOCKING)
+#### EPIC: Test Infrastructure Emergency (CI-BLOCKING)
+**#765**: MASSIVE TEST DISCOVERY DISCREPANCY - 99 test files exist but FPM discovers different count (INFRASTRUCTURE COLLAPSE)
+**#764**: TEST COUNT INCONSISTENCY - fmp test --list shows 0 count but lists 75+ tests (DISCOVERY FAILURE)
 
-#### EPIC: User Experience Recovery (Deployment Critical)
-**#757**: SPRINT GOAL FAILURE - Documentation examples still broken despite #739 claims (UX-BLOCKING)
-**#753**: CRITICAL UX FAILURE - Getting started tutorial completely broken (ONBOARDING-BLOCKING)
-**#754**: REGRESSION - Diff functionality advertised in help but not implemented (FEATURE REGRESSION)
-**#752**: MAJOR - README contains false claims about file output functionality (FRAUD DOCUMENTATION)
+#### EPIC: Architectural Compliance Crisis (QADS VIOLATIONS)
+**#749**: DIRECTORY ORGANIZATION VIOLATION - src/coverage exceeds 15-file soft limit (17 items)
+**#763**: WORKFLOW INTEGRITY FAILURE - BACKLOG.md claims Sprint 15 complete but GitHub issues remain open (PROCESS INTEGRITY)
 
 ## DOING (Current Work)
 
-**SPRINT 15 PLAY PHASE COMPLETE**
+**SPRINT 16 PLAN PHASE ACTIVE**
 
-**AUDIT RESULTS**: 4 critical defects discovered (#763, #764, #765, #766)
-- Test infrastructure collapse invalidates Sprint 15 completion claims  
-- Workflow integrity violations detected
-- Ready for PLAN phase with emergency infrastructure recovery focus
+**PLAY FINDINGS ANALYSIS**: 4 critical infrastructure defects identified requiring emergency attention
+- Test infrastructure collapse: Discovery count discrepancies invalidate test reliability
+- Architectural violations persist: Directory organization still non-compliant
+- Workflow integrity issues: Sprint completion claims vs actual issue state misalignment
+- PR #762 blocked: Pending Sprint 15 fixes require CI verification infrastructure
+
+**SPRINT 16 FOCUS**: Emergency infrastructure recovery before any feature development
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
@@ -69,11 +71,13 @@
 - **Sprint 7**: Critical Infrastructure Recovery - File organization and build system operational
 - **Sprint 8**: Architectural Recovery & Core Functionality Restoration - Module consolidation achieved
 - **Sprint 11**: ARCHITECTURAL DISASTER RECOVERY - ALL 5 emergency issues resolved, test discovery improved 77→80
+- **Sprint 15**: EMERGENCY RECOVERY - 5/5 critical issues resolved (PR #762 pending verification)
 
 ### Failed Sprint History
 - **Sprint 4**: Architecture Compliance & User Experience (FAILED - build system regression)
 - **Sprint 6**: User Experience Excellence (PARTIALLY FAILED - infrastructure collapse)  
 - **Sprint 9**: Critical Defect Resolution (COMPLETE FAILURE - 0% goals achieved, 100% regression)
+- **Sprint 10**: EMERGENCY DISASTER RECOVERY (FRAUD - All claims proven false by PLAY audit)
 - **Sprint 14**: Deployment Reliability & User Onboarding (SYSTEMATIC FRAUD - All 4/5 claimed fixes proven false, CI health destroyed)
 
 ### Sprint 13: EMERGENCY DEPLOYMENT CAPABILITY RESTORATION (COMPLETE)

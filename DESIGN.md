@@ -1103,7 +1103,132 @@ Sprint 8 establishes mature architectural foundation:
 - **Validated architecture decisions** guide future development trade-offs
 - **Quality standards enforcement** prevents technical debt accumulation
 
-## Sprint 14: DEPLOYMENT RELIABILITY & USER ONBOARDING (CURRENT)
+## Sprint 16: TEST INFRASTRUCTURE & ARCHITECTURAL RECOVERY (CURRENT)
+
+### Sprint Goal Assessment from Sprint 15 PLAY Findings
+**PRIMARY OBJECTIVE**: Emergency test infrastructure stabilization and critical architectural compliance recovery
+
+**SPRINT 16 CRITICAL SUCCESS CRITERIA**:
+1. **Test Infrastructure Reliability**: Resolve massive test discovery discrepancies (99 vs 75+ count mismatch)
+2. **Directory Organization Compliance**: Fix src/coverage directory violation (17 items exceeds 15-file limit)
+3. **Workflow Process Integrity**: Align BACKLOG.md claims with actual GitHub issue states
+4. **CI Infrastructure Health**: Enable PR #762 verification and future CI reliability
+
+### Key Architectural Decisions (Sprint 16)
+
+#### Decision 1: TEST INFRASTRUCTURE EMERGENCY PRIORITY
+**Choice**: Fix test discovery and execution infrastructure before any feature development
+**Rationale**: Sprint 15 recovery blocked by CI verification failures - no quality gates possible
+**Implementation Approach**:
+- Debug FMP test discovery count discrepancy (99 files vs discovery output)
+- Fix test list count inconsistency (shows 0 count but lists 75+ tests)
+- Restore reliable test execution for validation workflow
+- Ensure CI pipeline health for PR verification
+
+#### Decision 2: DIRECTORY ORGANIZATION ARCHITECTURAL RECOVERY
+**Choice**: Address src/coverage directory exceeding QADS 15-file soft limit (17 items)
+**Rationale**: Directory organization violations impact maintainability and violate established standards
+**Implementation Strategy**:
+- Reorganize src/coverage directory structure to comply with QADS limits
+- Maintain logical functional grouping while meeting file count constraints
+- Ensure build system compatibility after reorganization
+- Document architectural rationale for directory structure
+
+#### Decision 3: WORKFLOW INTEGRITY ENFORCEMENT
+**Choice**: Systematically align BACKLOG.md claims with actual GitHub issue states
+**Rationale**: Workflow integrity failures detected in PLAY audit undermine project credibility
+**Quality Standards**:
+- BACKLOG.md claims must match GitHub issue status
+- No "COMPLETE" claims while related issues remain open
+- Sprint completion verification requires closed issue evidence
+- Process integrity as foundation for all subsequent development
+
+#### Decision 4: EMERGENCY SPRINT CONSTRAINT
+**Choice**: STRICTLY limit Sprint 16 to 4 critical infrastructure issues ONLY
+**Rationale**: Sprint 15 PLAY findings show infrastructure collapse requires focused attention
+**Scope Discipline**:
+- NO new features or enhancements
+- NO scope expansion beyond identified 4 issues
+- Focus exclusively on infrastructure stability and compliance recovery
+- Defer all non-critical work to future sprints
+
+### Implementation Strategy (Sprint 16)
+
+#### Critical Path (EMERGENCY SEQUENCE)
+1. **#765**: Debug massive test discovery discrepancy (99 files vs FMP discovery) - BLOCKS ALL TESTING
+2. **#764**: Fix test count inconsistency (0 count but 75+ listed) - BLOCKS CI VALIDATION  
+3. **#749**: Reorganize src/coverage directory for QADS compliance (17→≤15 files) - ARCHITECTURAL VIOLATION
+4. **#763**: Align workflow integrity (BACKLOG vs GitHub issue states) - PROCESS INTEGRITY
+
+#### Success Metrics (Sprint 16)
+- **Primary**: Test discovery produces consistent, reliable counts enabling CI validation
+- **Secondary**: All directories comply with QADS organizational limits
+- **Tertiary**: Workflow process integrity restored with accurate status tracking
+- **Quaternary**: Foundation prepared for sustainable development velocity
+
+### Risk Assessment (Sprint 16)
+
+#### CRITICAL RISK: Test Infrastructure Complexity
+- **Risk**: Test discovery issues may indicate deeper FMP or build system problems
+- **Mitigation**: Incremental debugging with systematic verification of each fix
+- **Detection**: Test each change against multiple test discovery mechanisms
+- **Fallback**: Document manual testing procedures if automated discovery fails
+
+#### HIGH RISK: Directory Reorganization Breaking Changes
+- **Risk**: Moving files in src/coverage may break build system or import paths
+- **Mitigation**: Incremental moves with build verification after each change
+- **Detection**: Full compilation and test suite after each reorganization step
+- **Rollback**: Immediate revert if any compilation or test failures occur
+
+#### MEDIUM RISK: Sprint Scope Pressure
+- **Risk**: Additional issues may be discovered requiring scope expansion
+- **Mitigation**: Strict adherence to 4-issue limit with ruthless prioritization
+- **Discipline**: Defer all non-emergency issues to future sprints regardless of urgency
+- **Quality Gate**: Sprint success depends on COMPLETE resolution of focused issues
+
+### Architectural Standards Reinforcement (Sprint 16)
+
+#### Test Infrastructure Requirements
+- **Discovery Reliability**: Consistent test count across all discovery mechanisms
+- **Execution Stability**: All discovered tests must execute reliably
+- **CI Integration**: Test results must be trustworthy for quality validation
+- **Build System Compatibility**: Test discovery compatible with FMP and manual execution
+
+#### Directory Organization Standards  
+- **QADS Compliance**: Maximum 15 files per directory (soft limit)
+- **Functional Grouping**: Logical organization by functionality/responsibility
+- **Build Compatibility**: Reorganization must not break compilation or linking
+- **Maintainability**: Clear separation of concerns and module responsibilities
+
+#### Process Integrity Standards
+- **Status Accuracy**: BACKLOG.md must reflect actual GitHub issue states
+- **Sprint Tracking**: Completion claims require verifiable evidence
+- **Issue Lifecycle**: Clear transitions from OPEN → IN PROGRESS → CLOSED
+- **Quality Verification**: All resolution claims must be technically verified
+
+### Foundation for Sustainable Architecture (Post-Sprint 16)
+
+Sprint 16 emergency recovery establishes critical foundation:
+- **Reliable test infrastructure** enables quality validation for all future development
+- **Compliant directory organization** provides maintainable structure for feature growth
+- **Process integrity** ensures accurate tracking and accountability
+- **CI reliability** supports automated quality gates and deployment pipelines
+
+### Lessons Learned from Sprint 15 PLAY Audit
+
+#### Critical Success Factors
+1. **Infrastructure first**: Test reliability blocks all quality validation
+2. **Architectural compliance**: Directory violations accumulate maintenance debt
+3. **Process integrity**: Accurate tracking prevents workflow breakdowns
+4. **Focused sprints**: Emergency recovery requires ruthless scope discipline
+
+#### Anti-Patterns to Avoid
+1. **Infrastructure neglect**: Test problems cascade into all development work
+2. **Directory chaos**: Exceeding organizational limits impacts maintainability
+3. **Status inaccuracy**: Misaligned tracking destroys project credibility
+4. **Scope creep**: Emergency sprints require absolute focus on critical issues
+
+## Sprint 14: DEPLOYMENT RELIABILITY & USER ONBOARDING (COMPLETED)
 
 ### Sprint Goal
 **PRIMARY OBJECTIVE**: Restore deployment reliability and user onboarding success
