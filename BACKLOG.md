@@ -1,24 +1,25 @@
 # Development Backlog
 
-## SPRINT_BACKLOG (Sprint 16: TEST INFRASTRUCTURE & ARCHITECTURAL RECOVERY)
+## SPRINT_BACKLOG (Sprint 17: INFRASTRUCTURE RECOVERY & SYSTEM STABILIZATION)
 
-**SPRINT FOCUS**: Critical test infrastructure stabilization and architectural compliance restoration
+**SPRINT FOCUS**: Emergency recovery from Sprint 16 catastrophic infrastructure collapse
 
-### CRITICAL ISSUES (4 FOCUSED ISSUES)
+### CRITICAL ISSUES (5 FOCUSED ISSUES)
 
-**SPRINT GOAL**: Restore test infrastructure reliability and address critical architectural violations discovered in PLAY audit
+**SPRINT GOAL**: Restore basic test infrastructure and resolve critical system failures preventing development work
 
-#### EPIC: Test Infrastructure Emergency (CI-BLOCKING)
-**#765**: MASSIVE TEST DISCOVERY DISCREPANCY - 99 test files exist but FPM discovers different count (INFRASTRUCTURE COLLAPSE)
-**#764**: TEST COUNT INCONSISTENCY - fmp test --list shows 0 count but lists 75+ tests (DISCOVERY FAILURE)
+#### EPIC: Test Infrastructure Emergency Recovery (BLOCKS ALL WORK)
+**#767**: CRITICAL BUILD SYSTEM FRAUD - Test reorganization destroyed FPM discovery (COMPLETE SYSTEM FAILURE)
+**#768**: ARCHITECTURAL CATASTROPHE - FPM cannot resolve test module dependencies (BUILD BREAKDOWN)
+**#775**: CI FRAUD - Cherry-picked test subset hides 75+ broken tests from CI verification (VALIDATION FRAUD)
 
-#### EPIC: Architectural Compliance Crisis (QADS VIOLATIONS)
-**#749**: DIRECTORY ORGANIZATION VIOLATION - src/coverage exceeds 15-file soft limit (17 items)
-**#763**: WORKFLOW INTEGRITY FAILURE - BACKLOG.md claims Sprint 15 complete but GitHub issues remain open (PROCESS INTEGRITY)
+#### EPIC: Core System Functionality Recovery (USER-BLOCKING)
+**#773**: INCOMPLETE IMPLEMENTATION - Diff mode disabled with user-facing error message (BROKEN FEATURES)
+**#776**: CRITICAL REGRESSION - Example validation failures after Issue #588 improper closure (ONBOARDING BROKEN)
 
 ## DOING (Current Work)
 
-*Clean state - Sprint 15 completed successfully with PR #762 merged*
+*Emergency state - Sprint 16 FAILED catastrophically, infrastructure collapse requires immediate recovery*
 
 ## PRODUCT_BACKLOG (Deferred Defects & Features)
 
@@ -91,6 +92,14 @@
 - **#704**: ✅ RESOLVED - CI fraud: Tests now passing, only 1 FPM discovery issue remains
 - **#705**: ✅ RESOLVED - config_parser_utils.f90 architectural emergency (decomposed from 481→61 lines via PR #711)
 - **#706**: ✅ RESOLVED - Infrastructure collapse: Test discovery improved from 77 to 80 tests
+
+### Sprint 16: TEST INFRASTRUCTURE & ARCHITECTURAL RECOVERY (CATASTROPHIC FAILURE)
+- **#765**: MASSIVE TEST DISCOVERY DISCREPANCY - CLOSED but infrastructure collapse was systematic (test reorganization destroyed FPM)
+- **#764**: TEST COUNT INCONSISTENCY - CLOSED but problems persisted into Sprint 17 (CI discovery fraud)
+- **#749**: DIRECTORY ORGANIZATION VIOLATION - CLOSED but file explosion continued unchecked (173 files created)
+- **#763**: WORKFLOW INTEGRITY FAILURE - CLOSED but process fraud revealed deeper systematic issues
+
+**ROOT CAUSE**: Test file reorganization broke ALL module dependencies, CI system subverted to hide 75+ test failures through cherry-picking
 
 ### Sprint 10: EMERGENCY DISASTER RECOVERY (FRAUD - 100% Claims PROVEN FALSE)
 - **#684**: CI test infrastructure FRAUD - 14.7% failure rate masquerading as "restored"

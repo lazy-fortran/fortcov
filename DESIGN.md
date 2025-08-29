@@ -1454,4 +1454,114 @@ Sprint 12 establishes preventive practices for long-term stability:
 3. **Public-by-default modules** violate encapsulation
 4. **Mathematical shortcuts** erode user trust
 
+## Sprint 17: INFRASTRUCTURE RECOVERY & SYSTEM STABILIZATION (CURRENT)
+
+### Sprint Goal
+**PRIMARY OBJECTIVE**: Emergency recovery from Sprint 16 catastrophic infrastructure collapse
+
+**SPRINT 17 DEFINITION OF DONE** (5 CRITICAL ISSUES):
+1. **Test Infrastructure Recovery**: Restore FPM test discovery and dependency resolution (#767, #768)
+2. **CI Fraud Elimination**: Fix cherry-picked test subset to validate full test suite (#775)
+3. **Core Feature Restoration**: Re-enable diff mode functionality (#773)
+4. **User Onboarding Recovery**: Fix integration example validation failures (#776)
+5. **System Integrity**: Establish foundation for sustainable development
+
+### Key Emergency Architectural Decisions (Sprint 17)
+
+#### Decision 1: TEST INFRASTRUCTURE EMERGENCY PROTOCOL
+**Choice**: Complete test infrastructure rebuild with dependency validation
+**Rationale**: Sprint 16 test reorganization broke ALL module dependencies - system completely non-functional
+**Implementation Approach**:
+- Restore FPM test discovery by fixing module import paths
+- Validate ALL test module dependencies before declaring resolution
+- Eliminate CI cherry-picking fraud by running complete test suite
+- Establish test infrastructure as untouchable foundation
+
+#### Decision 2: ANTI-FRAUD TECHNICAL VERIFICATION
+**Choice**: All infrastructure recovery claims MUST include CI proof
+**Rationale**: Systematic fraud in prior sprints requires technical verification gates
+**Implementation Standards**:
+- All "tests pass" claims must include CI run URLs
+- No handoff between workflow phases without CI verification
+- Technical evidence required for all completion claims
+- Zero tolerance for unverifiable success assertions
+
+#### Decision 3: CORE FEATURE RECOVERY PRIORITY
+**Choice**: Restore disabled diff functionality instead of removal
+**Rationale**: Removing user features is architectural regression, not progress
+**Implementation**: Debug and fix diff mode implementation rather than disabling with error messages
+
+#### Decision 4: EMERGENCY SPRINT DISCIPLINE
+**Choice**: ABSOLUTE limit of 5 critical infrastructure issues - NO scope expansion
+**Rationale**: Sprint 16 catastrophic failure demonstrates team cannot handle complex work during crisis
+**Scope Constraints**:
+- NO architectural improvements beyond critical repairs
+- NO new features or enhancements
+- NO documentation updates beyond essential fixes
+- ONLY infrastructure recovery work
+
+### Implementation Strategy (Sprint 17)
+
+#### CRITICAL PATH (EMERGENCY SEQUENCE)
+1. **#767**: Rebuild test infrastructure - Fix FPM discovery system completely
+2. **#768**: Resolve module dependencies - Repair ALL broken test imports
+3. **#775**: Eliminate CI fraud - Run complete test suite without cherry-picking
+4. **#773**: Restore diff functionality - Fix implementation rather than disable
+5. **#776**: Fix integration examples - Restore user onboarding capability
+
+### Success Metrics (Sprint 17)
+
+#### Infrastructure Recovery Verification
+- **Primary**: FPM discovers and executes ALL tests without module dependency errors
+- **Secondary**: CI system runs complete test suite (75+ tests) without cherry-picking
+- **Tertiary**: All core features functional with no disabled functionality error messages
+- **Quaternary**: Integration examples work for user onboarding
+
+#### Anti-Fraud Technical Gates
+- **Verification Required**: All claims backed by CI run evidence
+- **No Trust Zone**: Every success assertion must be technically verifiable
+- **Quality Restoration**: Professional engineering discipline restored
+- **Process Integrity**: Accurate status tracking and completion verification
+
+### Risk Assessment (Sprint 17)
+
+#### CRITICAL RISK: Test Infrastructure Reconstruction Complexity
+- **Risk**: Module dependency resolution may require significant refactoring
+- **Mitigation**: Incremental fixes with build verification after each repair
+- **Detection**: Test each module import independently
+- **Fallback**: Restore previous working test infrastructure if reconstruction fails
+
+#### HIGH RISK: CI System Fraud Detection
+- **Risk**: Cherry-picking may be deeply embedded in CI configuration
+- **Mitigation**: Systematic audit of CI test execution and selection logic
+- **Detection**: Compare CI test count against actual file system test discovery
+- **Quality Gate**: CI must run identical test suite to local discovery
+
+#### MEDIUM RISK: Feature Recovery Complexity
+- **Risk**: Disabled features may have underlying implementation gaps
+- **Mitigation**: Debug and fix root causes rather than removing functionality
+- **Standard**: Core features must be functional, not disabled with error messages
+
+### Sprint 17 Emergency Recovery Standards
+
+#### Test Infrastructure Requirements (NON-NEGOTIABLE)
+- **Discovery Consistency**: FPM and manual discovery must report identical test counts
+- **Dependency Resolution**: ALL test modules must import successfully
+- **Execution Reliability**: Every discovered test must execute without module errors
+- **CI Integration**: Local and CI test execution must be identical
+
+#### Anti-Fraud Verification Standards
+- **Technical Evidence Required**: All success claims must include verifiable proof
+- **CI Run Documentation**: Link to actual CI runs demonstrating test success
+- **No Cherry-Picking**: CI must execute same test suite as local development
+- **Process Integrity**: Accurate status tracking prevents future fraud
+
+### Foundation for Post-Emergency Development
+
+Sprint 17 emergency recovery establishes critical foundation:
+- **Reliable test infrastructure** enables quality validation for all future work
+- **Fraud-proof verification** prevents systematic false claims
+- **Functional core features** maintain user value delivery
+- **Process integrity** ensures accurate project tracking and accountability
+
 ## Sprint 11: ARCHITECTURAL DISASTER RECOVERY PROTOCOL (COMPLETE)
