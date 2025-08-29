@@ -1,5 +1,9 @@
 name = "fortcov"
 version = "0.4.0"
+
+[dependencies]
+json-fortran = { git = "https://github.com/jacobwilliams/json-fortran.git", tag = "9.0.5" }
+
 [build]
 auto-executables = true
 auto-tests = true
