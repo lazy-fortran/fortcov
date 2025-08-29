@@ -121,26 +121,59 @@ contains
     end subroutine import_coverage_from_json_safe
     
     subroutine export_coverage_to_json(coverage_data, json_output)
-        !! Core JSON coverage export implementation
+        !! Core JSON coverage export implementation using json-fortran
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=:), allocatable, intent(out) :: json_output
         
-        character(len=:), allocatable :: files_json
-        character(len=LONG_STRING_LEN) :: summary_json
+        type(json_core) :: json
+        type(json_value), pointer :: json_root => null()
+        type(json_value), pointer :: summary_obj => null()
+        type(json_value), pointer :: files_array => null()
+        type(extended_coverage_stats_t) :: stats
+        logical :: status_ok
         
-        json_output = "{"
+        ! Initialize json-fortran
+        call json%initialize()
         
-        json_output = json_output // '"version": "1.0",'
-        json_output = json_output // '"timestamp": "' // get_current_timestamp() // '",'
-        json_output = json_output // '"tool": "fortcov",'
+        ! Create root object
+        call json%create_object(json_root, '')
         
-        call format_summary_json(coverage_data, summary_json)
-        json_output = json_output // '"summary": ' // trim(summary_json) // ','
+        ! Add metadata
+        call json%add(json_root, 'version', '1.0')
+        call json%add(json_root, 'timestamp', get_current_timestamp())
+        call json%add(json_root, 'tool', 'fortcov')
         
-        call format_files_json(coverage_data, files_json)
-        json_output = json_output // '"files": ' // files_json
+        ! Calculate and add summary
+        call calculate_coverage_statistics(coverage_data, stats)
+        call json%create_object(summary_obj, 'summary')
+        call json%add(summary_obj, 'line_coverage', stats%line_coverage)
+        call json%add(summary_obj, 'total_lines', stats%total_lines)
+        call json%add(summary_obj, 'covered_lines', stats%covered_lines)
+        call json%add(summary_obj, 'total_files', stats%total_files)
+        call json%add(summary_obj, 'covered_files', stats%covered_files)
+        call json%add(json_root, summary_obj)
         
-        json_output = json_output // "}"
+        ! Add files array
+        call add_files_array_to_json(json, json_root, coverage_data)
+        
+        ! Convert to string with error handling
+        call json%print(json_root, json_output)
+        call json%check_for_errors(status_ok)
+        
+        ! Handle errors with fallback
+        if (.not. status_ok .or. .not. allocated(json_output)) then
+            if (allocated(json_output)) deallocate(json_output)
+            json_output = '{"error": "JSON export failed", "tool": "fortcov"}'
+        end if
+        
+        ! Validate output is not empty
+        if (len_trim(json_output) == 0) then
+            json_output = '{"error": "Empty JSON output", "tool": "fortcov"}'
+        end if
+        
+        ! Cleanup
+        call json%destroy(json_root)
+        nullify(json_root, summary_obj, files_array)
     end subroutine export_coverage_to_json
     
     function validate_json_coverage_format(json_content) result(is_valid)
@@ -259,120 +292,83 @@ contains
         found = .true.
     end subroutine parse_coverage_from_json_value
     
-    subroutine format_summary_json(coverage_data, summary_json)
-        !! Formats coverage summary as JSON
+    subroutine add_files_array_to_json(json, json_root, coverage_data)
+        !! Adds files array to JSON using json-fortran with robust error handling
+        type(json_core), intent(inout) :: json
+        type(json_value), pointer, intent(in) :: json_root
         type(coverage_data_t), intent(in) :: coverage_data
-        character(len=*), intent(out) :: summary_json
         
-        type(extended_coverage_stats_t) :: stats
+        type(json_value), pointer :: files_array => null()
+        type(json_value), pointer :: file_obj => null()
+        type(json_value), pointer :: lines_array => null()
+        type(json_value), pointer :: line_obj => null()
+        integer :: i, j
+        logical :: status_ok
         
-        call calculate_coverage_statistics(coverage_data, stats)
+        ! Validate input
+        if (.not. associated(json_root)) return
         
-        write(summary_json, '(A, F6.2, A, I0, A, I0, A, I0, A, I0, A)') &
-            '{"line_coverage": ', stats%line_coverage, &
-            ', "total_lines": ', stats%total_lines, &
-            ', "covered_lines": ', stats%covered_lines, &
-            ', "total_files": ', stats%total_files, &
-            ', "covered_files": ', stats%covered_files, '}'
-    end subroutine format_summary_json
-    
-    subroutine format_files_json(coverage_data, files_json)
-        !! Formats files array as JSON
-        type(coverage_data_t), intent(in) :: coverage_data
-        character(len=:), allocatable, intent(out) :: files_json
-        
-        character(len=:), allocatable :: file_json
-        integer :: i
-        
-        files_json = "["
+        ! Create files array with error checking
+        call json%create_array(files_array, 'files')
+        call json%check_for_errors(status_ok)
+        if (.not. status_ok .or. .not. associated(files_array)) return
         
         if (allocated(coverage_data%files)) then
             do i = 1, size(coverage_data%files)
-                if (i > 1) files_json = files_json // ","
+                ! Create file object with safe filename handling
+                call json%create_object(file_obj, '')
+                call json%check_for_errors(status_ok)
+                if (.not. status_ok .or. .not. associated(file_obj)) cycle
                 
-                call format_coverage_file_json(coverage_data%files(i), file_json)
-                files_json = files_json // file_json
+                ! Add filename with validation
+                if (len_trim(coverage_data%files(i)%filename) > 0) then
+                    call json%add(file_obj, 'filename', &
+                                trim(coverage_data%files(i)%filename))
+                else
+                    call json%add(file_obj, 'filename', 'unknown')
+                end if
+                
+                ! Create lines array for this file
+                call json%create_array(lines_array, 'lines')
+                call json%check_for_errors(status_ok)
+                if (.not. status_ok .or. .not. associated(lines_array)) then
+                    call json%destroy(file_obj)
+                    cycle
+                end if
+                
+                if (allocated(coverage_data%files(i)%lines)) then
+                    do j = 1, size(coverage_data%files(i)%lines)
+                        ! Create line object with validation
+                        call json%create_object(line_obj, '')
+                        call json%check_for_errors(status_ok)
+                        if (.not. status_ok .or. .not. associated(line_obj)) cycle
+                        
+                        call json%add(line_obj, 'line_number', &
+                                    coverage_data%files(i)%lines(j)%line_number)
+                        call json%add(line_obj, 'execution_count', &
+                                    coverage_data%files(i)%lines(j)%execution_count)
+                        
+                        ! Add line to lines array
+                        call json%add(lines_array, line_obj)
+                        nullify(line_obj)
+                    end do
+                end if
+                
+                ! Add lines array to file object
+                call json%add(file_obj, lines_array)
+                nullify(lines_array)
+                
+                ! Add file to files array
+                call json%add(files_array, file_obj)
+                nullify(file_obj)
             end do
         end if
         
-        files_json = files_json // "]"
-    end subroutine format_files_json
+        ! Add files array to root
+        call json%add(json_root, files_array)
+        nullify(files_array)
+    end subroutine add_files_array_to_json
     
-    subroutine format_coverage_file_json(file_data, file_json)
-        !! Formats single coverage file data as JSON
-        type(coverage_file_t), intent(in) :: file_data
-        character(len=:), allocatable, intent(out) :: file_json
-        
-        character(len=:), allocatable :: lines_json
-        
-        file_json = '{"filename": "' // escape_json_string(file_data%filename) // '"'
-        
-        call format_coverage_lines_json(file_data, lines_json)
-        file_json = file_json // ', "lines": ' // lines_json
-        
-        file_json = file_json // '}'
-    end subroutine format_coverage_file_json
-    
-    subroutine format_coverage_lines_json(file_data, lines_json)
-        !! Formats coverage lines array as JSON
-        type(coverage_file_t), intent(in) :: file_data
-        character(len=:), allocatable, intent(out) :: lines_json
-        
-        character(len=256) :: line_json
-        integer :: i
-        
-        lines_json = "["
-        
-        if (allocated(file_data%lines)) then
-            do i = 1, size(file_data%lines)
-                if (i > 1) lines_json = lines_json // ","
-                
-                write(line_json, '(A, I0, A, I0, A)') &
-                    '{"line_number": ', file_data%lines(i)%line_number, &
-                    ', "execution_count": ', file_data%lines(i)%execution_count, '}'
-                
-                lines_json = lines_json // trim(line_json)
-            end do
-        end if
-        
-        lines_json = lines_json // "]"
-    end subroutine format_coverage_lines_json
-    
-    function escape_json_string(input_str) result(escaped_str)
-        !! Escapes special characters in JSON string
-        character(len=*), intent(in) :: input_str
-        character(len=:), allocatable :: escaped_str
-        
-        integer :: i, output_len
-        character(len=1) :: c
-        
-        output_len = len(input_str)
-        do i = 1, len(input_str)
-            c = input_str(i:i)
-            if (c == '"' .or. c == '\' .or. c == achar(10) .or. c == achar(13)) then
-                output_len = output_len + 1
-            end if
-        end do
-        
-        allocate(character(len=output_len) :: escaped_str)
-        escaped_str = ""
-        
-        do i = 1, len(input_str)
-            c = input_str(i:i)
-            select case (c)
-            case ('"')
-                escaped_str = escaped_str // '\"'
-            case ('\')
-                escaped_str = escaped_str // '\\'
-            case (achar(10))
-                escaped_str = escaped_str // '\n'
-            case (achar(13))
-                escaped_str = escaped_str // '\r'
-            case default
-                escaped_str = escaped_str // c
-            end select
-        end do
-    end function escape_json_string
     
     subroutine parse_files_from_json_array(json_parser, files_array, coverage_data, found)
         !! Parses files array from json-fortran array
