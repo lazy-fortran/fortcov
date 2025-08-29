@@ -8,7 +8,7 @@ module gcov_generator
     !! - Check gcov executable availability
     
     use gcov_executor, only: gcov_executor_t
-    use path_validation_core, only: validate_executable_path
+    use path_security_core, only: validate_executable_path
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use file_utils_core, only: ensure_directory
     implicit none

@@ -21,7 +21,7 @@ module build_discovery_core
                                     get_coverage_test_command
     use config_types, only: config_t
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
-    use path_validation_core, only: validate_path_security
+    use path_security_core, only: validate_path_security
     use file_utils_core, only: file_exists
     implicit none
     private

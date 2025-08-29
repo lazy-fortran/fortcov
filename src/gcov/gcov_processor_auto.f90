@@ -18,7 +18,7 @@ module gcov_processor_auto
     use gcov_file_processor, only: process_gcov_file
     use coverage_model_core, only: coverage_data_t
     use directory_ops_core, only: ensure_directory_safe
-    use path_validation_core, only: validate_path_security
+    use path_security_core, only: validate_path_security
     implicit none
     private
     
