@@ -49,7 +49,7 @@ contains
             if (allocated(source_data%files(i)%lines)) then
                 total_lines = total_lines + size(source_data%files(i)%lines)
                 covered_lines = covered_lines + &
-                    count(source_data%files(i)%lines%execution_count > 0)
+                    count(source_data%files(i)%lines(:)%execution_count > 0)
             end if
             
             ! Count functions (if function coverage data available)
