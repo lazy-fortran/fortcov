@@ -10,6 +10,7 @@ sudo apt update && sudo apt install -y build-essential gfortran git curl
 curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-0.12.0-linux-x86_64-gcc-12 -o /tmp/fpm
 chmod +x /tmp/fpm && sudo mv /tmp/fpm /usr/local/bin/
 git clone https://github.com/lazy-fortran/fortcov.git
+# json-fortran dependency automatically handled by FPM during build
 cd fortcov && fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 ```
@@ -19,6 +20,7 @@ sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 xcode-select --install
 brew install gcc fortran-lang/tap/fpm
 git clone https://github.com/lazy-fortran/fortcov.git
+# json-fortran dependency automatically handled by FPM during build
 cd fortcov && fpm build --profile release
 sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 ```
@@ -26,9 +28,10 @@ sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
 **Windows (MSYS2):**
 ```bash
 pacman -S mingw-w64-x86_64-gcc-fortran git curl
-curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-windows.zip -o fpm.zip
+curl -fsSL https://github.com/fortran-lang/fpm/releases/latest/download/fpm-windows.zip -o fmp.zip
 unzip fpm.zip && mv fpm.exe /usr/local/bin/
 git clone https://github.com/lazy-fortran/fortcov.git
+# json-fortran dependency automatically handled by FPM during build
 cd fortcov && fpm build --profile release
 cp build/gfortran_*/app/fortcov.exe /usr/local/bin/
 ```

@@ -54,6 +54,8 @@ find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
 fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown report
+# Optional: Generate JSON output using json-fortran library
+# fortcov --source=src *.gcov --format=json --output=coverage.json
 ```
 
 ## Next Steps

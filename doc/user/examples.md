@@ -76,7 +76,7 @@ fortcov --source=src *.gcov  # Shows coverage statistics in terminal
 fortcov --source=src *.gcov --quiet
 ```
 
-**Current Implementation Status**: All output formats (text, markdown, json, html, xml) are fully functional and create actual files.
+**Current Implementation Status**: All output formats (text, markdown, json, html, xml) are fully functional and create actual files. JSON output uses json-fortran library for robust processing.
 
 ## Build System Integration
 
@@ -94,6 +94,8 @@ find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
 done
 echo "Analyzing coverage..."
 fortcov --source=src *.gcov
+# Generate JSON output using json-fortran library:
+# fortcov --source=src *.gcov --format=json --output=coverage.json
 ```
 
 **CMake integration:**
@@ -148,6 +150,7 @@ jobs:
     - name: Install FortCov
       run: |
         git clone https://github.com/lazy-fortran/fortcov.git
+        # json-fortran dependency automatically handled by FPM
         cd fortcov && fpm build --profile release
         sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
     
@@ -176,6 +179,7 @@ coverage_analysis:
     # Install FPM and FortCov
     - curl -fsSL https://fpm.fortran-lang.org/install.sh | sh
     - git clone https://github.com/lazy-fortran/fortcov.git
+    # json-fortran dependency automatically handled by FPM
     - cd fortcov && fpm build --profile release
     - cp build/gfortran_*/app/fortcov /usr/local/bin/
     - cd ..
