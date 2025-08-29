@@ -13,8 +13,6 @@ module json_io
     ! Replace manual JSON parsing with json-fortran library
     use json_module, only: json_file, json_value, json_core
     use json_kinds, only: RK, IK
-    
-    ! Replace json_validator with json-fortran validation (removed manual dependency)
     implicit none
     private
     
@@ -56,9 +54,7 @@ contains
         
         type(json_core) :: json_parser
         type(json_value), pointer :: root_obj => null()
-        type(json_value), pointer :: files_array => null()
         logical :: found
-        character(len=:), allocatable :: error_msg
         
         call initialize_coverage_data(coverage_data)
         
@@ -74,7 +70,7 @@ contains
             return
         end if
         
-        ! Extract coverage data from parsed JSON
+        ! Extract coverage data from JSON
         call parse_coverage_from_json_value(json_parser, root_obj, coverage_data, found)
         
         if (.not. found) then
@@ -127,7 +123,6 @@ contains
         type(json_core) :: json
         type(json_value), pointer :: json_root => null()
         type(json_value), pointer :: summary_obj => null()
-        type(json_value), pointer :: files_array => null()
         type(extended_coverage_stats_t) :: stats
         logical :: status_ok
         
@@ -152,7 +147,7 @@ contains
         call json%add(summary_obj, 'covered_files', stats%covered_files)
         call json%add(json_root, summary_obj)
         
-        ! Add files array
+        ! Add files array to JSON
         call add_files_array_to_json(json, json_root, coverage_data)
         
         ! Convert to string with error handling
@@ -172,7 +167,7 @@ contains
         
         ! Cleanup
         call json%destroy(json_root)
-        nullify(json_root, summary_obj, files_array)
+        nullify(json_root, summary_obj)
     end subroutine export_coverage_to_json
     
     function validate_json_coverage_format(json_content) result(is_valid)
