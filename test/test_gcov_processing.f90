@@ -98,9 +98,12 @@ contains
         call initialize_default_config(config)
         config%auto_discovery = .true.
         
-        ! No mock files created
+        ! No mock files created - use clean temporary directory
+        call execute_command_line('mkdir -p test_empty && rm -rf test_empty/*')
         
-        call auto_process_gcov_files('.', config, result)
+        call auto_process_gcov_files('test_empty', config, result)
+        
+        call execute_command_line('rm -rf test_empty')
         
         call assert_false(result%success, 'Gcov processing failed appropriately')
         call assert_true(index(result%error_message, '.gcda') > 0, &
