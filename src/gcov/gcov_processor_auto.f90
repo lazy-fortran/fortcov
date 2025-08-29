@@ -420,17 +420,16 @@ contains
         
         integer :: i, gcov_command_result
         character(len=1024) :: gcov_command
-        character(len=256) :: gcno_file, gcda_base
-        character(len=256) :: gcov_executable
+        character(len=256) :: gcno_file, gcda_base, gcov_exec
         logical :: gcno_exists
         
         call clear_error_context(error_ctx)
         
-        ! Ensure gcov executable is set
-        if (allocated(config%gcov_executable) .and. len_trim(config%gcov_executable) > 0) then
-            gcov_executable = trim(config%gcov_executable)
+        ! Initialize gcov executable with safe default
+        if (allocated(config%gcov_executable)) then
+            gcov_exec = trim(config%gcov_executable)
         else
-            gcov_executable = 'gcov'  ! Default to 'gcov' if not specified
+            gcov_exec = 'gcov'  ! Use default gcov if not configured
         end if
         
         ! Process each .gcda file
@@ -453,7 +452,7 @@ contains
             end if
             
             ! Run gcov on the .gcda file with full path
-            write(gcov_command, '(A,1X,A)') trim(gcov_executable), &
+            write(gcov_command, '(A,1X,A)') trim(gcov_exec), &
                 trim(gcda_files(i))
             call execute_command_line(trim(gcov_command), &
                 exitstat=gcov_command_result)
