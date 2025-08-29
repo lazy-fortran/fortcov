@@ -103,7 +103,7 @@ contains
         logical, intent(out) :: success
         
         integer :: num_start, num_end, hits_start, hits_end, iostat_var
-        character(len=20) :: temp_str
+        character(len=:), allocatable :: temp_str
         
         success = .false.
         line_number = 0

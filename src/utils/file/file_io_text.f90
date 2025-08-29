@@ -72,7 +72,7 @@ contains
         character(len=:), allocatable, intent(out) :: content
         logical, intent(out) :: error_flag
         
-        integer :: unit, iostat
+        integer :: unit, iostat, i
         integer(int64) :: file_size
         character(len=1), allocatable :: buffer(:)
         type(validation_result_t) :: validation_result
@@ -117,8 +117,11 @@ contains
         
         close(unit)
         
-        ! Convert buffer to string
-        content = transfer(buffer, repeat(' ', int(file_size)))
+        ! Convert buffer to string safely without transfer()
+        allocate(character(len=file_size) :: content)
+        do i = 1, int(file_size)
+            content(i:i) = buffer(i)
+        end do
         deallocate(buffer)
     end subroutine read_file_content
 
