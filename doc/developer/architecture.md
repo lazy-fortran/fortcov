@@ -25,7 +25,7 @@ FortCov is a Fortran code coverage analysis tool providing gcov integration, rep
 
 **coverage_engine.f90**: Main orchestration (97% size reduction)
 **fortcov_config.f90**: Configuration management (92% size reduction)
-**json_coverage_io.f90**: I/O operations (94% size reduction)
+**json_io.f90**: JSON I/O operations using json-fortran library (94% size reduction)
 **coverage_model.f90**: Data structures (92% size reduction)
 
 ### Processing Pipeline
@@ -33,7 +33,8 @@ FortCov is a Fortran code coverage analysis tool providing gcov integration, rep
 1. **Input Validation**: Comprehensive security-first validation
 2. **Coverage Discovery**: O(n) file discovery with pattern matching
 3. **Data Processing**: Streaming architecture for memory efficiency
-4. **Output Generation**: Multiple format support with templating
+4. **JSON Processing**: json-fortran library integration for robust JSON I/O
+5. **Output Generation**: Multiple format support with templating
 
 ## Design Patterns
 

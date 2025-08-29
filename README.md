@@ -7,6 +7,7 @@ Fortran code coverage analysis tool that generates markdown reports from gfortra
 ```bash
 # Install prerequisites 
 sudo apt install gfortran  # or: brew install gcc (macOS)
+# Note: json-fortran dependency is automatically fetched by FPM
 
 # Install FortCov
 git clone https://github.com/lazy-fortran/fortcov.git
@@ -52,6 +53,7 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 ## Features
 
 - **Multiple output formats**: text, markdown (default), json, html, xml
+- **JSON-fortran integration**: Robust JSON processing using json-fortran library
 - **Build system integration**: Works with FPM, CMake, Make, and custom build systems  
 - **CI/CD ready**: Designed for automated testing pipelines
 - **Security focused**: Path validation, command injection prevention
@@ -90,7 +92,7 @@ fortcov --source=src *.gcov  # Shows terminal coverage output
 fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown report
 ```
 
-**Current Implementation Status**: Coverage analysis and markdown output are fully functional. Other formats (json, html, xml) are supported with basic implementations.
+**Current Implementation Status**: Coverage analysis and markdown output are fully functional. JSON output uses json-fortran library for robust processing. Other formats (html, xml) are supported with basic implementations.
 
 **CI/CD integration:**
 ```bash
