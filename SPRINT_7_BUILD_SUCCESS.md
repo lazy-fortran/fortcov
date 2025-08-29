@@ -9,7 +9,7 @@
 ### Core Build System Verification
 ```bash
 # Build system fully functional
-fmp build               # ✅ PASS: Project builds without errors
+fpm build               # ✅ PASS: Project builds without errors
 fpm test                # ✅ PASS: 111/111 tests pass with comprehensive coverage
 ./build/gfortran*/app/fortcov --version  # ✅ PASS: Version 0.4.0 operational
 ```
@@ -44,7 +44,7 @@ Integration Tests:        ✅ ALL PASSED
 ### Build Integration Examples
 ```bash
 # FPM integration
-examples/build_systems/fmp/basic_example/    # ✅ Functional
+examples/build_systems/fpm/basic_example/    # ✅ Functional
 examples/build_systems/cmake/basic_example/  # ✅ Functional
 examples/build_systems/make/basic_example/   # ✅ Functional
 ```

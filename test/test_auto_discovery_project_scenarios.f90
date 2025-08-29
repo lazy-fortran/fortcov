@@ -86,7 +86,7 @@ contains
         ! Validate fpm.toml exists and is readable
         inquire(file=trim(workspace_path) // '/fpm.toml', exist=file_exists)
         call assert_test(file_exists, "FPM configuration file exists", &
-                        "fmp.toml should exist")
+                        "fpm.toml should exist")
         
         if (file_exists) then
             open(newunit=unit_number, file=trim(workspace_path) // '/fpm.toml', &

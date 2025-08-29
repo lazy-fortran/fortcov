@@ -171,9 +171,9 @@ contains
             "No coverage files found in: ", trim(source_path)
         
         write(error_ctx%suggestion, '(A)') &
-            "1. Verify you built with coverage flags: fmp build --flag ""-fprofile-arcs -ftest-coverage"""
+            "1. Verify you built with coverage flags: fpm build --flag ""-fprofile-arcs -ftest-coverage"""
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "2. Run your tests to generate .gcda files: fmp test --flag ""-fprofile-arcs -ftest-coverage"""
+            "2. Run your tests to generate .gcda files: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "3. Generate .gcov files: gcov src/*.f90"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &

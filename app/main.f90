@@ -177,10 +177,13 @@ contains
       end if
     end if
     
-    ! Set appropriate error context based on results
+    ! Set appropriate error context based on results and user flags
     if (enforcement_result%should_block_merge) then
       error_ctx%error_code = ERROR_INVALID_CONFIG
       error_ctx%message = "Architectural size violations detected"
+    else if (config%fail_on_size_warnings .and. enforcement_result%warnings_count > 0) then
+      error_ctx%error_code = ERROR_INVALID_CONFIG
+      error_ctx%message = "Architectural size warnings detected (fail-on-warnings enabled)"
     end if
     
   end subroutine handle_architectural_validation
