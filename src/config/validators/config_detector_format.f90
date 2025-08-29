@@ -24,7 +24,7 @@ contains
         open(newunit=unit, file=filename, status='old', action='read', iostat=iostat)
         if (iostat /= 0) then
             success = .false.
-            error_message = "Failed to open config file for format detection"
+            error_message = "Config file not found: " // trim(filename)
             return
         end if
         
