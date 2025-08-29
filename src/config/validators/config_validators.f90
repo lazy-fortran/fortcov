@@ -1,6 +1,6 @@
 module config_validators
     use config_types, only: config_t
-    use path_validation_core, only: validate_executable_path, validate_path_security
+    use path_security_core, only: validate_executable_path, validate_path_security
     use error_handling_core
     use input_validation_core
     use config_validators_format

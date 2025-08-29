@@ -5,6 +5,7 @@ module json_parsing_core
     !! Extracted from json_io.f90 to maintain QADS size standards.
     !! Handles core JSON value parsing and structure navigation.
     use coverage_model_core
+    use coverage_data_utils
     use json_module, only: json_file, json_value, json_core
     use json_kinds, only: RK, IK
     implicit none
@@ -75,8 +76,7 @@ contains
         
         if (num_files <= 0) then
             ! Handle empty files array - still need to allocate for validation
-            allocate(coverage_data%files(0))
-            coverage_data%total_files = 0
+            call allocate_files_array(coverage_data, 0)
             found = .true.
             return
         end if
@@ -93,10 +93,7 @@ contains
         end do
         
         ! Assign to coverage data - populate BOTH fields for compatibility
-        if (allocated(coverage_data%files)) deallocate(coverage_data%files)
-        
-        ! Populate both arrays for validation compatibility
-        allocate(coverage_data%files(num_files))
+        call allocate_files_array(coverage_data, num_files)
         
         ! Convert file_coverage_t to coverage_file_t for main files array
         do i = 1, num_files

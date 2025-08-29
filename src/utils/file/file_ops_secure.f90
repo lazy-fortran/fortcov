@@ -7,7 +7,7 @@ module file_ops_secure
     use iso_fortran_env, only: error_unit
     use error_handling_core
     use string_utils, only: int_to_string
-    use path_validation_core, only: validate_path_security
+    use path_security_core, only: validate_path_security
     use security_assessment_core, only: assess_deletion_security_risks, &
                                    assess_pattern_security_risks
     use shell_utils_core, only: escape_shell_argument

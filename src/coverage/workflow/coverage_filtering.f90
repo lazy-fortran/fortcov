@@ -6,6 +6,7 @@ module coverage_filtering
     use constants_core
     use foundation_utils
     use coverage_data_core
+    use coverage_data_utils
     use coverage_calculations, only: calculate_overall_coverage
     implicit none
     private
@@ -37,7 +38,7 @@ contains
         end do
         
         if (filtered_count > 0) then
-            allocate(filtered_data%files(filtered_count))
+            call allocate_files_array(filtered_data, filtered_count)
             filtered_data%files(1:filtered_count) = temp_files(1:filtered_count)
         end if
         

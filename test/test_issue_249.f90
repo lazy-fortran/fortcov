@@ -11,7 +11,7 @@ program test_issue_249
     use error_handling_core
     use file_utils_core
     use file_ops_secure, only: safe_find_files, safe_mkdir
-    use path_validation_core, only: validate_path_security, validate_executable_path
+    use path_security_core, only: validate_path_security, validate_executable_path
     use shell_utils_core, only: escape_shell_argument
     implicit none
     
