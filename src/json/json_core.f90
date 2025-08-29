@@ -62,7 +62,7 @@ contains
         type(coverage_data_t), intent(inout) :: coverage_data
         logical, intent(out) :: found
         
-        integer :: num_files, i
+        integer :: num_files, i, j
         type(json_value), pointer :: file_obj => null()
         type(file_coverage_t), allocatable :: temp_files(:)
         
@@ -73,7 +73,14 @@ contains
         ! Get array size
         call json_parser%info(files_array, n_children=num_files)
         
-        if (num_files <= 0) return
+        if (num_files <= 0) then
+            ! Handle empty files array - still need to allocate for validation
+            allocate(coverage_data%files_json(0))
+            allocate(coverage_data%files(0))
+            coverage_data%total_files = 0
+            found = .true.
+            return
+        end if
         
         ! Allocate temporary array for file coverage data
         allocate(temp_files(num_files))
@@ -86,12 +93,31 @@ contains
             end if
         end do
         
-        ! Assign to coverage data - use proper files field
+        ! Assign to coverage data - populate BOTH fields for compatibility
         if (allocated(coverage_data%files)) deallocate(coverage_data%files)
-        ! Note: Temporarily using files_json for compatibility during refactoring
         if (allocated(coverage_data%files_json)) deallocate(coverage_data%files_json)
+        
+        ! Populate both arrays for validation compatibility
         allocate(coverage_data%files_json(num_files))
+        allocate(coverage_data%files(num_files))
         coverage_data%files_json = temp_files
+        
+        ! Convert file_coverage_t to coverage_file_t for main files array
+        do i = 1, num_files
+            coverage_data%files(i)%filename = temp_files(i)%filename
+            if (allocated(temp_files(i)%lines)) then
+                allocate(coverage_data%files(i)%lines(size(temp_files(i)%lines)))
+                ! Convert line_coverage_t to coverage_line_t
+                do j = 1, size(temp_files(i)%lines)
+                    call coverage_data%files(i)%lines(j)%init( &
+                        temp_files(i)%filename, &
+                        temp_files(i)%lines(j)%line_number, &
+                        temp_files(i)%lines(j)%execution_count, &
+                        .true.)  ! is_executable
+                end do
+            end if
+        end do
+        
         coverage_data%total_files = num_files
         
         found = .true.
