@@ -14,8 +14,7 @@ module json_io
     use json_module, only: json_file, json_value, json_core
     use json_kinds, only: RK, IK
     
-    ! Keep json_validator for format validation
-    use json_validator
+    ! Replace json_validator with json-fortran validation (removed manual dependency)
     implicit none
     private
     
