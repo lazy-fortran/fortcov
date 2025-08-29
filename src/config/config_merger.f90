@@ -15,35 +15,29 @@ contains
         type(config_t), intent(in) :: file_config
         
         ! Only update unset string values (allocated check means CLI didn't set)
-        if (.not. allocated(cli_config%source_dir) .and. allocated(file_config%source_dir)) then
-            cli_config%source_dir = file_config%source_dir
+        if (.not. allocated(cli_config%source_paths) .and. allocated(file_config%source_paths)) then
+            cli_config%source_paths = file_config%source_paths
         end if
         
-        if (.not. allocated(cli_config%build_dir) .and. allocated(file_config%build_dir)) then
-            cli_config%build_dir = file_config%build_dir
+        if (.not. allocated(cli_config%output_path) .and. allocated(file_config%output_path)) then
+            cli_config%output_path = file_config%output_path
         end if
         
-        if (.not. allocated(cli_config%output_dir) .and. allocated(file_config%output_dir)) then
-            cli_config%output_dir = file_config%output_dir
-        end if
-        
-        if (.not. allocated(cli_config%test_dir) .and. allocated(file_config%test_dir)) then
-            cli_config%test_dir = file_config%test_dir
+        if (.not. allocated(cli_config%gcov_executable) .and. allocated(file_config%gcov_executable)) then
+            cli_config%gcov_executable = file_config%gcov_executable
         end if
         
         ! Update numeric values if not explicitly set (using sentinel values)
-        if (cli_config%coverage_threshold < 0.0 .and. file_config%coverage_threshold >= 0.0) then
-            cli_config%coverage_threshold = file_config%coverage_threshold
+        if (cli_config%minimum_coverage < 0.0 .and. file_config%minimum_coverage >= 0.0) then
+            cli_config%minimum_coverage = file_config%minimum_coverage
         end if
         
-        if (cli_config%max_processes <= 0 .and. file_config%max_processes > 0) then
-            cli_config%max_processes = file_config%max_processes
+        if (cli_config%threads <= 0 .and. file_config%threads > 0) then
+            cli_config%threads = file_config%threads
         end if
         
         ! Boolean flags - only update if file config explicitly sets them
-        if (file_config%generate_html) cli_config%generate_html = .true.
         if (file_config%verbose) cli_config%verbose = .true.
-        if (file_config%parallel_execution) cli_config%parallel_execution = .true.
         
         ! Merge arrays (append file values to CLI values)
         call merge_arrays(cli_config%exclude_patterns, file_config%exclude_patterns)
@@ -56,13 +50,17 @@ contains
         type(config_t), intent(out) :: config
         
         ! Negative values indicate unset
-        config%coverage_threshold = -1.0
-        config%max_processes = -1
+        config%minimum_coverage = -1.0
+        config%fail_under_threshold = -1.0
+        config%threads = -1
         
         ! Booleans default to false
-        config%generate_html = .false.
         config%verbose = .false.
-        config%parallel_execution = .false.
+        config%quiet = .false.
+        config%show_help = .false.
+        config%show_version = .false.
+        config%validate_config_only = .false.
+        config%enable_diff = .false.
         
     end subroutine initialize_file_config_defaults
     
