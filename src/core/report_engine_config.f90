@@ -4,6 +4,7 @@ module report_engine_config
     !! Handles initialization and configuration for report engine components.
     !! Extracted from report_engine.f90 for SRP compliance (Issue #718).
     use coverage_model_core
+    use coverage_metrics_core
     use data_transformer_core
     use data_transformer_types
     use theme_manager_core

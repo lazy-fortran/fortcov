@@ -14,9 +14,7 @@ module report_engine_terminal
     private
     
     public :: launch_terminal_browser_session
-    public :: generate_terminal_display
     public :: generate_styled_terminal_output
-    public :: start_interactive_tui
 
 contains
 
@@ -68,19 +66,6 @@ contains
         call start_interactive_tui(session, terminal_output, success, error_msg)
     end subroutine launch_terminal_browser_session
     
-    ! Generate terminal display (delegated to terminal_ui_manager)
-    subroutine generate_terminal_display(transformed_data, theme, terminal_output)
-        type(transformed_data_t), intent(in) :: transformed_data
-        type(color_scheme_t), intent(in) :: theme
-        character(len=:), allocatable, intent(out) :: terminal_output
-        
-        ! This would delegate to terminal_ui_manager module
-        ! For now, provide basic terminal output
-        terminal_output = "=== Coverage Report ===" // new_line('a') // &
-                         "Files: " // new_line('a') // &
-                         "Coverage Summary: [Terminal Display]"
-    end subroutine generate_terminal_display
-    
     ! Generate styled terminal output
     subroutine generate_styled_terminal_output(source_content, highlighter, &
                                               output, success, error_msg)
@@ -103,18 +88,5 @@ contains
         
         success = .true.
     end subroutine generate_styled_terminal_output
-    
-    ! Start interactive TUI (delegated to terminal_ui_manager)
-    subroutine start_interactive_tui(session, terminal_output, success, error_msg)
-        type(terminal_session_t), intent(inout) :: session
-        character(len=*), intent(in) :: terminal_output
-        logical, intent(out) :: success
-        character(len=:), allocatable, intent(out) :: error_msg
-        
-        ! This would delegate to terminal_ui_manager module
-        ! For now, basic implementation
-        success = .true.
-        error_msg = ""
-    end subroutine start_interactive_tui
 
 end module report_engine_terminal

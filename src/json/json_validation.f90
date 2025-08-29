@@ -53,10 +53,6 @@ contains
                 is_valid = .false.
             end if
         else
-            if (.false.) then
-                is_valid = .false.
-            end if
-        else
             is_valid = .false.
         end if
     end function is_coverage_data_valid

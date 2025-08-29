@@ -13,7 +13,6 @@ module report_engine_html
     private
     
     public :: generate_html_report_content
-    public :: generate_html_structure
     public :: generate_styled_html_output
 
 contains
@@ -66,25 +65,6 @@ contains
         
         success = .true.
     end subroutine generate_html_report_content
-    
-    ! Generate HTML structure (delegated to html_reporter module)
-    function generate_html_structure(transformed_data, css_variables, theme) &
-        result(html_content)
-        type(transformed_data_t), intent(in) :: transformed_data
-        character(len=*), intent(in) :: css_variables
-        type(color_scheme_t), intent(in) :: theme
-        character(len=:), allocatable :: html_content
-        
-        ! This function would delegate to html_reporter module
-        ! For now, return basic structure
-        html_content = '<!DOCTYPE html>' // new_line('a') // &
-                      '<html><head>' // new_line('a') // &
-                      '<style>' // css_variables // '</style>' // &
-                      new_line('a') // &
-                      '</head><body>' // new_line('a') // &
-                      '<h1>Coverage Report</h1>' // new_line('a') // &
-                      '</body></html>'
-    end function generate_html_structure
     
     ! Generate styled HTML output
     subroutine generate_styled_html_output(source_content, highlighter, &
