@@ -96,9 +96,15 @@ fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown re
 
 **CI/CD integration:**
 ```bash
-# Note: Exit code fix pending in PR #741
+# Coverage analysis with threshold checking - returns proper exit codes
 fortcov --source=src *.gcov --fail-under 80 --output=coverage.md
-echo "Exit code: $?"  # Will be 2 for threshold failures after fix
+echo "Exit code: $?"  # Returns 0=success, 2=threshold not met, 3=no coverage data
+
+# Example CI/CD usage
+if ! fortcov --source=src *.gcov --fail-under 80 --quiet; then
+    echo "Coverage below 80% threshold - build failed"
+    exit 1
+fi
 ```
 
 ## Known Issues
