@@ -1,6 +1,7 @@
 program test_memory_allocation_bug_issue_243
     !! Memory allocation safety test for Issue #243
     !! Tests memory safety without external dependencies
+    !! CI-optimized version for reliable test execution
     !! 
     !! Note: The comprehensive memory tests are in separate test programs:
     !! - test_memory_allocation_core: Core allocation patterns
