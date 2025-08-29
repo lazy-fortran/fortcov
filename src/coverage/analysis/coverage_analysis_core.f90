@@ -15,7 +15,7 @@ module coverage_analysis_core
                                        line_coverage_stats_t
     use coverage_json_io
     use coverage_tui
-    use coverage_workflows, only: execute_auto_test_workflow
+    use coverage_workflows, only: execute_auto_test_workflow, perform_coverage_diff_analysis
     use error_handling_core
     use file_utils_core, only: file_exists
     
@@ -74,9 +74,9 @@ contains
         ! Check for diff mode
         if (config%enable_diff) then
             if (.not. config%quiet) then
-                print *, "❌ Diff mode not implemented - diff functionality removed"
+                print *, "📊 Diff mode detected - analyzing coverage differences"
             end if
-            exit_code = EXIT_FAILURE
+            exit_code = perform_coverage_diff_analysis(config)
             return
         end if
         
