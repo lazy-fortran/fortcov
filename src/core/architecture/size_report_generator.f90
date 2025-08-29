@@ -216,11 +216,17 @@ contains
                         report_text = report_text // ','
                     end if
                     report_text = report_text // new_line('') // '    {' // new_line('') // &
-                        '      "filename": "' // escape_json_string(report%file_violations(i)%filename) // '",' // new_line('') // &
-                        '      "current_lines": ' // int_to_string(report%file_violations(i)%current_lines) // ',' // new_line('') // &
-                        '      "target_limit": ' // int_to_string(report%file_violations(i)%target_limit) // ',' // new_line('') // &
-                        '      "severity_level": "' // trim(report%file_violations(i)%severity_level) // '",' // new_line('') // &
-                        '      "remediation_hint": "' // escape_json_string(report%file_violations(i)%remediation_hint) // '"' // new_line('') // &
+                        '      "filename": "' // &
+                        escape_json_string(report%file_violations(i)%filename) // '",' // new_line('') // &
+                        '      "current_lines": ' // &
+                        int_to_string(report%file_violations(i)%current_lines) // ',' // new_line('') // &
+                        '      "target_limit": ' // &
+                        int_to_string(report%file_violations(i)%target_limit) // ',' // new_line('') // &
+                        '      "severity_level": "' // &
+                        trim(report%file_violations(i)%severity_level) // '",' // new_line('') // &
+                        '      "remediation_hint": "' // &
+                        escape_json_string(report%file_violations(i)%remediation_hint) // '"' // &
+                        new_line('') // &
                         '    }'
                     first_violation = .false.
                 end if
@@ -240,12 +246,24 @@ contains
                         report_text = report_text // ','
                     end if
                     report_text = report_text // new_line('') // '    {' // new_line('') // &
-                        '      "directory": "' // escape_json_string(report%directory_violations(i)%directory_path) // '",' // new_line('') // &
-                        '      "current_items": ' // int_to_string(report%directory_violations(i)%current_items) // ',' // new_line('') // &
-                        '      "soft_limit": ' // int_to_string(report%directory_violations(i)%soft_limit) // ',' // new_line('') // &
-                        '      "hard_limit": ' // int_to_string(report%directory_violations(i)%hard_limit) // ',' // new_line('') // &
-                        '      "severity_level": "' // trim(report%directory_violations(i)%severity_level) // '",' // new_line('') // &
-                        '      "remediation_hint": "' // escape_json_string(report%directory_violations(i)%remediation_hint) // '"' // new_line('') // &
+                        '      "directory": "' // &
+                        escape_json_string(report%directory_violations(i)%directory_path) // &
+                        '",' // new_line('') // &
+                        '      "current_items": ' // &
+                        int_to_string(report%directory_violations(i)%current_items) // &
+                        ',' // new_line('') // &
+                        '      "soft_limit": ' // &
+                        int_to_string(report%directory_violations(i)%soft_limit) // &
+                        ',' // new_line('') // &
+                        '      "hard_limit": ' // &
+                        int_to_string(report%directory_violations(i)%hard_limit) // &
+                        ',' // new_line('') // &
+                        '      "severity_level": "' // &
+                        trim(report%directory_violations(i)%severity_level) // &
+                        '",' // new_line('') // &
+                        '      "remediation_hint": "' // &
+                        escape_json_string(report%directory_violations(i)%remediation_hint) // &
+                        '"' // new_line('') // &
                         '    }'
                     first_violation = .false.
                 end if
