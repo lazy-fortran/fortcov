@@ -223,6 +223,9 @@ contains
         character(len=*), intent(in) :: workspace_path
         integer :: unit_number
         
+        ! Create the workspace directory first
+        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
+        
         ! Create corrupted gcov file with invalid format
         open(newunit=unit_number, file=trim(workspace_path) // '/corrupted.gcov', &
              status='replace', action='write')
@@ -251,6 +254,9 @@ contains
         !! Creates an empty FPM project structure (build files but no sources)
         character(len=*), intent(in) :: workspace_path
         integer :: unit_number
+        
+        ! Create the workspace directory first
+        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
         
         ! Create minimal fpm.toml
         open(newunit=unit_number, file=trim(workspace_path) // '/fpm.toml', &
