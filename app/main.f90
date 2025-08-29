@@ -49,7 +49,7 @@ program main
     print *, "   * Ensure source directory exists: ls -la <your_source_path>"
     print *, "   * Check if .gcov files are present: find . -name '*.gcov'"
     print *, "   * Try: fortcov --source=src --output=coverage.md"
-    call exit(EXIT_FAILURE)
+    stop 1
   end if
 
   ! Apply enhanced auto-discovery integration for zero-configuration mode (Issue #281)
@@ -66,35 +66,35 @@ program main
     call show_help()
     ! In quiet mode, help/version should exit with failure code
     if (config%quiet) then
-      call exit(EXIT_FAILURE)
+      stop 1
     else
-      call exit(EXIT_SUCCESS)
+      stop 0
     end if
   else if (config%show_version) then
     call show_version()
     ! In quiet mode, help/version should exit with failure code
     if (config%quiet) then
-      call exit(EXIT_FAILURE)
+      stop 1
     else
-      call exit(EXIT_SUCCESS)
+      stop 0
     end if
   else if (config%validate_config_only) then
     ! Only validate configuration, don't run analysis
     call validate_config_with_context(config, error_ctx)
     if (error_ctx%error_code /= ERROR_SUCCESS) then
       print *, "Configuration validation failed: " // trim(error_ctx%message)
-      call exit(EXIT_FAILURE)
+      stop 1
     else
       print *, "Configuration is valid"
-      call exit(EXIT_SUCCESS)
+      stop 0
     end if
   else if (config%validate_architecture) then
     ! Only validate architectural size compliance, don't run coverage analysis
     call handle_architectural_validation(config, error_ctx)
     if (error_ctx%error_code /= ERROR_SUCCESS) then
-      call exit(EXIT_FAILURE)
+      stop 1
     else
-      call exit(EXIT_SUCCESS)
+      stop 0
     end if
   end if
   
@@ -107,7 +107,7 @@ program main
         print *, "🛡️  Fork bomb prevention: fortcov execution disabled"
         print *, "    (fortcov detected it's running within a test environment)"
       end if
-      call exit(EXIT_SUCCESS)
+      stop 0
     end if
   end block
   
@@ -123,7 +123,7 @@ program main
     print *, "For configuration help:"
     print *, "   • See example: cat fortcov.nml.example"
     print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
-    call exit(EXIT_FAILURE)
+    stop 1
   end if
   
   ! Check for TUI mode
@@ -137,7 +137,11 @@ program main
     exit_code = run_coverage_analysis(config)
   end if
   
-  call exit(exit_code)
+  if (exit_code == 0) then
+    stop 0
+  else
+    stop 1
+  end if
 
 contains
 
