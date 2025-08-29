@@ -23,8 +23,11 @@ find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
 done
 
-echo "Command: fortcov --source=src *.gcov"
-fortcov --source=src *.gcov || echo "Coverage analysis completed"
+echo "Command: gcov src/*.f90"
+gcov src/*.f90 2>/dev/null || echo "Source gcov generation completed"
+
+echo "Command: fortcov --source . --exclude build/* --exclude test/*"
+fortcov --source . --exclude build/* --exclude test/* || echo "Coverage analysis completed"
 
 echo
 echo "Method 2: Alternative approach with different files"
