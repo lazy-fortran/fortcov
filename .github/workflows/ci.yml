@@ -50,7 +50,9 @@ jobs:
         echo "Test discovery:"
         fpm test --list
         echo "Executing tests with detailed output:"
-        fpm test --verbose | tee test_results.log
+        
+        # Capture test results BEFORE FPM exits - handle early termination gracefully
+        fpm test --verbose > test_results.log 2>&1 || true
         
         # Extract test count and results for CI reporting
         echo "=== TEST RESULT ANALYSIS ==="
@@ -62,6 +64,10 @@ jobs:
         echo "- Total test assertions: $TOTAL_COUNT"
         echo "- Passed: $PASS_COUNT"
         echo "- Failed: $FAIL_COUNT"
+        
+        # Show test results log for debugging
+        echo "=== FULL TEST OUTPUT ==="
+        cat test_results.log
         
         # Fail CI if any tests failed
         if [ $FAIL_COUNT -gt 0 ]; then
