@@ -1,0 +1,34 @@
+        -:    0:Source:src/demo_calculator.f90
+        -:    1:! Demo calculator module for coverage testing
+        -:    2:module demo_calculator
+        -:    3:    implicit none
+        -:    4:    private
+        -:    5:    
+        -:    6:    public :: add_numbers, multiply_numbers, divide_numbers
+        -:    7:    
+        -:    8:contains
+        -:    9:
+        2:   10:    pure function add_numbers(a, b) result(sum_result)
+        -:   11:        real, intent(in) :: a, b
+        -:   12:        real :: sum_result
+        2:   13:        sum_result = a + b
+        2:   14:    end function add_numbers
+        -:   15:
+        2:   16:    pure function multiply_numbers(a, b) result(product_result)
+        -:   17:        real, intent(in) :: a, b
+        -:   18:        real :: product_result
+        2:   19:        product_result = a * b
+        2:   20:    end function multiply_numbers
+        -:   21:
+        3:   22:    function divide_numbers(a, b) result(division_result)
+        -:   23:        real, intent(in) :: a, b
+        -:   24:        real :: division_result
+        -:   25:        
+        3:   26:        if (abs(b) < 1.0e-10) then
+        1:   27:            division_result = 0.0  ! Simple error handling
+        -:   28:        else
+        2:   29:            division_result = a / b
+        -:   30:        end if
+        3:   31:    end function divide_numbers
+        -:   32:
+        -:   33:end module demo_calculator
