@@ -22,7 +22,12 @@ contains
         character(len=*), intent(in) :: arg
         logical :: is_flag
 
-        is_flag = (len_trim(arg) > 1 .and. arg(1:1) == '-')
+        ! Check for empty string before substring access to prevent crash
+        if (len_trim(arg) == 0) then
+            is_flag = .false.
+        else
+            is_flag = (len_trim(arg) > 1 .and. arg(1:1) == '-')
+        end if
 
     end function is_flag_argument
 
