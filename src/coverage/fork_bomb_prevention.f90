@@ -4,6 +4,8 @@ module fork_bomb_prevention
     !! Handles detection of test execution environments to prevent infinite recursion.
     !! Extracted from coverage_test_executor.f90 for SRP compliance (Issue #718).
     use config_core, only: config_t
+    use file_ops_secure, only: safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     private
     
@@ -67,12 +69,12 @@ contains
     
     subroutine cleanup_recursion_marker()
         !! Clean up recursion marker file
-        logical :: file_exists
+        !! SECURITY FIX Issue #963: Use secure file removal instead of execute_command_line
+        type(error_context_t) :: error_ctx
         
-        inquire(file='.fortcov_execution_marker', exist=file_exists)
-        if (file_exists) then
-            call execute_command_line('rm -f .fortcov_execution_marker')
-        end if
+        ! Use secure file removal instead of shell command
+        call safe_remove_file('.fortcov_execution_marker', error_ctx)
+        ! Note: Ignore errors - marker file may not exist, which is fine
         
     end subroutine cleanup_recursion_marker
     
