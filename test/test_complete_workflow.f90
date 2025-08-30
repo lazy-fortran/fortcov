@@ -249,7 +249,7 @@ contains
         call execute_command_line('mkdir -p test_build')
         call execute_command_line('if [ -f test_build/mock_gcov ]; then ' // &
                                  'realpath test_build/mock_gcov > test_build/mock_path.txt; ' // &
-                                 'else echo "gcov" > test_build/mock_path.txt; fi', wait=.true.)
+                                 'else echo "gcov" > test_build/mock_path.txt; fi')
         open(unit=10, file='test_build/mock_path.txt', status='old', iostat=iostat)
         if (iostat == 0) then
             read(10, '(A)') abs_path
