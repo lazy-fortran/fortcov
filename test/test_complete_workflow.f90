@@ -109,13 +109,6 @@ contains
         ! Since we can't test actual test failure in this environment,
         ! we'll simulate a scenario where gcov processing might fail
         
-        call initialize_default_config(config)
-        config%auto_discovery = .true.
-        config%auto_test_execution = .false.  ! Skip test execution due to fork bomb prevention
-        
-        ! Since we can't test actual test failure in this environment,
-        ! we'll simulate a scenario where gcov processing might fail
-        
         call execute_complete_auto_workflow(config, result)
         
         ! In mock environment with fork bomb prevention, tests don't execute
@@ -141,11 +134,6 @@ contains
         call create_mock_fpm_project()
         call create_mock_slow_tests()
         call create_mock_gcda_files()
-        
-        call initialize_default_config(config)
-        config%auto_discovery = .true.
-        config%auto_test_execution = .false.  ! Skip test execution due to fork bomb prevention
-        config%test_timeout_seconds = 1  ! Very short timeout (not used due to disabled auto test)
         
         call initialize_default_config(config)
         config%auto_discovery = .true.
@@ -261,7 +249,7 @@ contains
         call execute_command_line('mkdir -p test_build')
         call execute_command_line('if [ -f test_build/mock_gcov ]; then ' // &
                                  'realpath test_build/mock_gcov > test_build/mock_path.txt; ' // &
-                                 'else echo "gcov" > test_build/mock_path.txt; fi', wait=.true.)
+                                 'else echo "gcov" > test_build/mock_path.txt; fi')
         open(unit=10, file='test_build/mock_path.txt', status='old', iostat=iostat)
         if (iostat == 0) then
             read(10, '(A)') abs_path
