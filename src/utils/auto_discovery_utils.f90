@@ -104,7 +104,7 @@ contains
         type(test_build_result_t), intent(out) :: test_result
         type(gcov_result_t), intent(out) :: gcov_result
         integer, intent(out) :: test_exit_code
-        type(complete_workflow_result_t), intent(out) :: result
+        type(complete_workflow_result_t), intent(inout) :: result
 
         result%auto_discovery_used = .true.
 
@@ -132,7 +132,7 @@ contains
         type(config_t), intent(in) :: config
         type(test_build_result_t), intent(in) :: test_result
         integer, intent(out) :: test_exit_code
-        type(complete_workflow_result_t), intent(out) :: result
+        type(complete_workflow_result_t), intent(inout) :: result
 
         result%test_executed = .true.
 

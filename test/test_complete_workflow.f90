@@ -242,6 +242,8 @@ contains
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 30
         config%verbose = .false.
+        config%import_file = ''  ! Ensure manual files are not detected
+        if (allocated(config%source_paths)) deallocate(config%source_paths)
         
         ! Use mock gcov if it exists, otherwise real gcov
         call execute_command_line('mkdir -p test_build')
