@@ -210,6 +210,16 @@ contains
             config%show_help = .true.
         case ("--version", "-V")
             config%show_version = .true.
+        case ("--diff")
+            config%enable_diff = .true.
+        case ("--diff-baseline")
+            if (len_trim(value) > 0) then
+                config%diff_baseline_file = value
+            end if
+        case ("--diff-current")
+            if (len_trim(value) > 0) then
+                config%diff_current_file = value
+            end if
         case default
             ! Unknown flag - could add warning but for now continue
             continue
