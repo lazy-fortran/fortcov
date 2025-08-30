@@ -53,20 +53,24 @@ contains
     
     subroutine apply_coverage_file_filtering(all_files, config, filtered_files)
         !! Apply filtering to coverage files if needed
+        !! CRITICAL: Exclude patterns should NOT filter coverage files in auto-discovery mode
+        !! They should only filter source files within the coverage data
         use pattern_filtering_core, only: filter_coverage_files_by_patterns
         character(len=:), allocatable, intent(in) :: all_files(:)
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: filtered_files(:)
         
-        ! Filter files by exclude patterns
-        if (allocated(all_files)) then
-            ! Bypass filtering for empty arrays to avoid allocation issues
-            if (size(all_files) == 0) then
-                allocate(character(len=256) :: filtered_files(0))
-            else
-                filtered_files = filter_coverage_files_by_patterns(all_files, config)
-            end if
+        ! Handle empty arrays
+        if (.not. allocated(all_files) .or. size(all_files) == 0) then
+            allocate(character(len=256) :: filtered_files(0))
+            return
         end if
+        
+        ! CRITICAL: Exclude patterns should NEVER filter coverage files
+        ! They should only filter source files within the coverage data
+        ! Coverage files are discovered by auto-discovery or explicit specification
+        ! Exclude patterns are for source file filtering only
+        filtered_files = all_files
     end subroutine apply_coverage_file_filtering
     
     subroutine validate_and_limit_files(input_files, config, output_files)

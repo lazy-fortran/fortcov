@@ -5,6 +5,7 @@ module coverage_data_filter
     !! Extracted from report_engine_impl.f90 for SRP compliance.
     use coverage_model_core
     use report_config_core
+    use string_utils, only: matches_pattern
     implicit none
     private
 
@@ -49,12 +50,12 @@ contains
             end if
         end if
 
-        ! Check exclude patterns
+        ! Check exclude patterns using proper pattern matching
         if (allocated(criteria%exclude_patterns) .and. &
             size(criteria%exclude_patterns) > 0) then
             matches_exclude = .false.
             do i = 1, size(criteria%exclude_patterns)
-                if (index(file%filename, trim(criteria%exclude_patterns(i))) > 0) then
+                if (matches_pattern(file%filename, criteria%exclude_patterns(i))) then
                     matches_exclude = .true.
                     exit
                 end if

@@ -194,9 +194,9 @@ contains
         ! Check for test file exclusion using patterns
         if (allocated(config%exclude_patterns)) then
             if (is_test_file(normalized_path)) then
-                ! Check if test files match any exclude pattern
+                ! Check if test files match any exclude pattern using proper pattern matching
                 do i = 1, size(config%exclude_patterns)
-                    if (index(normalized_path, trim(config%exclude_patterns(i))) > 0) then
+                    if (matches_pattern(normalized_path, config%exclude_patterns(i))) then
                         should_exclude = .true.
                         return
                     end if
