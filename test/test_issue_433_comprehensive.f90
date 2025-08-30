@@ -160,7 +160,7 @@ program test_issue_433_comprehensive
     test_count = test_count + 1
     print *, "Test 7: --validate flag with valid config"
     args(1) = "--validate"
-    args(2) = "--source=/home/ert/code/fortcov/src"
+    args(2) = "--source=src"
     call parse_config(args(1:2), config, success, error_message)
     if (.not. success) then
         print *, "  FAIL: Parsing failed: ", trim(error_message)
