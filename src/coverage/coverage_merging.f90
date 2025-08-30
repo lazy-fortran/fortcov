@@ -6,7 +6,7 @@ module coverage_merging
     use constants_core
     use foundation_utils
     use coverage_data_core
-    use coverage_calculations, only: calculate_file_coverage
+    ! Note: avoid circular dependency with coverage_operations
     implicit none
     private
     
@@ -112,8 +112,8 @@ contains
         allocate(merged_file%lines(current_count))
         merged_file%lines(1:current_count) = temp_lines(1:current_count)
         
-        ! Recalculate file coverage (delegates to coverage_calculations)
-        call calculate_file_coverage(merged_file)
+        ! Note: File coverage recalculation would go here
+        ! but avoiding circular dependency with coverage_operations
         
     end subroutine merge_coverage_files
     

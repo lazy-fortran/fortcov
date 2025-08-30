@@ -291,10 +291,10 @@ contains
             config%include_unchanged = namelist_data%include_unchanged
             config%keep_gcov_files = namelist_data%keep_gcov_files
 
-            ! Transfer arrays
-            call transfer_string_array(namelist_data%source_paths, config%source_paths)
-            call transfer_string_array(namelist_data%exclude_patterns, config%exclude_patterns)
-            call transfer_string_array(namelist_data%include_patterns, config%include_patterns)
+            ! Transfer arrays from fixed-length to allocatable arrays
+            call convert_fixed_to_allocatable_array(namelist_data%source_paths, config%source_paths)
+            call convert_fixed_to_allocatable_array(namelist_data%exclude_patterns, config%exclude_patterns)
+            call convert_fixed_to_allocatable_array(namelist_data%include_patterns, config%include_patterns)
 
         end subroutine transfer_data_to_config
 
@@ -407,5 +407,44 @@ contains
         end subroutine parse_integer_with_error_local
 
     end subroutine process_config_file_option
+
+    subroutine convert_fixed_to_allocatable_array(fixed_array, allocatable_array)
+        !! Convert fixed-length array to allocatable deferred-length array
+        !! Only includes non-empty strings from the fixed array
+        character(len=*), dimension(:), intent(in) :: fixed_array
+        character(len=:), allocatable, intent(out) :: allocatable_array(:)
+        
+        integer :: i, non_empty_count
+        character(len=:), allocatable :: temp_array(:)
+        integer :: max_len
+        
+        ! Count non-empty strings and find maximum length
+        non_empty_count = 0
+        max_len = 0
+        do i = 1, size(fixed_array)
+            if (len_trim(fixed_array(i)) > 0) then
+                non_empty_count = non_empty_count + 1
+                max_len = max(max_len, len_trim(fixed_array(i)))
+            end if
+        end do
+        
+        ! Handle empty case
+        if (non_empty_count == 0) then
+            allocate(character(len=0) :: allocatable_array(0))
+            return
+        end if
+        
+        ! Allocate with deferred length
+        allocate(character(len=max_len) :: allocatable_array(non_empty_count))
+        
+        ! Copy non-empty strings
+        non_empty_count = 0
+        do i = 1, size(fixed_array)
+            if (len_trim(fixed_array(i)) > 0) then
+                non_empty_count = non_empty_count + 1
+                allocatable_array(non_empty_count) = trim(fixed_array(i))
+            end if
+        end do
+    end subroutine convert_fixed_to_allocatable_array
 
 end module config_parser_files

@@ -126,13 +126,13 @@ contains
         
         select case (flag)
         case ("--source", "-s")
-            call add_source_path(value, config, success, error_message)
+            call add_source_path(config, value)
             ! Flag was recognized even if there was an error
         case ("--exclude", "-e")
-            call add_exclude_pattern(value, config, success, error_message)
+            call add_exclude_pattern(config, value)
             ! Flag was recognized even if there was an error
         case ("--include", "-i")
-            call add_include_pattern(value, config, success, error_message)
+            call add_include_pattern(config, value)
             ! Flag was recognized even if there was an error
         case ("--output", "-o")
             config%output_path = value
@@ -220,7 +220,7 @@ contains
                 return
             else
                 ! If value provided, parse as comma-separated files
-                call parse_diff_files(value, config, success, error_message)
+                call parse_diff_files(value, config%diff_baseline_file, config%diff_current_file, success, error_message)
                 ! Flag is recognized even if value parsing fails - error will be caught in validation
                 if (.not. success) then
                     ! Store raw value for later validation instead of failing flag recognition

@@ -15,8 +15,11 @@ contains
     
     subroutine create_reporter(format, reporter, error_flag)
         !! Create a concrete reporter instance based on format
-        use coverage_reporter_impl, only: text_reporter_t, markdown_reporter_t, &
-                                         json_reporter_t, html_reporter_t, xml_reporter_t
+        use text_reporter, only: text_reporter_t
+        use json_reporter, only: json_reporter_t  
+        use html_reporter_impl, only: html_reporter_t
+        use xml_reporter, only: xml_reporter_t
+        use markdown_reporter_wrapper, only: markdown_reporter_t
         character(len=*), intent(in) :: format
         class(coverage_reporter_t), allocatable, intent(out) :: reporter
         logical, intent(out) :: error_flag

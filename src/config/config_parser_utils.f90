@@ -4,25 +4,22 @@ module config_parser_utils
     !! This module re-exports essential parsing utilities from specialized modules
     !! to maintain interface compatibility while enforcing architectural boundaries.
 
-    ! Import all specialized modules
-    use config_parser_string_utils, only: parse_real_with_error, &
+    ! Import from consolidated module
+    use config_parser_consolidated, only: parse_real_with_error, &
                                           parse_integer_with_error, &
-                                          parse_threshold_with_error
-    
-    use config_parser_array_utils, only: add_string_to_array, &
-                                         add_source_path, &
-                                         add_exclude_pattern, &
-                                         add_include_pattern, &
-                                         transfer_string_array
-    
-    use config_parser_flag_utils, only: is_flag_argument, &
-                                        flag_requires_value, &
-                                        get_long_form_option, &
-                                        has_input_related_arguments, &
-                                        has_output_related_arguments, &
-                                        has_diff_mode_arguments
-    
-    use config_parser_complex_utils, only: parse_diff_files
+                                          parse_threshold_with_error, &
+                                          add_string_to_array, &
+                                          add_source_path, &
+                                          add_exclude_pattern, &
+                                          add_include_pattern, &
+                                          transfer_string_array, &
+                                          is_flag_argument, &
+                                          flag_requires_value, &
+                                          get_long_form_option, &
+                                          has_input_related_arguments, &
+                                          has_output_related_arguments, &
+                                          has_diff_mode_arguments, &
+                                          parse_diff_files
 
     implicit none
     private

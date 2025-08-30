@@ -5,10 +5,9 @@ module json_generator
     !! Extracted from json_io.f90 to maintain QADS size standards.
     !! Handles JSON structure creation and serialization.
     use coverage_model_core
-    use coverage_operations_core, only: calculate_coverage_statistics
+    use coverage_operations, only: calculate_coverage_statistics
     use json_module, only: json_file, json_value, json_core
     use json_kinds, only: RK, IK
-    use timestamp_utils, only: get_current_timestamp
     implicit none
     private
     

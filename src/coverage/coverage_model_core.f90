@@ -7,7 +7,7 @@ module coverage_model_core
     !! Original module size: 900 lines → Now: <100 lines
     !! Decomposed into: coverage_data_model + coverage_operations
     use coverage_data_core
-    use coverage_operations_core
+    use coverage_operations, only: calculate_coverage_statistics, merge_coverage_data, compare_coverage_data
     use coverage_stats_core, only: coverage_stats_t, extended_coverage_stats_t
     use coverage_diff, only: diff_thresholds_t, DIFF_UNCHANGED, DIFF_ADDED, &
                             DIFF_REMOVED, DIFF_CHANGED, &

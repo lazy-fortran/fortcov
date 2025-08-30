@@ -40,15 +40,11 @@ contains
 
             if (is_valid_coverage_file) then
                 ! Add to coverage files
-                call add_string_to_array(positionals(i), config%coverage_files, &
-                                         MAX_ARRAY_SIZE, "coverage files", &
-                                         success, error_message)
-                if (.not. success) return
+                call add_string_to_array(config%coverage_files, positionals(i))
 
             else if (is_source_path) then
                 ! Add to source paths
-                call add_source_path(positionals(i), config, success, error_message)
-                if (.not. success) return
+                call add_source_path(config, positionals(i))
 
             else
                 ! Unknown positional argument
