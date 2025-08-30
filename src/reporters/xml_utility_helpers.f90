@@ -3,6 +3,7 @@ module xml_utility_helpers
     !! 
     !! Handles utility functions for paths, timestamps, and string processing.
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
+    use timestamp_utils, only: get_current_timestamp
     implicit none
     private
     
@@ -10,16 +11,6 @@ module xml_utility_helpers
 
 contains
 
-    function get_current_timestamp() result(timestamp)
-        character(len=19) :: timestamp
-        integer :: values(8)
-        
-        call date_and_time(values=values)
-        write(timestamp, '(I4,A,I0.2,A,I0.2,A,I0.2,A,I0.2,A,I0.2)') &
-            values(1), '-', values(2), '-', values(3), 'T', &
-            values(5), ':', values(6), ':', values(7)
-            
-    end function get_current_timestamp
     
     function get_directory_path(filename) result(dir_path)
         character(len=*), intent(in) :: filename

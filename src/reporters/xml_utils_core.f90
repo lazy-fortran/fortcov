@@ -5,6 +5,7 @@ module xml_utils_core
     !! Handles utility functions for XML processing and file operations.
     use coverage_model_core
     use string_utils, only: int_to_string
+    use timestamp_utils, only: get_current_timestamp
     implicit none
     private
     
@@ -14,16 +15,6 @@ module xml_utils_core
     
 contains
     
-    function get_current_timestamp() result(timestamp)
-        character(len=19) :: timestamp
-        integer :: values(8)
-        
-        call date_and_time(values=values)
-        write(timestamp, '(I4,A,I0.2,A,I0.2,A,I0.2,A,I0.2,A,I0.2)') &
-            values(1), '-', values(2), '-', values(3), 'T', &
-            values(5), ':', values(6), ':', values(7)
-            
-    end function get_current_timestamp
     
     function get_directory_path(filename) result(dir_path)
         character(len=*), intent(in) :: filename
