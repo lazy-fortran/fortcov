@@ -100,6 +100,7 @@ contains
         
         call create_mock_fpm_project()
         call create_mock_failing_tests()
+        call create_mock_gcda_files()
         
         call initialize_default_config(config)
         config%auto_discovery = .true.
@@ -132,6 +133,7 @@ contains
         
         call create_mock_fpm_project()
         call create_mock_slow_tests()
+        call create_mock_gcda_files()
         
         call initialize_default_config(config)
         config%auto_discovery = .true.
