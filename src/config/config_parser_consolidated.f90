@@ -202,7 +202,8 @@ contains
         select case (trim(flag))
         case ("--source", "-s", "--exclude", "--include", "--output", "-o", &
               "--format", "-f", "--minimum", "-m", "--threshold", "-t", &
-              "--fail-under", "--diff-threshold", "--import", "--config")
+              "--fail-under", "--diff-threshold", "--import", "--config", &
+              "--test-timeout")
             requires_value = .true.
         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
               "--verbose", "-v", "--validate", "--diff", "--lcov", &
@@ -354,8 +355,13 @@ contains
         end if
         
         ! Check for manually specified source paths (also indicates manual mode)
+        ! Exclude zero-config default source path "." from triggering fork bomb prevention
         if (allocated(config%source_paths) .and. size(config%source_paths) > 0) then
-            has_manual_coverage_files = .true.
+            ! Only consider it manual if it's not just the zero-config default "."
+            if (.not. (size(config%source_paths) == 1 .and. &
+                      trim(config%source_paths(1)) == ".")) then
+                has_manual_coverage_files = .true.
+            end if
         end if
         
         ! If manual coverage files detected, disable auto-test execution to prevent fork bomb
@@ -373,23 +379,24 @@ contains
         character(len=*), intent(in) :: args(:)
         logical :: zero_config_mode
         integer :: i
+        logical :: has_non_empty_args
         
         zero_config_mode = .false.
+        has_non_empty_args = .false.
         
-        ! No arguments means zero-config
-        if (size(args) == 0) then
+        ! Count non-empty arguments
+        do i = 1, size(args)
+            if (len_trim(args(i)) > 0) then
+                has_non_empty_args = .true.
+                exit
+            end if
+        end do
+        
+        ! No arguments or only empty strings means zero-config
+        if (size(args) == 0 .or. .not. has_non_empty_args) then
             zero_config_mode = .true.
             return
         end if
-        
-        ! Check if all arguments are flags (no positional arguments)
-        do i = 1, size(args)
-            if (.not. is_flag_argument(args(i))) then
-                ! Found positional argument, not zero-config
-                zero_config_mode = .false.
-                return
-            end if
-        end do
         
         ! Check for explicit zero-config flag
         do i = 1, size(args)
@@ -399,9 +406,50 @@ contains
             end if
         end do
         
-        ! All arguments are flags and no explicit coverage files
-        zero_config_mode = .true.
+        ! Check if we have only flags (ignoring their values for zero-config detection)
+        ! This allows constructs like "--output custom.md" to still be zero-config
+        call check_zero_config_with_flags(args, zero_config_mode)
     end function detect_zero_config_mode
+
+    subroutine check_zero_config_with_flags(args, zero_config_mode)
+        !! Check if arguments represent zero-config mode considering flag-value pairs
+        character(len=*), intent(in) :: args(:)
+        logical, intent(out) :: zero_config_mode
+        integer :: i
+        logical :: has_coverage_file
+        
+        zero_config_mode = .true.
+        has_coverage_file = .false.
+        
+        i = 1
+        do while (i <= size(args))
+            if (len_trim(args(i)) == 0) then
+                ! Skip empty strings
+                i = i + 1
+                cycle
+            end if
+            
+            if (is_flag_argument(args(i))) then
+                ! This is a flag - check if it requires a value
+                if (flag_requires_value(args(i))) then
+                    ! Skip the next argument (the value for this flag)
+                    i = i + 2
+                else
+                    ! Boolean flag
+                    i = i + 1
+                end if
+            else
+                ! This is a positional argument (likely a coverage file)
+                has_coverage_file = .true.
+                zero_config_mode = .false.
+                return
+            end if
+        end do
+        
+        ! If we get here, all arguments were flags (with their values)
+        ! This means zero-config with overrides
+        zero_config_mode = .true.
+    end subroutine check_zero_config_with_flags
 
     ! ========================================================================
     ! Complex Parsing Utilities
