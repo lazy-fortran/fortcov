@@ -173,7 +173,7 @@ contains
     subroutine process_single_flag(flag_with_value, config, success, error_message)
         !! Process a single flag with its value and update configuration
         use config_types, only: config_t
-        use config_parser_string, only: parse_real_with_error, parse_integer_with_error
+        use config_parser_string, only: parse_real_with_error, parse_integer_with_error, parse_threshold_with_error
         use config_parser_arrays, only: add_source_path, add_exclude_pattern, add_include_pattern
         character(len=*), intent(in) :: flag_with_value
         type(config_t), intent(inout) :: config
@@ -218,9 +218,9 @@ contains
             if (len_trim(value) > 0) then
                 config%output_format = value
             end if
-        case ("--minimum", "-m")
+        case ("--minimum", "-m", "--threshold")
             if (len_trim(value) > 0) then
-                call parse_real_with_error(value, config%minimum_coverage, "minimum coverage", success, error_message)
+                call parse_threshold_with_error(value, config%minimum_coverage, "minimum coverage", success, error_message)
             end if
         case ("--threads", "-t")
             if (len_trim(value) > 0) then
@@ -244,6 +244,24 @@ contains
             if (len_trim(value) > 0) then
                 config%diff_current_file = value
             end if
+        case ("--fail-under")
+            if (len_trim(value) > 0) then
+                call parse_threshold_with_error(value, config%fail_under_threshold, "fail-under threshold", success, error_message)
+            end if
+        case ("--diff-threshold")
+            if (len_trim(value) > 0) then
+                call parse_threshold_with_error(value, config%diff_threshold, "diff threshold", success, error_message)
+            end if
+        case ("--import")
+            if (len_trim(value) > 0) then
+                config%import_file = value
+            end if
+        case ("--config")
+            if (len_trim(value) > 0) then
+                config%config_file = value
+            end if
+        case ("--tui")
+            config%tui_mode = .true.
         case ("--auto-discovery")
             config%auto_discovery = .true.
         case ("--no-auto-discovery")
@@ -261,8 +279,9 @@ contains
                 config%architecture_output_format = value
             end if
         case default
-            ! Unknown flag - could add warning but for now continue
-            continue
+            ! Unknown flag - reject with error message
+            success = .false.
+            error_message = "Unknown flag: '" // trim(flag) // "'"
         end select
     end subroutine process_single_flag
 
