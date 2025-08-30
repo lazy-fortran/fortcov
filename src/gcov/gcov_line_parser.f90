@@ -280,6 +280,8 @@ contains
         integer :: file_idx
         type(coverage_function_t), allocatable :: temp_functions(:)
         integer :: current_func_count
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Find the current file in the array
         file_idx = 0
@@ -297,18 +299,31 @@ contains
         
         ! Add function to the file's function array
         if (.not. allocated(files_array(file_idx)%functions)) then
-            allocate(files_array(file_idx)%functions(1))
+            allocate(files_array(file_idx)%functions(1), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate functions array: " // trim(errmsg)
+                return
+            end if
             files_array(file_idx)%functions(1) = func
         else
             ! Extend the functions array
             current_func_count = size(files_array(file_idx)%functions)
-            allocate(temp_functions(current_func_count + 1))
+            allocate(temp_functions(current_func_count + 1), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate temp_functions: " // trim(errmsg)
+                return
+            end if
             temp_functions(1:current_func_count) = files_array(file_idx)%functions
             temp_functions(current_func_count + 1) = func
             
-            deallocate(files_array(file_idx)%functions)
-            allocate(files_array(file_idx)%functions, source=temp_functions)
-            deallocate(temp_functions)
+            deallocate(files_array(file_idx)%functions, stat=stat)
+            allocate(files_array(file_idx)%functions, source=temp_functions, stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to reallocate functions array: " // trim(errmsg)
+                deallocate(temp_functions, stat=stat)
+                return
+            end if
+            deallocate(temp_functions, stat=stat)
         end if
     end subroutine add_function_to_current_file
     
@@ -317,22 +332,33 @@ contains
         type(coverage_line_t), allocatable, intent(inout) :: lines_array(:)
         type(coverage_line_t), allocatable :: temp_array(:)
         integer :: current_size, new_size
+        integer :: stat
+        character(len=512) :: errmsg
         
         current_size = size(lines_array)
         new_size = current_size * 2
         
         ! Copy existing data to temporary array
-        allocate(temp_array(current_size))
+        allocate(temp_array(current_size), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate temp_array for resize: " // trim(errmsg)
+            return
+        end if
         temp_array = lines_array
         
         ! Reallocate with larger size
-        deallocate(lines_array)
-        allocate(lines_array(new_size))
+        deallocate(lines_array, stat=stat)
+        allocate(lines_array(new_size), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to resize lines_array: " // trim(errmsg)
+            deallocate(temp_array, stat=stat)
+            return
+        end if
         
         ! Copy data back
         lines_array(1:current_size) = temp_array
         
-        deallocate(temp_array)
+        deallocate(temp_array, stat=stat)
     end subroutine resize_lines_array
 
 end module gcov_line_parser

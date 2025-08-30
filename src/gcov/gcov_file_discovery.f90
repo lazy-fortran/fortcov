@@ -71,6 +71,7 @@ contains
         character(len=1024) :: find_command, temp_file
         character(len=256) :: temp_files(50)  ! Max 50 files
         integer :: unit, iostat, num_files, i, stat
+        character(len=512) :: errmsg
 
         call clear_error_context(error_ctx)
 
@@ -118,7 +119,12 @@ contains
 
         ! Allocate and populate result array
         if (num_files > 0) then
-            allocate(character(len=256) :: gcda_files(num_files))
+            allocate(character(len=256) :: gcda_files(num_files), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate gcda_files result: " // trim(errmsg)
+                error_ctx%error_code = 1
+                return
+            end if
             gcda_files(1:num_files) = temp_files(1:num_files)
         else
             call safe_write_message(error_ctx, &
@@ -151,6 +157,7 @@ contains
         character(len=1024) :: find_command, temp_file
         character(len=256) :: temp_files(50)  ! Max 50 files
         integer :: unit, iostat, num_files, i, stat
+        character(len=512) :: errmsg
 
         call clear_error_context(error_ctx)
 
@@ -195,11 +202,21 @@ contains
 
         ! Allocate and populate result array
         if (num_files > 0) then
-            allocate(character(len=256) :: gcov_files(num_files))
+            allocate(character(len=256) :: gcov_files(num_files), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate gcov_files result: " // trim(errmsg)
+                error_ctx%error_code = 1
+                return
+            end if
             gcov_files(1:num_files) = temp_files(1:num_files)
         else
             ! Don't set error here - let the caller handle no files found
-            allocate(character(len=256) :: gcov_files(0))
+            allocate(character(len=256) :: gcov_files(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty gcov_files: " // trim(errmsg)
+                error_ctx%error_code = 1
+                return
+            end if
         end if
     end subroutine direct_find_gcov_files
 

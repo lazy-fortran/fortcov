@@ -52,14 +52,20 @@ contains
         character(len=*), intent(in) :: pattern
         character(len=:), allocatable :: files(:)
         type(error_context_t) :: error_ctx
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Use secure command executor for safe file finding
         call safe_find_files(pattern, files, error_ctx)
         
         ! If secure find fails, return empty array
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            if (allocated(files)) deallocate(files)
-            allocate(character(len=256) :: files(0))
+            if (allocated(files)) deallocate(files, stat=stat)
+            allocate(character(len=256) :: files(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty files array: " // trim(errmsg)
+                return
+            end if
         end if
     end function find_files
 
@@ -71,6 +77,8 @@ contains
         
         character(len=256) :: full_pattern
         type(error_context_t) :: error_ctx
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Construct full search pattern
         if (trim(directory) == ".") then
@@ -84,8 +92,12 @@ contains
         
         ! If secure find fails, return empty array
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            if (allocated(files)) deallocate(files)
-            allocate(character(len=256) :: files(0))
+            if (allocated(files)) deallocate(files, stat=stat)
+            allocate(character(len=256) :: files(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty files array: " // trim(errmsg)
+                return
+            end if
         end if
     end function find_files_with_glob
 
@@ -99,6 +111,7 @@ contains
         logical, intent(out) :: error_flag
         integer :: unit, stat, file_size, i
         integer(kind=1) :: byte
+        character(len=512) :: errmsg
         
         error_flag = .false.
         
@@ -106,7 +119,10 @@ contains
         inquire(file=filename, exist=error_flag, size=file_size)
         if (.not. error_flag) then
             error_flag = .true.
-            allocate(data(0))
+            allocate(data(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty data array: " // trim(errmsg)
+            end if
             return
         end if
         
@@ -117,12 +133,21 @@ contains
              status='old', iostat=stat)
         if (stat /= 0) then
             error_flag = .true.
-            allocate(data(0))
+            allocate(data(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty data array: " // trim(errmsg)
+            end if
             return
         end if
         
         ! Allocate data array
-        allocate(data(file_size))
+        allocate(data(file_size), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate data array: " // trim(errmsg)
+            error_flag = .true.
+            close(unit)
+            return
+        end if
         
         ! Read bytes
         do i = 1, file_size
@@ -146,6 +171,8 @@ contains
         
         logical :: file_exists, error_flag
         integer :: file_size
+        integer :: stat
+        character(len=512) :: errmsg
         
         call clear_error_context(error_ctx)
         
@@ -153,7 +180,10 @@ contains
         inquire(file=filename, exist=file_exists, size=file_size)
         if (.not. file_exists) then
             call handle_missing_source(filename, error_ctx)
-            allocate(data(0))
+            allocate(data(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty data array: " // trim(errmsg)
+            end if
             return
         end if
         
@@ -238,6 +268,8 @@ contains
         integer(int64) :: file_size
         character(len=1), allocatable :: buffer(:)
         type(validation_result_t) :: validation_result
+        integer :: stat
+        character(len=512) :: errmsg
         
         error_flag = .false.
         
@@ -265,13 +297,20 @@ contains
         end if
         
         ! Allocate buffer
-        allocate(buffer(file_size))
+        allocate(buffer(file_size), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate buffer: " // trim(errmsg)
+            error_flag = .true.
+            close(unit)
+            content = ""
+            return
+        end if
         
         ! Read file content
         read(unit, iostat=iostat) buffer
         if (iostat /= 0) then
             error_flag = .true.
-            deallocate(buffer)
+            deallocate(buffer, stat=stat)
             close(unit)
             content = ""
             return
@@ -280,11 +319,17 @@ contains
         close(unit)
         
         ! Convert buffer to string safely without transfer()
-        allocate(character(len=file_size) :: content)
+        allocate(character(len=file_size) :: content, stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate content string: " // trim(errmsg)
+            error_flag = .true.
+            deallocate(buffer, stat=stat)
+            return
+        end if
         do i = 1, int(file_size)
             content(i:i) = buffer(i)
         end do
-        deallocate(buffer)
+        deallocate(buffer, stat=stat)
     end subroutine read_file_content
 
     subroutine read_file_content_enhanced(filename, content, error_ctx)

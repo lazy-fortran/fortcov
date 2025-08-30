@@ -42,10 +42,18 @@ contains
         type(coverage_file_t), allocatable, intent(out) :: files_array(:)
         integer, intent(out) :: files_count
         
+        integer :: stat
+        character(len=512) :: errmsg
+        
         error_flag = .false.
         coverage_data = coverage_data_t()
         files_count = 0
-        allocate(coverage_file_t :: files_array(10))  ! Initial capacity
+        allocate(coverage_file_t :: files_array(10), stat=stat, errmsg=errmsg)  ! Initial capacity
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate files_array: " // trim(errmsg)
+            error_flag = .true.
+            return
+        end if
     end subroutine initialize_parser_state
     
     ! Open gcov file and parse all content line by line
@@ -62,12 +70,20 @@ contains
         type(coverage_line_t), allocatable :: lines_array(:)
         integer :: lines_count
         logical :: has_source
+        integer :: stat
+        character(len=512) :: errmsg
         
         ! Initialize file parsing state
         lines_count = 0
         has_source = .false.
         source_filename = "unknown"
-        allocate(coverage_line_t :: lines_array(100))  ! Initial capacity
+        
+        allocate(coverage_line_t :: lines_array(100), stat=stat, errmsg=errmsg)  ! Initial capacity
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate lines_array: " // trim(errmsg)
+            error_flag = .true.
+            return
+        end if
         
         ! Open file with error handling
         call open_gcov_file_with_validation(unit, path, error_flag)
