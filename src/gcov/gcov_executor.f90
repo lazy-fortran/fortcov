@@ -43,9 +43,16 @@ contains
         character(len=256) :: temp_filename
         character(len=256), allocatable :: temp_files(:)
         integer :: line_count
+        integer :: stat
+        character(len=512) :: errmsg
         
         call clear_error_context(error_ctx)
-        allocate(temp_files(10))
+        allocate(temp_files(10), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate temp_files: " // trim(errmsg)
+            error_ctx%error_code = ERROR_INVALID_CONFIG
+            return
+        end if
         
         ! Validate prerequisites
         call validate_gcov_prerequisites(source_file, error_ctx)
@@ -78,7 +85,7 @@ contains
         
         ! Cleanup
         call cleanup_temp_file(temp_filename)
-        if (allocated(temp_files)) deallocate(temp_files)
+        if (allocated(temp_files)) deallocate(temp_files, stat=stat)
     end subroutine execute_gcov
     
     ! Validate that source file and coverage data files exist
@@ -172,9 +179,16 @@ contains
         type(error_context_t), intent(inout) :: error_ctx
         
         integer :: i
+        integer :: stat
+        character(len=512) :: errmsg
         
         if (line_count > 0) then
-            allocate(character(len=256) :: gcov_files(line_count))
+            allocate(character(len=256) :: gcov_files(line_count), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate gcov_files result: " // trim(errmsg)
+                error_ctx%error_code = ERROR_INVALID_CONFIG
+                return
+            end if
             do i = 1, line_count
                 gcov_files(i) = trim(temp_files(i))
             end do
@@ -183,7 +197,11 @@ contains
             call safe_write_message(error_ctx, "No .gcov files were generated")
             call safe_write_suggestion(error_ctx, "Check gcov command output for errors")
             call safe_write_context(error_ctx, "gcov file generation")
-            allocate(character(len=256) :: gcov_files(0))
+            allocate(character(len=256) :: gcov_files(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty gcov_files: " // trim(errmsg)
+                return
+            end if
         end if
     end subroutine build_gcov_files_result
     
@@ -192,8 +210,15 @@ contains
         character(len=256), allocatable, intent(inout) :: temp_files(:)
         character(len=:), allocatable, intent(out) :: gcov_files(:)
         
-        if (allocated(temp_files)) deallocate(temp_files)
-        allocate(character(len=256) :: gcov_files(0))
+        integer :: stat
+        character(len=512) :: errmsg
+        
+        if (allocated(temp_files)) deallocate(temp_files, stat=stat)
+        allocate(character(len=256) :: gcov_files(0), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate empty gcov_files in cleanup: " // trim(errmsg)
+            return
+        end if
     end subroutine cleanup_and_return_empty
 
     subroutine set_branch_coverage(this, enable)
