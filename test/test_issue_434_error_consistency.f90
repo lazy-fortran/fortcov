@@ -146,11 +146,11 @@ program test_issue_434_error_consistency
     print *, "============================================"
     print '(A,I0,A,I0)', " Tests run: ", test_count, ", Failed: ", test_failures
     if (test_failures == 0) then
-        print *, "✅ All tests passed! Issue #434 is resolved."
+        print *, "All tests passed! Issue #434 is resolved."
         print *, "Error handling is now consistent across all flags."
         call exit(0)
     else
-        print *, "❌ Some tests failed."
+        print *, "Some tests failed."
         call exit(1)
     end if
     
