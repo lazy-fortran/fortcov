@@ -42,7 +42,8 @@ contains
             requires_value = .true.
         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
               "--verbose", "-v", "--validate", "--diff", "--lcov", &
-              "--auto-test", "--zero-config", "--tui")
+              "--auto-test", "--no-auto-test", "--auto-discovery", &
+              "--no-auto-discovery", "--zero-config", "--tui")
             requires_value = .false.
         end select
     end function flag_requires_value
@@ -133,15 +134,38 @@ contains
         character(len=*), intent(out) :: error_message
         
         integer :: i
+        character(len=1024) :: combined_flag
         
         success = .true.
         error_message = ""
         
-        ! Process each flag in sequence
-        do i = 1, flag_count
+        ! Process each flag in sequence, handling space-separated flag-value pairs
+        i = 1
+        do while (i <= flag_count)
             if (len_trim(flags(i)) > 0) then
-                call process_single_flag(flags(i), config, success, error_message)
-                if (.not. success) return
+                ! Check if this flag requires a value and the next element is the value
+                if (is_flag_argument(flags(i)) .and. flag_requires_value(flags(i))) then
+                    if (i < flag_count .and. len_trim(flags(i+1)) > 0 .and. &
+                        .not. is_flag_argument(flags(i+1))) then
+                        ! Combine flag and value: "flag=value"
+                        combined_flag = trim(flags(i)) // "=" // trim(flags(i+1))
+                        call process_single_flag(combined_flag, config, success, error_message)
+                        if (.not. success) return
+                        i = i + 2  ! Skip both flag and value
+                    else
+                        ! Flag without value - process as is
+                        call process_single_flag(flags(i), config, success, error_message)
+                        if (.not. success) return
+                        i = i + 1
+                    end if
+                else
+                    ! Regular flag (no value required) or already combined
+                    call process_single_flag(flags(i), config, success, error_message)
+                    if (.not. success) return
+                    i = i + 1
+                end if
+            else
+                i = i + 1
             end if
         end do
     end subroutine process_flag_arguments
@@ -219,6 +243,22 @@ contains
         case ("--diff-current")
             if (len_trim(value) > 0) then
                 config%diff_current_file = value
+            end if
+        case ("--auto-discovery")
+            config%auto_discovery = .true.
+        case ("--no-auto-discovery")
+            config%auto_discovery = .false.
+        case ("--auto-test")
+            config%auto_test_execution = .true.
+        case ("--no-auto-test")
+            config%auto_test_execution = .false.
+        case ("--test-timeout")
+            if (len_trim(value) > 0) then
+                call parse_integer_with_error(value, config%test_timeout_seconds, "test timeout", success, error_message)
+            end if
+        case ("--architecture-format")
+            if (len_trim(value) > 0) then
+                config%architecture_output_format = value
             end if
         case default
             ! Unknown flag - could add warning but for now continue
