@@ -47,7 +47,7 @@ program test_issue_434_error_consistency
     test_count = test_count + 1
     print *, "Test 2: Invalid output format"
     args(1) = "--format=invalid_format"
-    args(2) = "--source=/home/ert/code/fortcov/src"
+    args(2) = "--source=src"
     call parse_config(args(1:2), config, success, error_message)
     if (success) then
         call validate_config_with_context(config, error_ctx)
@@ -89,7 +89,7 @@ program test_issue_434_error_consistency
     test_count = test_count + 1
     print *, "Test 4: Invalid fail-under threshold"
     args(1) = "--fail-under=notanumber"
-    args(2) = "--source=/home/ert/code/fortcov/src"
+    args(2) = "--source=src"
     call parse_config(args(1:2), config, success, error_message)
     if (success) then
         print *, "  WARNING: Parser accepted non-numeric threshold"
