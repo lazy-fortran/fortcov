@@ -21,6 +21,8 @@ module file_ops_secure
     public :: safe_close_and_delete
     public :: safe_find_files
     public :: safe_mkdir
+    public :: safe_remove_file
+    public :: safe_move_file
     
 contains
 
@@ -396,6 +398,128 @@ contains
         integer, intent(out) :: pid
         pid = 1234  ! Simplified - in real implementation would get actual PID
     end subroutine get_process_id
+
+    ! Secure file removal without shell commands - SECURITY FIX for Issue #963
+    subroutine safe_remove_file(filename, error_ctx)
+        !! Securely remove a file using Fortran intrinsics instead of shell commands
+        !! This prevents shell injection vulnerabilities from execute_command_line calls
+        character(len=*), intent(in) :: filename
+        type(error_context_t), intent(out) :: error_ctx
+        
+        character(len=:), allocatable :: safe_filename
+        logical :: file_exists
+        integer :: unit, iostat, close_iostat
+        
+        call clear_error_context(error_ctx)
+        
+        ! Validate filename path security first
+        call validate_path_security(filename, safe_filename, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) return
+        
+        ! Check if file exists before attempting deletion
+        inquire(file=safe_filename, exist=file_exists)
+        if (.not. file_exists) then
+            ! File doesn't exist - this is not an error, just return success
+            return
+        end if
+        
+        ! Use Fortran intrinsic file deletion instead of execute_command_line
+        ! This is secure and prevents shell injection attacks
+        open(newunit=unit, file=safe_filename, status='old', iostat=iostat)
+        if (iostat /= 0) then
+            ! File might be locked or inaccessible
+            error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+            call safe_write_message(error_ctx, &
+                "Cannot open file for secure deletion: " // safe_filename)
+            call safe_write_suggestion(error_ctx, &
+                "Check file permissions and that file is not in use")
+            return
+        end if
+        
+        ! Secure deletion using Fortran intrinsic close with status='delete'
+        close(unit, status='delete', iostat=close_iostat)
+        if (close_iostat /= 0) then
+            error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+            call safe_write_message(error_ctx, &
+                "Failed to delete file securely: " // safe_filename)
+            call safe_write_suggestion(error_ctx, &
+                "File may be locked or system may deny deletion")
+        end if
+        
+    end subroutine safe_remove_file
+
+    ! Secure file move without shell commands - SECURITY FIX for Issue #963
+    subroutine safe_move_file(source_file, target_file, error_ctx)
+        !! Securely move a file using Fortran intrinsics instead of shell commands
+        !! This prevents shell injection vulnerabilities from execute_command_line calls
+        character(len=*), intent(in) :: source_file
+        character(len=*), intent(in) :: target_file
+        type(error_context_t), intent(out) :: error_ctx
+        
+        character(len=:), allocatable :: safe_source, safe_target
+        logical :: source_exists, target_exists
+        integer :: source_unit, target_unit, iostat
+        integer :: copy_iostat, close_iostat
+        character(len=1024) :: buffer
+        
+        call clear_error_context(error_ctx)
+        
+        ! Validate both file paths for security
+        call validate_path_security(source_file, safe_source, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) return
+        
+        call validate_path_security(target_file, safe_target, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) return
+        
+        ! Check source file exists
+        inquire(file=safe_source, exist=source_exists)
+        if (.not. source_exists) then
+            error_ctx%error_code = ERROR_MISSING_FILE
+            call safe_write_message(error_ctx, &
+                "Source file does not exist: " // safe_source)
+            return
+        end if
+        
+        ! Check if target already exists (optional warning, not error)
+        inquire(file=safe_target, exist=target_exists)
+        
+        ! Copy file content securely using Fortran I/O
+        open(newunit=source_unit, file=safe_source, status='old', &
+             action='read', iostat=iostat)
+        if (iostat /= 0) then
+            error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+            call safe_write_message(error_ctx, &
+                "Cannot open source file for reading: " // safe_source)
+            return
+        end if
+        
+        open(newunit=target_unit, file=safe_target, status='replace', &
+             action='write', iostat=iostat)
+        if (iostat /= 0) then
+            close(source_unit)
+            error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+            call safe_write_message(error_ctx, &
+                "Cannot create target file: " // safe_target)
+            return
+        end if
+        
+        ! Copy content line by line
+        do
+            read(source_unit, '(A)', iostat=copy_iostat) buffer
+            if (copy_iostat /= 0) exit
+            write(target_unit, '(A)') trim(buffer)
+        end do
+        
+        ! Close files
+        close(target_unit)
+        close(source_unit)
+        
+        ! Remove original file after successful copy
+        call safe_remove_file(safe_source, error_ctx)
+        ! Note: If removal fails, we still have successful copy
+        ! This matches 'mv' behavior where copy success is primary
+        
+    end subroutine safe_move_file
 
 
 end module file_ops_secure

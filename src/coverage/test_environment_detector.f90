@@ -3,6 +3,8 @@ module test_environment_detector
     !! 
     !! Extracted from coverage_test_executor.f90 for SRP compliance (Issue #718).
     !! Handles detection of test execution environments to prevent recursion.
+    use file_ops_secure, only: safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     private
     
@@ -68,10 +70,12 @@ contains
         !! Clean up recursion marker file
         logical :: file_exists
         
-        inquire(file='.fortcov_execution_marker', exist=file_exists)
-        if (file_exists) then
-            call execute_command_line('rm -f .fortcov_execution_marker')
-        end if
+        ! SECURITY FIX Issue #963: Use secure file removal instead of execute_command_line
+        block
+            type(error_context_t) :: error_ctx
+            call safe_remove_file('.fortcov_execution_marker', error_ctx)
+            ! Note: Ignore errors - marker file may not exist, which is fine
+        end block
         
     end subroutine cleanup_recursion_marker
     

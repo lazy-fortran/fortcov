@@ -10,6 +10,8 @@ module command_utils_core
     !! - Command building and execution
     !! - Unique identifier generation
     use iso_c_binding, only: c_int
+    use file_ops_secure, only: safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     private
     
@@ -178,8 +180,12 @@ contains
             close(unit)
         end if
         
-        ! Clean up temporary file
-        call execute_command_line("rm -f " // escape_shell_arg(trim(temp_file)))
+        ! SECURITY FIX Issue #963: Clean up temporary file using secure removal
+        block
+            type(error_context_t) :: error_ctx
+            call safe_remove_file(trim(temp_file), error_ctx)
+            ! Note: Ignore errors in cleanup - file might be already removed
+        end block
         
         ! Allocate final result
         if (file_count > 0) then

@@ -17,6 +17,7 @@ program main
   use coverage_workflows, only: launch_coverage_tui_mode
   use size_enforcement_core, only: enforce_size_limits_for_ci, &
                                    size_enforcement_config_t, ci_enforcement_result_t
+  use file_ops_secure, only: safe_remove_file
   implicit none
   
   type(config_t) :: config
@@ -24,12 +25,15 @@ program main
   character(len=:), allocatable :: error_message
   character(len=:), allocatable :: enhancement_error
   type(error_context_t) :: error_ctx
+  type(error_context_t) :: marker_error_ctx
   logical :: success, enhancement_success
   integer :: exit_code, argc, i, arg_len, current_len
   
   ! CRITICAL: Clean up any stale fork bomb prevention markers from previous runs
   ! This ensures that crashed or killed previous executions don't block current runs
-  call execute_command_line('rm -f .fortcov_execution_marker')
+  ! SECURITY FIX Issue #963: Use secure file removal instead of execute_command_line
+  call safe_remove_file('.fortcov_execution_marker', marker_error_ctx)
+  ! Note: Ignore errors here - marker file may not exist, which is fine
   
   ! Get command line arguments (excluding argv(0) which contains executable path)
   ! command_argument_count() returns number of user arguments (not including argv(0))

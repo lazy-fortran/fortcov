@@ -11,7 +11,7 @@ module gcov_executor
                                   safe_write_message, safe_write_suggestion, safe_write_context
     use file_utils_core, only: file_exists
     use secure_executor, only: safe_execute_gcov
-    use file_ops_secure, only: safe_mkdir
+    use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_move_file
     use shell_utils_core, only: escape_shell_argument
     implicit none
     private
@@ -159,9 +159,12 @@ contains
         if (gcov_file_exists) then
             output_gcov_file = trim(this%gcov_output_dir) // "/" // &
                               trim(source_basename) // ".f90.gcov"
-            call execute_command_line("mv " // escape_shell_argument(gcov_file) // &
-                                     " " // escape_shell_argument(output_gcov_file), &
-                                     exitstat=stat)
+            ! SECURITY FIX Issue #963: Use secure file move instead of execute_command_line
+            block
+                type(error_context_t) :: move_error_ctx
+                call safe_move_file(gcov_file, output_gcov_file, move_error_ctx)
+                stat = merge(0, 1, move_error_ctx%error_code == ERROR_SUCCESS)
+            end block
             line_count = 1
             if (stat == 0) then
                 temp_files(1) = output_gcov_file
@@ -262,10 +265,13 @@ contains
                 open(newunit=unit, file=gcov_files(i), status='old', iostat=stat)
                 if (stat == 0) then
                     close(unit, status='delete', iostat=close_stat)
-                    ! If deletion failed, try alternative method
+                    ! SECURITY FIX Issue #963: If deletion failed, use secure removal
                     if (close_stat /= 0) then
-                        call execute_command_line("rm -f " // trim(gcov_files(i)), &
-                                                 exitstat=stat)
+                        block
+                            type(error_context_t) :: remove_error_ctx
+                            call safe_remove_file(trim(gcov_files(i)), remove_error_ctx)
+                            ! Note: Ignore errors in cleanup - file might be locked
+                        end block
                     end if
                 end if
             end if
@@ -289,10 +295,13 @@ contains
         open(newunit=unit, file=temp_filename, status='old', iostat=stat)
         if (stat == 0) then
             close(unit, status='delete', iostat=close_stat)
-            ! If deletion failed, try alternative method
+            ! SECURITY FIX Issue #963: If deletion failed, use secure removal
             if (close_stat /= 0) then
-                call execute_command_line("rm -f " // trim(temp_filename), &
-                                         exitstat=stat)
+                block
+                    type(error_context_t) :: remove_error_ctx
+                    call safe_remove_file(trim(temp_filename), remove_error_ctx)
+                    ! Note: Ignore errors in cleanup - file might be locked
+                end block
             end if
         end if
     end subroutine cleanup_temp_file
