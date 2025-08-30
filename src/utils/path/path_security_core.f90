@@ -46,7 +46,8 @@ contains
         ! Length validation
         if (path_len == 0) then
             error_ctx%error_code = ERROR_INVALID_PATH
-            call safe_write_message(error_ctx, "Empty path provided")
+            call safe_write_message(error_ctx, &
+                "Empty path provided. Please specify a valid output file path using --output")
             return
         end if
         

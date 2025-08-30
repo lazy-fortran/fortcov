@@ -12,7 +12,8 @@ sudo apt install gfortran  # or: brew install gcc (macOS)
 # Install FortCov
 git clone https://github.com/lazy-fortran/fortcov.git
 cd fortcov && fpm build --profile release
-sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
+# Find and copy the fortcov executable (handles multiple build directories)
+sudo cp $(find build -name fortcov -type f -path "*/app/*" | head -1) /usr/local/bin/
 
 # Manual coverage generation
 cd your-fortran-project

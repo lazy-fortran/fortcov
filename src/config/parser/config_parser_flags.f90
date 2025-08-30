@@ -43,7 +43,9 @@ contains
                     i = i + 2
                 else
                     success = .false.
-                    error_message = "Missing value for flag: " // trim(flag)
+                    error_message = "Missing value for flag: " // trim(flag) // &
+                        ". This flag requires an argument. " // &
+                        "Example: " // trim(flag) // " <value>"
                     return
                 end if
             else
@@ -88,7 +90,8 @@ contains
         if (len_trim(error_message) == 0) then
             ! Unknown flag
             success = .false.
-            error_message = "Unknown flag: " // trim(flag)
+            error_message = "Unknown flag: " // trim(flag) // &
+                ". Run 'fortcov --help' to see available options."
         end if
 
     end subroutine process_single_flag

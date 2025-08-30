@@ -203,7 +203,11 @@ contains
         call validate_path_security(output_path, safe_path, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             is_valid = .false.
-            error_message = "Invalid output path: " // trim(error_ctx%message)
+            if (len_trim(output_path) == 0) then
+                error_message = "Output path cannot be empty. Use --output <filename> to specify the output file."
+            else
+                error_message = "Invalid output path '" // trim(output_path) // "': " // trim(error_ctx%message)
+            end if
         end if
 
     end subroutine validate_output_path

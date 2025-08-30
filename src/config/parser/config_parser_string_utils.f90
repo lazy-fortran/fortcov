@@ -53,7 +53,8 @@ contains
 
         if (.not. success) then
             value = 0
-            error_message = "Invalid " // trim(value_name) // ": '" // trim(str) // "'"
+            error_message = "Invalid " // trim(value_name) // ": '" // trim(str) // &
+                "'. Expected an integer value."
         else
             error_message = ""
         end if

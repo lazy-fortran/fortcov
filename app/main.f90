@@ -49,8 +49,8 @@ program main
     allocate(character(len=0) :: args(0))
   end if
   
-  ! Ensure error_message is allocated
-  allocate(character(len=0) :: error_message)
+  ! Ensure error_message is allocated with sufficient length
+  allocate(character(len=512) :: error_message)
   
   ! Parse configuration
   call parse_config(args, config, success, error_message)
