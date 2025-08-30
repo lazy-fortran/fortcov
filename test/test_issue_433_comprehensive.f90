@@ -23,7 +23,7 @@ program test_issue_433_comprehensive
     ! Test 1: Valid source path
     test_count = test_count + 1
     print *, "Test 1: Valid source path"
-    args(1) = "--source=/home/ert/code/fortcov/src"
+    args(1) = "--source=src"
     args(2) = "--output=coverage.md"
     call parse_config(args(1:2), config, success, error_message)
     if (.not. success) then
@@ -109,7 +109,7 @@ program test_issue_433_comprehensive
     ! Test 5: Invalid output format
     test_count = test_count + 1
     print *, "Test 5: Invalid output format"
-    args(1) = "--source=/home/ert/code/fortcov/src"
+    args(1) = "--source=src"
     args(2) = "--format=invalid_format"
     args(3) = "--output=coverage.txt"
     call parse_config(args(1:3), config, success, error_message)
@@ -135,7 +135,7 @@ program test_issue_433_comprehensive
     ! Test 6: Invalid threshold value
     test_count = test_count + 1
     print *, "Test 6: Invalid threshold value"
-    args(1) = "--source=/home/ert/code/fortcov/src"
+    args(1) = "--source=src"
     args(2) = "--threshold=150"
     args(3) = "--output=coverage.md"
     call parse_config(args(1:3), config, success, error_message)
@@ -181,11 +181,11 @@ program test_issue_433_comprehensive
     print *, "========================================="
     print '(A,I0,A,I0)', " Tests run: ", test_count, ", Failed: ", test_failures
     if (test_failures == 0) then
-        print *, "✅ All tests passed! Issue #433 is resolved."
+        print *, "All tests passed! Issue #433 is resolved."
         print *, "Configuration validation now provides specific error messages."
         call exit(0)
     else
-        print *, "❌ Some tests failed."
+        print *, "Some tests failed."
         call exit(1)
     end if
     
