@@ -41,7 +41,7 @@ contains
               "--gcov-executable", "--gcov-args", "--diff-baseline", "--diff-current")
             requires_value = .true.
         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
-              "--verbose", "-v", "--validate", "--diff", "--lcov", &
+              "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
               "--auto-test", "--no-auto-test", "--auto-discovery", &
               "--no-auto-discovery", "--zero-config", "--tui")
             requires_value = .false.
@@ -278,6 +278,10 @@ contains
             if (len_trim(value) > 0) then
                 config%architecture_output_format = value
             end if
+        case ("--validate")
+            config%validate_config_only = .true.
+        case ("--validate-architecture")
+            config%validate_architecture = .true.
         case default
             ! Unknown flag - reject with error message
             success = .false.
