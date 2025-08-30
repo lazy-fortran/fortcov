@@ -55,41 +55,16 @@ contains
             return
         end if
         
-        ! Apply filtering if exclude patterns are specified
-        if (allocated(config%exclude_patterns) .and. &
-            size(config%exclude_patterns) > 0) then
-            
-            filtered_count = 0
-            do i = 1, size(coverage_files)
-                include_file = should_include_file(coverage_files(i), config)
-                if (include_file .and. filtered_count < MAX_ARRAY_SIZE) then
-                    filtered_count = filtered_count + 1
-                    temp_files(filtered_count) = coverage_files(i)
-                end if
-            end do
-            
-            ! Allocate and copy filtered results
-            allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
-                filtered_files(filtered_count), stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
-                write(*, '(A)') "Error: Memory allocation failed for filtered_files: " // &
-                    trim(errmsg)
-                return
-            end if
-            if (filtered_count > 0) then
-                filtered_files(1:filtered_count) = temp_files(1:filtered_count)
-            end if
-        else
-            ! No filtering needed - copy all files
-            allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
-                filtered_files(size(coverage_files)), stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
-                write(*, '(A)') "Error: Memory allocation failed for filtered_files: " // &
-                    trim(errmsg)
-                return
-            end if
-            filtered_files = coverage_files
+        ! No filtering of coverage files - exclude patterns apply to source files within the data
+        ! Issue #884 fix: Don't filter coverage files, only filter source files in reports
+        allocate(character(len=MAX_FILE_PATH_LENGTH) :: &
+            filtered_files(size(coverage_files)), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Memory allocation failed for filtered_files: " // &
+                trim(errmsg)
+            return
         end if
+        filtered_files = coverage_files
         
     end subroutine find_and_filter_coverage_files
 
@@ -203,27 +178,5 @@ contains
         end if
         
     end subroutine parse_coverage_files
-
-    function should_include_file(filename, config) result(include_file)
-        !! Check if file should be included based on exclude patterns
-        use string_utils, only: matches_pattern
-        character(len=*), intent(in) :: filename
-        type(config_t), intent(in) :: config
-        logical :: include_file
-        
-        integer :: i
-        
-        include_file = .true.
-        
-        if (.not. allocated(config%exclude_patterns)) return
-        
-        do i = 1, size(config%exclude_patterns)
-            if (matches_pattern(filename, config%exclude_patterns(i))) then
-                include_file = .false.
-                return
-            end if
-        end do
-        
-    end function should_include_file
 
 end module coverage_processor_file

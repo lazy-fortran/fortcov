@@ -106,7 +106,7 @@ contains
         
         character(len=1024), allocatable :: coverage_files(:)
         character(len=1024), allocatable :: filtered_files(:)
-        type(coverage_data_t) :: merged_coverage
+        type(coverage_data_t) :: merged_coverage, filtered_coverage
         type(line_coverage_stats_t) :: line_stats
         logical :: parse_error, report_error
         integer :: auto_test_exit_code
@@ -125,6 +125,8 @@ contains
         ! Find and filter coverage files
         call find_and_filter_coverage_files(config, coverage_files, filtered_files)
         
+        ! Debug output removed after fixing issues
+        
         if (.not. allocated(filtered_files) .or. size(filtered_files) == 0) then
             exit_code = handle_missing_coverage_files(config)
             return
@@ -137,11 +139,16 @@ contains
             return
         end if
         
-        ! Calculate and display statistics
-        call calculate_and_display_statistics(merged_coverage, config, line_stats)
+        ! Debug output removed after fixing issues
         
-        ! Generate reports
-        call generate_coverage_reports(merged_coverage, line_stats, config, report_error)
+        ! Apply source and exclude filtering to coverage data
+        call apply_coverage_filtering(merged_coverage, config, filtered_coverage)
+        
+        ! Calculate and display statistics on filtered data
+        call calculate_and_display_statistics(filtered_coverage, config, line_stats)
+        
+        ! Generate reports with filtered data
+        call generate_coverage_reports(filtered_coverage, line_stats, config, report_error)
         if (report_error) then
             exit_code = EXIT_FAILURE
             return
@@ -246,5 +253,58 @@ contains
         exit_code = apply_threshold_validation(line_stats, config)
         
     end function perform_imported_json_analysis
+
+    subroutine apply_coverage_filtering(input_data, config, output_data)
+        !! Apply source and exclude pattern filtering to coverage data
+        use coverage_data_filter, only: apply_filter_criteria
+        use report_config_core, only: filter_criteria_t
+        type(coverage_data_t), intent(in) :: input_data
+        type(config_t), intent(in) :: config
+        type(coverage_data_t), intent(out) :: output_data
+        
+        type(filter_criteria_t) :: criteria
+        logical :: filter_success
+        character(len=:), allocatable :: error_message
+        integer :: i
+        
+        ! Set up filter criteria from config
+        call criteria%init()
+        
+        ! Set up exclude patterns from config
+        if (allocated(config%exclude_patterns)) then
+            criteria%exclude_patterns = config%exclude_patterns
+        end if
+        
+        ! Set up include patterns from source paths
+        ! Convert source paths to wildcard patterns for matching
+        if (allocated(config%source_paths)) then
+            if (allocated(criteria%include_patterns)) deallocate(criteria%include_patterns)
+            allocate(character(len=256) :: criteria%include_patterns(size(config%source_paths)))
+            do i = 1, size(config%source_paths)
+                ! Add wildcard to match files under the directory
+                if (config%source_paths(i)(len_trim(config%source_paths(i)):) == "/") then
+                    criteria%include_patterns(i) = trim(config%source_paths(i)) // "*"
+                else
+                    criteria%include_patterns(i) = trim(config%source_paths(i)) // "/*"
+                end if
+            end do
+        end if
+        
+        ! Apply the filter
+        call apply_filter_criteria(input_data, criteria, output_data, &
+                                 filter_success, error_message)
+        
+        if (.not. filter_success) then
+            if (.not. config%quiet) then
+                write(*,'(A)') "Warning: Failed to apply coverage filters: " // error_message
+                write(*,'(A)') "Using unfiltered data"
+            end if
+            ! Use unfiltered data if filtering fails
+            output_data = input_data
+        else
+            ! Filtering completed successfully
+        end if
+        
+    end subroutine apply_coverage_filtering
 
 end module coverage_analysis_core
