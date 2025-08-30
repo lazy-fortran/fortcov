@@ -19,10 +19,10 @@ module config_parser_command_line
     use config_classifier_args, only: classify_command_arguments
     use config_parser_flags, only: process_flag_arguments
     use config_parser_files, only: parse_config_file
-    use config_zero_config_detector
-    use config_special_flags
+    use config_parser_consolidated, only: detect_zero_config_mode
+    use config_parser_consolidated, only: process_special_flags
     use config_positional_args
-    use config_fork_bomb_prevention
+    use config_parser_consolidated, only: prevent_fork_bomb_with_manual_files
     implicit none
     
     ! Re-export public procedures for backward compatibility
@@ -59,7 +59,7 @@ contains
         end if
 
         ! Check for zero-configuration mode
-        is_zero_config = should_use_zero_config(args)
+        is_zero_config = detect_zero_config_mode(args)
 
         if (is_zero_config) then
             ! Process CLI flags FIRST, then apply zero-config defaults for unset values

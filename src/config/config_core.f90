@@ -18,7 +18,10 @@ module config_core
 
     use config_types
     use config_defaults_core
-    use config_validation
+    use config_validation_core
+    use config_validators
+    use config_validators_format
+    use input_validator_source
     use config_help_core
     use config_parser
     use error_handling_core
