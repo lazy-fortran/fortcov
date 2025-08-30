@@ -27,8 +27,11 @@ contains
                            size(config%source_paths) > 0
         has_coverage_files = allocated(config%coverage_files) .and. &
                              size(config%coverage_files) > 0
-        has_import_file = len_trim(config%import_file) > 0
+        has_import_file = allocated(config%import_file) .and. &
+                          len_trim(config%import_file) > 0
         has_diff_files = config%enable_diff .and. &
+                         allocated(config%diff_baseline_file) .and. &
+                         allocated(config%diff_current_file) .and. &
                          len_trim(config%diff_baseline_file) > 0 .and. &
                          len_trim(config%diff_current_file) > 0
 

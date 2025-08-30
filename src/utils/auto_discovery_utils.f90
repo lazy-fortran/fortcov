@@ -160,7 +160,8 @@ contains
         type(config_t), intent(in) :: config
         logical, intent(out) :: manual_files_specified
 
-        manual_files_specified = (len_trim(config%import_file) > 0) .or. &
+        manual_files_specified = (allocated(config%import_file) .and. &
+                                   len_trim(config%import_file) > 0) .or. &
                                (allocated(config%source_paths) .and. &
                                 size(config%source_paths) > 0)
 
