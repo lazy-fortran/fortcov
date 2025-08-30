@@ -23,7 +23,8 @@ contains
         character(len=:), allocatable :: class_section, lines_section
         type(coverage_file_t), allocatable :: files(:)
         integer :: class_start, class_end, line_pos
-        integer :: file_count
+        integer :: file_count, stat
+        character(len=256) :: errmsg
         
         success = .false.
         file_count = 0
@@ -36,7 +37,11 @@ contains
             return
         end if
         
-        allocate(files(file_count))
+        allocate(files(file_count), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            ! Handle allocation failure gracefully
+            return
+        end if
         
         ! Parse each class element (simplified implementation)
         call parse_classes_from_xml(xml_content, files, success)
@@ -182,21 +187,24 @@ contains
         type(coverage_line_t), allocatable, intent(out) :: lines(:)
         logical, intent(out) :: success
         
-        integer :: line_count, i, pos, line_start
+        integer :: line_count, i, pos, line_start, stat
         integer :: line_number, hits
         logical :: line_success
+        character(len=256) :: errmsg
         
         success = .false.
         
         ! Count lines
         line_count = count_xml_elements(class_xml, '<line number="')
         if (line_count == 0) then
-            allocate(lines(0))
+            allocate(lines(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) return
             success = .true.
             return
         end if
         
-        allocate(lines(line_count))
+        allocate(lines(line_count), stat=stat, errmsg=errmsg)
+        if (stat /= 0) return
         pos = 1
         
         ! Parse each line element

@@ -52,6 +52,8 @@ contains
         
         logical :: component_success
         character(len=:), allocatable :: component_error
+        integer :: stat
+        character(len=256) :: errmsg
         
         success = .false.
         error_msg = ""
@@ -60,14 +62,26 @@ contains
         ! Initialize configuration
         call this%config%init()
         
-        ! Initialize foundation components
-        allocate(this%transformer)
+        ! Initialize foundation components with proper error handling
+        allocate(this%transformer, stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate transformer: " // trim(errmsg)
+            return
+        end if
         call this%transformer%init()
         
-        allocate(this%theme_manager)
+        allocate(this%theme_manager, stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate theme_manager: " // trim(errmsg)
+            return
+        end if
         call this%theme_manager%init()
         
-        allocate(this%highlighter)
+        allocate(this%highlighter, stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate highlighter: " // trim(errmsg)
+            return
+        end if
         call this%highlighter%init()
         
         ! Load Fortran rules for syntax highlighting
@@ -78,11 +92,19 @@ contains
             return
         end if
         
-        ! Initialize specialized components
-        allocate(this%generator)
+        ! Initialize specialized components with proper error handling
+        allocate(this%generator, stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate generator: " // trim(errmsg)
+            return
+        end if
         call this%generator%init()
         
-        allocate(this%formatter)
+        allocate(this%formatter, stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate formatter: " // trim(errmsg)
+            return
+        end if
         call this%formatter%init()
         
         ! Initialize coverage data
