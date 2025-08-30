@@ -144,7 +144,13 @@ contains
         ! Process flag arguments
         if (flag_count > 0) then
             call process_flag_arguments(flags, flag_count, config, success, error_message)
-            if (.not. success) return
+            if (.not. success) then
+                ! Ensure error message is preserved
+                if (len_trim(error_message) == 0) then
+                    error_message = "Failed to process command-line flags"
+                end if
+                return
+            end if
         end if
 
         ! Process positional arguments

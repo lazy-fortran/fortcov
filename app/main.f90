@@ -56,7 +56,11 @@ program main
   call parse_config(args, config, success, error_message)
   
   if (.not. success) then
-    print *, "Error: " // trim(error_message)
+    if (len_trim(error_message) > 0) then
+      print *, "Error: " // trim(error_message)
+    else
+      print *, "Error: Invalid configuration"
+    end if
     print *, ""
     print *, "Quick troubleshooting:"
     print *, "   * Run 'fortcov --help' for usage examples"

@@ -76,11 +76,9 @@ contains
             return
         end if
 
-        ! Validate output path if specified
-        if (len_trim(config%output_path) > 0) then
-            call validate_output_path(config%output_path, is_valid, error_message)
-            if (.not. is_valid) return
-        end if
+        ! Validate output path (including empty path check)
+        call validate_output_path(config%output_path, is_valid, error_message)
+        if (.not. is_valid) return
 
     end subroutine validate_output_settings
 
