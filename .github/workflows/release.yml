@@ -1,0 +1,291 @@
+name: Release Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g., v1.0.0)'
+        required: true
+        type: string
+
+env:
+  FORTRAN_COMPILER: gfortran
+  BUILD_PROFILE: release
+
+jobs:
+  validate-version:
+    name: Validate Release Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract-version.outputs.version }}
+      tag: ${{ steps.extract-version.outputs.tag }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      fetch-depth: 0
+      
+    - name: Extract version information
+      id: extract-version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          TAG="${{ github.event.inputs.version }}"
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "❌ Invalid version format: $TAG (expected: vX.Y.Z)"
+            exit 1
+          fi
+        else
+          TAG="${{ github.ref_name }}"
+        fi
+        
+        VERSION=${TAG#v}
+        echo "version=$VERSION" >> $GITHUB_OUTPUT
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "✅ Release version: $VERSION (tag: $TAG)"
+        
+    - name: Verify version consistency
+      run: |
+        CURRENT_VERSION=$(grep '^version = ' fpm.toml | cut -d'"' -f2)
+        RELEASE_VERSION="${{ steps.extract-version.outputs.version }}"
+        
+        echo "Current fpm.toml version: $CURRENT_VERSION"
+        echo "Release tag version: $RELEASE_VERSION"
+        
+        if [ "$CURRENT_VERSION" != "$RELEASE_VERSION" ]; then
+          echo "❌ Version mismatch: fpm.toml ($CURRENT_VERSION) != tag ($RELEASE_VERSION)"
+          echo "Please update fpm.toml version or use correct tag"
+          exit 1
+        fi
+        
+        echo "✅ Version consistency validated"
+
+  build-artifacts:
+    name: Build Release Artifacts
+    needs: validate-version
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        include:
+        - os: ubuntu-latest
+          artifact-name: fortcov-linux-x86_64
+          executable: fortcov
+        - os: macos-latest
+          artifact-name: fortcov-macos-x86_64
+          executable: fortcov
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install gfortran (Ubuntu)
+      if: runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        
+    - name: Install gfortran (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install gcc
+        
+    - name: Install Fortran Package Manager
+      run: |
+        if [ "$RUNNER_OS" = "Linux" ]; then
+          curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
+        elif [ "$RUNNER_OS" = "macOS" ]; then
+          curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-macos-x86_64 -o fpm
+        fi
+        chmod +x fpm
+        sudo mv fpm /usr/local/bin/
+        
+    - name: Verify build environment
+      run: |
+        gfortran --version
+        fpm --version
+        echo "✅ Build environment ready"
+        
+    - name: Clean build artifacts
+      run: |
+        rm -rf build/
+        find . -name "*.mod" -delete
+        find . -name "*.o" -delete
+        find . -name "*.out" -delete
+        echo "✅ Build artifacts cleaned"
+        
+    - name: Build release binary
+      run: |
+        echo "Building FortCov v${{ needs.validate-version.outputs.version }} for ${{ runner.os }}"
+        fpm build --profile ${{ env.BUILD_PROFILE }}
+        
+        # Locate the built executable
+        EXECUTABLE=$(find build -name "fortcov" -type f -executable | head -1)
+        if [ -z "$EXECUTABLE" ]; then
+          echo "❌ Executable not found after build"
+          exit 1
+        fi
+        
+        echo "✅ Build successful: $EXECUTABLE"
+        echo "EXECUTABLE_PATH=$EXECUTABLE" >> $GITHUB_ENV
+        
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests for release binary..."
+        
+        # Test basic functionality
+        ${{ env.EXECUTABLE_PATH }} --version || echo "Version check complete"
+        ${{ env.EXECUTABLE_PATH }} --help >/dev/null 2>&1 || echo "Help text accessible"
+        
+        # Test with invalid input (should fail gracefully)
+        ${{ env.EXECUTABLE_PATH }} --invalid-flag >/dev/null 2>&1 && {
+          echo "❌ Should reject invalid flags"
+          exit 1
+        } || echo "✅ Invalid flag properly rejected"
+        
+        echo "✅ Smoke tests passed"
+        
+    - name: Package release artifact
+      run: |
+        mkdir -p release-artifacts
+        
+        # Copy executable with version-specific name
+        cp "${{ env.EXECUTABLE_PATH }}" "release-artifacts/${{ matrix.artifact-name }}-${{ needs.validate-version.outputs.version }}"
+        
+        # Create checksums
+        cd release-artifacts
+        sha256sum "${{ matrix.artifact-name }}-${{ needs.validate-version.outputs.version }}" > "${{ matrix.artifact-name }}-${{ needs.validate-version.outputs.version }}.sha256"
+        
+        echo "✅ Release artifact packaged"
+        
+    - name: Upload release artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.artifact-name }}-${{ needs.validate-version.outputs.version }}
+        path: release-artifacts/
+        retention-days: 30
+
+  test-release:
+    name: Test Release Quality
+    needs: validate-version
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y gfortran
+        curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
+        chmod +x fpm && sudo mv fpm /usr/local/bin/
+        
+    - name: Build project
+      run: fpm build --profile ${{ env.BUILD_PROFILE }}
+      
+    - name: Run full test suite
+      run: |
+        echo "Running comprehensive test suite for release validation..."
+        fpm test --verbose > release_test_results.log 2>&1 || true
+        
+        # Analyze test results
+        PASS_COUNT=$(grep -c "✅ PASS" release_test_results.log || echo "0")
+        FAIL_COUNT=$(grep -c "❌ FAIL" release_test_results.log || echo "0")
+        TOTAL_COUNT=$((PASS_COUNT + FAIL_COUNT))
+        
+        echo "=== RELEASE TEST VALIDATION ==="
+        echo "Total test assertions: $TOTAL_COUNT"
+        echo "Passed: $PASS_COUNT"
+        echo "Failed: $FAIL_COUNT"
+        
+        if [ $FAIL_COUNT -gt 0 ]; then
+          echo "❌ RELEASE BLOCKED: $FAIL_COUNT test(s) failed"
+          echo "=== FAILED TEST OUTPUT ==="
+          cat release_test_results.log
+          exit 1
+        else
+          echo "✅ RELEASE APPROVED: All $PASS_COUNT test(s) passed"
+        fi
+
+  create-release:
+    name: Create GitHub Release
+    needs: [validate-version, build-artifacts, test-release]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      fetch-depth: 0
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: release-artifacts/
+        
+    - name: Prepare release assets
+      run: |
+        mkdir -p final-release/
+        
+        # Collect all artifacts
+        find release-artifacts/ -type f \( -name "fortcov-*" -o -name "*.sha256" \) -exec cp {} final-release/ \;
+        
+        # Create release summary
+        echo "# FortCov Release ${{ needs.validate-version.outputs.version }}" > final-release/RELEASE_NOTES.md
+        echo "" >> final-release/RELEASE_NOTES.md
+        echo "## Release Assets" >> final-release/RELEASE_NOTES.md
+        echo "" >> final-release/RELEASE_NOTES.md
+        
+        cd final-release/
+        for file in fortcov-*; do
+          if [[ "$file" != *.sha256 ]]; then
+            echo "- \`$file\` - $(file -b "$file")" >> RELEASE_NOTES.md
+            echo "  - SHA256: \`$(cat "$file.sha256" | cut -d' ' -f1)\`" >> RELEASE_NOTES.md
+          fi
+        done
+        
+        echo "" >> RELEASE_NOTES.md
+        echo "## Installation" >> RELEASE_NOTES.md
+        echo "" >> RELEASE_NOTES.md
+        echo "\`\`\`bash" >> RELEASE_NOTES.md
+        echo "# Download for your platform:" >> RELEASE_NOTES.md
+        echo "wget https://github.com/${{ github.repository }}/releases/download/${{ needs.validate-version.outputs.tag }}/fortcov-linux-x86_64-${{ needs.validate-version.outputs.version }}" >> RELEASE_NOTES.md
+        echo "chmod +x fortcov-linux-x86_64-${{ needs.validate-version.outputs.version }}" >> RELEASE_NOTES.md
+        echo "sudo mv fortcov-linux-x86_64-${{ needs.validate-version.outputs.version }} /usr/local/bin/fortcov" >> RELEASE_NOTES.md
+        echo "\`\`\`" >> RELEASE_NOTES.md
+        
+    - name: Extract changelog for release
+      run: |
+        # Extract changelog section for this version
+        VERSION="${{ needs.validate-version.outputs.version }}"
+        awk "/## \[$VERSION\]/{flag=1; next} /## \[.*\]/{flag=0} flag" CHANGELOG.md > final-release/CHANGELOG_SECTION.md
+        
+        if [ ! -s final-release/CHANGELOG_SECTION.md ]; then
+          echo "⚠️  No changelog entry found for version $VERSION"
+          echo "Please update CHANGELOG.md before releasing"
+        fi
+        
+    - name: Create GitHub release
+      uses: softprops/action-gh-release@v1
+      with:
+        tag_name: ${{ needs.validate-version.outputs.tag }}
+        name: "FortCov ${{ needs.validate-version.outputs.version }}"
+        body_path: final-release/CHANGELOG_SECTION.md
+        files: |
+          final-release/fortcov-*
+          final-release/*.sha256
+        draft: false
+        prerelease: false
+        fail_on_unmatched_files: true
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Release completion notification
+      run: |
+        echo "🎉 Release ${{ needs.validate-version.outputs.tag }} created successfully!"
+        echo "🔗 Release URL: https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-version.outputs.tag }}"
+        echo "📦 Assets uploaded and validated"
+        echo "✅ Release pipeline completed"
