@@ -201,9 +201,10 @@ contains
         ! Flags that require values
         select case (trim(flag))
         case ("--source", "-s", "--exclude", "--include", "--output", "-o", &
-              "--format", "-f", "--minimum", "-m", "--threshold", "-t", &
+              "--format", "-f", "--minimum", "-m", "--threshold", &
               "--fail-under", "--diff-threshold", "--import", "--config", &
-              "--test-timeout")
+              "--test-timeout", "--threads", "-t", "--architecture-format", &
+              "--gcov-executable", "--gcov-args", "--diff-baseline", "--diff-current")
             requires_value = .true.
         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
               "--verbose", "-v", "--validate", "--diff", "--lcov", &
@@ -224,8 +225,10 @@ contains
             long_flag = "--output"
         case ("-f")
             long_flag = "--format"
-        case ("-m", "-t")
+        case ("-m")
             long_flag = "--minimum"
+        case ("-t")
+            long_flag = "--threads"
         case ("-h")
             long_flag = "--help"
         case ("-V")

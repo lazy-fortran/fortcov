@@ -176,12 +176,22 @@ contains
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
         
-        character(len=:), allocatable :: flag, value
+        character(len=:), allocatable :: flag, value, normalized_flag
         
         flag = arg(1:equals_pos-1)
         value = arg(equals_pos+1:)
         
-        call add_flag_to_array(flag, flags, flag_count, success, error_message)
+        ! Normalize short flags to long form (e.g., -t -> --threads)
+        normalized_flag = get_long_form_option(flag)
+        
+        ! Validate that this flag should have a value
+        if (.not. flag_requires_value(normalized_flag)) then
+            success = .false.
+            error_message = "Flag " // trim(normalized_flag) // " does not accept values"
+            return
+        end if
+        
+        call add_flag_to_array(normalized_flag, flags, flag_count, success, error_message)
         if (.not. success) return
         
         call add_flag_to_array(value, flags, flag_count, success, error_message)
