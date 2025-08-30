@@ -27,6 +27,10 @@ _build/
 mybuild/
 bin/
 
+# Fortran Package Manager (FPM) build directories
+.fpm/
+fpm_scratch_*/
+
 # Coverage files (never commit binary coverage data)
 *.gcno
 *.gcda
