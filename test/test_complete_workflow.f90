@@ -150,8 +150,15 @@ contains
     end subroutine create_mock_complete_project
 
     subroutine create_mock_gcda_files()
-        call execute_command_line('mkdir -p test_temp_dir/build/test')
-        call execute_command_line('touch test_temp_dir/build/test/test.gcda')
+        ! Create gcda files in current directory where auto_process_gcov_files looks
+        call execute_command_line('mkdir -p test_build')
+        call execute_command_line('touch test_build/test.gcda')
+        call execute_command_line('touch test_build/test.gcno')
+        ! Create a simple source file that gcov can reference
+        call execute_command_line('echo "program test" > test_build/test.f90')
+        call execute_command_line('echo "end program test" >> test_build/test.f90')
+        ! Create a mock gcov executable for testing
+        call create_mock_gcov_executable()
     end subroutine create_mock_gcda_files
 
     subroutine create_mock_failing_tests()
@@ -176,7 +183,8 @@ contains
     end subroutine cleanup_mock_complete_project
 
     subroutine cleanup_mock_gcov_files()
-        call execute_command_line('rm -rf test_temp_dir/build')
+        call execute_command_line('rm -rf test_build')
+        call cleanup_mock_gcov_executable()
     end subroutine cleanup_mock_gcov_files
 
     subroutine cleanup_mock_failing_tests()
@@ -212,12 +220,57 @@ contains
     subroutine initialize_default_config(config)
         !! Initialize config with default values
         type(config_t), intent(out) :: config
+        character(len=512) :: abs_path
+        integer :: iostat
         
         config%auto_discovery = .false.
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 30
         config%verbose = .false.
-        config%gcov_executable = 'gcov'
+        
+        ! Use mock gcov if it exists, otherwise real gcov
+        call execute_command_line('if [ -f test_build/mock_gcov ]; then ' // &
+                                 'realpath test_build/mock_gcov > test_build/mock_path.txt; ' // &
+                                 'else echo "gcov" > test_build/mock_path.txt; fi')
+        open(unit=10, file='test_build/mock_path.txt', status='old', iostat=iostat)
+        if (iostat == 0) then
+            read(10, '(A)') abs_path
+            close(10)
+            config%gcov_executable = trim(abs_path)
+            call execute_command_line('rm -f test_build/mock_path.txt')
+        else
+            config%gcov_executable = 'gcov'
+        end if
     end subroutine initialize_default_config
+
+    subroutine create_mock_gcov_executable()
+        !! Create a mock gcov executable that generates dummy .gcov files
+        call execute_command_line('mkdir -p test_build')
+        call execute_command_line('cat > test_build/mock_gcov << "MOCKGCOV"' // char(10) // &
+                                  '#!/bin/bash' // char(10) // &
+                                  '# Mock gcov for testing' // char(10) // &
+                                  'for arg in "$@"; do' // char(10) // &
+                                  '  if [[ "$arg" == *.gcda ]]; then' // char(10) // &
+                                  '    base=$(basename "$arg" .gcda)' // char(10) // &
+                                  '    echo "        -:    0:Source:$base.f90" > "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        -:    0:Graph:$base.gcno" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        -:    0:Data:$base.gcda" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        -:    0:Runs:1" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        -:    1:program test" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        1:    2:    implicit none" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        1:    3:    print *, \"Test\"" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "        -:    4:end program test" >> "$base.f90.gcov"' // char(10) // &
+                                  '    echo "Lines executed:66.67% of 3"' // char(10) // &
+                                  '  fi' // char(10) // &
+                                  'done' // char(10) // &
+                                  'exit 0' // char(10) // &
+                                  'MOCKGCOV')
+        call execute_command_line('chmod +x test_build/mock_gcov')
+    end subroutine create_mock_gcov_executable
+    
+    subroutine cleanup_mock_gcov_executable()
+        call execute_command_line('rm -f test_build/mock_gcov')
+        call execute_command_line('rm -f test_build/mock_path.txt')
+    end subroutine cleanup_mock_gcov_executable
 
 end program test_complete_workflow

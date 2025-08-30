@@ -45,9 +45,12 @@ contains
               "--output", "-o", "--format", "-f", "--config", "-c", &
               "--import", "--gcov-executable", "--gcov-args", &
               "--minimum", "-m", "--threshold", "--fail-under", &
-              "--threads", "-t", "--diff", "--diff-threshold", &
-              "--test-timeout", "--architecture-format")
+              "--threads", "-t", "--diff-baseline", "--diff-current", &
+              "--diff-threshold", "--test-timeout", "--architecture-format")
             requires_value = .true.
+        ! --diff can work with or without a value - special handling needed
+        case ("--diff")
+            requires_value = .false.  ! Allow standalone usage, complex flag handler will handle value case
         ! Unknown flags do not require values (will be caught as invalid later)
         case default
             requires_value = .false.
