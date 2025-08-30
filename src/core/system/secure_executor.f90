@@ -186,7 +186,7 @@ contains
         integer, intent(out) :: exit_stat
         
         character(len=MAX_COMMAND_LENGTH) :: command
-        character(len=256) :: abs_source_path, abs_gcov_path
+        character(len=:), allocatable :: abs_source_path, abs_gcov_path
         
         ! For working directory execution, resolve paths appropriately:
         ! - Executable names ("gcov") stay as-is for PATH discovery
@@ -234,9 +234,9 @@ contains
         !! - Path injection: No user input concatenation without validation
         !! - Working directory attacks: Explicit CWD resolution
         character(len=*), intent(in) :: path
-        character(len=*), intent(out) :: abs_path
+        character(len=:), allocatable, intent(out) :: abs_path
         
-        character(len=256) :: cwd
+        character(len=:), allocatable :: cwd
         integer :: stat
         
         if (len_trim(path) == 0) then
@@ -249,9 +249,17 @@ contains
             abs_path = trim(path)
         else
             ! Relative path - prepend current working directory
-            ! Get current working directory
-            call getcwd(cwd, stat)
-            if (stat == 0) then
+            ! Get current working directory with safe buffer
+            block
+                character(len=4096) :: temp_cwd
+                call getcwd(temp_cwd, stat)
+                if (stat == 0) then
+                    cwd = trim(temp_cwd)
+                else
+                    cwd = ""
+                end if
+            end block
+            if (len_trim(cwd) > 0) then
                 if (path(1:2) == './') then
                     ! Remove './' prefix
                     abs_path = trim(cwd) // '/' // path(3:)

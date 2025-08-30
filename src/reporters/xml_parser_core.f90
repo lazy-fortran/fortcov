@@ -228,7 +228,7 @@ contains
         logical, intent(out) :: success
         
         integer :: num_start, num_end, hits_start, hits_end
-        character(len=32) :: temp_string
+        character(len=256) :: temp_string
         integer :: iostat
         
         success = .false.

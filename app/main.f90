@@ -16,11 +16,11 @@ program main
   
   type(config_t) :: config
   character(len=:), allocatable :: args(:)
-  character(len=256) :: error_message
+  character(len=:), allocatable :: error_message
   character(len=:), allocatable :: enhancement_error
   type(error_context_t) :: error_ctx
   logical :: success, enhancement_success
-  integer :: exit_code, argc, i
+  integer :: exit_code, argc, i, arg_len, current_len
   
   ! CRITICAL: Clean up any stale fork bomb prevention markers from previous runs
   ! This ensures that crashed or killed previous executions don't block current runs
@@ -31,14 +31,26 @@ program main
   argc = command_argument_count()
   
   if (argc > 0) then
-    allocate(character(len=256) :: args(argc))
+    ! Find maximum argument length for dynamic allocation
+    arg_len = 0
+    do i = 1, argc
+      call get_command_argument(i, length=current_len)
+      arg_len = max(arg_len, current_len)
+    end do
+    
+    ! Allocate with dynamic length based on actual arguments
+    allocate(character(len=arg_len) :: args(argc))
+    
     ! get_command_argument(i, ...) with i=1,2,... gets user arguments (not argv(0))
     do i = 1, argc
       call get_command_argument(i, args(i))
     end do
   else
-    allocate(character(len=256) :: args(0))
+    allocate(character(len=0) :: args(0))
   end if
+  
+  ! Ensure error_message is allocated
+  allocate(character(len=0) :: error_message)
   
   ! Parse configuration
   call parse_config(args, config, success, error_message)
