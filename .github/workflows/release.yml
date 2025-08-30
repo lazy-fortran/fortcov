@@ -257,7 +257,7 @@ jobs:
         echo "\`\`\`" >> RELEASE_NOTES.md
         
     - name: Extract changelog for release
-       run: |
+      run: |
          # Extract changelog section for this version
          VERSION="${{ needs.validate-version.outputs.version }}"
          awk "/## \[$VERSION\]/{flag=1; next} /## \[.*\]/{flag=0} flag" CHANGELOG.md > final-release/CHANGELOG_SECTION.md
@@ -269,7 +269,7 @@ jobs:
          fi
 
     - name: Update CHANGELOG.md for next development cycle
-       run: |
+      run: |
          VERSION="${{ needs.validate-version.outputs.version }}"
          DATE=$(date +%Y-%m-%d)
 
