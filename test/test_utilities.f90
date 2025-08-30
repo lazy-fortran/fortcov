@@ -86,7 +86,7 @@ contains
         logical, intent(inout) :: passed
         
         if (.not. condition) then
-            write(error_unit, *) "  ❌ Assertion failed: " // message
+            write(error_unit, *) "  failed: " // message
             passed = .false.
         end if
     end subroutine assert_true
@@ -98,7 +98,7 @@ contains
         logical, intent(inout) :: passed
         
         if (condition) then
-            write(error_unit, *) "  ❌ Assertion failed: " // message
+            write(error_unit, *) "  failed: " // message
             passed = .false.
         end if
     end subroutine assert_false

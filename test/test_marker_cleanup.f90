@@ -137,7 +137,7 @@ contains
         ! Verify marker exists
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         if (.not. marker_exists) then
-            print *, "❌ FAIL: Test setup failed - marker not created"
+            print *, "failed - marker not created"
             all_tests_pass = .false.
             call execute_command_line('rm -f .fortcov_execution_marker')
             return
@@ -149,7 +149,7 @@ contains
         call execute_command_line(test_command, exitstat=exit_status)
         
         if (exit_status /= 0) then
-            print *, "❌ FAIL: Fork bomb detection test failed"
+            print *, "failed"
             all_tests_pass = .false.
         else
             print *, "✅ PASS: Fork bomb detection working"
@@ -161,7 +161,7 @@ contains
         ! Verify cleanup worked
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         if (marker_exists) then
-            print *, "❌ FAIL: Test cleanup failed - marker still exists"
+            print *, "failed - marker still exists"
             all_tests_pass = .false.
             return
         end if

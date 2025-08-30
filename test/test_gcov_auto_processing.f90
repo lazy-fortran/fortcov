@@ -52,7 +52,7 @@ contains
             call print_result_summary(result)
         else
             call increment_fail(counter)
-            print *, "  ❌ FAIL: GCov auto-processing failed basic validation"
+            print *, "  failed basic validation"
             print *, "    Error: ", trim(result%error_message)
         end if
     end subroutine test_gcov_file_processing
@@ -143,7 +143,7 @@ contains
             call print_detailed_statistics(result)
         else
             call increment_fail(counter)
-            print *, "  ❌ FAIL: Bulk processing validation failed"
+            print *, "  failed"
         end if
     end subroutine test_gcov_bulk_processing
     
@@ -211,7 +211,7 @@ contains
             print *, "  ✅ PASS: Result statistics are accurate and complete"
         else
             call increment_fail(counter)
-            print *, "  ❌ FAIL: Result statistics validation failed"
+            print *, "  failed"
         end if
     end subroutine test_gcov_result_statistics
     

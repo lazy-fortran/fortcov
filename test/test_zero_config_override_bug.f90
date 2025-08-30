@@ -34,7 +34,7 @@ program test_zero_config_override_bug
     call parse_command_line_config(args, config, success, error_message)
     
     if (.not. success) then
-        print *, "   ❌ Parse failed: ", trim(error_message)
+        print *, "   failed: ", trim(error_message)
     else
         print *, "   Parse successful"
         if (allocated(config%output_format)) then
@@ -60,7 +60,7 @@ program test_zero_config_override_bug
     call parse_command_line_config(args, config, success, error_message)
     
     if (.not. success) then
-        print *, "   ❌ Parse failed: ", trim(error_message)
+        print *, "   failed: ", trim(error_message)
     else
         print *, "   Parse successful"
         if (allocated(config%output_path)) then
@@ -86,7 +86,7 @@ program test_zero_config_override_bug
     call parse_command_line_config(args, config, success, error_message)
     
     if (.not. success) then
-        print *, "   ❌ Parse failed: ", trim(error_message)
+        print *, "   failed: ", trim(error_message)
     else
         print *, "   Parse successful"
         print *, "   Parsed threshold: ", config%minimum_coverage

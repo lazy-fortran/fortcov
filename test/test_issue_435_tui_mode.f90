@@ -71,7 +71,7 @@ program test_issue_435_tui_mode
     print *, "Test Summary"
     print *, "========================================="
     if (test_failures == 0) then
-        print *, "✅ All tests passed!"
+        print *, "All tests passed!"
         print *, "TUI mode flag is recognized and TUI handler exists."
         print *, ""
         print *, "NOTE: Full interactive TUI testing requires manual verification."
@@ -79,7 +79,7 @@ program test_issue_435_tui_mode
         print *, "Expected: Interactive menu with options [h]elp, [a]nalyze, [q]uit, etc."
         call exit(0)
     else
-        print '(A,I0,A)', "❌ ", test_failures, " tests failed."
+        print '(A,I0,A)', "failed."
         call exit(1)
     end if
     

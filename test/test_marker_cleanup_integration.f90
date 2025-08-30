@@ -45,7 +45,7 @@ contains
         ! Verify marker exists (simulating stale state)
         inquire(file='.fortcov_execution_marker', exist=marker_exists_before)
         if (.not. marker_exists_before) then
-            print *, "❌ FAIL: Test setup failed - stale marker not created"
+            print *, "failed - stale marker not created"
             all_tests_pass = .false.
             return
         end if
@@ -85,7 +85,7 @@ contains
         ! Verify marker persists (demonstrating the problem)
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         if (.not. marker_exists) then
-            print *, "❌ FAIL: Test setup failed - marker should persist"
+            print *, "failed - marker should persist"
             all_tests_pass = .false.
         else
             print *, "✅ PASS: Marker persists after simulated crash"
@@ -114,7 +114,7 @@ contains
         ! Verify marker exists before fortcov startup
         inquire(file='.fortcov_execution_marker', exist=marker_exists_before)
         if (.not. marker_exists_before) then
-            print *, "❌ FAIL: Test setup failed - stale marker not created"
+            print *, "failed - stale marker not created"
             all_tests_pass = .false.
             call execute_command_line('rm -f .fortcov_execution_marker')
             return

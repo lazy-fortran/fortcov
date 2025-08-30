@@ -55,7 +55,7 @@ contains
         ! Test allocation with error handling
         allocate(test_array(1000), stat=stat, errmsg=errmsg)
         if (stat /= 0) then
-            print *, "  ❌ FAIL: Basic allocation failed:", trim(errmsg)
+            print *, "  failed:", trim(errmsg)
             all_tests_passed = .false.
             return
         end if
@@ -84,7 +84,7 @@ contains
         ! Allocate
         allocate(int_array(500), stat=stat)
         if (stat /= 0) then
-            print *, "  ❌ FAIL: Setup allocation failed"
+            print *, "  failed"
             all_tests_passed = .false.
             return
         end if
@@ -92,7 +92,7 @@ contains
         ! Deallocate with status check
         deallocate(int_array, stat=stat)
         if (stat /= 0) then
-            print *, "  ❌ FAIL: Deallocation failed"
+            print *, "  failed"
             all_tests_passed = .false.
             return
         end if
@@ -118,7 +118,7 @@ contains
         ! Initial allocation
         allocate(character(len=10) :: string_array(5), stat=stat)
         if (stat /= 0) then
-            print *, "  ❌ FAIL: Initial string allocation failed"
+            print *, "  failed"
             all_tests_passed = .false.
             return
         end if
@@ -131,7 +131,7 @@ contains
         ! Deallocate before reallocation
         deallocate(string_array, stat=stat)
         if (stat /= 0) then
-            print *, "  ❌ FAIL: String deallocation failed"
+            print *, "  failed"
             all_tests_passed = .false.
             return
         end if
@@ -139,7 +139,7 @@ contains
         ! Reallocate with different size
         allocate(character(len=20) :: string_array(10), stat=stat)
         if (stat /= 0) then
-            print *, "  ❌ FAIL: String reallocation failed"
+            print *, "  failed"
             all_tests_passed = .false.
             return
         end if

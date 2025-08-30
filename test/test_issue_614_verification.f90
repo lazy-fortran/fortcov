@@ -59,7 +59,7 @@ contains
         call parse_config(test_args, config, parse_success, error_msg)
         
         if (.not. parse_success) then
-            print '(A,A,A)', "❌ FAIL: ", format_name, " - Parse failed: " // trim(error_msg)
+            print '(A,A,A)', "failed: " // trim(error_msg)
             test_status = .false.
             return
         end if

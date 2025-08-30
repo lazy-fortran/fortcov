@@ -148,6 +148,12 @@ contains
             config%gcov_args = value
         case ("--architecture-format")
             config%architecture_output_format = value
+        case ("--diff-baseline")
+            config%enable_diff = .true.
+            config%diff_baseline_file = trim(value)
+        case ("--diff-current")
+            config%enable_diff = .true.
+            config%diff_current_file = trim(value)
         case default
             success = .false.
         end select
@@ -208,13 +214,20 @@ contains
                                           "thread count", success, error_message)
         case ("--diff")
             config%enable_diff = .true.
-            call parse_diff_files(value, config, success, error_message)
-            ! Flag is recognized even if value parsing fails - error will be caught in validation
-            if (.not. success) then
-                ! Store raw value for later validation instead of failing flag recognition
-                config%diff_baseline_file = "PARSE_ERROR"
-                config%diff_current_file = trim(error_message)
+            ! If no value provided (empty string), treat as standalone flag
+            if (len_trim(value) == 0) then
                 success = .true.
+                return
+            else
+                ! If value provided, parse as comma-separated files
+                call parse_diff_files(value, config, success, error_message)
+                ! Flag is recognized even if value parsing fails - error will be caught in validation
+                if (.not. success) then
+                    ! Store raw value for later validation instead of failing flag recognition
+                    config%diff_baseline_file = "PARSE_ERROR"
+                    config%diff_current_file = trim(error_message)
+                    success = .true.
+                end if
             end if
         case ("--diff-threshold")
             call parse_threshold_with_error(value, config%diff_threshold, &
