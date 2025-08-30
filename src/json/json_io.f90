@@ -8,6 +8,7 @@ module json_io
     use constants_core
     use coverage_model_core
     use coverage_operations, only: calculate_coverage_statistics
+    use timestamp_utils, only: get_current_timestamp
     use input_validation_core
     use error_handling_core
     ! Replace manual JSON parsing with json-fortran library
@@ -361,15 +362,5 @@ contains
         ! Empty coverage data (0 files) is valid
     end function is_coverage_data_valid
 
-    function get_current_timestamp() result(timestamp)
-        !! Get current timestamp in ISO 8601 format (YYYY-MM-DDTHH:MM:SS)
-        character(len=19) :: timestamp
-        integer :: values(8)
-        
-        call date_and_time(values=values)
-        write(timestamp, '(I4,A,I0.2,A,I0.2,A,I0.2,A,I0.2,A,I0.2)') &
-            values(1), '-', values(2), '-', values(3), 'T', &
-            values(5), ':', values(6), ':', values(7)
-    end function get_current_timestamp
 
 end module json_io

@@ -18,7 +18,7 @@ module coverage_format_converter
     use json_kinds, only: RK, IK
     use xml_utils, only: is_well_formed_xml
     use xml_parser_core, only: parse_cobertura_xml
-    use xml_utility_helpers, only: get_current_timestamp
+    use timestamp_utils, only: get_current_timestamp
     implicit none
     private
 
