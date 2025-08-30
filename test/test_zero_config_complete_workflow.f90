@@ -59,7 +59,7 @@ contains
         call parse_config(no_args, config, success, error_message)
         
         if (.not. success) then
-            print *, "❌ Config parsing failed: " // trim(error_message)
+            print *, "failed: " // trim(error_message)
             return
         end if
         
@@ -100,7 +100,7 @@ contains
         call parse_config(args, config, success, error_message)
         
         if (.not. success) then
-            print *, "❌ Config parsing failed: " // trim(error_message)
+            print *, "failed: " // trim(error_message)
             return
         end if
         
@@ -154,7 +154,7 @@ contains
         call parse_config(no_args, config, success, error_message)
         
         if (.not. success) then
-            print *, "❌ Config parsing failed: " // trim(error_message)
+            print *, "failed: " // trim(error_message)
             return
         end if
         
@@ -197,7 +197,7 @@ contains
         call parse_config(args, config, success, error_message)
         
         if (.not. success) then
-            print *, "❌ Config parsing failed: " // trim(error_message)
+            print *, "failed: " // trim(error_message)
             return
         end if
         

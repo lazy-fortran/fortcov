@@ -69,7 +69,7 @@ program test_debug_fork_bomb
             print *, "✅ Zero-config mode disabled - normal processing"
         end if
     else
-        print *, "❌ Configuration parsing failed:"
+        print *, "failed:"
         print *, "  error:", trim(error_message)
     end if
     

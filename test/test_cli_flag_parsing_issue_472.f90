@@ -62,7 +62,7 @@ contains
         
         if (.not. success) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: --source . syntax failed to parse"
+            print *, "  failed to parse"
             print *, "    Error: ", trim(error_message)
         else if (.not. allocated(config%source_paths)) then
             call increment_fail(counter)
@@ -98,7 +98,7 @@ contains
         
         if (.not. success) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: --source=. syntax failed to parse"
+            print *, "  failed to parse"
             print *, "    Error: ", trim(error_message)
         else if (.not. allocated(config%source_paths)) then
             call increment_fail(counter)
@@ -135,7 +135,7 @@ contains
         
         if (.not. success) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: -s . syntax failed to parse"
+            print *, "  failed to parse"
             print *, "    Error: ", trim(error_message)
         else if (.not. allocated(config%source_paths)) then
             call increment_fail(counter)
@@ -177,7 +177,7 @@ contains
         
         if (.not. success) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: Complex command failed to parse"
+            print *, "  failed to parse"
             print *, "    Error: ", trim(error_message)
         else if (.not. allocated(config%source_paths) .or. &
                  size(config%source_paths) == 0 .or. &
@@ -220,7 +220,7 @@ contains
         
         if (.not. success) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: Multiple source directories failed to parse"
+            print *, "  failed to parse"
             print *, "    Error: ", trim(error_message)
         else if (.not. allocated(config%source_paths) .or. &
                  size(config%source_paths) < 2) then
@@ -327,7 +327,7 @@ contains
         
         if (.not. success) then
             call increment_fail(counter)
-            print *, "  ❌ FAIL: Source with spaces failed to parse"
+            print *, "  failed to parse"
             print *, "    Error: ", trim(error_message)
         else if (.not. allocated(config%source_paths) .or. &
                  size(config%source_paths) == 0) then

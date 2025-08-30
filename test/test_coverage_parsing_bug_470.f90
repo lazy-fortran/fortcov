@@ -14,10 +14,10 @@ program test_coverage_parsing_bug_470
     ! Skip manual test for now - focus on real gcov file issue
     
     if (test_passed) then
-        print *, "✅ All tests passed"
+        print *, "All tests passed"
         stop 0
     else
-        print *, "❌ Tests failed"
+        print *, "failed"
         stop 1
     end if
 

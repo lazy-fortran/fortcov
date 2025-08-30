@@ -53,7 +53,7 @@ contains
         ! Verify marker exists
         inquire(file='.fortcov_execution_marker', exist=marker_exists)
         if (.not. marker_exists) then
-            print *, "❌ FAIL: Test setup failed - stale marker not created"
+            print *, "failed - stale marker not created"
             all_tests_pass = .false.
             return
         end if
@@ -89,7 +89,7 @@ contains
         ! Verify marker exists before cleanup
         inquire(file='.fortcov_execution_marker', exist=marker_exists_before)
         if (.not. marker_exists_before) then
-            print *, "❌ FAIL: Test setup failed - stale marker not created"
+            print *, "failed - stale marker not created"
             all_tests_pass = .false.
             return
         end if
@@ -103,7 +103,7 @@ contains
             print *, "✅ PASS: Startup cleanup removes stale markers"
             print *, "   Normal execution can now proceed"
         else
-            print *, "❌ FAIL: Startup cleanup failed to remove stale marker"
+            print *, "failed to remove stale marker"
             all_tests_pass = .false.
             ! Clean up for safety
             call execute_command_line('rm -f .fortcov_execution_marker')
