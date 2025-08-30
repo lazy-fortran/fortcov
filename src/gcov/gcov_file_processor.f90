@@ -63,7 +63,7 @@ contains
         type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
         integer, intent(inout) :: files_count
         logical, intent(inout) :: error_flag
-        
+
         integer :: iostat_val
         character(len=256) :: line
         character(len=:), allocatable :: source_filename
@@ -72,29 +72,35 @@ contains
         logical :: has_source
         integer :: stat
         character(len=512) :: errmsg
-        
+        logical :: file_opened
+
         ! Initialize file parsing state
         lines_count = 0
         has_source = .false.
         source_filename = "unknown"
-        
+        file_opened = .false.
+
         allocate(coverage_line_t :: lines_array(100), stat=stat, errmsg=errmsg)  ! Initial capacity
         if (stat /= 0) then
             write(*, '(A)') "Error: Failed to allocate lines_array: " // trim(errmsg)
             error_flag = .true.
             return
         end if
-        
+
         ! Open file with error handling
         call open_gcov_file_with_validation(unit, path, error_flag)
         if (error_flag) return
-        
+        file_opened = .true.
+
         ! Process each line
         call process_gcov_lines(unit, path, source_filename, lines_array, lines_count, &
                                files_array, files_count, has_source)
-        
-        close(unit)
-        
+
+        ! Ensure file is always closed
+        if (file_opened) then
+            close(unit)
+        end if
+
         ! Add final file if we have data
         if (has_source .and. lines_count > 0) then
             call add_file_to_array(files_array, files_count, source_filename, &
