@@ -26,9 +26,6 @@ contains
         logical :: matches_include, matches_exclude
 
         include = .true.
-        
-        ! Debug output (temporary)
-        ! print *, "DEBUG: Filtering file: ", trim(file%filename)
 
         ! Check coverage threshold
         file_coverage = file%get_line_coverage()
@@ -41,18 +38,14 @@ contains
         ! Issue #886 fix: Use matches_pattern for consistent wildcard support
         if (allocated(criteria%include_patterns) .and. &
             size(criteria%include_patterns) > 0) then
-            ! print *, "DEBUG: Checking include patterns"
             matches_include = .false.
             do i = 1, size(criteria%include_patterns)
-                ! print *, "  Pattern: ", trim(criteria%include_patterns(i)), &
-                !          " Matches: ", matches_pattern(file%filename, criteria%include_patterns(i))
                 if (matches_pattern(file%filename, criteria%include_patterns(i))) then
                     matches_include = .true.
                     exit
                 end if
             end do
             if (.not. matches_include) then
-                ! print *, "  File excluded - no include pattern match"
                 include = .false.
                 return
             end if
