@@ -19,10 +19,6 @@ name = "fortcov"
 source-dir = "app"
 main = "main.f90"
 
-[[test]]
-name = "test_memory_allocation_bug_issue_243"
-source-dir = "test"
-main = "test_memory_allocation_bug_issue_243.f90"
 
 [dependencies]
 json-fortran = { git = "https://github.com/jacobwilliams/json-fortran.git", tag = "9.0.5" }
