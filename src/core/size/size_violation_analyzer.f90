@@ -52,7 +52,8 @@ contains
         type(file_size_violation_t), allocatable, intent(out) :: violations(:)
         
         type(file_size_violation_t) :: temp_violations(1000)
-        integer :: violation_count, i
+        integer :: violation_count, i, stat
+        character(len=256) :: errmsg
         
         violation_count = 0
         
@@ -68,12 +69,21 @@ contains
             end if
         end do
         
-        ! Allocate and copy violations
+        ! Allocate and copy violations with proper error handling
         if (violation_count > 0) then
-            allocate(violations(violation_count))
+            allocate(violations(violation_count), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                ! Graceful fallback - return empty violations on allocation failure
+                allocate(violations(0))
+                return
+            end if
             violations(1:violation_count) = temp_violations(1:violation_count)
         else
-            allocate(violations(0))
+            allocate(violations(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                ! Should rarely fail for empty allocation, but handle gracefully
+                return
+            end if
         end if
         
     end subroutine analyze_file_violations
@@ -84,7 +94,8 @@ contains
         type(directory_size_violation_t), allocatable, intent(out) :: violations(:)
         
         type(directory_size_violation_t) :: temp_violations(200)
-        integer :: violation_count, i
+        integer :: violation_count, i, stat
+        character(len=256) :: errmsg
         
         violation_count = 0
         
@@ -100,12 +111,21 @@ contains
             end if
         end do
         
-        ! Allocate and copy violations
+        ! Allocate and copy violations with proper error handling
         if (violation_count > 0) then
-            allocate(violations(violation_count))
+            allocate(violations(violation_count), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                ! Graceful fallback - return empty violations on allocation failure
+                allocate(violations(0))
+                return
+            end if
             violations(1:violation_count) = temp_violations(1:violation_count)
         else
-            allocate(violations(0))
+            allocate(violations(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                ! Should rarely fail for empty allocation, but handle gracefully
+                return
+            end if
         end if
         
     end subroutine analyze_directory_violations

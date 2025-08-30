@@ -5,6 +5,7 @@ module size_scanner_core
     !! architectural size validation. Single responsibility: data collection.
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
                                    ERROR_FILE_OPERATION_FAILED, clear_error_context
+    use error_handlers, only: handle_out_of_memory
     implicit none
     private
     
@@ -36,7 +37,8 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         character(len=:), allocatable :: find_command, wc_output
-        integer :: wc_exit_code
+        integer :: wc_exit_code, stat
+        character(len=256) :: errmsg
         type(scan_result_t) :: temp_results(1000)  ! Temp storage
         
         call clear_error_context(error_ctx)
@@ -57,12 +59,21 @@ contains
         ! Parse wc output into scan results
         call parse_wc_output_to_results(wc_output, temp_results, total_scanned)
         
-        ! Allocate and copy results
+        ! Allocate and copy results with proper error handling
         if (total_scanned > 0) then
-            allocate(results(total_scanned))
+            allocate(results(total_scanned), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                call handle_out_of_memory(total_scanned * 8, error_ctx)  ! Approximate size
+                allocate(results(0))  ! Fallback to empty array
+                return
+            end if
             results(1:total_scanned) = temp_results(1:total_scanned)
         else
-            allocate(results(0))
+            allocate(results(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                call handle_out_of_memory(0, error_ctx)
+                return
+            end if
         end if
         
     end subroutine scan_file_sizes_in_directory
@@ -75,6 +86,8 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         type(scan_result_t) :: temp_results(200)  ! Temp storage
+        integer :: stat
+        character(len=256) :: errmsg
         
         call clear_error_context(error_ctx)
         total_scanned = 0
@@ -86,12 +99,21 @@ contains
             total_scanned = total_scanned + 1
         end if
         
-        ! Allocate and copy results
+        ! Allocate and copy results with proper error handling
         if (total_scanned > 0) then
-            allocate(results(total_scanned))
+            allocate(results(total_scanned), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                call handle_out_of_memory(total_scanned * 8, error_ctx)
+                allocate(results(0))  ! Fallback to empty array
+                return
+            end if
             results(1:total_scanned) = temp_results(1:total_scanned)
         else
-            allocate(results(0))
+            allocate(results(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                call handle_out_of_memory(0, error_ctx)
+                return
+            end if
         end if
         
     end subroutine scan_directory_item_counts

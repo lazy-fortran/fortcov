@@ -39,6 +39,8 @@ contains
     ! Initialize transformer
     subroutine transformer_init(this)
         class(data_transformer_t), intent(out) :: this
+        integer :: stat
+        character(len=256) :: errmsg
         
         this%max_cache_size_mb = 100
         this%max_memory_mb = 100
@@ -46,8 +48,12 @@ contains
         this%current_memory_usage_mb = 0
         this%cache_count = 0
         
-        ! Initialize cache
-        allocate(this%cache(100))  ! Start with reasonable cache size
+        ! Initialize cache with proper error handling
+        allocate(this%cache(100), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            ! Graceful degradation - continue without cache
+            this%cache_count = -1  ! Indicate cache unavailable
+        end if
     end subroutine transformer_init
     
     ! Initialize transformer with cache settings
@@ -79,7 +85,8 @@ contains
         logical, intent(out) :: success
         character(len=:), allocatable, intent(out) :: error_msg
         
-        integer :: i
+        integer :: i, stat
+        character(len=256) :: errmsg
         
         success = .false.
         error_msg = ""
@@ -97,8 +104,12 @@ contains
             return
         end if
         
-        ! Allocate output files
-        allocate(output_data%files(size(input_data%files)))
+        ! Allocate output files with proper error handling
+        allocate(output_data%files(size(input_data%files)), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate output files: " // trim(errmsg)
+            return
+        end if
         
         ! Transform each file
         do i = 1, size(input_data%files)
@@ -132,14 +143,19 @@ contains
         type(coverage_file_t), intent(in) :: input_file
         type(source_file_t), intent(out) :: output_file
         
-        integer :: i, executable_lines, covered_lines
+        integer :: i, executable_lines, covered_lines, stat
+        character(len=256) :: errmsg
         
         call output_file%init()
         output_file%filename = input_file%filename
         
         ! Transform lines if they exist
         if (allocated(input_file%lines)) then
-            allocate(output_file%lines(size(input_file%lines)))
+            allocate(output_file%lines(size(input_file%lines)), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                ! Graceful failure - file cannot be processed
+                return
+            end if
             
             executable_lines = 0
             covered_lines = 0
