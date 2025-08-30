@@ -1,6 +1,6 @@
 module system_diff
     use coverage_model_core
-    use coverage_json_io
+    use json_io
     use string_utils, only: real_to_string, int_to_string
     ! Replace json_core with json-fortran library (removed manual dependency)
     use json_module, only: json_file, json_value, json_core

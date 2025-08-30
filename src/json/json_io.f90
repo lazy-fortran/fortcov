@@ -7,7 +7,7 @@ module json_io
     !! a clear, unified API for JSON operations.
     use constants_core
     use coverage_model_core
-    use coverage_operations_core, only: calculate_coverage_statistics
+    use coverage_operations, only: calculate_coverage_statistics
     use input_validation_core
     use error_handling_core
     ! Replace manual JSON parsing with json-fortran library
