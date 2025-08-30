@@ -4,9 +4,14 @@ program main
                                    validate_config, validate_config_with_context
   use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
                                     ERROR_INVALID_CONFIG, clear_error_context
-  use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
+  use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE, EXIT_THRESHOLD_NOT_MET, &
+                              EXIT_NO_COVERAGE_DATA, EXIT_INVALID_CONFIG, &
+                              EXIT_FILE_ACCESS_ERROR, EXIT_MEMORY_ERROR, &
+                              EXIT_VALIDATION_ERROR
   use system_exit_handler, only: exit_success_clean, exit_failure_clean, &
-                                    exit_invalid_config_clean
+                                    exit_invalid_config_clean, exit_threshold_not_met_clean, &
+                                    exit_no_coverage_data_clean, exit_file_access_error_clean, &
+                                    exit_memory_error_clean, exit_validation_error_clean
   use zero_config_core, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
   use coverage_workflows, only: launch_coverage_tui_mode
@@ -137,7 +142,12 @@ program main
     print *, "For configuration help:"
     print *, "   • See example: cat fortcov.nml.example"
     print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
-    call exit_invalid_config_clean()
+    ! EPIC 1 FIX: Map source path errors to proper exit codes
+    if (index(error_ctx%message, "Source path not found") > 0) then
+      call exit_no_coverage_data_clean()
+    else
+      call exit_invalid_config_clean()
+    end if
   end if
   
   ! Check for TUI mode
@@ -151,8 +161,20 @@ program main
     exit_code = run_coverage_analysis(config)
   end if
   
-  if (exit_code == 0) then
+  if (exit_code == EXIT_SUCCESS) then
     call exit_success_clean()
+  else if (exit_code == EXIT_THRESHOLD_NOT_MET) then
+    call exit_threshold_not_met_clean()
+  else if (exit_code == EXIT_NO_COVERAGE_DATA) then
+    call exit_no_coverage_data_clean()
+  else if (exit_code == EXIT_INVALID_CONFIG) then
+    call exit_invalid_config_clean()
+  else if (exit_code == EXIT_FILE_ACCESS_ERROR) then
+    call exit_file_access_error_clean()
+  else if (exit_code == EXIT_MEMORY_ERROR) then
+    call exit_memory_error_clean()
+  else if (exit_code == EXIT_VALIDATION_ERROR) then
+    call exit_validation_error_clean()
   else
     call exit_failure_clean()
   end if
