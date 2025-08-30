@@ -9,7 +9,6 @@ module coverage_workflows
     use coverage_types, only: coverage_diff_t
     use string_utils, only: to_lower, matches_pattern
     use zero_config_manager, only: auto_discover_coverage_files_priority
-    use coverage_test_executor
     use coverage_processor_gcov
     use coverage_workflow_core
     implicit none
@@ -190,7 +189,16 @@ contains
         
     end function filter_coverage_files_by_patterns
     
-    
+    function execute_auto_test_workflow(config) result(exit_code)
+        !! Delegate to coverage_test_executor module
+        use coverage_test_executor, only: execute_auto_test_workflow_impl => execute_auto_test_workflow
+        
+        type(config_t), intent(in) :: config
+        integer :: exit_code
+        
+        exit_code = execute_auto_test_workflow_impl(config)
+        
+    end function execute_auto_test_workflow
     
     
     function is_test_file(filepath) result(is_test)
