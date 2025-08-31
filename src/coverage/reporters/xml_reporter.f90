@@ -24,7 +24,8 @@ contains
     subroutine xml_generate_report(this, coverage_data, output_path, &
                                  success, error_message, &
                                  diff_data, threshold)
-        use file_utilities, only: write_text_file
+        use file_utilities, only: write_text_file_safe
+        use error_handling_core, only: error_context_t
         use coverage_stats_core, only: calculate_line_coverage, coverage_stats_t
         class(xml_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
@@ -36,7 +37,7 @@ contains
         
         character(len=:), allocatable :: xml_content
         type(coverage_stats_t) :: stats
-        logical :: write_error
+        type(error_context_t) :: err_ctx
         integer :: i
         ! Optimized buffered builder variables (avoid O(n^2) concatenation)
         integer :: total_len, pos
@@ -158,10 +159,10 @@ contains
 
         xml_content = buffer(1:pos-1)
         
-        ! Write to file
-        call write_text_file(output_path, xml_content, write_error)
+        ! Write to file (ensure directory exists; capture rich error context)
+        call write_text_file_safe(output_path, xml_content, err_ctx)
         
-        if (write_error) then
+        if (err_ctx%error_code /= 0) then
             success = .false.
             error_message = "Failed to write XML file: " // trim(output_path)
         else

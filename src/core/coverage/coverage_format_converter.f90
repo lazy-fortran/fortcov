@@ -282,13 +282,13 @@ contains
         pos = 1
 
         call append_text(buffer, pos, '<packages>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '  <package name="fortcov-coverage">')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '    <classes>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
 
         if (associated(root_obj) .and. associated(files_array)) then
@@ -304,16 +304,16 @@ contains
                         call append_text(buffer, pos, trim(filename))
                         call append_text(buffer, pos, &
                             '" line-rate="1.0" branch-rate="1.0" complexity="0.0">')
-                        buffer(pos:pos) = new_line('')
+                        buffer(pos:pos) = new_line('a')
                         pos = pos + 1
                         call append_text(buffer, pos, '        <methods></methods>')
-                        buffer(pos:pos) = new_line('')
+                        buffer(pos:pos) = new_line('a')
                         pos = pos + 1
                         call append_text(buffer, pos, '        <lines></lines>')
-                        buffer(pos:pos) = new_line('')
+                        buffer(pos:pos) = new_line('a')
                         pos = pos + 1
                         call append_text(buffer, pos, '      </class>')
-                        buffer(pos:pos) = new_line('')
+                        buffer(pos:pos) = new_line('a')
                         pos = pos + 1
                     end if
                 end if
@@ -321,10 +321,10 @@ contains
         end if
 
         call append_text(buffer, pos, '    </classes>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '  </package>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '</packages>')
 
