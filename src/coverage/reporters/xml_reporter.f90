@@ -26,6 +26,7 @@ contains
                                  diff_data, threshold)
         use file_utilities, only: write_text_file_safe
         use error_handling_core, only: error_context_t
+        use error_utils, only: format_error_message
         use coverage_stats_core, only: calculate_line_coverage, coverage_stats_t
         class(xml_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
@@ -164,7 +165,7 @@ contains
         
         if (err_ctx%error_code /= 0) then
             success = .false.
-            error_message = "Failed to write XML file: " // trim(output_path)
+            error_message = trim(format_error_message(err_ctx))
         else
             success = .true.
             error_message = ""
