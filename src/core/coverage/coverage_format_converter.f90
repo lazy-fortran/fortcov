@@ -59,25 +59,25 @@ contains
         if (.not. success) return
 
         ! Build XML content
-        xml_body = XML_HEADER // new_line('') // &
-                  XML_DTD // new_line('') // &
+        xml_body = XML_HEADER // new_line('a') // &
+                  XML_DTD // new_line('a') // &
                   '<coverage version="1.0" timestamp="' // &
                   get_current_timestamp() // '"' // &
                   ' line-rate="' // real_to_string(line_rate) // '"' // &
                   ' branch-rate="' // real_to_string(branch_rate) // '"' // &
                   ' lines-covered="' // int_to_string(covered_lines) // '"' // &
                   ' lines-valid="' // int_to_string(total_lines) // '"' // &
-                  ' complexity="0.0">' // new_line('')
+                  ' complexity="0.0">' // new_line('a')
 
         ! Add sources section (simplified)
-        xml_body = xml_body // '<sources>' // new_line('') // &
-                  '  <source>.</source>' // new_line('') // &
-                  '</sources>' // new_line('')
+        xml_body = xml_body // '<sources>' // new_line('a') // &
+                  '  <source>.</source>' // new_line('a') // &
+                  '</sources>' // new_line('a')
 
         ! Add packages section (simplified)
-        xml_body = xml_body // generate_packages_from_json(json_content) // new_line('')
+        xml_body = xml_body // generate_packages_from_json(json_content) // new_line('a')
 
-        xml_body = xml_body // '</coverage>' // new_line('')
+        xml_body = xml_body // '</coverage>' // new_line('a')
 
         xml_output = xml_body
         success = .true.
