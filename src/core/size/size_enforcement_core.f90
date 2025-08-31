@@ -195,7 +195,8 @@ contains
             result%summary_message = "WARNING: " // int_to_string(result%warnings_count) // &
                                     " files approaching size limits"
         else if (result%warnings_count > 0) then
-            result%exit_code = CI_SUCCESS_WITH_WARNINGS
+            ! CRITICAL FIX: When warnings exist but fail_on_warnings is false, return success
+            result%exit_code = CI_SUCCESS
             result%should_block_merge = .false.
             result%summary_message = "PASSED WITH WARNINGS: " // &
                                     int_to_string(result%warnings_count) // " size warnings"

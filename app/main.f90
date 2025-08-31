@@ -3,7 +3,7 @@ program main
   use config_core, only: config_t, parse_config, show_help, show_version, &
                                    validate_config, validate_config_with_context
   use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
-                                    ERROR_INVALID_CONFIG, clear_error_context
+                                     ERROR_INVALID_CONFIG, ERROR_THRESHOLD_NOT_MET, clear_error_context
   use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE, EXIT_THRESHOLD_NOT_MET, &
                               EXIT_NO_COVERAGE_DATA, EXIT_INVALID_CONFIG, &
                               EXIT_FILE_ACCESS_ERROR, EXIT_MEMORY_ERROR, &
@@ -231,13 +231,22 @@ contains
       end if
     end if
     
-    ! Set appropriate error context based on results and user flags
-    if (enforcement_result%should_block_merge) then
-      error_ctx%error_code = ERROR_INVALID_CONFIG
-      error_ctx%message = "Architectural size violations detected"
-    else if (config%fail_on_size_warnings .and. enforcement_result%warnings_count > 0) then
-      error_ctx%error_code = ERROR_INVALID_CONFIG
-      error_ctx%message = "Architectural size warnings detected (fail-on-warnings enabled)"
+    ! CRITICAL FIX: Use enforcement_result%exit_code directly instead of manual logic
+    ! This properly integrates size_enforcement_core exit codes with main.f90 error handling
+    if (enforcement_result%exit_code /= 0) then  ! CI_SUCCESS = 0, any non-zero is an error
+      ! Map size_enforcement_core exit codes to application error codes
+      if (enforcement_result%exit_code == 1) then  ! CI_SUCCESS_WITH_WARNINGS
+        ! Any non-success error code triggers exit_failure_clean() -> EXIT_FAILURE = 1
+        error_ctx%error_code = ERROR_THRESHOLD_NOT_MET
+        error_ctx%message = trim(enforcement_result%summary_message)
+      else if (enforcement_result%exit_code == 2) then  ! CI_FAILURE_VIOLATIONS
+        error_ctx%error_code = ERROR_INVALID_CONFIG
+        error_ctx%message = "Architectural size violations detected"
+      else  ! CI_FAILURE_ERROR = 3 or other errors
+        error_ctx%error_code = ERROR_INVALID_CONFIG
+        error_ctx%message = "Architectural size validation failed: " // &
+                           trim(enforcement_result%summary_message)
+      end if
     end if
     
   end subroutine handle_architectural_validation
