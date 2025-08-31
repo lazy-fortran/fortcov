@@ -31,7 +31,10 @@ contains
             print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
             
             ! Check if sources are configured, offer interactive setup
-            if (size(config%source_paths) == 0 .or. all(len_trim(config%source_paths) == 0)) then
+            if (.not. allocated(config%source_paths)) then
+                print *, "⚠️  No source paths configured. Use [c]onfigure to set up sources."
+            else if (size(config%source_paths) == 0 .or. &
+                     all(len_trim(config%source_paths) == 0)) then
                 print *, "⚠️  No source paths configured. Use [c]onfigure to set up sources."
             end if
             
@@ -79,7 +82,10 @@ contains
             print *, "---------------------------------------------"
             
             ! Show current source status
-            if (size(config%source_paths) == 0 .or. all(len_trim(config%source_paths) == 0)) then
+            if (.not. allocated(config%source_paths)) then
+                print *, "📁 Sources: Not configured - use [c] to set up"
+            else if (size(config%source_paths) == 0 .or. &
+                     all(len_trim(config%source_paths) == 0)) then
                 print *, "📁 Sources: Not configured - use [c] to set up"
             else
                 print *, "📁 Sources:", trim(config%source_paths(1))
@@ -214,7 +220,13 @@ contains
         
         if (.not. config%quiet) then
             ! Check if sources are configured before analysis
-            if (size(config%source_paths) == 0 .or. all(len_trim(config%source_paths) == 0)) then
+            if (.not. allocated(config%source_paths)) then
+                print *, "❌ Cannot analyze: No source paths configured"
+                print *, "   Use [c]onfigure command to set up source directories first"
+                print *, ""
+                return
+            else if (size(config%source_paths) == 0 .or. &
+                     all(len_trim(config%source_paths) == 0)) then
                 print *, "❌ Cannot analyze: No source paths configured"
                 print *, "   Use [c]onfigure command to set up source directories first"
                 print *, ""
@@ -288,7 +300,7 @@ contains
         if (allocated(config%exclude_patterns)) then
             print *, "Exclude patterns: ", size(config%exclude_patterns), " configured"
         end if
-        if (allocated(config%source_paths)) then
+        if (allocated(config%source_paths) .and. size(config%source_paths) > 0) then
             print *, "Source paths: ", size(config%source_paths), " configured"
         end if
         if (config%threads > 1) then
