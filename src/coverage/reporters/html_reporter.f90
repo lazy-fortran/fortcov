@@ -242,15 +242,18 @@ contains
                '                </div>' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
                '                    <span class="summary-label">Total Lines:</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // int_to_str(data%summary%total_lines) // '</span>' // new_line('a') // &
+               '                    <span class="summary-value">' // &
+               int_to_str(data%summary%total_lines) // '</span>' // new_line('a') // &
                '                </div>' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
                '                    <span class="summary-label">Covered Lines:</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // int_to_str(data%summary%covered_lines) // '</span>' // new_line('a') // &
+               '                    <span class="summary-value">' // &
+               int_to_str(data%summary%covered_lines) // '</span>' // new_line('a') // &
                '                </div>' // new_line('a') // &
                '                <div class="summary-item highlight">' // new_line('a') // &
                '                    <span class="summary-label">Coverage:</span>' // new_line('a') // &
-               '                    <span class="summary-value coverage-percent">' // real_to_str(data%summary%coverage_percentage) // '%</span>' // new_line('a') // &
+               '                    <span class="summary-value coverage-percent">' // &
+               real_to_str(data%summary%coverage_percentage) // '%</span>' // new_line('a') // &
                '                </div>' // new_line('a') // &
                '            </div>' // new_line('a') // &
                '        </section>' // new_line('a') // &
