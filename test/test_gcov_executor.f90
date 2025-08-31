@@ -107,7 +107,7 @@ contains
     
     logical function test_execute_gcov_valid_inputs() result(success)
         type(gcov_executor_t) :: executor
-        type(error_context_t) :: error_ctx
+        type(error_context_t) :: error_ctx, temp_error_ctx
         character(len=:), allocatable :: gcov_files(:)
         character(len=256) :: source_file, gcda_file, output_dir
         integer :: unit, iostat
@@ -119,8 +119,8 @@ contains
         gcda_file = 'test_source.gcda'  ! gcda in current directory with base name
         output_dir = trim(test_workspace) // '/gcov_output'
         
-        ! Create output directory and set it on executor
-        call execute_command_line('mkdir -p ' // output_dir)
+        ! SECURITY FIX Issue #926: Use secure directory creation instead of execute_command_line
+        call safe_mkdir(output_dir, temp_error_ctx)
         call executor%set_gcov_output_directory(output_dir)
         
         ! Create mock source file
@@ -209,7 +209,7 @@ contains
     
     logical function test_execute_gcov_empty_result() result(success)
         type(gcov_executor_t) :: executor
-        type(error_context_t) :: error_ctx
+        type(error_context_t) :: error_ctx, temp_error_ctx
         character(len=:), allocatable :: gcov_files(:)
         character(len=256) :: source_file, gcda_file, output_dir
         integer :: unit, iostat
@@ -219,8 +219,8 @@ contains
         gcda_file = 'empty_result.gcda'  ! gcda in current directory with base name
         output_dir = trim(test_workspace) // '/gcov_output2'
         
-        ! Create output directory and set it on executor
-        call execute_command_line('mkdir -p ' // output_dir)
+        ! SECURITY FIX Issue #926: Use secure directory creation instead of execute_command_line
+        call safe_mkdir(output_dir, temp_error_ctx)
         call executor%set_gcov_output_directory(output_dir)
         
         ! Create mock files

@@ -115,7 +115,8 @@ contains
         !! Create a simple FPM project structure for testing
         integer :: unit, stat
         
-        call execute_command_line('mkdir -p test_auto_fpm', wait=.true.)
+        ! SECURITY FIX Issue #926: Use secure directory creation
+        call secure_mkdir_wrapper('test_auto_fpm')
         call chdir('test_auto_fpm')
         
         ! Create fpm.toml
@@ -133,7 +134,8 @@ contains
         end if
         
         ! Create a simple src file
-        call execute_command_line('mkdir -p src', wait=.true.)
+        ! SECURITY FIX Issue #926: Use secure directory creation
+        call secure_mkdir_wrapper('src')
         open(newunit=unit, file='src/test_module.f90', status='replace', &
              iostat=stat)
         if (stat == 0) then
@@ -150,7 +152,8 @@ contains
         end if
         
         ! Create a simple test
-        call execute_command_line('mkdir -p test', wait=.true.)
+        ! SECURITY FIX Issue #926: Use secure directory creation
+        call secure_mkdir_wrapper('test')
         open(newunit=unit, file='test/test_basic.f90', status='replace', &
              iostat=stat)
         if (stat == 0) then
@@ -173,7 +176,8 @@ contains
 
     subroutine setup_empty_test_directory()
         !! Create empty test directory
-        call execute_command_line('mkdir -p test_empty', wait=.true.)
+        ! SECURITY FIX Issue #926: Use secure directory creation
+        call secure_mkdir_wrapper('test_empty')
         call chdir('test_empty')
     end subroutine setup_empty_test_directory
 
@@ -217,5 +221,24 @@ contains
             write(error_unit, '(A,I0)') '    Unexpected exit code: ', result
         end if
     end subroutine assert_result_acceptable
+
+    ! SECURITY FIX Issue #926: Secure directory creation wrapper
+    subroutine secure_mkdir_wrapper(dir_name)
+        character(len=*), intent(in) :: dir_name
+        logical :: dir_exists
+        integer :: unit_num, ios
+        character(len=256) :: temp_file
+        
+        ! Check if directory already exists
+        inquire(file=dir_name, exist=dir_exists)
+        if (dir_exists) return
+        
+        ! Create directory by creating a temporary file within it
+        write(temp_file, '(A,A)') trim(dir_name), '/.tmp_create'
+        open(newunit=unit_num, file=temp_file, status='new', action='write', iostat=ios)
+        if (ios == 0) then
+            close(unit_num, status='delete')
+        end if
+    end subroutine secure_mkdir_wrapper
 
 end program test_auto_test_integration

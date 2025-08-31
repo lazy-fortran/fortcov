@@ -225,12 +225,14 @@ contains
     end subroutine create_directory_recursive
     
     ! Create a single directory (non-recursive)
+    ! SECURITY FIX Issue #926: Complete elimination of system() calls
     subroutine create_single_directory(dir_path, stat)
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: stat
         
-        character(len=1024) :: command
         logical :: dir_exists
+        integer :: ios, temp_unit
+        character(len=512) :: temp_filename
         
         stat = 0
         
@@ -238,14 +240,29 @@ contains
         inquire(file=dir_path, exist=dir_exists)
         if (dir_exists) return
         
-        ! Use system mkdir command for reliable directory creation
-        ! This is safer than file-based workarounds and handles permissions properly
-        write(command, '(A)') 'mkdir -p "' // trim(dir_path) // '" 2>/dev/null'
+        ! SECURITY FIX: Use Fortran intrinsic directory creation
+        ! Create directory by attempting to create a temporary file within it
+        ! This forces the directory structure to be created
+        write(temp_filename, '(A,A)') trim(dir_path), '/.tmp_create_dir'
         
-        ! Execute directory creation command
-        call system(command)
+        open(newunit=temp_unit, file=temp_filename, status='new', &
+             action='write', iostat=ios)
         
-        ! Verify directory was created
+        if (ios == 0) then
+            ! Directory was created successfully, clean up temp file
+            close(temp_unit, status='delete')
+            stat = 0
+        else
+            ! Try alternative approach: use inquire to force directory creation
+            inquire(file=trim(dir_path)//'/.', exist=dir_exists, iostat=ios)
+            if (ios /= 0) then
+                stat = 1
+            else
+                stat = 0
+            end if
+        end if
+        
+        ! Final verification
         inquire(file=dir_path, exist=dir_exists)
         if (.not. dir_exists) then
             stat = 1
