@@ -20,7 +20,7 @@ fpm build --flag "-fprofile-arcs -ftest-coverage"
 ./run_ci_tests.sh
 
 # Run specific test by name  
-fmp test test_name
+fpm test test_name
 
 # Run tests with verbose output
 fpm test --verbose
