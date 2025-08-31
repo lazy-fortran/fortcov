@@ -72,49 +72,23 @@ generate_simple_coverage() {
     # Remove .gcno files from project root but NOT from build directories (needed for gcov)
     find . -maxdepth 1 -name "*.gcno" -delete 2>/dev/null || true
     
-    # Step 2: Build with coverage flags - use separated approach to ensure both file types exist
+    # Step 2: Build with coverage flags - single-step approach to prevent timestamp mismatches
     print_info "Building with coverage instrumentation..."
-    print_info "Using staged build approach to ensure gcno/gcda compatibility..."
+    print_info "Using single-step FPM test approach to ensure gcno/gcda compatibility..."
     
-    # First clean any stale coverage files to prevent timestamp mismatches
+    # Clean any stale coverage files from previous runs
     find build -name "*.gcno" -delete 2>/dev/null || true
     find build -name "*.gcda" -delete 2>/dev/null || true
     
-    # Stage 1: Build to generate .gcno files
-    print_info "Stage 1: Building to generate .gcno files..."
-    fpm build --flag "-fprofile-arcs -ftest-coverage"
-    
-    # Check if .gcno files were generated
-    local gcno_count
-    gcno_count=$(find build -name "*.gcno" | wc -l)
-    print_info "Generated $gcno_count .gcno files during build stage"
-    
-    # Stage 2: Test to generate .gcda files - handle FPM rebuild behavior
-    print_info "Stage 2: Running tests to generate .gcda files..."
-    
-    # If .gcno files exist, back them up before running tests
-    if [ "$gcno_count" -gt 0 ]; then
-        print_info "Backing up .gcno files to prevent FPM test rebuild loss..."
-        find build -name "*.gcno" -exec cp {} {}.backup \; 2>/dev/null || true
-    fi
-    
-    # Run tests which may rebuild and destroy .gcno files
+    # Single step: FPM test with coverage flags generates both .gcno and .gcda files with matching timestamps
+    print_info "Running FPM test with coverage instrumentation..."
     fpm test --flag "-fprofile-arcs -ftest-coverage"
     
-    # Check if .gcno files survived the test run
-    local gcno_after_test
-    gcno_after_test=$(find build -name "*.gcno" | wc -l)
-    
-    if [ "$gcno_after_test" -eq 0 ] && [ "$gcno_count" -gt 0 ]; then
-        print_info "FPM test destroyed .gcno files - restoring from backup..."
-        find build -name "*.gcno.backup" -exec sh -c 'mv "$1" "${1%.backup}"' _ {} \; 2>/dev/null || true
-    fi
-    
-    # Verify both file types exist after staged approach
+    # Verify both file types exist after single-step approach
     local gcno_final gcda_final
     gcno_final=$(find build -name "*.gcno" | wc -l)
     gcda_final=$(find build -name "*.gcda" | wc -l)
-    print_info "Final file counts: $gcno_final .gcno files, $gcda_final .gcda files"
+    print_info "Generated coverage files: $gcno_final .gcno files, $gcda_final .gcda files"
     
     # Step 3: Handle the complex FPM build directory structure
     print_info "Extracting coverage data from FPM build directories..."
@@ -134,8 +108,10 @@ generate_simple_coverage() {
         echo "  - $dir"
     done
     
-    # Step 4: Generate .gcov files in each build directory with proper source path context
-    print_info "Generating .gcov files in build directories..."
+    # Step 4: Generate .gcov files - CRITICAL FIX: Run gcov FROM WITHIN build directories
+    print_info "Generating .gcov files from build directories..."
+    local total_gcov_generated=0
+    
     echo "$build_dirs" | while read -r build_dir; do
         if [ -n "$build_dir" ] && [ -d "$build_dir" ]; then
             print_info "Processing: $build_dir"
@@ -151,9 +127,22 @@ generate_simple_coverage() {
                 print_info "Coverage file counts: $gcno_count .gcno files, $gcda_count .gcda files"
                 
                 if [ "$gcno_count" -gt 0 ] && [ "$gcda_count" -gt 0 ]; then
-                    # Run gcov from project root with object-directory pointing to build dir
-                    print_info "Running gcov with compatible gcno/gcda files..."
-                    gcov --object-directory="$build_dir" "$build_dir"/*.gcno 2>/dev/null || true
+                    # CRITICAL FIX: Run gcov FROM WITHIN the build directory
+                    print_info "Running gcov from within build directory (timestamp compatibility fix)..."
+                    (
+                        cd "$build_dir" || exit 1
+                        gcov *.gcno 2>/dev/null || true
+                        local gcov_count
+                        gcov_count=$(ls *.gcov 2>/dev/null | wc -l || echo "0")
+                        print_info "Generated $gcov_count .gcov files in $build_dir"
+                        
+                        # Move .gcov files to project root for organization
+                        if [ "$gcov_count" -gt 0 ]; then
+                            print_info "Moving .gcov files to project root..."
+                            mv *.gcov "$PROJECT_ROOT/" 2>/dev/null || true
+                            total_gcov_generated=$((total_gcov_generated + gcov_count))
+                        fi
+                    )
                 else
                     print_warning "Incomplete coverage data: missing gcno or gcda files"
                 fi
@@ -164,45 +153,98 @@ generate_simple_coverage() {
         fi
     done
     
-    # Step 5: Implement the simple pattern by organizing .gcov files appropriately
-    case "$source_pattern" in
-        "src")
-            print_info "Implementing simple pattern: gcov files in src/ directory"
-            mkdir -p src
-            # .gcov files are now generated in project root, move relevant ones to src/
-            find . -maxdepth 1 -name "*.gcov" -exec mv {} src/ \; 2>/dev/null || true
-            ;;
-        ".")
-            print_info "Implementing simple pattern: gcov files in project root"
-            # .gcov files are already in project root - no move needed
-            ;;
-        *)
-            print_info "Implementing custom pattern: gcov files in $source_pattern"
-            mkdir -p "$source_pattern"
-            # Move .gcov files from project root to custom directory
-            find . -maxdepth 1 -name "*.gcov" -exec mv {} "$source_pattern"/ \; 2>/dev/null || true
-            ;;
-    esac
+    print_info "Total .gcov files generated across all build directories: checking project root..."
+    
+    # Step 5: .gcov files are now ready for organization (integrated into Step 6)
     
     # Step 6: Verify .gcov files are available for analysis
-    local gcov_files
-    gcov_files=$(find "$source_pattern" -name "*.gcov" 2>/dev/null | wc -l)
+    local gcov_in_root
+    gcov_in_root=$(find . -maxdepth 1 -name "*.gcov" 2>/dev/null | wc -l)
     
-    if [ "$gcov_files" -eq 0 ]; then
-        print_error "No .gcov files found in $source_pattern after processing"
-        print_error "This indicates a problem with the coverage generation process"
+    if [ "$gcov_in_root" -eq 0 ]; then
+        print_error "No .gcov files found in project root after processing"
+        print_error "This indicates a problem with the gcov generation process"
+        print_error "Debug info:"
+        print_error "  - Build directories found: $(echo "$build_dirs" | wc -l)"
+        print_error "  - .gcno files available: $(find build -name "*.gcno" | wc -l)"
+        print_error "  - .gcda files available: $(find build -name "*.gcda" | wc -l)"
         return 1
     fi
     
-    print_success "Found $gcov_files .gcov files in $source_pattern"
+    print_success "Generated $gcov_in_root .gcov files in project root"
     
-    # Step 7: Run fortcov analysis
-    print_info "Running fortcov analysis..."
+    # CRITICAL FIX: Filter out empty .gcov files (only source reference, no coverage data)
+    print_info "Filtering out empty .gcov files (no coverage data)..."
+    local meaningful_gcov=0
+    local empty_gcov=0
+    
+    for gcov_file in *.gcov; do
+        if [ -f "$gcov_file" ]; then
+            local line_count
+            line_count=$(wc -l < "$gcov_file")
+            if [ "$line_count" -le 1 ]; then
+                # Empty or single-line files have no coverage data
+                rm "$gcov_file"
+                empty_gcov=$((empty_gcov + 1))
+            else
+                meaningful_gcov=$((meaningful_gcov + 1))
+            fi
+        fi
+    done
+    
+    print_info "Coverage filtering results:"
+    print_info "  - Meaningful coverage files: $meaningful_gcov"
+    print_info "  - Empty files removed: $empty_gcov"
+    
+    if [ "$meaningful_gcov" -eq 0 ]; then
+        print_warning "No meaningful coverage data found - this usually means:"
+        print_warning "  - Test suite doesn't exercise main application code"
+        print_warning "  - Coverage instrumentation didn't capture execution"
+        print_warning "  - Source files weren't executed during test run"
+        print_warning ""
+        print_warning "To get coverage data, you need to run the actual application"
+        print_warning "or tests that exercise the main source code modules."
+        return 1
+    fi
+    
+    # Now organize meaningful .gcov files according to the requested pattern
+    local gcov_files
+    case "$source_pattern" in
+        "src")
+            print_info "Organizing meaningful .gcov files for src/ directory pattern"
+            # Keep .gcov files in project root - fortcov correlates them with --source=src
+            gcov_files=$meaningful_gcov
+            ;;
+        ".")
+            print_info "Keeping meaningful .gcov files in project root for root pattern"
+            gcov_files=$meaningful_gcov
+            ;;
+        *)
+            print_info "Organizing meaningful .gcov files for custom pattern: $source_pattern"
+            # Keep files in project root but use custom source path
+            gcov_files=$meaningful_gcov
+            ;;
+    esac
+    
+    print_success "Ready for analysis: $gcov_files meaningful .gcov files with coverage data"
+    
+    # Step 7: Run fortcov analysis with meaningful .gcov files  
+    print_info "Running fortcov analysis with coverage data..."
     local fortcov_exe
     fortcov_exe=$(find_fortcov) || return 1
     
-    print_info "Command: $fortcov_exe --source $source_pattern --exclude '$exclude_pattern' --output $output_file"
-    "$fortcov_exe" --source "$source_pattern" --exclude "$exclude_pattern" --output "$output_file"
+    # Pass .gcov files as positional arguments along with --source
+    local gcov_files_list
+    gcov_files_list=$(ls *.gcov 2>/dev/null | tr '\n' ' ')
+    
+    if [ -n "$gcov_files_list" ]; then
+        print_info "Command: $fortcov_exe --source $source_pattern --exclude '$exclude_pattern' --output $output_file $gcov_files_list"
+        # shellcheck disable=SC2086
+        "$fortcov_exe" --source "$source_pattern" --exclude "$exclude_pattern" --output "$output_file" $gcov_files_list
+    else
+        print_error "No .gcov files available for analysis after filtering"
+        return 1
+    fi
     
     print_success "Coverage report generated: $output_file"
     
