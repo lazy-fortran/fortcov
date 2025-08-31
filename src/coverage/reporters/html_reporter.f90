@@ -315,7 +315,8 @@ contains
     function generate_responsive_css_styles() result(css)
         character(len=:), allocatable :: css
         
-        css = '        @media (max-width: 768px) { body { padding: 10px; } .report-header h1 { font-size: 2rem; } .summary-grid { grid-template-columns: 1fr; } }'
+        css = '        @media (max-width: 768px) { body { padding: 10px; } ' // &
+              '.report-header h1 { font-size: 2rem; } .summary-grid { grid-template-columns: 1fr; } }'
     end function generate_responsive_css_styles
 
 end module html_reporter
