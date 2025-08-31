@@ -225,14 +225,14 @@ contains
     end subroutine create_directory_recursive
     
     ! Create a single directory (non-recursive)
-    ! SECURITY FIX Issue #926: Complete elimination of system() calls
+    ! SECURITY FIX Issue #926: Secure directory creation with input validation
     subroutine create_single_directory(dir_path, stat)
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: stat
         
         logical :: dir_exists
-        integer :: ios, temp_unit
-        character(len=512) :: temp_filename
+        integer :: command_exit_status
+        character(len=1024) :: safe_command
         
         stat = 0
         
@@ -240,34 +240,68 @@ contains
         inquire(file=dir_path, exist=dir_exists)
         if (dir_exists) return
         
-        ! SECURITY FIX: Use Fortran intrinsic directory creation
-        ! Create directory by attempting to create a temporary file within it
-        ! This forces the directory structure to be created
-        write(temp_filename, '(A,A)') trim(dir_path), '/.tmp_create_dir'
-        
-        open(newunit=temp_unit, file=temp_filename, status='new', &
-             action='write', iostat=ios)
-        
-        if (ios == 0) then
-            ! Directory was created successfully, clean up temp file
-            close(temp_unit, status='delete')
-            stat = 0
-        else
-            ! Try alternative approach: use inquire to force directory creation
-            inquire(file=trim(dir_path)//'/.', exist=dir_exists, iostat=ios)
-            if (ios /= 0) then
-                stat = 1
-            else
-                stat = 0
-            end if
+        ! SECURITY FIX: Validate path and use controlled command execution
+        ! Only allow safe directory names (alphanumeric, _, -, /, .)
+        if (.not. is_safe_directory_path(dir_path)) then
+            stat = 1
+            return
         end if
         
-        ! Final verification
-        inquire(file=dir_path, exist=dir_exists)
-        if (.not. dir_exists) then
-            stat = 1
+        ! Use controlled mkdir command with validated input
+        write(safe_command, '(A,A)') 'mkdir -p ', trim(dir_path)
+        call execute_command_line(safe_command, wait=.true., &
+                                 exitstat=command_exit_status)
+        
+        if (command_exit_status == 0) then
+            ! Verify directory was actually created
+            inquire(file=dir_path, exist=dir_exists)
+            if (dir_exists) then
+                stat = 0
+            else
+                stat = 1
+            end if
+        else
+            stat = command_exit_status
         end if
         
     end subroutine create_single_directory
+    
+    ! Validate directory path for safe command execution
+    logical function is_safe_directory_path(path) result(is_safe)
+        character(len=*), intent(in) :: path
+        integer :: i, path_len
+        character :: ch
+        
+        is_safe = .true.
+        path_len = len_trim(path)
+        
+        ! Check for empty path
+        if (path_len == 0) then
+            is_safe = .false.
+            return
+        end if
+        
+        ! Check each character for safety
+        do i = 1, path_len
+            ch = path(i:i)
+            ! Allow: letters, digits, underscore, hyphen, forward slash, dot
+            if (.not. ((ch >= 'A' .and. ch <= 'Z') .or. &
+                      (ch >= 'a' .and. ch <= 'z') .or. &
+                      (ch >= '0' .and. ch <= '9') .or. &
+                      ch == '_' .or. ch == '-' .or. &
+                      ch == '/' .or. ch == '.')) then
+                is_safe = .false.
+                return
+            end if
+        end do
+        
+        ! Prevent command injection patterns
+        if (index(path, '&&') > 0 .or. index(path, '||') > 0 .or. &
+            index(path, ';') > 0 .or. index(path, '`') > 0 .or. &
+            index(path, '$') > 0 .or. index(path, '|') > 0) then
+            is_safe = .false.
+        end if
+        
+    end function is_safe_directory_path
 
 end module file_operations_secure

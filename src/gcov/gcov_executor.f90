@@ -206,48 +206,46 @@ contains
         error_ctx%error_code = ERROR_SUCCESS
     end subroutine execute_gcov_command
     
-    ! SECURITY FIX Issue #926: Secure gcov command execution
-    ! This completely eliminates execute_command_line and uses native Fortran file processing
-    ! Instead of executing gcov, we work with existing .gcov files
+    ! SECURITY FIX Issue #926: Secure gcov command execution with validation
+    ! Execute gcov commands safely with comprehensive input validation
     subroutine secure_execute_gcov_command(command, exit_code)
         character(len=*), intent(in) :: command  
         integer, intent(out) :: exit_code
         
-        ! SECURITY FIX: Instead of executing gcov commands, check for existing .gcov files
-        ! This completely eliminates shell execution vulnerabilities
-        
-        character(len=1024) :: expected_gcov_file
-        logical :: gcov_exists
-        
-        ! Extract expected .gcov filename from command
-        ! For a command like "gcov main.f90", expect "main.f90.gcov"
-        if (index(command, ' ') > 0) then
-            ! Simple extraction: assume last argument is the source file
-            expected_gcov_file = trim(command(index(command, ' ', back=.true.)+1:)) // '.gcov'
-        else
-            ! Single word command - unlikely but handle gracefully
-            expected_gcov_file = trim(command) // '.gcov'
+        ! SECURITY FIX: Validate command before execution
+        if (.not. is_safe_gcov_command(command)) then
+            exit_code = 1
+            return
         end if
         
-        ! Check if .gcov file already exists
-        inquire(file=expected_gcov_file, exist=gcov_exists)
-        
-        if (gcov_exists) then
-            ! Success - .gcov file is available for processing
-            exit_code = 0
-        else
-            ! Check common alternative locations
-            inquire(file='./' // expected_gcov_file, exist=gcov_exists)
-            if (gcov_exists) then
-                exit_code = 0
-            else
-                ! No .gcov file found - this is expected when gcov hasn't been run yet
-                ! For security, we don't execute gcov but report missing coverage data
-                exit_code = 1
-            end if
-        end if
+        ! Execute the validated command
+        call execute_command_line(command, wait=.true., exitstat=exit_code)
         
     end subroutine secure_execute_gcov_command
+    
+    ! Validate gcov command for safe execution
+    logical function is_safe_gcov_command(command) result(is_safe)
+        character(len=*), intent(in) :: command
+        
+        is_safe = .true.
+        
+        ! Check for dangerous command injection patterns
+        if (index(command, '&&') > 0 .or. index(command, '||') > 0 .or. &
+            index(command, ';') > 0 .or. index(command, '`') > 0 .or. &
+            index(command, '$') > 0 .or. index(command, '|') > 0 .or. &
+            index(command, '>') > 0 .or. index(command, '<') > 0) then
+            is_safe = .false.
+            return
+        end if
+        
+        ! Ensure command starts with safe gcov patterns
+        if (.not. (index(command, 'gcov ') == 1 .or. &
+                   index(command, 'cd ') == 1)) then
+            is_safe = .false.
+            return
+        end if
+        
+    end function is_safe_gcov_command
     
     ! Process generated gcov output files
     subroutine process_gcov_output_files(this, source_file, temp_files, line_count, error_ctx)
