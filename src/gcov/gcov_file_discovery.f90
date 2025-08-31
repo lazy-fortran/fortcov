@@ -16,6 +16,7 @@ module gcov_file_discovery
                               safe_write_message, safe_write_suggestion, safe_write_context
     use path_security_core, only: validate_path_security
     use file_ops_secure, only: safe_find_files, safe_remove_file
+    use file_search_secure, only: safe_find_files_with_glob
     implicit none
     private
 
@@ -79,11 +80,8 @@ contains
         call validate_path_security(directory, safe_directory, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) return
 
-        ! Build secure search pattern for .gcda files
-        pattern = trim(safe_directory) // '/**/*.gcda'
-
-        ! Use secure file finding instead of execute_command_line
-        call safe_find_files(pattern, gcda_files, error_ctx)
+        ! Use enhanced recursive API for .gcda file discovery
+        call safe_find_files_with_glob(safe_directory, "**/*.gcda", gcda_files, error_ctx)
         
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call safe_write_context(error_ctx, 'direct gcda file discovery')
@@ -130,11 +128,8 @@ contains
         call validate_path_security(directory, safe_directory, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) return
 
-        ! Build secure search pattern for .gcov files
-        pattern = trim(safe_directory) // '/**/*.gcov'
-
-        ! Use secure file finding instead of execute_command_line
-        call safe_find_files(pattern, gcov_files, error_ctx)
+        ! Use enhanced recursive API for .gcov file discovery
+        call safe_find_files_with_glob(safe_directory, "**/*.gcov", gcov_files, error_ctx)
         
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call safe_write_context(error_ctx, 'direct gcov file discovery')
