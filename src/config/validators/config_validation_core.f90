@@ -21,8 +21,8 @@ contains
 
         is_valid = .true.
 
-        ! Skip validation for help/version modes
-        if (config%show_help .or. config%show_version) then
+        ! Skip validation for help/version/TUI modes
+        if (config%show_help .or. config%show_version .or. config%tui_mode) then
             return
         end if
 
@@ -102,8 +102,8 @@ contains
         is_valid = .true.
         error_msg = ""
 
-        ! Skip validation for help/version modes
-        if (config%show_help .or. config%show_version) then
+        ! Skip validation for help/version/TUI modes
+        if (config%show_help .or. config%show_version .or. config%tui_mode) then
             return
         end if
 
