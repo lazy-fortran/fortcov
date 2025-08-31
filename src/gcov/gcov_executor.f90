@@ -88,9 +88,14 @@ contains
         ! Build final result
         call build_gcov_files_result(temp_files, line_count, gcov_files, error_ctx)
         
-        ! Cleanup
+        ! Cleanup with proper error handling
         call cleanup_temp_file(temp_filename)
-        if (allocated(temp_files)) deallocate(temp_files, stat=stat)
+        if (allocated(temp_files)) then
+            deallocate(temp_files, stat=stat)
+            if (stat /= 0) then
+                write(*, '(A)') "Warning: Failed to deallocate temp_files in normal cleanup"
+            end if
+        end if
     end subroutine execute_gcov
     
     ! Validate that source file and coverage data files exist
@@ -214,7 +219,7 @@ contains
         end if
     end subroutine build_gcov_files_result
     
-    ! Cleanup and return empty result
+    ! Cleanup and return empty result with proper memory management
     subroutine cleanup_and_return_empty(temp_files, gcov_files)
         character(len=256), allocatable, intent(inout) :: temp_files(:)
         character(len=:), allocatable, intent(out) :: gcov_files(:)
@@ -222,7 +227,14 @@ contains
         integer :: stat
         character(len=512) :: errmsg
         
-        if (allocated(temp_files)) deallocate(temp_files, stat=stat)
+        ! Critical fix: Ensure temp_files is deallocated in all error paths
+        if (allocated(temp_files)) then
+            deallocate(temp_files, stat=stat)
+            if (stat /= 0) then
+                write(*, '(A)') "Warning: Failed to deallocate temp_files"
+            end if
+        end if
+        
         allocate(character(len=256) :: gcov_files(0), stat=stat, errmsg=errmsg)
         if (stat /= 0) then
             write(*, '(A)') "Error: Failed to allocate empty gcov_files in cleanup: " // trim(errmsg)
