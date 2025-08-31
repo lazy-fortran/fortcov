@@ -83,10 +83,9 @@ contains
 
         if (all_tests_passed) then
             write(output_unit, '(A)') "✅ ALL " // trim(suite_name) // " TESTS PASSED"
-            if (should_exit) call exit(0)
         else
             write(output_unit, '(A)') "❌ " // trim(suite_name) // " TESTS FAILED"
-            if (should_exit) call exit(1)
+            if (should_exit) stop 1
         end if
     end subroutine print_test_summary
 

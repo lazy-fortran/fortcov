@@ -265,11 +265,10 @@ contains
         if (shared_all_tests_passed) then
             write(output_unit, '(A)') "✅ " // trim(test_suite_name) // &
                                       " FULLY VALIDATED"
-            call exit(0)
         else
             write(output_unit, '(A)') "❌ " // trim(test_suite_name) // &
                                       " VALIDATION FAILED"
-            call exit(1)
+            stop 1
         end if
     end subroutine print_test_summary
 

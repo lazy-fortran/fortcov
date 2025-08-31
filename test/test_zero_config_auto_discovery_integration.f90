@@ -86,12 +86,11 @@ program test_zero_config_auto_discovery_integration
     if (total_failures == 0) then
         print *, "✅ ALL INTEGRATION TEST SUITES PASSED"
         print *, "====================================================="
-        call exit(0)
     else
         write(error_unit, '(A,I0,A)') "❌ ", total_failures, &
             " TEST SUITES FAILED"
         print *, "====================================================="
-        call exit(1)
+        stop 1
     end if
 
 end program test_zero_config_auto_discovery_integration

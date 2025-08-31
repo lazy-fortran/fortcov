@@ -28,7 +28,7 @@ program test_issue_467_comprehensive
         print *, "   • Fork bomb prevention still works correctly"
     else
         print *, "❌ SOME COMPREHENSIVE TESTS FAILED"
-        call exit(1)
+        stop 1
     end if
     
 contains

@@ -215,7 +215,7 @@ contains
         write(unit_number, '(A)') '    print *, "This should not print"'
         write(unit_number, '(A)') '  else'
         write(unit_number, '(A)') '    print *, "Test failed as expected"'
-        write(unit_number, '(A)') '    call exit(1)  ! Simulate test failure'
+        write(unit_number, '(A)') '    stop 1  ! Simulate test failure'
         write(unit_number, '(A)') '  end if'
         write(unit_number, '(A)') 'end program failing_test'
         close(unit_number)
@@ -308,11 +308,10 @@ contains
         if (shared_all_tests_passed) then
             write(output_unit, '(A)') "✅ " // trim(test_suite_name) // &
                                       " FULLY VALIDATED"
-            call exit(0)
         else
             write(output_unit, '(A)') "❌ " // trim(test_suite_name) // &
                                       " VALIDATION FAILED"
-            call exit(1)
+            stop 1
         end if
     end subroutine print_test_summary
 

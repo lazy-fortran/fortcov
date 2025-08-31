@@ -28,7 +28,7 @@ program test_marker_cleanup
         print *, "✅ ALL TESTS PASSED - Marker cleanup working correctly"
     else
         print *, "❌ SOME TESTS FAILED - Marker cleanup NOT working"
-        call exit(1)
+        stop 1
     end if
     
 contains

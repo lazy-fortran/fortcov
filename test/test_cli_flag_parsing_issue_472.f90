@@ -38,9 +38,8 @@ program test_cli_flag_parsing_issue_472
     call print_test_summary(counter, "CLI Flag Parsing Issue #472")
     
     if (counter%failed > 0) then
-        call exit(1)
+        stop 1
     else
-        call exit(0)
     end if
     
 contains

@@ -28,7 +28,7 @@ program test_issue_395_fork_bomb
         print *, "✅ ALL TESTS PASSED - Fork bomb prevention working"
     else
         print *, "❌ SOME TESTS FAILED - Fork bomb prevention NOT working"
-        call exit(1)
+        stop 1
     end if
     
 contains

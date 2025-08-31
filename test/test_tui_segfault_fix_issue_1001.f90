@@ -82,10 +82,9 @@ program test_tui_segfault_fix_issue_1001
         print *, "All tests passed!"
         print *, "TUI segmentation fault (Issue #1001) successfully fixed."
         print *, "Memory safety validated for all source_paths allocation states."
-        call exit(0)
     else
         print '(A,I0,A)', "failed tests: ", test_failures, " failed."
-        call exit(1) 
+        stop 1 
     end if
     
 contains

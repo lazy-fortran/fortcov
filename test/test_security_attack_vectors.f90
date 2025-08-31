@@ -18,9 +18,8 @@ program test_security_attack_vectors
     call runner%print_summary()
     
     if (abs(runner%get_pass_rate() - 100.0) < epsilon(1.0)) then
-        call exit(0)
     else
-        call exit(1)
+        stop 1
     end if
     
 contains

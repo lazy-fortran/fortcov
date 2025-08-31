@@ -40,12 +40,11 @@ program test_realistic_coverage_simulation_issue_304
         print '(A,I0,A,I0,A)', "✓ ALL TESTS PASSED (", passed_tests, "/", total_tests, ")"
         print *, ""
         print *, "Issue #304 Resolution: REALISTIC COVERAGE SIMULATION WORKING"
-        call exit(0)
     else
         print '(A,I0,A,I0,A)', "✗ TESTS FAILED (", passed_tests, "/", total_tests, " passed)"
         print *, ""
         print *, "Issue #304 needs further work"
-        call exit(1)
+        stop 1
     end if
     
 contains

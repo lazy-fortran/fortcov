@@ -89,12 +89,11 @@ program test_coverage_edge_cases_issue_304
         print *, "✅ ALL COVERAGE EDGE CASE TESTS PASSED"
         print *, "Issue #304 Edge Cases: COMPREHENSIVE COVERAGE ACHIEVED"
         print *, "============================================================="
-        call exit(0)
     else
         write(error_unit, '(A,I0,A)') "❌ ", total_failures, &
             " EDGE CASE TEST SUITES FAILED"
         print *, "============================================================="
-        call exit(1)
+        stop 1
     end if
     
 end program test_coverage_edge_cases_issue_304
