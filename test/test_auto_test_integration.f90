@@ -114,13 +114,14 @@ contains
     subroutine setup_fpm_test_project()
         !! Create a simple FPM project structure for testing
         integer :: unit, stat
+        character(len=256) :: test_dir
         
-        ! SECURITY FIX Issue #926: Use secure directory creation
+        ! CRITICAL CI FIX: Use absolute paths to prevent project root corruption
+        test_dir = trim(current_dir) // '/test_auto_fpm'
         call secure_mkdir_wrapper('test_auto_fpm')
-        call chdir('test_auto_fpm')
         
-        ! Create fpm.toml
-        open(newunit=unit, file='fpm.toml', status='replace', iostat=stat)
+        ! Create fpm.toml in isolated test directory
+        open(newunit=unit, file=trim(test_dir) // '/fpm.toml', status='replace', iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'name = "test_project"'
             write(unit, '(A)') 'version = "0.1.0"'
@@ -133,10 +134,10 @@ contains
             close(unit)
         end if
         
-        ! Create a simple src file
+        ! Create a simple src file in isolated test directory
         ! SECURITY FIX Issue #926: Use secure directory creation
-        call secure_mkdir_wrapper('src')
-        open(newunit=unit, file='src/test_module.f90', status='replace', &
+        call secure_mkdir_wrapper('test_auto_fpm/src')
+        open(newunit=unit, file=trim(test_dir) // '/src/test_module.f90', status='replace', &
              iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'module test_module'
@@ -151,10 +152,10 @@ contains
             close(unit)
         end if
         
-        ! Create a simple test
+        ! Create a simple test in isolated test directory
         ! SECURITY FIX Issue #926: Use secure directory creation
-        call secure_mkdir_wrapper('test')
-        open(newunit=unit, file='test/test_basic.f90', status='replace', &
+        call secure_mkdir_wrapper('test_auto_fpm/test')
+        open(newunit=unit, file=trim(test_dir) // '/test/test_basic.f90', status='replace', &
              iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'program test_basic'
@@ -178,7 +179,6 @@ contains
         !! Create empty test directory
         ! SECURITY FIX Issue #926: Use secure directory creation
         call secure_mkdir_wrapper('test_empty')
-        call chdir('test_empty')
     end subroutine setup_empty_test_directory
 
     subroutine cleanup_test_files()
