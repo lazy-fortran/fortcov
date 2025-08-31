@@ -51,6 +51,11 @@ contains
         if (stat /= 0) then
             write(*, '(A)') "Error: Failed to allocate temp_files: " // trim(errmsg)
             error_ctx%error_code = ERROR_INVALID_CONFIG
+            ! Handle failed allocation case: allocate empty result directly
+            allocate(character(len=256) :: gcov_files(0), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Failed to allocate empty gcov_files: " // trim(errmsg)
+            end if
             return
         end if
         
