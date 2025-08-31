@@ -9,10 +9,10 @@ module gcov_executor
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, ERROR_INVALID_CONFIG, &
                                   ERROR_INCOMPLETE_COVERAGE, clear_error_context, handle_missing_source, &
                                   safe_write_message, safe_write_suggestion, safe_write_context
-    use file_utils_core, only: file_exists
+    use file_utilities, only: file_exists
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_move_file
-    use shell_utils_core, only: escape_shell_argument
+    use shell_utilities, only: escape_shell_argument
     implicit none
     private
     

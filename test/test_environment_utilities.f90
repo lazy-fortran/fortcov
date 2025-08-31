@@ -4,7 +4,7 @@ module test_environment_utilities
     !! SECURITY FIX Issue #971: Complete elimination of execute_command_line
     
     use file_ops_secure, only: safe_mkdir, safe_remove_file
-    use directory_ops_core, only: ensure_directory_safe
+    use directory_operations, only: ensure_directory_safe
     use error_handling_core, only: error_context_t, clear_error_context
     implicit none
     private

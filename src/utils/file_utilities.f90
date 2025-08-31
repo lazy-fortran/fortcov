@@ -1,4 +1,4 @@
-module file_utils_core
+module file_utilities
     use file_utils_consolidated, only: find_files, find_files_with_glob, &
         read_binary_file, read_binary_file_safe, write_text_file, &
         write_text_file_safe, read_file_content, read_file_content_enhanced, &
@@ -22,4 +22,4 @@ module file_utils_core
     public :: read_file_content_enhanced
     public :: basename
 
-end module file_utils_core
+end module file_utilities

@@ -6,8 +6,8 @@ module coverage_processor_gcov
     !! management functionality.
     use constants_core
     use config_core
-    use file_utils_core
-    use shell_utils_core, only: escape_shell_argument
+    use file_utilities
+    use shell_utilities, only: escape_shell_argument
     implicit none
     private
 

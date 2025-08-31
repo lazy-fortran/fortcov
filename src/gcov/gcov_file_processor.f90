@@ -1,7 +1,7 @@
 module gcov_file_processor
     use coverage_model_core
     use error_handling_core
-    use iostat_utils_core
+    use iostat_utilities
     use gcov_line_parser
     use coverage_data_builder
     implicit none

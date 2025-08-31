@@ -1,4 +1,4 @@
-module file_processor_core
+module file_processor
     !! File processing utilities extracted from zero_configuration_manager
     !! 
     !! This module provides file processing, directory management, and user
@@ -8,7 +8,7 @@ module file_processor_core
     !! - Output directory structure creation
     !! - Zero-configuration error guidance display
     !! - Configuration default application
-    use file_utils_core, only: ensure_directory
+    use file_utilities, only: ensure_directory
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, ERROR_FILE_ACCESS
     implicit none
     private
@@ -122,4 +122,4 @@ contains
         
     end subroutine apply_zero_configuration_defaults
 
-end module file_processor_core
+end module file_processor

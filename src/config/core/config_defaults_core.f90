@@ -7,7 +7,7 @@ module config_defaults_core
     use config_types, only: config_t, MAX_ARRAY_SIZE
     use constants_core
     use zero_config_manager
-    use shell_utils_core, only: escape_shell_argument
+    use shell_utilities, only: escape_shell_argument
     
     implicit none
     private

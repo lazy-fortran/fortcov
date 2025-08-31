@@ -5,7 +5,7 @@ module file_operations_secure
     !! and directory creation using Fortran intrinsics to prevent shell injection
     !! vulnerabilities. All operations include comprehensive security validation.
     use error_handling_core
-    use path_security_core, only: validate_path_security
+    use path_security, only: validate_path_security
     implicit none
     private
     

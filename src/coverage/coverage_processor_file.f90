@@ -7,7 +7,7 @@ module coverage_processor_file
     use config_core, only: config_t
     use config_types, only: MAX_ARRAY_SIZE
     use coverage_parser_factory, only: coverage_parser_t, create_parser
-    use file_utils_core, only: read_file_content, file_exists
+    use file_utilities, only: read_file_content, file_exists
     use coverage_workflows, only: execute_auto_test_workflow
     
     implicit none

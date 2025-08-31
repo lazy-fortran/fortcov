@@ -1,4 +1,4 @@
-module shell_utils_core
+module shell_utilities
     !! Shell utilities module for command escaping and safe execution
     !!
     !! This module provides shell command utilities that can be used across
@@ -65,4 +65,4 @@ contains
         deallocate(temp_arg)
     end function escape_shell_argument
 
-end module shell_utils_core
+end module shell_utilities

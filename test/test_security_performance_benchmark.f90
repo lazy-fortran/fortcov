@@ -13,7 +13,7 @@ program test_security_performance_benchmark
     use security_assessment_core, only: assess_pattern_security_risks, &
                                    assess_deletion_security_risks, &
                                    check_file_location
-    use path_security_core, only: validate_path_security
+    use path_security, only: validate_path_security
     use file_ops_secure, only: safe_find_files
     use error_handling_core
     implicit none

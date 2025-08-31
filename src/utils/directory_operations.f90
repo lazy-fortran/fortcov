@@ -1,4 +1,4 @@
-module directory_ops_core
+module directory_operations
     use error_handling_core
     use file_ops_secure, only: safe_mkdir
     implicit none
@@ -33,4 +33,4 @@ contains
         call safe_mkdir(path, error_ctx)
     end subroutine ensure_directory_safe
 
-end module directory_ops_core
+end module directory_operations

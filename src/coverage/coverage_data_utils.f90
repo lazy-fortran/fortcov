@@ -17,7 +17,7 @@ module coverage_data_utils
     !! - Eliminate duplicated allocation patterns
 
     use coverage_types
-    use memory_management_core, only: memory_status_t, get_memory_status, validate_memory_balance
+    use memory_management, only: memory_status_t, get_memory_status, validate_memory_balance
     implicit none
     private
 

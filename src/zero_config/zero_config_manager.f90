@@ -21,7 +21,7 @@ module zero_config_manager
                                    auto_discover_coverage_files_priority, &
                               auto_discover_source_files_priority => &
                                    auto_discover_source_files_priority
-    use file_processor_core, only: ensure_output_directory_structure => &
+    use file_processor, only: ensure_output_directory_structure => &
                                    ensure_output_directory_structure, &
                               show_zero_configuration_error_guidance => &
                                    show_zero_configuration_error_guidance, &

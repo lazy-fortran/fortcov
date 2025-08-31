@@ -1,4 +1,4 @@
-module path_security_core
+module path_security
     use error_handling_core
     use string_utils, only: int_to_string
     use path_scanner
@@ -192,4 +192,4 @@ contains
         if (next_slot > PATH_CACHE_SIZE) next_slot = 1
     end subroutine cache_path_result
 
-end module path_security_core
+end module path_security

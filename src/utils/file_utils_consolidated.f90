@@ -11,9 +11,9 @@ module file_utils_consolidated
     
     use iso_fortran_env, only: int64
     use error_handling_core
-    use iostat_utils_core
+    use iostat_utilities
     use input_validation_core
-    use directory_ops_core
+    use directory_operations
     use file_ops_secure, only: safe_find_files
     use file_search_secure, only: safe_find_files_with_glob
     use path_utils_consolidated, only: resolve_path, file_exists, basename

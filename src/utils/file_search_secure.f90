@@ -5,7 +5,7 @@ module file_search_secure
     !! intrinsics instead of shell commands to prevent injection attacks.
     !! Includes pattern-based discovery and security validation.
     use error_handling_core
-    use path_security_core, only: validate_path_security
+    use path_security, only: validate_path_security
     use security_assessment_core, only: assess_pattern_security_risks
     use file_deletion_secure, only: safe_close_and_delete
     implicit none
