@@ -134,35 +134,37 @@ program main
     end if
   end block
   
-  ! Validate configuration for security and accessibility
-  call validate_config_with_context(config, error_ctx)
-  if (error_ctx%error_code /= ERROR_SUCCESS) then
-    print *, trim(error_ctx%message)
-    if (len_trim(error_ctx%suggestion) > 0) then
-      print *, ""
-      print *, "Suggested fix: " // trim(error_ctx%suggestion)
-    end if
-    print *, ""
-    print *, "For configuration help:"
-    print *, "   • See example: cat fortcov.nml.example"
-    print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
-    ! EPIC 1 FIX: Map source path errors to proper exit codes
-    if (index(error_ctx%message, "Source path not found") > 0) then
-      call exit_no_coverage_data_clean()
-    else
-      call exit_invalid_config_clean()
-    end if
-  end if
-  
-  ! Check for TUI mode
+  ! Check for TUI mode BEFORE validation to allow interactive source selection
   if (config%tui_mode) then
-    ! Launch Terminal User Interface
+    ! Launch Terminal User Interface with interactive configuration
     exit_code = launch_coverage_tui_mode(config)
-  else if (config%zero_configuration_mode) then
-    ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
-    call execute_zero_config_complete_workflow(config, exit_code)
   else
-    exit_code = run_coverage_analysis(config)
+    ! Validate configuration for security and accessibility (non-TUI modes only)
+    call validate_config_with_context(config, error_ctx)
+    if (error_ctx%error_code /= ERROR_SUCCESS) then
+      print *, trim(error_ctx%message)
+      if (len_trim(error_ctx%suggestion) > 0) then
+        print *, ""
+        print *, "Suggested fix: " // trim(error_ctx%suggestion)
+      end if
+      print *, ""
+      print *, "For configuration help:"
+      print *, "   • See example: cat fortcov.nml.example"
+      print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
+      ! EPIC 1 FIX: Map source path errors to proper exit codes
+      if (index(error_ctx%message, "Source path not found") > 0) then
+        call exit_no_coverage_data_clean()
+      else
+        call exit_invalid_config_clean()
+      end if
+    end if
+    ! Only proceed with analysis for non-TUI modes
+    if (config%zero_configuration_mode) then
+      ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
+      call execute_zero_config_complete_workflow(config, exit_code)
+    else
+      exit_code = run_coverage_analysis(config)
+    end if
   end if
   
   if (exit_code == EXIT_SUCCESS) then

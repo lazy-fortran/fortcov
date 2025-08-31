@@ -16,9 +16,9 @@ module coverage_tui
 contains
     
     function perform_tui_analysis(config) result(exit_code)
-        !! TUI mode analysis implementation
+        !! TUI mode analysis implementation with interactive source configuration
         use tui_main_loop
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
         integer :: exit_code
         
         type(tui_engine_t) :: tui_engine
@@ -29,7 +29,13 @@ contains
         
         if (.not. config%quiet) then
             print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
-            print *, "   Commands: [h]elp, [r]efresh, [f]ilter, [e]xport, [q]uit"
+            
+            ! Check if sources are configured, offer interactive setup
+            if (size(config%source_paths) == 0 .or. all(len_trim(config%source_paths) == 0)) then
+                print *, "⚠️  No source paths configured. Use [c]onfigure to set up sources."
+            end if
+            
+            print *, "   Commands: [h]elp, [c]onfigure, [a]nalyze, [r]efresh, [f]ilter, [e]xport, [q]uit"
             print *, ""
         end if
         
@@ -64,14 +70,25 @@ contains
     end function perform_tui_analysis
     
     subroutine display_tui_menu(config)
-        !! Displays the TUI main menu
+        !! Displays the TUI main menu with source status
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
             print *, "---------------------------------------------"
             print *, "Coverage Analysis TUI - Main Menu"
             print *, "---------------------------------------------"
+            
+            ! Show current source status
+            if (size(config%source_paths) == 0 .or. all(len_trim(config%source_paths) == 0)) then
+                print *, "📁 Sources: Not configured - use [c] to set up"
+            else
+                print *, "📁 Sources:", trim(config%source_paths(1))
+                if (size(config%source_paths) > 1) print *, "           (and", size(config%source_paths)-1, "more)"
+            end if
+            
+            print *, "---------------------------------------------"
             print *, "[h] Help - Show available commands"
+            print *, "[c] Configure - Set source paths and options"
             print *, "[a] Analyze - Run coverage analysis"
             print *, "[r] Refresh - Refresh coverage data"
             print *, "[f] Filter - Apply file filters"
@@ -85,15 +102,18 @@ contains
     end subroutine display_tui_menu
     
     subroutine process_tui_command(user_input, config, continue_tui)
-        !! Processes TUI user commands
+        !! Processes TUI user commands with interactive configuration
         character(len=*), intent(in) :: user_input
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
         logical, intent(inout) :: continue_tui
         
         ! Process user command
         select case(trim(adjustl(user_input)))
         case('h', 'H', 'help')
             call show_tui_help(config)
+            
+        case('c', 'C', 'configure', 'config')
+            call handle_tui_configure(config)
             
         case('a', 'A', 'analyze')
             call handle_tui_analyze(config)
@@ -131,23 +151,76 @@ contains
         if (.not. config%quiet) then
             print *, ""
             print *, "TUI Help:"
-            print *, "  h/help    - Show this help message"
-            print *, "  a/analyze - Run full coverage analysis"
-            print *, "  r/refresh - Refresh coverage file discovery"
-            print *, "  f/filter  - Configure include/exclude filters"
-            print *, "  s/stats   - Display coverage statistics"
-            print *, "  e/export  - Export coverage to file"
-            print *, "  q/quit    - Exit TUI mode"
+            print *, "  h/help      - Show this help message"
+            print *, "  c/configure - Set source paths and configuration options"
+            print *, "  a/analyze   - Run full coverage analysis"
+            print *, "  r/refresh   - Refresh coverage file discovery"
+            print *, "  f/filter    - Configure include/exclude filters"
+            print *, "  s/stats     - Display coverage statistics"
+            print *, "  e/export    - Export coverage to file"
+            print *, "  q/quit      - Exit TUI mode"
             print *, ""
         end if
         
     end subroutine show_tui_help
     
+    subroutine handle_tui_configure(config)
+        !! Handles interactive source path configuration
+        type(config_t), intent(inout) :: config
+        character(len=256) :: source_path
+        integer :: iostat
+        logical :: path_exists
+        
+        if (.not. config%quiet) then
+            print *, ""
+            print *, "📁 Configure Source Paths"
+            print *, "---------------------------------------------"
+            print *, "Enter source directory path (e.g., 'src', 'lib', etc.):"
+            write(*, '(A)', advance='no') "Source path: "
+            
+            read(*, '(A)', iostat=iostat) source_path
+            if (iostat /= 0) then
+                print *, "❌ Input error occurred"
+                return
+            end if
+            
+            source_path = trim(adjustl(source_path))
+            if (len_trim(source_path) == 0) then
+                print *, "❌ Empty path provided, keeping current configuration"
+                return
+            end if
+            
+            ! Validate path exists
+            inquire(file=trim(source_path), exist=path_exists)
+            if (.not. path_exists) then
+                print *, "⚠️  Warning: Path '", trim(source_path), "' does not exist"
+                print *, "   You can still proceed - path might be created later"
+            end if
+            
+            ! Update config with new source path
+            if (allocated(config%source_paths)) deallocate(config%source_paths)
+            allocate(character(len=256) :: config%source_paths(1))
+            config%source_paths(1) = trim(source_path)
+            
+            print *, "✅ Source path configured: ", trim(source_path)
+            print *, ""
+        end if
+        
+    end subroutine handle_tui_configure
+    
     subroutine handle_tui_analyze(config)
-        !! Handles TUI analyze command
+        !! Handles TUI analyze command with source validation
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
+            ! Check if sources are configured before analysis
+            if (size(config%source_paths) == 0 .or. all(len_trim(config%source_paths) == 0)) then
+                print *, "❌ Cannot analyze: No source paths configured"
+                print *, "   Use [c]onfigure command to set up source directories first"
+                print *, ""
+                return
+            end if
+            
             print *, "Running coverage analysis..."
             call perform_tui_coverage_analysis(config)
         end if
