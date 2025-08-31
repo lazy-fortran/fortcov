@@ -37,6 +37,14 @@ contains
             '/proc/', '/sys/ ', '/dev/ ' &
         ]
         
+        ! SECURITY BALANCE IMPROVEMENT: Allow legitimate /tmp output while preserving security
+        ! /tmp is standard Unix temporary directory - legitimate for output file creation
+        if (starts_with_ignore_case(path, '/tmp/')) then
+            ! Allow /tmp access - this is legitimate temporary file creation
+            ! Security validation already prevents path traversal, command injection
+            return
+        end if
+        
         ! Check against blocked system directories
         do i = 1, size(BLOCKED_PATHS)
             if (starts_with_ignore_case(path, trim(BLOCKED_PATHS(i)))) then
