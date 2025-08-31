@@ -17,7 +17,7 @@ contains
         !! Create a concrete reporter instance based on format
         use text_reporter, only: text_reporter_t
         use json_reporter, only: json_reporter_t  
-        use html_reporter_impl, only: html_reporter_t
+        use html_reporter, only: html_reporter_t
         use xml_reporter, only: xml_reporter_t
         use markdown_reporter_wrapper, only: markdown_reporter_t
         character(len=*), intent(in) :: format
