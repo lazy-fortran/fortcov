@@ -228,7 +228,7 @@ contains
     end subroutine extract_coverage_rates_from_json
 
     function generate_packages_from_json(json_content) result(packages_xml)
-        !! Generate XML packages section from JSON using json-fortran
+        !! Generate XML packages section from JSON efficiently (single allocation)
         character(len=*), intent(in) :: json_content
         character(len=:), allocatable :: packages_xml
 
@@ -240,49 +240,109 @@ contains
         integer :: num_files, i
         logical :: found
 
-        packages_xml = '<packages>' // new_line('') // &
-                      '  <package name="fortcov-coverage">' // new_line('') // &
-                      '    <classes>' // new_line('')
+        integer :: total_len, pos
+        character(len=:), allocatable :: buffer
 
         call json_parser%initialize()
         call json_parser%deserialize(root_obj, json_content)
 
-        if (json_parser%failed() .or. .not. associated(root_obj)) then
-            packages_xml = packages_xml // &
-                          '    </classes>' // new_line('') // &
-                          '  </package>' // new_line('') // &
-                          '</packages>'
-            if (associated(root_obj)) call json_parser%destroy(root_obj)
-            return
-        end if
+        ! Header/footer static parts length
+        total_len = 0
+        total_len = total_len + len('<packages>') + 1
+        total_len = total_len + len('  <package name="fortcov-coverage">') + 1
+        total_len = total_len + len('    <classes>') + 1
 
-        ! Get files array
+        ! Compute body size
         call json_parser%get(root_obj, 'files', files_array, found)
-        if (found .and. associated(files_array)) then
+        if (associated(root_obj) .and. found .and. associated(files_array)) then
             call json_parser%info(files_array, n_children=num_files)
-
             do i = 1, num_files
                 call json_parser%get_child(files_array, i, file_obj)
                 if (associated(file_obj)) then
                     call json_parser%get(file_obj, 'filename', filename, found)
                     if (found .and. allocated(filename)) then
-                        packages_xml = packages_xml // &
-                            '      <class name="' // filename // '" filename="' // filename // '"' // &
-                            ' line-rate="1.0" branch-rate="1.0" complexity="0.0">' // new_line('') // &
-                            '        <methods></methods>' // new_line('') // &
-                            '        <lines></lines>' // new_line('') // &
-                            '      </class>' // new_line('')
+                        total_len = total_len + len('      <class name="') + &
+                                    len_trim(filename) + len('" filename="') + &
+                                    len_trim(filename) + &
+                                    len('" line-rate="1.0" branch-rate="1.0" complexity="0.0">') + 1
+                        total_len = total_len + len('        <methods></methods>') + 1
+                        total_len = total_len + len('        <lines></lines>') + 1
+                        total_len = total_len + len('      </class>') + 1
                     end if
                 end if
             end do
         end if
 
-        packages_xml = packages_xml // &
-                      '    </classes>' // new_line('') // &
-                      '  </package>' // new_line('') // &
-                      '</packages>'
+        ! Footer static parts
+        total_len = total_len + len('    </classes>') + 1
+        total_len = total_len + len('  </package>') + 1
+        total_len = total_len + len('</packages>')
+
+        allocate(character(len=total_len) :: buffer)
+        pos = 1
+
+        call append_text(buffer, pos, '<packages>')
+        buffer(pos:pos) = new_line('')
+        pos = pos + 1
+        call append_text(buffer, pos, '  <package name="fortcov-coverage">')
+        buffer(pos:pos) = new_line('')
+        pos = pos + 1
+        call append_text(buffer, pos, '    <classes>')
+        buffer(pos:pos) = new_line('')
+        pos = pos + 1
+
+        if (associated(root_obj) .and. associated(files_array)) then
+            call json_parser%info(files_array, n_children=num_files)
+            do i = 1, num_files
+                call json_parser%get_child(files_array, i, file_obj)
+                if (associated(file_obj)) then
+                    call json_parser%get(file_obj, 'filename', filename, found)
+                    if (found .and. allocated(filename)) then
+                        call append_text(buffer, pos, '      <class name="')
+                        call append_text(buffer, pos, trim(filename))
+                        call append_text(buffer, pos, '" filename="')
+                        call append_text(buffer, pos, trim(filename))
+                        call append_text(buffer, pos, &
+                            '" line-rate="1.0" branch-rate="1.0" complexity="0.0">')
+                        buffer(pos:pos) = new_line('')
+                        pos = pos + 1
+                        call append_text(buffer, pos, '        <methods></methods>')
+                        buffer(pos:pos) = new_line('')
+                        pos = pos + 1
+                        call append_text(buffer, pos, '        <lines></lines>')
+                        buffer(pos:pos) = new_line('')
+                        pos = pos + 1
+                        call append_text(buffer, pos, '      </class>')
+                        buffer(pos:pos) = new_line('')
+                        pos = pos + 1
+                    end if
+                end if
+            end do
+        end if
+
+        call append_text(buffer, pos, '    </classes>')
+        buffer(pos:pos) = new_line('')
+        pos = pos + 1
+        call append_text(buffer, pos, '  </package>')
+        buffer(pos:pos) = new_line('')
+        pos = pos + 1
+        call append_text(buffer, pos, '</packages>')
+
+        packages_xml = buffer(1:pos-1)
 
         if (associated(root_obj)) call json_parser%destroy(root_obj)
+    contains
+        pure subroutine append_text(buf, pos, txt)
+            character(len=*), intent(inout) :: buf
+            integer,           intent(inout) :: pos
+            character(len=*),  intent(in)    :: txt
+            integer :: L
+            L = len(txt)
+            if (L > 0) then
+                buf(pos:pos+L-1) = txt
+                pos = pos + L
+            end if
+        end subroutine append_text
     end function generate_packages_from_json
 
 end module coverage_format_converter
