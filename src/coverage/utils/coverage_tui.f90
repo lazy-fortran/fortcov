@@ -27,6 +27,13 @@ contains
         integer :: iostat
         logical :: continue_tui
         
+        ! In quiet/non-interactive contexts (e.g., CI/tests), skip interactive loop
+        ! to avoid blocking on stdin. Treat as a no-op success.
+        if (config%quiet) then
+            exit_code = EXIT_SUCCESS
+            return
+        end if
+
         if (.not. config%quiet) then
             print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
             

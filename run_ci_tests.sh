@@ -13,7 +13,7 @@ EXCLUDE_TESTS=(
     "test_gcov_processing"                 # Exit code 1 - Gcov processing issue
     "test_complete_workflow"               # Exit code 1 - Workflow integration failure
     "test_auto_discovery_integration_suite" # Exit code 1 - Command execution failure
-    "test_coverage_workflows_decomposition" # Test execution hangs
+    # re-enabled after TUI quiet-mode fix
     "test_auto_discovery_core_validation" # Exit code 2 - Core validation failure
     "test_bugfix_469"                     # Exit code 1 - Bug fix validation failure
     "test_build_system_detector"          # Exit code 1 - Build detection failure
