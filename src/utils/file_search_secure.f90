@@ -17,6 +17,8 @@ module file_search_secure
     
     ! Public procedures
     public :: safe_find_files
+    public :: safe_find_files_with_glob  ! Enhanced API for directory+pattern
+    public :: safe_find_files_recursive  ! Enhanced API for recursive search
     public :: create_secure_temp_filename
     public :: get_process_id
     
@@ -58,6 +60,50 @@ contains
         call fortran_find_files(safe_pattern, files, error_ctx, has_security_assessment)
         
     end subroutine safe_find_files
+
+    ! Enhanced API: Find files with directory and glob pattern
+    subroutine safe_find_files_with_glob(directory, pattern, files, error_ctx)
+        character(len=*), intent(in) :: directory, pattern
+        character(len=:), allocatable, intent(out) :: files(:)
+        type(error_context_t), intent(out) :: error_ctx
+        
+        character(len=512) :: full_pattern
+        
+        call clear_error_context(error_ctx)
+        
+        ! Construct full search pattern
+        if (trim(directory) == "." .or. len_trim(directory) == 0) then
+            full_pattern = trim(pattern)
+        else
+            full_pattern = trim(directory) // "/" // trim(pattern)
+        end if
+        
+        ! Use existing safe_find_files implementation
+        call safe_find_files(full_pattern, files, error_ctx)
+        
+    end subroutine safe_find_files_with_glob
+
+    ! Enhanced API: Recursive file finding
+    subroutine safe_find_files_recursive(base_dir, pattern, files, error_ctx)
+        character(len=*), intent(in) :: base_dir, pattern
+        character(len=:), allocatable, intent(out) :: files(:)
+        type(error_context_t), intent(out) :: error_ctx
+        
+        character(len=512) :: recursive_pattern
+        
+        call clear_error_context(error_ctx)
+        
+        ! Construct recursive search pattern using ** wildcard
+        if (trim(base_dir) == "." .or. len_trim(base_dir) == 0) then
+            recursive_pattern = "**/" // trim(pattern)
+        else
+            recursive_pattern = trim(base_dir) // "/**/" // trim(pattern)
+        end if
+        
+        ! Use existing safe_find_files implementation
+        call safe_find_files(recursive_pattern, files, error_ctx)
+        
+    end subroutine safe_find_files_recursive
 
     ! Secure Fortran-based file finding to replace shell command vulnerabilities
     ! SECURITY FIX Issue #963: Complete replacement of execute_command_line find usage

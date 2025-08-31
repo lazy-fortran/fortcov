@@ -15,6 +15,7 @@ module file_utils_consolidated
     use input_validation_core
     use directory_ops_core
     use file_ops_secure, only: safe_find_files
+    use file_search_secure, only: safe_find_files_with_glob
     use path_utils_consolidated, only: resolve_path, file_exists, basename
     implicit none
     private
@@ -75,20 +76,12 @@ contains
         character(len=*), intent(in) :: pattern
         character(len=:), allocatable :: files(:)
         
-        character(len=256) :: full_pattern
         type(error_context_t) :: error_ctx
         integer :: stat
         character(len=512) :: errmsg
         
-        ! Construct full search pattern
-        if (trim(directory) == ".") then
-            full_pattern = trim(pattern)
-        else
-            full_pattern = trim(directory) // "/" // trim(pattern)
-        end if
-        
-        ! Use secure command executor for safe file finding
-        call safe_find_files(full_pattern, files, error_ctx)
+        ! Use enhanced API from file_search_secure for direct directory+pattern
+        call safe_find_files_with_glob(directory, pattern, files, error_ctx)
         
         ! If secure find fails, return empty array
         if (error_ctx%error_code /= ERROR_SUCCESS) then

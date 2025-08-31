@@ -10,6 +10,7 @@ module auto_discovery_core
     !! - Coordinate gcov file generation from gcda files
     use coverage_discovery_core, only: discover_coverage_files
     use file_utils_core, only: find_files, find_files_with_glob
+    use file_search_secure, only: safe_find_files_with_glob, safe_find_files_recursive
     use gcda_discovery, only: discover_gcda_files_priority
     use gcov_generator, only: generate_gcov_files_from_gcda, &
                                    check_gcov_availability
@@ -160,20 +161,19 @@ contains
     end function discover_existing_gcov_files
     
     function direct_find_gcov_files(directory) result(gcov_files)
-        !! Direct filesystem-based .gcov file discovery for zero-config mode
-        !! Uses system find command to discover ALL .gcov files in the directory
-        !! Bypasses security restrictions for zero-configuration functionality
-        use command_utils_core, only: validate_directory_exists, get_unique_suffix, &
-                                build_nonrecursive_find_command, &
-                                execute_find_and_read_results
+        !! Direct filesystem-based .gcov file discovery using canonical secure implementation
+        !! DEDUPLICATION: Now uses file_search_secure instead of shell commands
+        use error_handling_core, only: error_context_t, ERROR_SUCCESS
         character(len=*), intent(in) :: directory
         character(len=:), allocatable :: gcov_files(:)
-        character(len=512) :: command, temp_file
+        type(error_context_t) :: error_ctx
         integer :: stat
         character(len=512) :: errmsg
+        logical :: dir_exists
         
-        ! Validate directory exists
-        if (.not. validate_directory_exists(directory)) then
+        ! Check if directory exists
+        inquire(file=directory, exist=dir_exists)
+        if (.not. dir_exists) then
             allocate(character(len=256) :: gcov_files(0), &
                 stat=stat, errmsg=errmsg)
             if (stat /= 0) then
@@ -184,27 +184,36 @@ contains
             return
         end if
         
-        ! Prepare command and temporary file
-        temp_file = "/tmp/fortcov_find_gcov_" // get_unique_suffix()
-        command = build_nonrecursive_find_command(directory, temp_file)
+        ! Use canonical secure implementation for .gcov file finding
+        call safe_find_files_with_glob(directory, "*.gcov", gcov_files, error_ctx)
         
-        ! Execute and read results
-        gcov_files = execute_find_and_read_results(command, temp_file, 100)
+        ! Handle error by returning empty array
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            if (allocated(gcov_files)) deallocate(gcov_files, stat=stat)
+            allocate(character(len=256) :: gcov_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
+                    trim(errmsg)
+                return
+            end if
+        end if
     end function direct_find_gcov_files
     
     function direct_find_gcov_files_recursive(base_directory) result(gcov_files)
-        !! Recursively search for .gcov files in directory tree
-        use command_utils_core, only: validate_directory_exists, get_unique_suffix, &
-                                build_recursive_find_command, &
-                                execute_find_and_read_results
+        !! Recursively search for .gcov files using canonical secure implementation
+        !! DEDUPLICATION: Now uses file_search_secure instead of shell commands
+        use error_handling_core, only: error_context_t, ERROR_SUCCESS
         character(len=*), intent(in) :: base_directory
         character(len=:), allocatable :: gcov_files(:)
-        character(len=512) :: command, temp_file
+        type(error_context_t) :: error_ctx
         integer :: stat
         character(len=512) :: errmsg
+        logical :: dir_exists
         
-        ! Validate directory exists
-        if (.not. validate_directory_exists(base_directory)) then
+        ! Check if directory exists
+        inquire(file=base_directory, exist=dir_exists)
+        if (.not. dir_exists) then
             allocate(character(len=256) :: gcov_files(0), &
                 stat=stat, errmsg=errmsg)
             if (stat /= 0) then
@@ -215,12 +224,20 @@ contains
             return
         end if
         
-        ! Prepare command and temporary file
-        temp_file = "/tmp/fortcov_find_gcov_recursive_" // get_unique_suffix()
-        command = build_recursive_find_command(base_directory, temp_file)
+        ! Use canonical secure implementation for recursive .gcov file finding
+        call safe_find_files_recursive(base_directory, "*.gcov", gcov_files, error_ctx)
         
-        ! Execute and read results
-        gcov_files = execute_find_and_read_results(command, temp_file, 200)
+        ! Handle error by returning empty array
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            if (allocated(gcov_files)) deallocate(gcov_files, stat=stat)
+            allocate(character(len=256) :: gcov_files(0), &
+                stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
+                    trim(errmsg)
+                return
+            end if
+        end if
     end function direct_find_gcov_files_recursive
 
 end module auto_discovery_core

@@ -26,9 +26,8 @@ module command_utils_core
     public :: escape_shell_arg
     public :: replace_single_quotes
     public :: validate_directory_exists
-    public :: build_recursive_find_command
-    public :: build_nonrecursive_find_command
-    public :: execute_find_and_read_results
+    ! DEPRECATED: Shell-based find commands removed in favor of secure implementation
+    ! Use file_search_secure module for all file finding operations
     public :: get_unique_suffix
 
 contains
@@ -116,102 +115,15 @@ contains
         inquire(file=directory, exist=exists)
     end function validate_directory_exists
     
-    function build_recursive_find_command(base_directory, temp_file) result(command)
-        !! Build recursive find command for gcov files
-        character(len=*), intent(in) :: base_directory, temp_file
-        character(len=512) :: command
-        
-        command = "find " // escape_shell_arg(trim(base_directory)) // &
-                 " -name '*.gcov' -type f > " // &
-                 escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
-    end function build_recursive_find_command
-    
-    function build_nonrecursive_find_command(directory, temp_file) result(command)
-        !! Build non-recursive find command for gcov files
-        character(len=*), intent(in) :: directory, temp_file
-        character(len=512) :: command
-        
-        if (trim(directory) == ".") then
-            command = "find . -maxdepth 1 -name '*.gcov' -type f > " // &
-                     escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
-        else
-            command = "find " // escape_shell_arg(trim(directory)) // &
-                     " -maxdepth 1 -name '*.gcov' -type f > " // &
-                     escape_shell_arg(trim(temp_file)) // " 2>/dev/null"
-        end if
-    end function build_nonrecursive_find_command
-    
-    function execute_find_and_read_results(command, temp_file, max_results) &
-                                          result(gcov_files)
-        !! Execute find command and read results from temporary file
-        character(len=*), intent(in) :: command, temp_file
-        integer, intent(in) :: max_results
-        character(len=:), allocatable :: gcov_files(:)
-        
-        character(len=256) :: line
-        integer :: unit, iostat, file_count, stat
-        character(len=512) :: errmsg
-        character(len=256), allocatable :: temp_results(:)
-        
-        ! SECURITY FIX Issue #963: Use secure file finding instead of shell
-        ! Extract pattern from command (looking for *.gcov files)
-        call execute_secure_find_from_command(command, gcov_files)
-        return
-        
-        ! Legacy code below for reference - now replaced with secure implementation
-        allocate(temp_results(max_results), stat=stat, errmsg=errmsg)
-        if (stat /= 0) then
-            write(*, '(A)') "Error: Memory allocation failed for temp_results: " // &
-                trim(errmsg)
-            allocate(character(len=256) :: gcov_files(0))
-            return
-        end if
-        file_count = 0
-        
-        open(newunit=unit, file=trim(temp_file), status='old', iostat=iostat, &
-             action='read')
-        if (iostat == 0) then
-            do
-                read(unit, '(A)', iostat=iostat) line
-                if (iostat /= 0) exit
-                if (len_trim(line) > 0 .and. file_count < max_results) then
-                    file_count = file_count + 1
-                    temp_results(file_count) = trim(line)
-                end if
-            end do
-            close(unit)
-        end if
-        
-        ! SECURITY FIX Issue #963: Clean up temporary file using secure removal
-        block
-            type(error_context_t) :: error_ctx
-            call safe_remove_file(trim(temp_file), error_ctx)
-            ! Note: Ignore errors in cleanup - file might be already removed
-        end block
-        
-        ! Allocate final result
-        if (file_count > 0) then
-            allocate(character(len=256) :: gcov_files(file_count), &
-                stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
-                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
-                    trim(errmsg)
-                allocate(character(len=256) :: gcov_files(0))
-                return
-            end if
-            gcov_files(1:file_count) = temp_results(1:file_count)
-        else
-            allocate(character(len=256) :: gcov_files(0), &
-                stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
-                write(*, '(A)') "Error: Memory allocation failed for gcov_files: " // &
-                    trim(errmsg)
-                return
-            end if
-        end if
-        
-        deallocate(temp_results)
-    end function execute_find_and_read_results
+    ! DEPRECATED FUNCTIONS REMOVED:
+    ! - build_recursive_find_command
+    ! - build_nonrecursive_find_command  
+    ! - execute_find_and_read_results
+    !
+    ! REPLACEMENT: Use file_search_secure module functions:
+    ! - safe_find_files_recursive(base_dir, pattern, files, error_ctx)
+    ! - safe_find_files_with_glob(directory, pattern, files, error_ctx)
+    ! - safe_find_files(pattern, files, error_ctx)
     
     function get_unique_suffix() result(suffix)
         !! Generate a cryptographically secure unique suffix for temporary files
