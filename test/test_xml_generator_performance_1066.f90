@@ -27,7 +27,7 @@ program test_xml_generator_performance_1066
         stop 1
     end if
 
-    print *, '✅ PASS: XML generator performance/correctness validated (Issue #1066)'
+    print *, '[PASS] XML generator performance/correctness validated (Issue #1066)'
 
 contains
 
@@ -100,4 +100,3 @@ contains
     end subroutine append
 
 end program test_xml_generator_performance_1066
-

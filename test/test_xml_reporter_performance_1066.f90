@@ -54,7 +54,7 @@ program test_xml_reporter_performance_1066
         stop 1
     end if
 
-    print *, '✅ PASS: xml_reporter buffered generation validated (Issue #1066)'
+    print *, '[PASS] xml_reporter buffered generation validated (Issue #1066)'
 
 contains
 
