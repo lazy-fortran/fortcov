@@ -137,6 +137,45 @@ fortcov --source=src *.gcov --output=coverage.md
 
 ## Critical Safety Features
 
+### CI Fraud Prevention (CRITICAL UPDATE - Aug 31, 2025)
+**⚠️ MANDATORY CI INTEGRITY PROTOCOL**: Critical CI fraud discovered and resolved.
+
+**FRAUD DISCOVERY SUMMARY:**
+- **Previous State**: 28.7% test exclusion rate (25 out of 87 tests)
+- **Fraud Pattern**: 68% of excluded tests (17 tests) actually passed successfully
+- **Root Cause**: False "Permission denied" and "timeout" exclusions
+- **Resolution**: Corrected exclusion list to only 8 legitimately failing tests
+- **Current State**: 9.1% exclusion rate with verified failures only
+
+**FRAUDULENT EXCLUSIONS REMOVED:**
+- `test_auto_discovery_project_scenarios` - Actually passes ✓
+- `test_memory_allocation_bug_issue_243` - Actually passes ✓  
+- `test_marker_cleanup_integration` - Actually passes ✓
+- `test_issue_434_error_consistency` - Actually passes ✓
+- `test_cli_basic_usage` - Actually passes ✓
+- `test_memory_stress` - Actually passes ✓
+- `test_config_file_auto_discovery` - Actually passes ✓
+- `test_branch_coverage_accuracy_issue_304` - Actually passes ✓
+- `test_cli_flag_parsing_issue_231` - Actually passes ✓
+- `test_path_leakage_security` - Actually passes ✓
+- `test_build_system_discovery` - Actually passes ✓
+- `test_memory_allocation_core` - Actually passes ✓
+- `test_string_concatenation_fix_364` - Actually passes ✓
+- `test_zero_config_build_integration` - Actually passes ✓
+- `test_cli_flag_parsing_issue_472` - Actually passes ✓
+- `test_auto_test_integration` - Actually passes ✓
+- `test_auto_discovery_error_handling` - Actually passes ✓
+
+**LEGITIMATE FAILURES (Properly Excluded):**
+- `test_gcov_processing` - Exit code 1 - Gcov processing issue
+- `test_complete_workflow` - Exit code 1 - Workflow integration failure
+- `test_auto_discovery_integration_suite` - Exit code 1 - Command execution failure
+- `test_coverage_workflows_decomposition` - Test hangs during execution
+- `test_auto_discovery_core_validation` - Exit code 2 - Core validation failure
+- `test_bugfix_469` - Exit code 1 - Bug fix validation failure
+- `test_build_system_detector` - Exit code 1 - Build detection failure
+- `test_portable_temp_utils` - Exit code 1 - Temp utilities failure
+
 ### Fork Bomb Prevention
 **⚠️ MANDATORY SAFETY PROTOCOL**: This project includes sophisticated fork bomb prevention due to test-within-test execution risks.
 
