@@ -12,6 +12,9 @@ module config_positional_args
     public :: process_positional_arguments
     public :: classify_positional_argument
     
+    ! Private helper functions
+    private :: check_if_executable_path
+    
 contains
 
     subroutine process_positional_arguments(positionals, positional_count, &
@@ -26,6 +29,7 @@ contains
         integer :: i
         logical :: is_valid_coverage_file
         logical :: is_source_path
+        logical :: is_executable_path
 
         success = .true.
         error_message = ""
@@ -47,14 +51,20 @@ contains
                 call add_source_path(config, positionals(i))
 
             else
-                ! Unknown positional argument
-                if (config%strict_mode) then
-                    success = .false.
-                    error_message = "Unknown positional argument: " // trim(positionals(i))
-                    return
-                else if (config%verbose) then
-                    print '(A)', "Warning: Ignoring unknown argument: " // trim(positionals(i))
+                ! Check if this is an executable path (silently ignored)
+                call check_if_executable_path(positionals(i), is_executable_path)
+                
+                if (.not. is_executable_path) then
+                    ! Unknown positional argument (not an executable)
+                    if (config%strict_mode) then
+                        success = .false.
+                        error_message = "Unknown positional argument: " // trim(positionals(i))
+                        return
+                    else if (config%verbose) then
+                        print '(A)', "Warning: Ignoring unknown argument: " // trim(positionals(i))
+                    end if
                 end if
+                ! Note: executable paths are silently ignored (no warning needed)
             end if
         end do
 
@@ -66,12 +76,13 @@ contains
         logical, intent(out) :: is_valid_coverage_file
         logical, intent(out) :: is_source_path
 
-        logical :: file_exists, is_directory
+        logical :: file_exists, is_directory, is_executable_path
         character(len=:), allocatable :: extension
         integer :: dot_pos
 
         is_valid_coverage_file = .false.
         is_source_path = .false.
+        is_executable_path = .false.
 
         ! First check file extension to recognize coverage files by pattern
         ! (even if they don't exist yet - Issue #395 fork bomb prevention)
@@ -101,6 +112,15 @@ contains
                 ! Fortran source file
                 is_source_path = .true.
             end select
+        end if
+
+        ! Check if this is an executable path before other classifications
+        ! This prevents spurious warnings when shell expansion includes multiple executables
+        call check_if_executable_path(arg, is_executable_path)
+        
+        ! If it's an executable path, silently ignore (no classification needed)
+        if (is_executable_path) then
+            return
         end if
 
         ! If not recognized by extension, check if it's an existing file/directory
@@ -137,5 +157,37 @@ contains
         end subroutine check_if_directory
 
     end subroutine classify_positional_argument
+    
+    subroutine check_if_executable_path(path, is_executable)
+        !! Check if path is an executable file (fix for issue #918)
+        !! This prevents spurious warnings when shell expansion includes multiple fortcov executables
+        character(len=*), intent(in) :: path
+        logical, intent(out) :: is_executable
+
+        logical :: file_exists
+        integer :: unit, iostat
+
+        is_executable = .false.
+
+        ! Check if file exists
+        inquire(file=trim(path), exist=file_exists)
+        if (.not. file_exists) return
+
+        ! Check if path contains 'fortcov' and is in a build directory structure
+        if (index(path, 'fortcov') > 0 .and. &
+            (index(path, 'build/') > 0 .or. index(path, '/app/') > 0)) then
+            
+            ! Additional verification: try to open for read as binary executable
+            ! This is a heuristic - if the file can be opened and contains 'fortcov' 
+            ! in the path with build structure, it's likely an executable
+            open(newunit=unit, file=trim(path), status='old', &
+                 action='read', form='unformatted', access='stream', iostat=iostat)
+            if (iostat == 0) then
+                close(unit)
+                is_executable = .true.
+            end if
+        end if
+
+    end subroutine check_if_executable_path
 
 end module config_positional_args
