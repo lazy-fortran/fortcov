@@ -6,6 +6,8 @@ program test_complete_workflow
 
     use auto_discovery_utils
     use config_types, only: config_t
+    use error_handling_core, only: error_context_t, clear_error_context
+    use file_ops_secure, only: safe_mkdir, safe_remove_file
     use iso_fortran_env, only: output_unit
     implicit none
 
@@ -301,27 +303,6 @@ contains
             path_result = 'gcov'
         end if
     end subroutine determine_gcov_path_secure
-                                  '#!/bin/bash' // char(10) // &
-                                  '# Mock gcov for testing' // char(10) // &
-                                  'for arg in "$@"; do' // char(10) // &
-                                  '  if [[ "$arg" == *.gcda ]]; then' // char(10) // &
-                                  '    base=$(basename "$arg" .gcda)' // char(10) // &
-                                  '    echo "        -:    0:Source:$base.f90" > "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        -:    0:Graph:$base.gcno" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        -:    0:Data:$base.gcda" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        -:    0:Runs:1" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        -:    1:program test" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        1:    2:    implicit none" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        1:    3:    print *, \"Test\"" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "        -:    4:end program test" >> "$base.f90.gcov"' // char(10) // &
-                                  '    echo "Lines executed:66.67% of 3"' // char(10) // &
-                                  '  fi' // char(10) // &
-                                  'done' // char(10) // &
-                                  'exit 0' // char(10) // &
-                                  'MOCKGCOV')
-        ! SECURITY FIX Issue #971: File permissions handled by Fortran I/O
-        ! Note: Executable permissions replaced with native file operations
-    end subroutine create_mock_gcov_executable
     
     subroutine cleanup_mock_gcov_executable()
         ! SECURITY FIX Issue #971: Use secure file operations
