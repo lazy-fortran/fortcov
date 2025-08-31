@@ -1,0 +1,19 @@
+        -:    0:Source:test_demo.f90
+        -:    0:Graph:test_demo.gcno
+        -:    0:Data:test_demo.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        1:    1:program test_demo
+        1:    2:    use demo_calculator, only: add, multiply
+        -:    3:    implicit none
+        1:    4:    if (add(2, 3) == 5) then
+        1:    5:        print *, 'Test passed: 2 + 3 = 5'
+        -:    6:    else
+    #####:    7:        print *, 'Test failed: addition'
+        -:    8:    end if
+        1:    9:    if (multiply(4, 5) == 20) then
+        1:   10:        print *, 'Test passed: 4 * 5 = 20'
+        -:   11:    else
+    #####:   12:        print *, 'Test failed: multiplication'
+        -:   13:    end if
+        1:   14:end program test_demo

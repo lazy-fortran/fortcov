@@ -1,0 +1,20 @@
+        -:    0:Source:demo_calculator.f90
+        -:    0:Graph:demo_calculator.gcno
+        -:    0:Data:demo_calculator.gcda
+        -:    0:Runs:1
+        -:    0:Programs:1
+        -:    1:module demo_calculator
+        -:    2:    implicit none
+        -:    3:    private
+        -:    4:    public :: add, multiply
+        -:    5:contains
+        1:    6:    integer function add(a, b)
+        1:    7:        integer, intent(in) :: a, b
+        1:    8:        add = a + b
+        1:    9:    end function add
+        -:   10:
+        1:   11:    integer function multiply(a, b)
+        1:   12:        integer, intent(in) :: a, b
+        1:   13:        multiply = a * b
+        1:   14:    end function multiply
+        -:   15:end module demo_calculator
