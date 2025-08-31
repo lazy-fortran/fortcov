@@ -250,11 +250,14 @@ contains
                         "Should manage file handles properly", &
                         test_count, passed_tests, all_tests_passed)
         
-        ! Cleanup: Remove test handle files to maintain repository hygiene
+        ! ENHANCED CI HYGIENE: Remove test handle files with verification
         do i = 1, 5
             write(test_file, '(A,I0,A)') "test_infra_handle_", i, ".txt"
             call safe_cleanup_test_file(trim(test_file))
         end do
+        
+        ! Verify cleanup success for CI hygiene compliance
+        call verify_test_artifact_cleanup(test_count, passed_tests, all_tests_passed)
         
     end subroutine test_resource_leak_prevention
 
@@ -407,5 +410,29 @@ contains
         call safe_remove_file(file_path, error_ctx)
         ! Ignore cleanup errors - file may not exist
     end subroutine safe_cleanup_temp_file
+    
+    subroutine verify_test_artifact_cleanup(test_count, passed_tests, all_tests_passed)
+        !! CI HYGIENE: Verify that all test artifacts have been cleaned up
+        integer, intent(inout) :: test_count
+        integer, intent(inout) :: passed_tests  
+        logical, intent(inout) :: all_tests_passed
+        
+        logical :: artifact_exists
+        integer :: i
+        character(len=512) :: test_file
+        
+        ! Check that all handle files have been removed
+        artifact_exists = .false.
+        do i = 1, 5
+            write(test_file, '(A,I0,A)') "test_infra_handle_", i, ".txt"
+            inquire(file=trim(test_file), exist=artifact_exists)
+            if (artifact_exists) exit
+        end do
+        
+        call assert_test(.not. artifact_exists, "CI hygiene - artifact cleanup", &
+                        "All test artifacts should be removed from project root", &
+                        test_count, passed_tests, all_tests_passed)
+        
+    end subroutine verify_test_artifact_cleanup
 
 end module test_infrastructure_extended_validation

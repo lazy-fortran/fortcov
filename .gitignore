@@ -53,9 +53,15 @@ test_*.nml
 test_*.cfg
 test_*/
 
-# Test infrastructure artifacts (cleaned up by tests)
+# Test infrastructure artifacts (cleaned up by tests) - CI HYGIENE ENHANCED
 test_infra_handle_*.txt
 test_infra_cleanup_*.txt
+test_infra_rapid_*.txt
+test_infra_cmd_test.txt
+test_infra_io_test.txt
+test_infra_isolation_test.txt
+test_infra_temp_mgmt_test.tmp
+test_infra_concurrent_*.txt
 
 # IDE and editor files
 .vscode/

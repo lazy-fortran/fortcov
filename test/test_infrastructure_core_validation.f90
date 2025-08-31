@@ -41,8 +41,9 @@ contains
                                               all_tests_passed)
         call test_error_handling_robustness(test_count, passed_tests, all_tests_passed)
         
-        ! Cleanup test environment using secure directory removal
+        ! Enhanced CI hygiene cleanup
         call safe_cleanup_core_test_directory(temp_dir)
+        call enhanced_ci_hygiene_cleanup()
         
     end subroutine run_core_infrastructure_tests
 
@@ -367,5 +368,34 @@ contains
         call safe_remove_directory(temp_dir, error_ctx)
         ! Ignore cleanup errors - directory may not exist or may be locked
     end subroutine safe_cleanup_core_test_directory
+    
+    subroutine enhanced_ci_hygiene_cleanup()
+        !! CI HYGIENE: Enhanced cleanup for CI execution environments
+        !! Removes all possible test artifacts that could pollute project root
+        type(error_context_t) :: error_ctx
+        character(len=512) :: core_test_files(12)
+        integer :: i
+        
+        ! Enhanced cleanup list including all possible test artifacts
+        core_test_files(1) = 'test_infra_cmd_test.txt'
+        core_test_files(2) = 'test_infra_rapid_1.txt'
+        core_test_files(3) = 'test_infra_rapid_2.txt'
+        core_test_files(4) = 'test_infra_rapid_3.txt'
+        core_test_files(5) = 'test_infra_rapid_4.txt'
+        core_test_files(6) = 'test_infra_rapid_5.txt'
+        core_test_files(7) = 'test_infra_io_test.txt'
+        core_test_files(8) = 'test_infra_missing_file.txt'
+        core_test_files(9) = 'test_infra_test_file.tmp'
+        core_test_files(10) = 'test_infra_temp_dir_marker'
+        core_test_files(11) = 'test_infra_isolation_test.txt'
+        core_test_files(12) = 'test_infra_temp_mgmt_test.tmp'
+        
+        ! Remove all possible artifacts with robust error handling
+        do i = 1, 12
+            call safe_remove_file(core_test_files(i), error_ctx)
+            ! Continue cleanup regardless of individual failures
+        end do
+        
+    end subroutine enhanced_ci_hygiene_cleanup
 
 end module test_infrastructure_core_validation

@@ -51,6 +51,11 @@ fi
 # Local debug: Show test count for verification
 echo "DEBUG: Found $(echo "$ALL_TESTS" | wc -l) tests to run"
 
+# Pre-test cleanup: Remove any pre-existing test artifacts for CI hygiene
+echo "Pre-test cleanup: Removing any pre-existing test artifacts..."
+rm -f test_infra_handle_*.txt test_infra_cleanup_*.txt test_infra_rapid_*.txt test_infra_cmd_test.txt test_infra_io_test.txt test_infra_isolation_test.txt test_infra_temp_mgmt_test.tmp test_infra_concurrent_*.txt 2>/dev/null || true
+echo "Pre-test cleanup completed"
+
 # Run each test individually with timeout, skipping excluded ones
 PASSED=0
 FAILED=0
@@ -98,12 +103,65 @@ echo "  Previous fraudulent exclusions: 17 tests (68% of exclusions)"
 echo "  Current exclusion rate: $(echo "scale=1; $SKIPPED * 100 / ($PASSED + $FAILED + $SKIPPED)" | bc -l)%"
 echo "  Tests restored to execution: 17 tests now running"
 
+# Post-test CI hygiene: Remove test artifacts for clean CI execution
+echo ""
+echo "Post-test cleanup: Removing test artifacts for CI hygiene..."
+ARTIFACTS_REMOVED=0
+
+# List of test artifacts that might be left behind
+TEST_ARTIFACTS=(
+    "test_infra_handle_*.txt"
+    "test_infra_cleanup_*.txt"
+    "test_infra_rapid_*.txt"
+    "test_infra_cmd_test.txt"
+    "test_infra_io_test.txt"
+    "test_infra_isolation_test.txt"
+    "test_infra_temp_mgmt_test.tmp"
+    "test_infra_concurrent_*.txt"
+)
+
+# Remove artifacts and count removed files for reporting
+for pattern in "${TEST_ARTIFACTS[@]}"; do
+    # Use find to handle patterns properly and count removed files
+    found_files=$(find . -maxdepth 1 -name "$pattern" 2>/dev/null)
+    if [ -n "$found_files" ]; then
+        echo "Removing artifacts: $pattern"
+        rm -f $pattern 2>/dev/null || true
+        ARTIFACTS_REMOVED=$((ARTIFACTS_REMOVED + 1))
+    fi
+done
+
+# Final verification: Check for any remaining test artifacts
+REMAINING_ARTIFACTS=$(find . -maxdepth 1 -name "test_infra_*.txt" -o -name "test_infra_*.tmp" 2>/dev/null | wc -l)
+
+echo "CI Hygiene Report:"
+echo "  Artifact patterns cleaned: $ARTIFACTS_REMOVED"
+echo "  Remaining artifacts: $REMAINING_ARTIFACTS"
+
+if [[ $REMAINING_ARTIFACTS -gt 0 ]]; then
+    echo "  WARNING: Some test artifacts remain in project root:"
+    find . -maxdepth 1 -name "test_infra_*" 2>/dev/null || true
+else
+    echo "  ✅ Project root clean - no test artifacts remaining"
+fi
+
+# Final CI hygiene using dedicated cleanup script
+echo ""
+echo "Final CI hygiene check using comprehensive cleanup script..."
+if ./scripts/ci_hygiene_cleanup.sh; then
+    CI_HYGIENE_STATUS="✅ CLEAN"
+else
+    CI_HYGIENE_STATUS="⚠️ ARTIFACTS REMAIN"
+fi
+
 if [[ $FAILED -eq 0 ]]; then
     echo ""
     echo "[SUCCESS] All non-excluded tests passed!"
+    echo "CI Hygiene Status: $CI_HYGIENE_STATUS"
     exit 0
 else
     echo ""
     echo "[ERROR] Some tests failed!"
+    echo "CI Hygiene Status: $CI_HYGIENE_STATUS"
     exit 1
 fi
