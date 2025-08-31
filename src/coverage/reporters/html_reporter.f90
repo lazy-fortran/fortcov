@@ -293,15 +293,21 @@ contains
     function generate_component_css_styles() result(css)
         character(len=:), allocatable :: css
         
-        css = '        .cyberpunk { border: 2px solid var(--accent-color, #ff00ff); border-radius: 8px; padding: 1.5rem; margin: 1rem 0; background: rgba(255, 0, 255, 0.1); backdrop-filter: blur(5px); }' // new_line('a') // &
-              '        .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }' // new_line('a') // &
-              '        .summary-item { background: rgba(0, 255, 255, 0.1); padding: 1rem; border-radius: 6px; border-left: 4px solid var(--accent-color, #ff00ff); }' // new_line('a') // &
-              '        .summary-item.highlight { background: rgba(255, 0, 255, 0.2); border-left: 4px solid var(--secondary-color, #00ffff); }' // new_line('a') // &
+        css = '        .cyberpunk { border: 2px solid var(--accent-color, #ff00ff); ' // &
+              'border-radius: 8px; padding: 1.5rem; margin: 1rem 0; background: ' // &
+              'rgba(255, 0, 255, 0.1); backdrop-filter: blur(5px); }' // new_line('a') // &
+              '        .summary-grid { display: grid; grid-template-columns: ' // &
+              'repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }' // new_line('a') // &
+              '        .summary-item { background: rgba(0, 255, 255, 0.1); padding: 1rem; ' // &
+              'border-radius: 6px; border-left: 4px solid var(--accent-color, #ff00ff); }' // new_line('a') // &
+              '        .summary-item.highlight { background: rgba(255, 0, 255, 0.2); ' // &
+              'border-left: 4px solid var(--secondary-color, #00ffff); }' // new_line('a') // &
               '        .summary-label { display: block; font-weight: bold; margin-bottom: 0.5rem; }' // new_line('a') // &
               '        .summary-value { font-size: 1.5rem; color: var(--accent-color, #ff00ff); }' // new_line('a') // &
               '        .coverage-percent { font-weight: bold; text-shadow: 0 0 10px currentColor; }' // new_line('a') // &
               '        .file-list { margin-top: 2rem; }' // new_line('a') // &
-              '        .file-item { background: rgba(255, 255, 255, 0.05); margin: 0.5rem 0; padding: 1rem; border-radius: 6px; border-left: 3px solid var(--secondary-color, #00ffff); }' // new_line('a') // &
+              '        .file-item { background: rgba(255, 255, 255, 0.05); margin: 0.5rem 0; ' // &
+              'padding: 1rem; border-radius: 6px; border-left: 3px solid var(--secondary-color, #00ffff); }' // new_line('a') // &
               '        .file-name { font-weight: bold; color: var(--accent-color, #ff00ff); }' // new_line('a') // &
               '        .file-coverage { float: right; color: var(--secondary-color, #00ffff); }'
     end function generate_component_css_styles
