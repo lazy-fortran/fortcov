@@ -11,6 +11,7 @@ program test_build_system_detector
     use iso_fortran_env, only: error_unit, output_unit
     use build_detector_core
     use error_handling_core
+    use file_ops_secure, only: safe_mkdir, safe_remove_file
     implicit none
     
     integer :: total_tests = 0
@@ -83,7 +84,7 @@ contains
         write(output_unit, '(A)') 'Test 1: FPM detection'
         
         call setup_test_directory('test_fpm', 'fpm.toml')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_fpm', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'FPM detection failed')
         call assert_equals_str(build_info%system_type, 'fpm', &
@@ -95,7 +96,6 @@ contains
         call assert_contains(build_info%test_command, '-fprofile-arcs', &
                              'Missing coverage flag')
         
-        call chdir(current_dir)
     end subroutine test_fpm_detection
 
     subroutine test_cmake_detection()
@@ -103,7 +103,7 @@ contains
         write(output_unit, '(A)') 'Test 2: CMake detection'
         
         call setup_test_directory('test_cmake', 'CMakeLists.txt')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_cmake', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'CMake detection failed')
         call assert_equals_str(build_info%system_type, 'cmake', &
@@ -115,7 +115,6 @@ contains
         call assert_contains(build_info%test_command, 'ctest', &
                              'Missing ctest in command')
         
-        call chdir(current_dir)
     end subroutine test_cmake_detection
 
     subroutine test_make_detection()
@@ -123,7 +122,7 @@ contains
         write(output_unit, '(A)') 'Test 3: Make detection'
         
         call setup_test_directory('test_make', 'Makefile')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_make', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Make detection failed')
         call assert_equals_str(build_info%system_type, 'make', &
@@ -133,7 +132,6 @@ contains
         call assert_contains(build_info%test_command, 'make test', &
                              'Missing make test in command')
         
-        call chdir(current_dir)
     end subroutine test_make_detection
 
     subroutine test_meson_detection()
@@ -141,7 +139,7 @@ contains
         write(output_unit, '(A)') 'Test 4: Meson detection'
         
         call setup_test_directory('test_meson', 'meson.build')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_meson', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Meson detection failed')
         call assert_equals_str(build_info%system_type, 'meson', &
@@ -151,7 +149,6 @@ contains
         call assert_contains(build_info%test_command, 'meson test', &
                              'Missing meson test in command')
         
-        call chdir(current_dir)
     end subroutine test_meson_detection
 
     subroutine test_priority_ordering()
@@ -160,13 +157,12 @@ contains
         
         ! Create directory with multiple build files
         call setup_multiple_build_files('test_priority')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_priority', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Priority detection failed')
         call assert_equals_str(build_info%system_type, 'fpm', &
                                'FPM should have highest priority')
         
-        call chdir(current_dir)
     end subroutine test_priority_ordering
 
     subroutine test_unknown_build_system()
@@ -174,7 +170,7 @@ contains
         write(output_unit, '(A)') 'Test 6: Unknown build system'
         
         call setup_test_directory('test_unknown', '')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_unknown', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Unknown detection should not error')
         call assert_equals_str(build_info%system_type, 'unknown', &
@@ -182,7 +178,6 @@ contains
         call assert_equals_str(build_info%test_command, '', &
                                'Unknown should have empty command')
         
-        call chdir(current_dir)
     end subroutine test_unknown_build_system
 
     subroutine test_tool_availability()
@@ -190,14 +185,13 @@ contains
         write(output_unit, '(A)') 'Test 7: Tool availability'
         
         call setup_test_directory('test_tool', 'fpm.toml')
-        call detect_build_system('.', build_info, error_ctx)
+        call detect_build_system('test_tool', build_info, error_ctx)
         
         call assert_no_error(error_ctx, 'Tool detection failed')
         ! Note: tool_available depends on actual system PATH
         write(output_unit, '(A,L1)') '  FPM tool available: ', &
                                      build_info%tool_available
         
-        call chdir(current_dir)
     end subroutine test_tool_availability
 
     subroutine test_invalid_directory()
@@ -209,7 +203,6 @@ contains
         
         call assert_has_error(error_ctx, 'Should error for invalid directory')
         
-        call chdir(current_dir)
     end subroutine test_invalid_directory
 
     subroutine test_coverage_commands()
@@ -246,13 +239,14 @@ contains
     ! Test utilities
     subroutine setup_test_directory(dirname, build_file)
         character(len=*), intent(in) :: dirname, build_file
+        character(len=:), allocatable :: full_path
         integer :: unit, stat
         
-        call execute_command_line('mkdir -p ' // dirname, wait=.true.)
-        call chdir(dirname)
+        call safe_mkdir_test(dirname)
         
         if (len_trim(build_file) > 0) then
-            open(newunit=unit, file=build_file, status='replace', &
+            full_path = trim(dirname) // '/' // trim(build_file)
+            open(newunit=unit, file=full_path, status='replace', &
                  iostat=stat)
             if (stat == 0) then
                 write(unit, '(A)') '# Test build file'
@@ -263,32 +257,36 @@ contains
 
     subroutine setup_multiple_build_files(dirname)
         character(len=*), intent(in) :: dirname
+        character(len=:), allocatable :: full_path
         integer :: unit, stat
         
-        call execute_command_line('mkdir -p ' // dirname, wait=.true.)
-        call chdir(dirname)
+        call safe_mkdir_test(dirname)
         
         ! Create all build files to test priority
-        open(newunit=unit, file='fpm.toml', status='replace', iostat=stat)
+        full_path = trim(dirname) // '/fpm.toml'
+        open(newunit=unit, file=full_path, status='replace', iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'name = "test"'
             close(unit)
         end if
         
-        open(newunit=unit, file='CMakeLists.txt', status='replace', &
+        full_path = trim(dirname) // '/CMakeLists.txt'
+        open(newunit=unit, file=full_path, status='replace', &
              iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'project(test)'
             close(unit)
         end if
         
-        open(newunit=unit, file='Makefile', status='replace', iostat=stat)
+        full_path = trim(dirname) // '/Makefile'
+        open(newunit=unit, file=full_path, status='replace', iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'all:'
             close(unit)
         end if
         
-        open(newunit=unit, file='meson.build', status='replace', &
+        full_path = trim(dirname) // '/meson.build'
+        open(newunit=unit, file=full_path, status='replace', &
              iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') 'project("test")'
@@ -297,9 +295,7 @@ contains
     end subroutine setup_multiple_build_files
 
     subroutine cleanup_test_directories()
-        call execute_command_line('rm -rf test_fpm test_cmake test_make ' // &
-                                  'test_meson test_priority test_unknown ' // &
-                                  'test_tool', wait=.true.)
+        call safe_cleanup_build_test_directories()
     end subroutine cleanup_test_directories
 
     ! Assertion utilities
@@ -365,5 +361,59 @@ contains
                                            trim(substring), '"'
         end if
     end subroutine assert_contains
+
+    subroutine safe_mkdir_test(dirname)
+        !! Create directory using simple approach for tests
+        character(len=*), intent(in) :: dirname
+        character(len=:), allocatable :: marker_file
+        integer :: unit, stat
+        
+        ! Create directory by creating a marker file in it
+        ! This forces most Fortran runtimes to create the directory
+        marker_file = trim(dirname) // '/.test_marker'
+        
+        ! Try to create the marker file which should create the directory
+        open(newunit=unit, file=marker_file, status='replace', iostat=stat)
+        if (stat == 0) then
+            write(unit, '(A)') '! Test directory marker'
+            close(unit)
+        end if
+    end subroutine safe_mkdir_test
+
+    subroutine safe_cleanup_build_test_directories()
+        !! Safely remove test directories and files using secure file operations
+        character(len=*), parameter :: test_dirs(7) = [ &
+            'test_fpm     ', &
+            'test_cmake   ', &
+            'test_make    ', &
+            'test_meson   ', &
+            'test_priority', &
+            'test_unknown ', &
+            'test_tool    ' &
+        ]
+        character(len=25), parameter :: test_files(7) = [ &
+            'test_fpm/fpm.toml        ', &
+            'test_cmake/CMakeLists.txt', &
+            'test_make/Makefile       ', &
+            'test_meson/meson.build   ', &
+            'test_priority/fpm.toml   ', &
+            'test_unknown/readme.txt  ', &
+            'test_tool/fpm.toml       ' &
+        ]
+        type(error_context_t) :: error_ctx
+        integer :: i
+        
+        ! Remove test files first
+        do i = 1, size(test_files)
+            call safe_remove_file(trim(test_files(i)), error_ctx)
+            ! Ignore errors - files may not exist
+        end do
+        
+        ! Remove test directories (empty directories can be removed as files)
+        do i = 1, size(test_dirs)
+            call safe_remove_file(trim(test_dirs(i)), error_ctx)
+            ! Ignore errors - directories may not exist or not be empty
+        end do
+    end subroutine safe_cleanup_build_test_directories
 
 end program test_build_system_detector

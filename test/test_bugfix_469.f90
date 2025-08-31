@@ -7,6 +7,8 @@ program test_bugfix_469
     !! instead of proper file globbing to discover ALL .gcov files in the directory.
     use iso_fortran_env, only: error_unit
     use zero_config_manager, only: auto_discover_coverage_files_priority
+    use file_ops_secure, only: safe_mkdir, safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     
     character(len=256), parameter :: test_dir = "build/gcov"
@@ -81,12 +83,10 @@ contains
     
     subroutine create_test_environment()
         !! Create test directory and realistic .gcov files
-        character(len=256) :: cmd
         integer :: i, unit, iostat
         
-        ! Create test directory
-        cmd = "mkdir -p " // trim(test_dir)
-        call execute_command_line(cmd)
+        ! Create test directory using secure method
+        call safe_mkdir_for_tests(test_dir)
         
         ! Create realistic .gcov files that should be found
         do i = 1, size(test_gcov_files)
@@ -104,12 +104,11 @@ contains
     subroutine create_hardcoded_test_files()
         !! Create files with hardcoded names that the current implementation finds
         character(len=256) :: hardcoded_names(4)
-        character(len=256) :: full_path, cmd
+        character(len=256) :: full_path
         integer :: i, unit, iostat
         
-        ! Create test directory first
-        cmd = "mkdir -p " // trim(test_dir)
-        call execute_command_line(cmd)
+        ! Create test directory first using secure method
+        call safe_mkdir_for_tests(test_dir)
         
         hardcoded_names = [ &
             "test.gcov     ", &
@@ -130,9 +129,37 @@ contains
     
     subroutine cleanup_test_environment()
         !! Remove test files and directory
-        character(len=256) :: cmd
-        cmd = "rm -rf " // trim(test_dir)
-        call execute_command_line(cmd)
+        call safe_cleanup_bugfix_test_files()
     end subroutine cleanup_test_environment
+
+    subroutine safe_mkdir_for_tests(directory)
+        !! Safely create directory for tests
+        character(len=*), intent(in) :: directory
+        type(error_context_t) :: error_ctx
+        
+        call safe_mkdir(directory, error_ctx)
+        ! Ignore errors - directory may already exist
+    end subroutine safe_mkdir_for_tests
+
+    subroutine safe_cleanup_bugfix_test_files()
+        !! Safely cleanup test files using secure file operations
+        type(error_context_t) :: error_ctx
+        integer :: i
+        
+        ! Remove test gcov files
+        do i = 1, size(test_gcov_files)
+            call safe_remove_file(trim(test_gcov_files(i)), error_ctx)
+        end do
+        
+        ! Remove hardcoded files that might have been created
+        call safe_remove_file(trim(test_dir) // "/test.gcov", error_ctx)
+        call safe_remove_file(trim(test_dir) // "/main.gcov", error_ctx)
+        call safe_remove_file(trim(test_dir) // "/real_test.gcov", error_ctx)
+        call safe_remove_file(trim(test_dir) // "/coverage.gcov", error_ctx)
+        
+        ! Try to remove directory (works if empty)
+        call safe_remove_file(test_dir, error_ctx)
+        ! Ignore all errors - files may not exist
+    end subroutine safe_cleanup_bugfix_test_files
     
 end program test_bugfix_469

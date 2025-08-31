@@ -7,6 +7,8 @@ program test_branch_coverage_accuracy_issue_304
     use coverage_parser_factory
     use coverage_model_core  
     use realistic_coverage_generator
+    use file_ops_secure, only: safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     
     integer :: total_tests, passed_tests
@@ -127,7 +129,7 @@ contains
             success = .true.  ! Basic parsing successful
         end if
         
-        call execute_command_line("rm -f " // test_file)
+        call safe_remove_test_file(test_file)
     end function test_simple_if_else
     
     logical function test_if_without_else() result(success)
@@ -160,7 +162,7 @@ contains
         coverage_data = parser%parse(test_file, error_flag)
         success = .not. error_flag
         
-        call execute_command_line("rm -f " // test_file)
+        call safe_remove_test_file(test_file)
     end function test_if_without_else
     
     logical function test_nested_if_statements() result(success)
@@ -200,7 +202,7 @@ contains
         coverage_data = parser%parse(test_file, error_flag)
         success = .not. error_flag
         
-        call execute_command_line("rm -f " // test_file)
+        call safe_remove_test_file(test_file)
     end function test_nested_if_statements
     
     logical function test_select_case_branches() result(success)
@@ -239,7 +241,7 @@ contains
         coverage_data = parser%parse(test_file, error_flag)
         success = .not. error_flag
         
-        call execute_command_line("rm -f " // test_file)
+        call safe_remove_test_file(test_file)
     end function test_select_case_branches
     
     logical function test_loop_condition_branches() result(success)
@@ -277,7 +279,7 @@ contains
         coverage_data = parser%parse(test_file, error_flag)
         success = .not. error_flag
         
-        call execute_command_line("rm -f " // test_file)
+        call safe_remove_test_file(test_file)
     end function test_loop_condition_branches
     
     logical function test_multiple_conditions() result(success)
@@ -355,5 +357,14 @@ contains
             print '(A,A)', "  ✗ FAIL: ", test_name
         end if
     end subroutine run_branch_test
+
+    subroutine safe_remove_test_file(filename)
+        !! Safely remove test files using Fortran intrinsics instead of shell commands
+        character(len=*), intent(in) :: filename
+        type(error_context_t) :: error_ctx
+        
+        call safe_remove_file(filename, error_ctx)
+        ! Ignore errors - test files may not exist, which is fine for cleanup
+    end subroutine safe_remove_test_file
 
 end program test_branch_coverage_accuracy_issue_304
