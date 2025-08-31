@@ -1,8 +1,14 @@
 module xml_attribute_parser
-    !! XML Attribute Extraction and Line Parsing
+    !! XML Attribute Extraction and Line Parsing - Enhanced with Memory Management
     !! 
     !! Handles extraction of attributes from XML elements and line parsing.
+    !! Enhanced to address Issue #967: Systematic memory leaks in core modules.
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
+    !!
+    !! Memory Management Improvements:
+    !! - Comprehensive error handling for all allocations
+    !! - Safe deallocation patterns with stat= checking
+    !! - Proper error reporting for memory failures
     use coverage_model_core
     implicit none
     private
@@ -57,12 +63,12 @@ contains
         ! Count line elements
         line_count = count_xml_elements(class_xml, '<line number=')
         if (line_count == 0) then
-            allocate(lines(0))
-            success = .true.
+            call safe_allocate_lines_array(lines, 0, success)
             return
         end if
         
-        allocate(lines(line_count))
+        call safe_allocate_lines_array(lines, line_count, success)
+        if (.not. success) return
         pos = 1
         
         ! Parse each line
@@ -151,4 +157,31 @@ contains
         
     end subroutine extract_line_attributes
 
+    subroutine safe_allocate_lines_array(lines, size, success)
+        !! Safely allocate lines array with comprehensive error handling
+        type(coverage_line_t), allocatable, intent(out) :: lines(:)
+        integer, intent(in) :: size
+        logical, intent(out) :: success
+        
+        integer :: stat
+        character(len=512) :: errmsg
+        
+        success = .false.
+        
+        ! Input validation
+        if (size < 0) then
+            write(*, '(A)') "Error: Invalid array size for lines allocation"
+            return
+        end if
+        
+        ! Perform allocation with error handling
+        allocate(lines(size), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            write(*, '(A)') "Error: Failed to allocate lines array: " // trim(errmsg)
+            return
+        end if
+        
+        success = .true.
+    end subroutine safe_allocate_lines_array
+    
 end module xml_attribute_parser

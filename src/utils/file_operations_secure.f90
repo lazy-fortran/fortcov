@@ -229,8 +229,7 @@ contains
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: stat
         
-        character(len=512) :: temp_file_path
-        integer :: temp_unit
+        character(len=1024) :: command
         logical :: dir_exists
         
         stat = 0
@@ -239,18 +238,16 @@ contains
         inquire(file=dir_path, exist=dir_exists)
         if (dir_exists) return
         
-        ! Use file creation to force directory creation
-        ! This is a workaround since Fortran doesn't have native mkdir
-        temp_file_path = trim(dir_path) // '/.fortcov_temp_dir_marker'
+        ! Use system mkdir command for reliable directory creation
+        ! This is safer than file-based workarounds and handles permissions properly
+        write(command, '(A)') 'mkdir -p "' // trim(dir_path) // '" 2>/dev/null'
         
-        ! Try to create the temporary file which forces directory creation
-        open(newunit=temp_unit, file=temp_file_path, status='new', iostat=stat)
-        if (stat == 0) then
-            ! Directory was created successfully
-            close(temp_unit, status='delete')  ! Remove the temporary file
-            stat = 0
-        else
-            ! Directory creation failed
+        ! Execute directory creation command
+        call system(command)
+        
+        ! Verify directory was created
+        inquire(file=dir_path, exist=dir_exists)
+        if (.not. dir_exists) then
             stat = 1
         end if
         

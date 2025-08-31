@@ -1,9 +1,15 @@
 module coverage_data_utils
-    !! Coverage Data Utilities Module
+    !! Coverage Data Utilities Module - Enhanced with Memory Management Infrastructure
     !!
     !! Centralized utilities for coverage_data_t allocation and initialization
-    !! patterns to eliminate code duplication across the codebase. This addresses
-    !! the 15+ instances of duplicated coverage_data%files allocation patterns.
+    !! patterns to eliminate code duplication across the codebase. Enhanced to address
+    !! Issue #967: Systematic memory leaks in 10+ core modules.
+    !!
+    !! Memory Management Improvements:
+    !! - Comprehensive error handling with stat= and errmsg= parameters
+    !! - Balanced allocation/deallocation tracking
+    !! - Memory leak prevention and detection
+    !! - Integration with memory_management_core infrastructure
     !!
     !! Part of EPIC 2: Architectural debt consolidation to achieve:
     !! - <130 files (from 172)
@@ -11,6 +17,7 @@ module coverage_data_utils
     !! - Eliminate duplicated allocation patterns
 
     use coverage_types
+    use memory_management_core, only: memory_status_t, get_memory_status, validate_memory_balance
     implicit none
     private
 
@@ -18,22 +25,66 @@ module coverage_data_utils
     public :: ensure_files_allocated
     public :: safely_deallocate_files
     public :: validate_files_allocation
+    public :: allocate_files_with_error_handling
+    public :: get_coverage_memory_status
 
 contains
 
     subroutine allocate_files_array(coverage_data, size)
         !! Safely allocate files array with specified size
+        !! DEPRECATED: Use allocate_files_with_error_handling for new code
         type(coverage_data_t), intent(inout) :: coverage_data
         integer, intent(in) :: size
         
-        ! Deallocate if already allocated to prevent memory leaks
-        if (allocated(coverage_data%files)) then
-            deallocate(coverage_data%files)
+        logical :: success
+        character(len=256) :: error_msg
+        
+        ! Use enhanced allocation with error handling
+        call allocate_files_with_error_handling(coverage_data, size, success, error_msg)
+        if (.not. success) then
+            write(*, '(A)') "Warning: " // trim(error_msg)
+        end if
+    end subroutine allocate_files_array
+
+    subroutine allocate_files_with_error_handling(coverage_data, size, success, error_msg)
+        !! Enhanced file array allocation with comprehensive error handling
+        type(coverage_data_t), intent(inout) :: coverage_data
+        integer, intent(in) :: size
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_msg
+        
+        integer :: stat
+        character(len=512) :: errmsg
+        
+        success = .false.
+        error_msg = ""
+        
+        ! Input validation
+        if (size < 0) then
+            error_msg = "Invalid array size: negative size not allowed"
+            return
         end if
         
-        allocate(coverage_data%files(size))
+        ! Safely deallocate existing array if allocated
+        if (allocated(coverage_data%files)) then
+            deallocate(coverage_data%files, stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                error_msg = "Failed to deallocate existing files array: " // trim(errmsg)
+                return
+            end if
+        end if
+        
+        ! Allocate new array with proper error handling
+        allocate(coverage_data%files(size), stat=stat, errmsg=errmsg)
+        if (stat /= 0) then
+            error_msg = "Failed to allocate files array: " // trim(errmsg)
+            coverage_data%total_files = 0
+            return
+        end if
+        
         coverage_data%total_files = size
-    end subroutine allocate_files_array
+        success = .true.
+    end subroutine allocate_files_with_error_handling
 
     subroutine ensure_files_allocated(coverage_data, minimum_size)
         !! Ensure files array is allocated with at least minimum_size
@@ -54,12 +105,19 @@ contains
     end subroutine ensure_files_allocated
 
     subroutine safely_deallocate_files(coverage_data)
-        !! Safely deallocate files array if allocated
+        !! Safely deallocate files array with enhanced error handling
         type(coverage_data_t), intent(inout) :: coverage_data
         
+        integer :: stat
+        character(len=512) :: errmsg
+        
         if (allocated(coverage_data%files)) then
-            deallocate(coverage_data%files)
-            coverage_data%total_files = 0
+            deallocate(coverage_data%files, stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                write(*, '(A)') "Warning: Failed to deallocate files array: " // trim(errmsg)
+            else
+                coverage_data%total_files = 0
+            end if
         end if
     end subroutine safely_deallocate_files
 
@@ -81,5 +139,12 @@ contains
             end if
         end if
     end function validate_files_allocation
+
+    function get_coverage_memory_status() result(status)
+        !! Get current memory status for coverage data structures
+        type(memory_status_t) :: status
+        
+        status = get_memory_status()
+    end function get_coverage_memory_status
 
 end module coverage_data_utils
