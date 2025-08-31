@@ -68,8 +68,6 @@ contains
         integer, intent(out) :: delete_iostat
         
         logical :: file_exists_after
-        integer :: attempts, overwrite_iostat, alt_unit
-        real :: start_time, current_time
         
         ! Verify initial deletion was successful
         inquire(file=filename, exist=file_exists_after)
@@ -80,43 +78,56 @@ contains
             close(unit, iostat=delete_iostat)
             
             ! Multi-layer fallback deletion strategy
-            do attempts = 1, max_attempts
-                inquire(file=filename, exist=file_exists_after)
-                if (.not. file_exists_after) then
-                    deletion_successful = .true.
-                    exit
-                end if
-                
-                ! Strategy 1: Secure overwrite before deletion
-                if (attempts == 1) then
-                    call secure_overwrite_file(filename, overwrite_iostat)
-                end if
-                
-                ! Strategy 2: Alternative secure file deletion attempt
-                ! Use Fortran intrinsics instead of shell commands
-                open(newunit=alt_unit, file=filename, status='old', iostat=delete_iostat)
-                if (delete_iostat == 0) then
-                    close(alt_unit, status='delete', iostat=delete_iostat)
-                end if
-                
-                ! Brief pause between attempts to handle concurrent access
-                if (attempts < max_attempts) then
-                    ! Use Fortran intrinsic delay instead of shell sleep
-                    call cpu_time(start_time)
-                    do
-                        call cpu_time(current_time)
-                        if (current_time - start_time >= 0.1) exit
-                        ! Wait for approximately 0.1 seconds
-                    end do
-                end if
-            end do
-            
-            ! Final verification
-            inquire(file=filename, exist=file_exists_after)
-            deletion_successful = .not. file_exists_after
+            call perform_fallback_deletion(filename, max_attempts, deletion_successful)
         end if
         
     end subroutine attempt_file_deletion
+    
+    ! Perform fallback deletion strategies
+    subroutine perform_fallback_deletion(filename, max_attempts, deletion_successful)
+        character(len=*), intent(in) :: filename
+        integer, intent(in) :: max_attempts
+        logical, intent(out) :: deletion_successful
+        
+        logical :: file_exists_after
+        integer :: attempts, overwrite_iostat, delete_iostat, alt_unit
+        
+        do attempts = 1, max_attempts
+            inquire(file=filename, exist=file_exists_after)
+            if (.not. file_exists_after) then
+                deletion_successful = .true.
+                exit
+            end if
+            
+            ! Strategy 1: Secure overwrite before deletion
+            if (attempts == 1) then
+                call secure_overwrite_file(filename, overwrite_iostat)
+            end if
+            
+            ! Strategy 2: Alternative secure file deletion attempt
+            open(newunit=alt_unit, file=filename, status='old', iostat=delete_iostat)
+            if (delete_iostat == 0) then
+                close(alt_unit, status='delete', iostat=delete_iostat)
+            end if
+            
+            ! Brief pause between attempts
+            if (attempts < max_attempts) call wait_brief_pause()
+        end do
+        
+        ! Final verification
+        inquire(file=filename, exist=file_exists_after)
+        deletion_successful = .not. file_exists_after
+    end subroutine perform_fallback_deletion
+    
+    ! Wait for brief pause between deletion attempts
+    subroutine wait_brief_pause()
+        real :: start_time, current_time
+        call cpu_time(start_time)
+        do
+            call cpu_time(current_time)
+            if (current_time - start_time >= 0.1) exit
+        end do
+    end subroutine wait_brief_pause
     
     ! Report deletion errors and security concerns
     subroutine report_deletion_error(error_ctx, filename, close_iostat, &

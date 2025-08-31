@@ -74,18 +74,13 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         character(len=:), allocatable :: safe_source, safe_target
-        logical :: source_exists, target_exists
-        integer :: source_unit, target_unit, iostat
-        integer :: copy_iostat, close_iostat
-        character(len=1024) :: buffer
+        logical :: source_exists
         
         call clear_error_context(error_ctx)
         
         ! Validate both file paths for security
-        call validate_path_security(source_file, safe_source, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) return
-        
-        call validate_path_security(target_file, safe_target, error_ctx)
+        call validate_move_file_paths(source_file, target_file, safe_source, &
+                                      safe_target, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) return
         
         ! Check source file exists
@@ -97,26 +92,56 @@ contains
             return
         end if
         
-        ! Check if target already exists (optional warning, not error)
-        inquire(file=safe_target, exist=target_exists)
+        ! Perform the secure copy operation
+        call perform_secure_file_copy(safe_source, safe_target, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) return
         
-        ! Copy file content securely using Fortran I/O
-        open(newunit=source_unit, file=safe_source, status='old', &
+        ! Remove original file after successful copy
+        call safe_remove_file(safe_source, error_ctx)
+        ! Note: If removal fails, we still have successful copy
+        ! This matches 'mv' behavior where copy success is primary
+        
+    end subroutine safe_move_file
+    
+    ! Validate file paths for move operation
+    subroutine validate_move_file_paths(source_file, target_file, safe_source, &
+                                        safe_target, error_ctx)
+        character(len=*), intent(in) :: source_file, target_file
+        character(len=:), allocatable, intent(out) :: safe_source, safe_target
+        type(error_context_t), intent(out) :: error_ctx
+        
+        call validate_path_security(source_file, safe_source, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) return
+        
+        call validate_path_security(target_file, safe_target, error_ctx)
+    end subroutine validate_move_file_paths
+    
+    ! Perform secure file copy operation
+    subroutine perform_secure_file_copy(source_path, target_path, error_ctx)
+        character(len=*), intent(in) :: source_path, target_path
+        type(error_context_t), intent(inout) :: error_ctx
+        
+        integer :: source_unit, target_unit, iostat, copy_iostat
+        character(len=1024) :: buffer
+        
+        ! Open source file for reading
+        open(newunit=source_unit, file=source_path, status='old', &
              action='read', iostat=iostat)
         if (iostat /= 0) then
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, &
-                "Cannot open source file for reading: " // safe_source)
+                "Cannot open source file for reading: " // source_path)
             return
         end if
         
-        open(newunit=target_unit, file=safe_target, status='replace', &
+        ! Open target file for writing
+        open(newunit=target_unit, file=target_path, status='replace', &
              action='write', iostat=iostat)
         if (iostat /= 0) then
             close(source_unit)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, &
-                "Cannot create target file: " // safe_target)
+                "Cannot create target file: " // target_path)
             return
         end if
         
@@ -130,13 +155,7 @@ contains
         ! Close files
         close(target_unit)
         close(source_unit)
-        
-        ! Remove original file after successful copy
-        call safe_remove_file(safe_source, error_ctx)
-        ! Note: If removal fails, we still have successful copy
-        ! This matches 'mv' behavior where copy success is primary
-        
-    end subroutine safe_move_file
+    end subroutine perform_secure_file_copy
 
     ! Directory creation with injection protection
     subroutine safe_mkdir(directory_path, error_ctx)
