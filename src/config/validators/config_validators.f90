@@ -245,22 +245,15 @@ contains
     end subroutine validate_import_file
 
     subroutine validate_gcov_executable(gcov_path, is_valid, error_message)
-        !! Validate gcov executable
+        !! SECURITY FIX Issue #963: gcov_executable validation DISABLED
+        !! Native .gcov file parsing eliminates need for gcov executable validation
         character(len=*), intent(in) :: gcov_path
         logical, intent(out) :: is_valid
         character(len=*), intent(out) :: error_message
 
-        character(len=:), allocatable :: safe_executable
-        type(error_context_t) :: error_ctx
-
+        ! Always return valid - no gcov executable needed
         is_valid = .true.
-        error_message = ""
-
-        call validate_executable_path(gcov_path, safe_executable, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            is_valid = .false.
-            error_message = "Invalid gcov executable: " // trim(error_ctx%message)
-        end if
+        error_message = "SECURITY FIX: Native .gcov parsing - no gcov executable required"
 
     end subroutine validate_gcov_executable
 

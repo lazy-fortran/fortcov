@@ -31,7 +31,7 @@ contains
         print '(A)', "  -e, --exclude PATTERN     Exclude files matching pattern"
         print '(A)', "  -i, --include PATTERN     Include only files matching pattern"
         print '(A)', "  --import FILE             Import coverage data from JSON/XML file"
-        print '(A)', "  --gcov-executable PATH    Path to gcov executable (default: gcov)"
+        ! SECURITY FIX Issue #963: --gcov-executable REMOVED - shell injection vulnerability
         print '(A)', "  --gcov-args ARGS          Additional arguments for gcov"
         print '(A)', "  --keep-gcov-files         Keep intermediate .gcov files"
         print '(A)', ""

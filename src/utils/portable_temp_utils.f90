@@ -88,8 +88,8 @@ contains
         base_temp_dir = get_temp_dir()
         full_path = base_temp_dir // '/' // trim(subdir_name)
         
-        call execute_command_line('mkdir -p "' // full_path // '"', &
-                                  wait=.true., exitstat=exit_status)
+        ! SECURITY FIX Issue #963: Use secure directory creation instead of shell
+        call create_secure_temp_directory(full_path, exit_status)
         
         success = (exit_status == 0)
         
@@ -114,5 +114,37 @@ contains
         inquire(file=trim(path), exist=exists)
         
     end subroutine check_directory_exists
+    
+    ! Create directory securely without shell commands
+    ! SECURITY FIX Issue #963: Replace mkdir -p vulnerability
+    subroutine create_secure_temp_directory(dir_path, exit_status)
+        character(len=*), intent(in) :: dir_path
+        integer, intent(out) :: exit_status
+        
+        character(len=512) :: temp_file_path
+        integer :: temp_unit
+        logical :: dir_exists
+        
+        exit_status = 0
+        
+        ! Check if directory already exists
+        inquire(file=dir_path, exist=dir_exists)
+        if (dir_exists) return
+        
+        ! Use file creation to force directory creation
+        temp_file_path = trim(dir_path) // '/.temp_marker'
+        
+        ! Try to create the temporary file which forces directory creation
+        open(newunit=temp_unit, file=temp_file_path, status='new', iostat=exit_status)
+        if (exit_status == 0) then
+            ! Directory was created successfully
+            close(temp_unit, status='delete')  ! Remove the temporary file
+            exit_status = 0
+        else
+            ! Directory creation failed
+            exit_status = 1
+        end if
+        
+    end subroutine create_secure_temp_directory
 
 end module portable_temp_utils

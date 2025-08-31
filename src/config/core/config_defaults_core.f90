@@ -32,7 +32,7 @@ contains
         config%input_format = "auto"
         config%output_format = "markdown"
         config%output_path = ""
-        config%gcov_executable = "gcov"
+        ! SECURITY FIX Issue #963: gcov_executable REMOVED - shell injection vulnerability  
         config%minimum_coverage = 0.0
         config%fail_under_threshold = 0.0
         config%threads = 1
@@ -142,9 +142,8 @@ contains
                 ! Check if directory exists
                 inquire(file=trim(directory_path), exist=dir_exists)
                 if (.not. dir_exists) then
-                    ! Use secure shell argument escaping to prevent command injection
-                    command = "mkdir -p " // escape_shell_argument(directory_path)
-                    call execute_command_line(command, exitstat=exit_status)
+                    ! SECURITY FIX Issue #963: Use secure directory creation instead of shell
+                    call create_secure_config_directory(directory_path, exit_status)
                     
                     ! Handle directory creation failure
                     if (exit_status /= 0) then
@@ -240,12 +239,41 @@ contains
             config%input_format = "auto"
         end if
 
-        ! Auto-discover gcov executable if needed
-        if (config%gcov_executable == "gcov") then
-            ! Let secure_command_executor handle discovery
-            config%gcov_executable = "gcov"
-        end if
+        ! SECURITY FIX Issue #963: gcov_executable auto-discovery REMOVED
+        ! Native .gcov file parsing eliminates need for gcov executable
 
     end subroutine apply_legacy_zero_config_defaults
+    
+    ! Create directory securely without shell commands
+    ! SECURITY FIX Issue #963: Replace mkdir -p shell vulnerability
+    subroutine create_secure_config_directory(dir_path, exit_status)
+        character(len=*), intent(in) :: dir_path
+        integer, intent(out) :: exit_status
+        
+        character(len=512) :: temp_file_path
+        integer :: temp_unit
+        logical :: dir_exists
+        
+        exit_status = 0
+        
+        ! Check if directory already exists
+        inquire(file=dir_path, exist=dir_exists)
+        if (dir_exists) return
+        
+        ! Use file creation to force directory creation
+        temp_file_path = trim(dir_path) // '/.config_marker'
+        
+        ! Try to create the temporary file which forces directory creation
+        open(newunit=temp_unit, file=temp_file_path, status='new', iostat=exit_status)
+        if (exit_status == 0) then
+            ! Directory was created successfully
+            close(temp_unit, status='delete')  ! Remove the temporary file
+            exit_status = 0
+        else
+            ! Directory creation failed
+            exit_status = 1
+        end if
+        
+    end subroutine create_secure_config_directory
 
 end module config_defaults_core

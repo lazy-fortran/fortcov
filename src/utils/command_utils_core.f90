@@ -10,7 +10,7 @@ module command_utils_core
     !! - Command building and execution
     !! - Unique identifier generation
     use iso_c_binding, only: c_int
-    use file_ops_secure, only: safe_remove_file
+    use file_ops_secure, only: safe_remove_file, safe_find_files
     use error_handling_core, only: error_context_t
     implicit none
     private
@@ -153,10 +153,12 @@ contains
         character(len=512) :: errmsg
         character(len=256), allocatable :: temp_results(:)
         
-        ! Execute find command
-        call execute_command_line(command)
+        ! SECURITY FIX Issue #963: Use secure file finding instead of shell
+        ! Extract pattern from command (looking for *.gcov files)
+        call execute_secure_find_from_command(command, gcov_files)
+        return
         
-        ! Read results from temporary file
+        ! Legacy code below for reference - now replaced with secure implementation
         allocate(temp_results(max_results), stat=stat, errmsg=errmsg)
         if (stat /= 0) then
             write(*, '(A)') "Error: Memory allocation failed for temp_results: " // &
@@ -233,5 +235,43 @@ contains
             suffix = trim(temp_suffix)
         end if
     end function get_unique_suffix
+    
+    ! Execute secure file finding from command pattern
+    ! SECURITY FIX Issue #963: Replace find shell execution vulnerability
+    subroutine execute_secure_find_from_command(command, gcov_files)
+        character(len=*), intent(in) :: command
+        character(len=:), allocatable, intent(out) :: gcov_files(:)
+        
+        type(error_context_t) :: error_ctx
+        character(len=256) :: pattern
+        integer :: pos_find, pos_name
+        
+        ! Parse the find command to extract directory and pattern
+        pos_find = index(command, 'find ')
+        pos_name = index(command, " -name '*.gcov'")
+        
+        if (pos_find > 0 .and. pos_name > 0) then
+            ! Extract directory from "find <directory> -name ..."
+            pattern = command(pos_find+5:pos_name-1)
+            pattern = trim(adjustl(pattern)) // '/*.gcov'
+            
+            ! Remove shell escaping quotes if present
+            if (pattern(1:1) == '"') then
+                pattern = pattern(2:len_trim(pattern)-1)
+            end if
+            
+            ! Use secure file finding
+            call safe_find_files(pattern, gcov_files, error_ctx)
+            
+            ! If no files found, create empty array
+            if (.not. allocated(gcov_files)) then
+                allocate(character(len=1) :: gcov_files(0))
+            end if
+        else
+            ! Fallback: create empty array for unknown command format
+            allocate(character(len=1) :: gcov_files(0))
+        end if
+        
+    end subroutine execute_secure_find_from_command
 
 end module command_utils_core

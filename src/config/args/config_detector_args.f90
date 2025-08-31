@@ -39,10 +39,10 @@ contains
             if (flag_part == "--source" .or. flag_part == "-s" .or. &
                 flag_part == "--import" .or. &
                 flag_part == "--config" .or. flag_part == "-c" .or. &
-                flag_part == "--gcov-executable" .or. &
                 flag_part == "--gcov-args" .or. &
                 flag_part == "--include" .or. flag_part == "-i" .or. &
                 flag_part == "--exclude" .or. flag_part == "-e") then
+                ! SECURITY FIX Issue #963: --gcov-executable REMOVED
                 has_input_args = .true.
                 return
             end if

@@ -24,7 +24,7 @@ module config_types
         character(len=:), allocatable :: exclude_patterns(:)
         character(len=:), allocatable :: include_patterns(:)
         character(len=:), allocatable :: coverage_files(:)
-        character(len=:), allocatable :: gcov_executable
+        ! SECURITY FIX Issue #963: gcov_executable REMOVED - shell injection vulnerability
         real :: minimum_coverage
         real :: fail_under_threshold
         integer :: threads

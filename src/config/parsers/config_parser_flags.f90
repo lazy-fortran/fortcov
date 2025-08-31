@@ -38,7 +38,8 @@ contains
               "--format", "-f", "--minimum", "-m", "--threshold", &
               "--fail-under", "--diff-threshold", "--import", "--config", &
               "--test-timeout", "--threads", "-t", "--architecture-format", &
-              "--gcov-executable", "--gcov-args", "--diff-baseline", "--diff-current")
+              "--gcov-args", "--diff-baseline", "--diff-current")
+              ! SECURITY FIX Issue #963: --gcov-executable REMOVED
             requires_value = .true.
         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
               "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
