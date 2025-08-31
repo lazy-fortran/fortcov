@@ -38,47 +38,125 @@ contains
         type(coverage_stats_t) :: stats
         logical :: write_error
         integer :: i
+        ! Optimized buffered builder variables (avoid O(n^2) concatenation)
+        integer :: total_len, pos
+        character(len=:), allocatable :: buffer
+        character(len=:), allocatable :: pct_str, files_analyzed_str
+        character(len=:), allocatable :: fname, cov_str, covered_str, total_str
         
         ! Calculate statistics
         stats = calculate_line_coverage(coverage_data)
         
-        ! Generate XML content
-        xml_content = "<?xml version='1.0' encoding='UTF-8'?>" // new_line('a') // &
-            "<coverage version='1.0'>" // new_line('a') // &
-            "  <summary>" // new_line('a')
-        
-        xml_content = xml_content // "    <overall_coverage>" // &
-                     format_percentage(stats%percentage, 2) // "</overall_coverage>" // new_line('a')
-        xml_content = xml_content // "    <lines_covered>" // &
-                     int_to_string(stats%covered_count) // "</lines_covered>" // new_line('a')
-        xml_content = xml_content // "    <total_lines>" // &
-                     int_to_string(stats%total_count) // "</total_lines>" // new_line('a')
+        ! Pre-compute dynamic strings
+        pct_str = format_percentage(stats%percentage, 2)
+        covered_str = int_to_string(stats%covered_count)
+        total_str = int_to_string(stats%total_count)
         if (allocated(coverage_data%files)) then
-            xml_content = xml_content // "    <files_analyzed>" // &
-                         int_to_string(size(coverage_data%files)) // "</files_analyzed>" // new_line('a')
+            files_analyzed_str = int_to_string(size(coverage_data%files))
         else
-            xml_content = xml_content // "    <files_analyzed>0</files_analyzed>" // new_line('a')
+            files_analyzed_str = '0'
         end if
-        
-        xml_content = xml_content // "  </summary>" // new_line('a') // &
-            "  <files>" // new_line('a')
-        
+
+        ! First pass: estimate total length for single allocation
+        total_len = 0
+        total_len = total_len + len("<?xml version='1.0' encoding='UTF-8'?>") + 1
+        total_len = total_len + len("<coverage version='1.0'>") + 1
+        total_len = total_len + len("  <summary>") + 1
+        total_len = total_len + len("    <overall_coverage>") + len_trim(pct_str) + len("</overall_coverage>") + 1
+        total_len = total_len + len("    <lines_covered>") + len_trim(covered_str) + len("</lines_covered>") + 1
+        total_len = total_len + len("    <total_lines>") + len_trim(total_str) + len("</total_lines>") + 1
+        total_len = total_len + len("    <files_analyzed>") + len_trim(files_analyzed_str) + len("</files_analyzed>") + 1
+        total_len = total_len + len("  </summary>") + 1
+        total_len = total_len + len("  <files>") + 1
+
         if (allocated(coverage_data%files)) then
             do i = 1, size(coverage_data%files)
-                xml_content = xml_content // "    <file>" // new_line('a') // &
-                             "      <name>" // trim(coverage_data%files(i)%filename) // "</name>" // new_line('a') // &
-                             "      <coverage>" // format_percentage(coverage_data%files(i)%line_coverage, 2) // &
-                             "</coverage>" // new_line('a') // &
-                             "      <covered_lines>" // int_to_string(coverage_data%files(i)%covered_lines) // &
-                             "</covered_lines>" // new_line('a') // &
-                             "      <total_lines>" // int_to_string(coverage_data%files(i)%total_lines) // &
-                             "</total_lines>" // new_line('a') // &
-                             "    </file>" // new_line('a')
+                fname = trim(coverage_data%files(i)%filename)
+                cov_str = format_percentage(coverage_data%files(i)%line_coverage, 2)
+                covered_str = int_to_string(coverage_data%files(i)%covered_lines)
+                total_str = int_to_string(coverage_data%files(i)%total_lines)
+                total_len = total_len + len("    <file>") + 1
+                total_len = total_len + len("      <name>") + len_trim(fname) + len("</name>") + 1
+                total_len = total_len + len("      <coverage>") + len_trim(cov_str) + len("</coverage>") + 1
+                total_len = total_len + len("      <covered_lines>") + len_trim(covered_str) + len("</covered_lines>") + 1
+                total_len = total_len + len("      <total_lines>") + len_trim(total_str) + len("</total_lines>") + 1
+                total_len = total_len + len("    </file>") + 1
             end do
         end if
-        
-        xml_content = xml_content // "  </files>" // new_line('a') // &
-            "</coverage>"
+
+        total_len = total_len + len("  </files>") + 1
+        total_len = total_len + len("</coverage>")
+
+        allocate(character(len=total_len) :: buffer)
+        pos = 1
+
+        call append(buffer, pos, "<?xml version='1.0' encoding='UTF-8'?>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+        call append(buffer, pos, "<coverage version='1.0'>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+        call append(buffer, pos, "  <summary>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+
+        call append(buffer, pos, "    <overall_coverage>")
+        call append(buffer, pos, trim(pct_str))
+        call append(buffer, pos, "</overall_coverage>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+
+        call append(buffer, pos, "    <lines_covered>")
+        call append(buffer, pos, trim(int_to_string(stats%covered_count)))
+        call append(buffer, pos, "</lines_covered>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+
+        call append(buffer, pos, "    <total_lines>")
+        call append(buffer, pos, trim(int_to_string(stats%total_count)))
+        call append(buffer, pos, "</total_lines>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+
+        call append(buffer, pos, "    <files_analyzed>")
+        call append(buffer, pos, trim(files_analyzed_str))
+        call append(buffer, pos, "</files_analyzed>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+
+        call append(buffer, pos, "  </summary>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+        call append(buffer, pos, "  <files>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+
+        if (allocated(coverage_data%files)) then
+            do i = 1, size(coverage_data%files)
+                fname = trim(coverage_data%files(i)%filename)
+                cov_str = format_percentage(coverage_data%files(i)%line_coverage, 2)
+                covered_str = int_to_string(coverage_data%files(i)%covered_lines)
+                total_str = int_to_string(coverage_data%files(i)%total_lines)
+
+                call append(buffer, pos, "    <file>")
+                buffer(pos:pos) = new_line('a'); pos = pos + 1
+                call append(buffer, pos, "      <name>")
+                call append(buffer, pos, fname)
+                call append(buffer, pos, "</name>")
+                buffer(pos:pos) = new_line('a'); pos = pos + 1
+                call append(buffer, pos, "      <coverage>")
+                call append(buffer, pos, trim(cov_str))
+                call append(buffer, pos, "</coverage>")
+                buffer(pos:pos) = new_line('a'); pos = pos + 1
+                call append(buffer, pos, "      <covered_lines>")
+                call append(buffer, pos, trim(covered_str))
+                call append(buffer, pos, "</covered_lines>")
+                buffer(pos:pos) = new_line('a'); pos = pos + 1
+                call append(buffer, pos, "      <total_lines>")
+                call append(buffer, pos, trim(total_str))
+                call append(buffer, pos, "</total_lines>")
+                buffer(pos:pos) = new_line('a'); pos = pos + 1
+                call append(buffer, pos, "    </file>")
+                buffer(pos:pos) = new_line('a'); pos = pos + 1
+            end do
+        end if
+
+        call append(buffer, pos, "  </files>")
+        buffer(pos:pos) = new_line('a'); pos = pos + 1
+        call append(buffer, pos, "</coverage>")
+
+        xml_content = buffer(1:pos-1)
         
         ! Write to file
         call write_text_file(output_path, xml_content, write_error)
@@ -94,6 +172,18 @@ contains
         ! Suppress unused warnings
         if (present(diff_data)) continue
         if (present(threshold)) continue
+    contains
+        pure subroutine append(buf, pos, txt)
+            character(len=*), intent(inout) :: buf
+            integer,           intent(inout) :: pos
+            character(len=*),  intent(in)    :: txt
+            integer :: L
+            L = len(txt)
+            if (L > 0) then
+                buf(pos:pos+L-1) = txt
+                pos = pos + L
+            end if
+        end subroutine append
     end subroutine xml_generate_report
     
     function xml_get_format_name(this) result(format_name)
