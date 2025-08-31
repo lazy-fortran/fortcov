@@ -237,7 +237,8 @@ contains
                '            <div class="summary-grid">' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
                '                    <span class="summary-label">Total Files:</span>' // new_line('a') // &
-               '                    <span class="summary-value">' // int_to_str(data%summary%total_files) // '</span>' // new_line('a') // &
+               '                    <span class="summary-value">' // &
+               int_to_str(data%summary%total_files) // '</span>' // new_line('a') // &
                '                </div>' // new_line('a') // &
                '                <div class="summary-item">' // new_line('a') // &
                '                    <span class="summary-label">Total Lines:</span>' // new_line('a') // &
