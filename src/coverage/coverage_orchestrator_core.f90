@@ -29,9 +29,9 @@ module coverage_orchestrator_core
 contains
     
     function analyze_coverage(config) result(exit_code)
-        !! Main coverage analysis orchestration function (preserved interface)
+        !! Main coverage analysis orchestration with interactive TUI support
         !! Delegates to specialized analysis module while maintaining interface stability
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
         integer :: exit_code
         
         class(orchestrator_interface_t), allocatable :: orchestrator
@@ -85,9 +85,9 @@ contains
     end function check_exclude_patterns
     
     function analyze_coverage_safe(config, error_ctx) result(exit_code)
-        !! Safe coverage analysis orchestration (preserved interface)
+        !! Safe coverage analysis orchestration with interactive TUI support
         !! Delegates to specialized analysis module with error handling
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
         type(error_context_t), intent(out) :: error_ctx
         integer :: exit_code
         

@@ -29,8 +29,8 @@ module coverage_analysis_core
 contains
 
     function perform_coverage_analysis(config) result(exit_code)
-        !! Core coverage analysis implementation (refactored for size limits)
-        type(config_t), intent(in) :: config
+        !! Core coverage analysis implementation with interactive TUI support
+        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
         integer :: exit_code
         
         ! Check for special modes first
@@ -56,8 +56,8 @@ contains
     end function perform_coverage_analysis
 
     function check_special_modes(config) result(exit_code)
-        !! Check for special analysis modes
-        type(config_t), intent(in) :: config
+        !! Check for special analysis modes with interactive configuration
+        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
         integer :: exit_code
         
         exit_code = EXIT_SUCCESS
@@ -183,8 +183,8 @@ contains
     end function handle_missing_coverage_files
 
     function perform_safe_coverage_analysis(config, error_ctx) result(exit_code)
-        !! Perform coverage analysis with comprehensive error handling
-        type(config_t), intent(in) :: config
+        !! Perform coverage analysis with comprehensive error handling and TUI support
+        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
         type(error_context_t), intent(out) :: error_ctx
         integer :: exit_code
         
