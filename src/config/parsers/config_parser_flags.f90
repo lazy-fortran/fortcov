@@ -41,11 +41,11 @@ contains
               "--gcov-args", "--diff-baseline", "--diff-current")
               ! SECURITY FIX Issue #963: --gcov-executable REMOVED
             requires_value = .true.
-        case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
-              "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
-              "--auto-test", "--no-auto-test", "--auto-discovery", &
-              "--no-auto-discovery", "--zero-config", "--tui")
-            requires_value = .false.
+         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
+               "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
+               "--auto-test", "--no-auto-test", "--auto-discovery", &
+               "--no-auto-discovery", "--zero-config", "--tui", "--fail-on-size-warnings")
+             requires_value = .false.
         end select
     end function flag_requires_value
 
@@ -281,9 +281,11 @@ contains
             end if
         case ("--validate")
             config%validate_config_only = .true.
-        case ("--validate-architecture")
-            config%validate_architecture = .true.
-        case default
+         case ("--validate-architecture")
+             config%validate_architecture = .true.
+         case ("--fail-on-size-warnings")
+             config%fail_on_size_warnings = .true.
+         case default
             ! Unknown flag - reject with error message
             success = .false.
             error_message = "Unknown flag: '" // trim(flag) // "'"
