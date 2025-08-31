@@ -258,25 +258,25 @@ jobs:
         
     - name: Extract changelog for release
       run: |
-         # Extract changelog section for this version
-         VERSION="${{ needs.validate-version.outputs.version }}"
-         awk "/## \[$VERSION\]/{flag=1; next} /## \[.*\]/{flag=0} flag" CHANGELOG.md > final-release/CHANGELOG_SECTION.md
+        # Extract changelog section for this version
+        VERSION="${{ needs.validate-version.outputs.version }}"
+        awk "/## \[$VERSION\]/{flag=1; next} /## \[.*\]/{flag=0} flag" CHANGELOG.md > final-release/CHANGELOG_SECTION.md
 
-         if [ ! -s final-release/CHANGELOG_SECTION.md ]; then
-           echo "⚠️  No changelog entry found for version $VERSION"
-           echo "Please update CHANGELOG.md before releasing"
-           exit 1
-         fi
+        if [ ! -s final-release/CHANGELOG_SECTION.md ]; then
+          echo "⚠️  No changelog entry found for version $VERSION"
+          echo "Please update CHANGELOG.md before releasing"
+          exit 1
+        fi
 
     - name: Update CHANGELOG.md for next development cycle
       run: |
-         VERSION="${{ needs.validate-version.outputs.version }}"
-         DATE=$(date +%Y-%m-%d)
+        VERSION="${{ needs.validate-version.outputs.version }}"
+        DATE=$(date +%Y-%m-%d)
 
-         # Replace [Unreleased] with the released version and date
-         sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $DATE/" CHANGELOG.md
+        # Replace [Unreleased] with the released version and date
+        sed -i "s/## \[Unreleased\]/## [Unreleased]\n\n## [$VERSION] - $DATE/" CHANGELOG.md
 
-         echo "✅ CHANGELOG.md updated for version $VERSION"
+        echo "✅ CHANGELOG.md updated for version $VERSION"
         
     - name: Create GitHub release
       uses: softprops/action-gh-release@v1
