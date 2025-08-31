@@ -64,56 +64,88 @@ contains
         type(error_context_t), intent(inout) :: error_ctx
         
         character(len=512) :: test_patterns(20)
+        integer :: pattern_count
+        
+        ! Get test file patterns based on directory type
+        call get_directory_test_patterns(dir_path, test_patterns, pattern_count)
+        
+        ! Remove each test file pattern
+        call remove_test_file_patterns(test_patterns, pattern_count)
+        
+    end subroutine remove_directory_contents_secure
+    
+    ! Get test file patterns for specific directory
+    subroutine get_directory_test_patterns(dir_path, test_patterns, pattern_count)
+        character(len=*), intent(in) :: dir_path
+        character(len=512), intent(out) :: test_patterns(20)
+        integer, intent(out) :: pattern_count
+        
+        if (trim(dir_path) == '.') then
+            call get_current_directory_patterns(test_patterns, pattern_count)
+        else
+            call get_subdirectory_patterns(dir_path, test_patterns, pattern_count)
+        end if
+    end subroutine get_directory_test_patterns
+    
+    ! Get test patterns for current directory
+    subroutine get_current_directory_patterns(test_patterns, pattern_count)
+        character(len=512), intent(out) :: test_patterns(20)
+        integer, intent(out) :: pattern_count
+        
+        test_patterns(1) = 'test_infra_cmd_test.txt'
+        test_patterns(2) = 'test_infra_rapid_1.txt'
+        test_patterns(3) = 'test_infra_rapid_2.txt'
+        test_patterns(4) = 'test_infra_rapid_3.txt'
+        test_patterns(5) = 'test_infra_rapid_4.txt'
+        test_patterns(6) = 'test_infra_rapid_5.txt'
+        test_patterns(7) = 'test_infra_concurrent_1.txt'
+        test_patterns(8) = 'test_infra_concurrent_2.txt'
+        test_patterns(9) = 'test_infra_concurrent_3.txt'
+        test_patterns(10) = 'test_infra_cleanup_test.txt'
+        test_patterns(11) = 'test_infra_temp_mgmt_test.tmp'
+        test_patterns(12) = 'test_infra_isolation_test.txt'
+        test_patterns(13) = 'test_infra_handle_1.txt'
+        test_patterns(14) = 'test_infra_handle_2.txt'
+        test_patterns(15) = 'test_infra_io_test.txt'
+        pattern_count = 15
+    end subroutine get_current_directory_patterns
+    
+    ! Get test patterns for subdirectory
+    subroutine get_subdirectory_patterns(dir_path, test_patterns, pattern_count)
+        character(len=*), intent(in) :: dir_path
+        character(len=512), intent(out) :: test_patterns(20)
+        integer, intent(out) :: pattern_count
+        
+        test_patterns(1) = trim(dir_path) // '/cmd_test.txt'
+        test_patterns(2) = trim(dir_path) // '/rapid_1.txt'
+        test_patterns(3) = trim(dir_path) // '/rapid_2.txt'
+        test_patterns(4) = trim(dir_path) // '/rapid_3.txt'
+        test_patterns(5) = trim(dir_path) // '/rapid_4.txt'
+        test_patterns(6) = trim(dir_path) // '/rapid_5.txt'
+        test_patterns(7) = trim(dir_path) // '/concurrent_1.txt'
+        test_patterns(8) = trim(dir_path) // '/concurrent_2.txt'
+        test_patterns(9) = trim(dir_path) // '/concurrent_3.txt'
+        test_patterns(10) = trim(dir_path) // '/cleanup_test.txt'
+        test_patterns(11) = trim(dir_path) // '/temp_mgmt_test.tmp'
+        test_patterns(12) = trim(dir_path) // '/isolation_test.txt'
+        test_patterns(13) = trim(dir_path) // '/handle_1.txt'
+        test_patterns(14) = trim(dir_path) // '/handle_2.txt'
+        test_patterns(15) = trim(dir_path) // '/.fortcov_temp_dir_marker'
+        pattern_count = 15
+    end subroutine get_subdirectory_patterns
+    
+    ! Remove array of test file patterns
+    subroutine remove_test_file_patterns(test_patterns, pattern_count)
+        character(len=512), intent(in) :: test_patterns(:)
+        integer, intent(in) :: pattern_count
         integer :: i
         type(error_context_t) :: file_error
         
-        ! Common test file patterns to remove (both old and new naming)
-        if (trim(dir_path) == '.') then
-            ! Current directory test files
-            test_patterns(1) = 'test_infra_cmd_test.txt'
-            test_patterns(2) = 'test_infra_rapid_1.txt'
-            test_patterns(3) = 'test_infra_rapid_2.txt' 
-            test_patterns(4) = 'test_infra_rapid_3.txt'
-            test_patterns(5) = 'test_infra_rapid_4.txt'
-            test_patterns(6) = 'test_infra_rapid_5.txt'
-            test_patterns(7) = 'test_infra_concurrent_1.txt'
-            test_patterns(8) = 'test_infra_concurrent_2.txt'
-            test_patterns(9) = 'test_infra_concurrent_3.txt'
-            test_patterns(10) = 'test_infra_cleanup_test.txt'
-            test_patterns(11) = 'test_infra_temp_mgmt_test.tmp'
-            test_patterns(12) = 'test_infra_isolation_test.txt'
-            test_patterns(13) = 'test_infra_handle_1.txt'
-            test_patterns(14) = 'test_infra_handle_2.txt'
-            test_patterns(15) = 'test_infra_io_test.txt'
-            test_patterns(16) = ''  ! Empty to mark end
-        else
-            ! Subdirectory test files
-            test_patterns(1) = trim(dir_path) // '/cmd_test.txt'
-            test_patterns(2) = trim(dir_path) // '/rapid_1.txt'
-            test_patterns(3) = trim(dir_path) // '/rapid_2.txt' 
-            test_patterns(4) = trim(dir_path) // '/rapid_3.txt'
-            test_patterns(5) = trim(dir_path) // '/rapid_4.txt'
-            test_patterns(6) = trim(dir_path) // '/rapid_5.txt'
-            test_patterns(7) = trim(dir_path) // '/concurrent_1.txt'
-            test_patterns(8) = trim(dir_path) // '/concurrent_2.txt'
-            test_patterns(9) = trim(dir_path) // '/concurrent_3.txt'
-            test_patterns(10) = trim(dir_path) // '/cleanup_test.txt'
-            test_patterns(11) = trim(dir_path) // '/temp_mgmt_test.tmp'
-            test_patterns(12) = trim(dir_path) // '/isolation_test.txt'
-            test_patterns(13) = trim(dir_path) // '/handle_1.txt'
-            test_patterns(14) = trim(dir_path) // '/handle_2.txt'
-            test_patterns(15) = trim(dir_path) // '/.fortcov_temp_dir_marker'
-            test_patterns(16) = ''  ! Empty to mark end
-        end if
-        
-        ! Remove each test file pattern  
-        do i = 1, 16
-            if (len_trim(test_patterns(i)) == 0) exit  ! Stop at empty pattern
+        do i = 1, pattern_count
             call safe_remove_file(test_patterns(i), file_error)
             ! Continue even if individual files fail to delete
         end do
-        
-    end subroutine remove_directory_contents_secure
+    end subroutine remove_test_file_patterns
     
     subroutine attempt_directory_removal(dir_path, iostat)
         !! Attempt directory removal by ensuring it's empty

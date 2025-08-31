@@ -58,57 +58,46 @@ contains
         character(len=*), intent(in) :: pattern
         logical, intent(out) :: concurrent_risk, readonly_risk, sensitive_pattern
         
-        integer :: pos
-        
-        ! Initialize all to false
-        concurrent_risk = .false.
-        readonly_risk = .false.
-        sensitive_pattern = .false.
-        
         ! SECURITY: Must check ALL patterns - NO early exits for security
-        ! Check for concurrent risk patterns
-        pos = index(pattern, '*.f90')
-        if (pos > 0) then
-            concurrent_risk = .true.
-        end if
+        concurrent_risk = detect_concurrent_risk_patterns(pattern)
+        readonly_risk = detect_readonly_risk_patterns(pattern)
+        sensitive_pattern = detect_sensitive_patterns(pattern)
         
-        ! Check ALL readonly patterns - NO early exit
-        pos = index(pattern, '/usr/')
-        if (pos > 0) then
-            readonly_risk = .true.
-        end if
-        
-        pos = index(pattern, '/proc/')
-        if (pos > 0) then
-            readonly_risk = .true.
-        end if
-        
-        pos = index(pattern, '/sys/')
-        if (pos > 0) then
-            readonly_risk = .true.
-        end if
-        
-        ! Check ALL sensitive patterns - NO early exit
-        pos = index(pattern, 'ssh')
-        if (pos > 0) then
-            sensitive_pattern = .true.
-        end if
-        
-        pos = index(pattern, 'home')
-        if (pos > 0) then
-            sensitive_pattern = .true.
-        end if
-        
-        pos = index(pattern, 'root')
-        if (pos > 0) then
-            sensitive_pattern = .true.
-        end if
-        
-        pos = index(pattern, 'etc')
-        if (pos > 0) then
-            sensitive_pattern = .true.
-        end if
     end subroutine analyze_pattern_risks
+
+    pure function detect_concurrent_risk_patterns(pattern) result(concurrent_risk)
+        !! Detect patterns indicating concurrent access risks
+        character(len=*), intent(in) :: pattern
+        logical :: concurrent_risk
+        
+        concurrent_risk = index(pattern, '*.f90') > 0
+
+    end function detect_concurrent_risk_patterns
+
+    pure function detect_readonly_risk_patterns(pattern) result(readonly_risk)
+        !! Detect patterns indicating readonly filesystem risks
+        character(len=*), intent(in) :: pattern
+        logical :: readonly_risk
+        
+        ! Check ALL readonly patterns - NO early exit for security completeness
+        readonly_risk = index(pattern, '/usr/') > 0 .or. &
+                        index(pattern, '/proc/') > 0 .or. &
+                        index(pattern, '/sys/') > 0
+
+    end function detect_readonly_risk_patterns
+
+    pure function detect_sensitive_patterns(pattern) result(sensitive_pattern)
+        !! Detect patterns indicating access to sensitive directories
+        character(len=*), intent(in) :: pattern
+        logical :: sensitive_pattern
+        
+        ! Check ALL sensitive patterns - NO early exit for security completeness
+        sensitive_pattern = index(pattern, 'ssh') > 0 .or. &
+                            index(pattern, 'home') > 0 .or. &
+                            index(pattern, 'root') > 0 .or. &
+                            index(pattern, 'etc') > 0
+
+    end function detect_sensitive_patterns
     
     ! Find cached pattern in local cache
     pure function find_cached_pattern(pattern, cache) result(cache_idx)

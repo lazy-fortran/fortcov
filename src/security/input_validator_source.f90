@@ -15,13 +15,29 @@ contains
         logical, intent(out) :: is_valid
         character(len=*), intent(out) :: error_message
 
-        logical :: has_source_paths
-        logical :: has_coverage_files
-        logical :: has_import_file
-        logical :: has_diff_files
+        logical :: has_source_paths, has_coverage_files, has_import_file, has_diff_files
 
-        is_valid = .true.
-        error_message = ""
+        call detect_input_sources(config, has_source_paths, has_coverage_files, &
+                                  has_import_file, has_diff_files)
+
+        call validate_input_source_rules(has_source_paths, has_coverage_files, &
+                                         has_import_file, has_diff_files, &
+                                         config%zero_configuration_mode, &
+                                         is_valid, error_message)
+        if (.not. is_valid) return
+
+        call validate_specific_input_sources(config, has_source_paths, &
+                                             has_coverage_files, has_diff_files, &
+                                             is_valid, error_message)
+
+    end subroutine validate_input_sources
+
+    pure subroutine detect_input_sources(config, has_source_paths, has_coverage_files, &
+                                         has_import_file, has_diff_files)
+        !! Detect which input sources are configured
+        type(config_t), intent(in) :: config
+        logical, intent(out) :: has_source_paths, has_coverage_files
+        logical, intent(out) :: has_import_file, has_diff_files
 
         has_source_paths = allocated(config%source_paths) .and. &
                            size(config%source_paths) > 0
@@ -35,13 +51,27 @@ contains
                          len_trim(config%diff_baseline_file) > 0 .and. &
                          len_trim(config%diff_current_file) > 0
 
+    end subroutine detect_input_sources
+
+    pure subroutine validate_input_source_rules(has_source_paths, has_coverage_files, &
+                                                has_import_file, has_diff_files, &
+                                                zero_config_mode, is_valid, error_message)
+        !! Validate input source combination rules
+        logical, intent(in) :: has_source_paths, has_coverage_files
+        logical, intent(in) :: has_import_file, has_diff_files, zero_config_mode
+        logical, intent(out) :: is_valid
+        character(len=*), intent(out) :: error_message
+
+        is_valid = .true.
+        error_message = ""
+
         ! Must have at least one input source (including diff files)
         ! Exception: zero-configuration mode handles input discovery automatically
         if (.not. has_source_paths .and. &
             .not. has_coverage_files .and. &
             .not. has_import_file .and. &
             .not. has_diff_files .and. &
-            .not. config%zero_configuration_mode) then
+            .not. zero_config_mode) then
             is_valid = .false.
             error_message = "No input sources specified. Provide source paths, coverage files, import file, or diff files"
             return
@@ -60,6 +90,17 @@ contains
             error_message = "Cannot mix diff mode with source paths, coverage files, or import file"
             return
         end if
+
+    end subroutine validate_input_source_rules
+
+    subroutine validate_specific_input_sources(config, has_source_paths, &
+                                               has_coverage_files, has_diff_files, &
+                                               is_valid, error_message)
+        !! Validate specific input source types
+        type(config_t), intent(in) :: config
+        logical, intent(in) :: has_source_paths, has_coverage_files, has_diff_files
+        logical, intent(out) :: is_valid
+        character(len=*), intent(out) :: error_message
 
         ! Validate source paths if present
         if (has_source_paths) then
@@ -80,7 +121,9 @@ contains
         end if
 
         ! SECURITY FIX Issue #963: gcov_executable validation removed - hardcoded 'gcov' command
+        is_valid = .true.
+        error_message = ""
 
-    end subroutine validate_input_sources
+    end subroutine validate_specific_input_sources
 
 end module input_validator_source

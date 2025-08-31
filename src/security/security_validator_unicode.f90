@@ -92,56 +92,92 @@ contains
         !!   valid: True if UTF-8 encoding is valid
         
         character(len=*), intent(in) :: text
-        integer :: i, byte_val, expected_bytes, j
+        integer :: i
         
         valid = .true.
         i = 1
         
         do while (i <= len(text))
-            byte_val = ichar(text(i:i))
-            
-            ! ASCII range (0x00-0x7F)
-            if (byte_val < 128) then
-                i = i + 1
-                cycle
-            end if
-            
-            ! Determine expected multibyte sequence length
-            if (byte_val >= 192 .and. byte_val < 224) then
-                expected_bytes = 2
-            else if (byte_val >= 224 .and. byte_val < 240) then
-                expected_bytes = 3
-            else if (byte_val >= 240 .and. byte_val < 248) then
-                expected_bytes = 4
-            else
-                ! Invalid UTF-8 start byte
-                valid = .false.
-                return
-            end if
-            
-            ! Check if we have enough bytes remaining
-            if (i + expected_bytes - 1 > len(text)) then
-                valid = .false.
-                return
-            end if
-            
-            ! Validate continuation bytes
-            do j = 1, expected_bytes - 1
-                byte_val = ichar(text(i+j:i+j))
-                if (byte_val < 128 .or. byte_val >= 192) then
-                    ! Invalid continuation byte
-                    valid = .false.
-                    return
-                end if
-            end do
-            
-            ! Check for overlong encodings (simplified)
-            call check_overlong_encoding(text(i:i+expected_bytes-1), valid)
+            call validate_utf8_char_at_position(text, i, valid)
             if (.not. valid) return
-            
-            i = i + expected_bytes
         end do
     end function is_valid_utf8
+    
+    ! Validate UTF-8 character at specific position
+    subroutine validate_utf8_char_at_position(text, position, valid)
+        character(len=*), intent(in) :: text
+        integer, intent(inout) :: position
+        logical, intent(out) :: valid
+        
+        integer :: byte_val, expected_bytes
+        
+        byte_val = ichar(text(position:position))
+        
+        ! ASCII range (0x00-0x7F)
+        if (byte_val < 128) then
+            position = position + 1
+            valid = .true.
+            return
+        end if
+        
+        ! Determine expected multibyte sequence length
+        call get_utf8_sequence_length(byte_val, expected_bytes, valid)
+        if (.not. valid) return
+        
+        ! Validate complete multibyte sequence
+        call validate_multibyte_sequence(text, position, expected_bytes, valid)
+        if (valid) position = position + expected_bytes
+    end subroutine validate_utf8_char_at_position
+    
+    ! Get UTF-8 sequence length from first byte
+    subroutine get_utf8_sequence_length(byte_val, expected_bytes, valid)
+        integer, intent(in) :: byte_val
+        integer, intent(out) :: expected_bytes
+        logical, intent(out) :: valid
+        
+        valid = .true.
+        
+        if (byte_val >= 192 .and. byte_val < 224) then
+            expected_bytes = 2
+        else if (byte_val >= 224 .and. byte_val < 240) then
+            expected_bytes = 3
+        else if (byte_val >= 240 .and. byte_val < 248) then
+            expected_bytes = 4
+        else
+            ! Invalid UTF-8 start byte
+            expected_bytes = 0
+            valid = .false.
+        end if
+    end subroutine get_utf8_sequence_length
+    
+    ! Validate complete multibyte UTF-8 sequence
+    subroutine validate_multibyte_sequence(text, position, expected_bytes, valid)
+        character(len=*), intent(in) :: text
+        integer, intent(in) :: position, expected_bytes
+        logical, intent(out) :: valid
+        
+        integer :: j, byte_val
+        
+        valid = .true.
+        
+        ! Check if we have enough bytes remaining
+        if (position + expected_bytes - 1 > len(text)) then
+            valid = .false.
+            return
+        end if
+        
+        ! Validate continuation bytes
+        do j = 1, expected_bytes - 1
+            byte_val = ichar(text(position+j:position+j))
+            if (byte_val < 128 .or. byte_val >= 192) then
+                valid = .false.
+                return
+            end if
+        end do
+        
+        ! Check for overlong encodings
+        call check_overlong_encoding(text(position:position+expected_bytes-1), valid)
+    end subroutine validate_multibyte_sequence
     
     logical function contains_unicode_attacks(text) result(has_attacks)
         !! Detect Unicode-based attack patterns
@@ -158,61 +194,105 @@ contains
         !!   has_attacks: True if attack patterns detected
         
         character(len=*), intent(in) :: text
-        integer :: i, j, byte_val
+        integer :: i
+        
+        has_attacks = .false.
+        i = 1
+        
+        do while (i <= len(text))
+            call scan_position_for_attacks(text, i, has_attacks)
+            if (has_attacks) return
+        end do
+    end function contains_unicode_attacks
+    
+    ! Scan specific position for Unicode attack patterns
+    subroutine scan_position_for_attacks(text, position, has_attacks)
+        character(len=*), intent(in) :: text
+        integer, intent(inout) :: position
+        logical, intent(out) :: has_attacks
+        
+        integer :: byte_val
+        
+        byte_val = ichar(text(position:position))
+        
+        ! Skip ASCII characters quickly
+        if (byte_val < 128) then
+            position = position + 1
+            has_attacks = .false.
+            return
+        end if
+        
+        ! Check for UTF-8 encoded attack sequences
+        if (byte_val == 226) then
+            call check_e2_attack_sequences(text, position, has_attacks)
+        else
+            call skip_non_attack_sequence(byte_val, position, has_attacks)
+        end if
+    end subroutine scan_position_for_attacks
+    
+    ! Check for attack sequences starting with 0xE2
+    subroutine check_e2_attack_sequences(text, position, has_attacks)
+        character(len=*), intent(in) :: text
+        integer, intent(inout) :: position
+        logical, intent(out) :: has_attacks
         
         has_attacks = .false.
         
-        ! Simplified byte-level scanning for known attack patterns
-        ! This is more reliable than complex codepoint conversion for MVP
+        ! Need at least 3 bytes for E2 sequences
+        if (position + 2 > len(text)) then
+            position = position + 1
+            return
+        end if
         
-        i = 1
-        do while (i <= len(text))
-            byte_val = ichar(text(i:i))
-            
-            ! Skip ASCII characters quickly
-            if (byte_val < 128) then
-                i = i + 1
-                cycle
-            end if
-            
-            ! Check for UTF-8 encoded attack sequences
-            if (byte_val == 226 .and. i + 2 <= len(text)) then
-                ! 3-byte UTF-8 sequence starting with E2
-                if (ichar(text(i+1:i+1)) == 128) then
-                    select case (ichar(text(i+2:i+2)))
-                    case (174)  ! RTL override U+202E -> E2 80 AE
-                        has_attacks = .true.
-                        return
-                    case (173)  ! PDF override U+202D -> E2 80 AD  
-                        has_attacks = .true.
-                        return
-                    case (139)  ! Zero width space U+200B -> E2 80 8B
-                        has_attacks = .true.
-                        return
-                    case (140)  ! Zero width non-joiner U+200C -> E2 80 8C
-                        has_attacks = .true.
-                        return
-                    case (141)  ! Zero width joiner U+200D -> E2 80 8D
-                        has_attacks = .true.
-                        return
-                    end select
-                end if
-                i = i + 3  ! Skip this 3-byte sequence
-            else
-                ! For other multibyte sequences, just skip them
-                ! (be permissive for legitimate Unicode)
-                if (byte_val >= 192 .and. byte_val < 224) then
-                    i = i + 2  ! 2-byte sequence
-                else if (byte_val >= 224 .and. byte_val < 240) then
-                    i = i + 3  ! 3-byte sequence
-                else if (byte_val >= 240 .and. byte_val < 248) then
-                    i = i + 4  ! 4-byte sequence
-                else
-                    i = i + 1  ! Invalid byte, skip
-                end if
-            end if
-        end do
-    end function contains_unicode_attacks
+        ! Check for E2 80 xx patterns (dangerous Unicode)
+        if (ichar(text(position+1:position+1)) == 128) then
+            call detect_dangerous_e2_80_patterns(text, position, has_attacks)
+        end if
+        
+        if (.not. has_attacks) position = position + 3  ! Skip 3-byte sequence
+    end subroutine check_e2_attack_sequences
+    
+    ! Detect dangerous E2 80 xx Unicode patterns
+    subroutine detect_dangerous_e2_80_patterns(text, position, has_attacks)
+        character(len=*), intent(in) :: text
+        integer, intent(in) :: position
+        logical, intent(out) :: has_attacks
+        
+        select case (ichar(text(position+2:position+2)))
+        case (174)  ! RTL override U+202E -> E2 80 AE
+            has_attacks = .true.
+        case (173)  ! PDF override U+202D -> E2 80 AD
+            has_attacks = .true.
+        case (139)  ! Zero width space U+200B -> E2 80 8B
+            has_attacks = .true.
+        case (140)  ! Zero width non-joiner U+200C -> E2 80 8C
+            has_attacks = .true.
+        case (141)  ! Zero width joiner U+200D -> E2 80 8D
+            has_attacks = .true.
+        case default
+            has_attacks = .false.
+        end select
+    end subroutine detect_dangerous_e2_80_patterns
+    
+    ! Skip non-attack multibyte sequence
+    subroutine skip_non_attack_sequence(byte_val, position, has_attacks)
+        integer, intent(in) :: byte_val
+        integer, intent(inout) :: position
+        logical, intent(out) :: has_attacks
+        
+        has_attacks = .false.
+        
+        ! Skip legitimate multibyte sequences
+        if (byte_val >= 192 .and. byte_val < 224) then
+            position = position + 2  ! 2-byte sequence
+        else if (byte_val >= 224 .and. byte_val < 240) then
+            position = position + 3  ! 3-byte sequence
+        else if (byte_val >= 240 .and. byte_val < 248) then
+            position = position + 4  ! 4-byte sequence
+        else
+            position = position + 1  ! Invalid byte, skip
+        end if
+    end subroutine skip_non_attack_sequence
     
     ! Removed unused helper functions for simpler, more reliable implementation
     ! get_unicode_codepoint and is_suspicious_codepoint were replaced with

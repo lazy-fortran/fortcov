@@ -195,6 +195,22 @@ contains
         type(error_context_t), intent(inout) :: error_ctx
         
         logical :: concurrent_risk, readonly_risk, disk_space_risk, sensitive_pattern
+
+        call get_pattern_risk_assessment(pattern, concurrent_risk, readonly_risk, &
+                                         sensitive_pattern)
+        call get_disk_space_risk(disk_space_risk)
+        
+        call report_security_concerns(pattern, concurrent_risk, readonly_risk, &
+                                      disk_space_risk, error_ctx)
+        
+    end subroutine assess_pattern_security_risks
+
+    subroutine get_pattern_risk_assessment(pattern, concurrent_risk, readonly_risk, &
+                                           sensitive_pattern)
+        !! Get pattern risk assessment with caching optimization
+        character(len=*), intent(in) :: pattern
+        logical, intent(out) :: concurrent_risk, readonly_risk, sensitive_pattern
+        
         integer :: cache_idx
         
         ! THREAD-SAFE: Local pattern cache variables
@@ -216,11 +232,16 @@ contains
                                      sensitive_pattern, local_pattern_cache, &
                                      local_cache_next_slot)
         end if
+
+    end subroutine get_pattern_risk_assessment
+
+    subroutine report_security_concerns(pattern, concurrent_risk, readonly_risk, &
+                                        disk_space_risk, error_ctx)
+        !! Report security concerns based on pattern analysis - priority order
+        character(len=*), intent(in) :: pattern
+        logical, intent(in) :: concurrent_risk, readonly_risk, disk_space_risk
+        type(error_context_t), intent(inout) :: error_ctx
         
-        ! THREAD-SAFE: Use local disk space check
-        call get_disk_space_risk(disk_space_risk)
-        
-        ! Report security concerns based on pattern analysis - priority order
         if (index(pattern, '/usr/') > 0) then
             ! Test 10: Readonly filesystem - highest priority
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
@@ -262,8 +283,8 @@ contains
             call safe_write_message(error_ctx, &
                 "Security alert: Disk space critical - temp file cleanup may fail")
         end if
-        
-    end subroutine assess_pattern_security_risks
+
+    end subroutine report_security_concerns
 
 
 end module security_assessment_core
