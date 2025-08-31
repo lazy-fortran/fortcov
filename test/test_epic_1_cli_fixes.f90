@@ -37,7 +37,7 @@ program test_epic_1_cli_fixes
         print *, "✅ ALL CLI EXIT CODE FIXES WORKING"
     else
         print *, "❌ SOME CLI EXIT CODE ISSUES REMAIN"
-        call exit(1)
+        stop 1
     end if
     print *, "========================================"
 

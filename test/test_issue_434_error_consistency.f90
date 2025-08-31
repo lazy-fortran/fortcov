@@ -148,10 +148,9 @@ program test_issue_434_error_consistency
     if (test_failures == 0) then
         print *, "All tests passed! Issue #434 is resolved."
         print *, "Error handling is now consistent across all flags."
-        call exit(0)
     else
         print *, "Some tests failed."
-        call exit(1)
+        stop 1
     end if
     
 end program test_issue_434_error_consistency

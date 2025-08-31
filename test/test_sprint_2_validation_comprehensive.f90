@@ -51,11 +51,10 @@ program test_sprint_2_validation_comprehensive
     if (all_tests_passed) then
         write(output_unit, '(A)') "✅ ALL SPRINT 2 SUCCESS CRITERIA VALIDATED"
         write(output_unit, '(A)') "   Sprint 2 auto-discovery functionality is READY"
-        call exit(0)
     else
         write(output_unit, '(A)') "❌ SPRINT 2 VALIDATION FAILED"
         write(output_unit, '(A)') "   Some success criteria not met"
-        call exit(1)
+        stop 1
     end if
 
 contains

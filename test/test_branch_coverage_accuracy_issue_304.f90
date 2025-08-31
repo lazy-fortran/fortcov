@@ -33,10 +33,9 @@ program test_branch_coverage_accuracy_issue_304
         print '(A,I0,A,I0,A)', "✓ ALL BRANCH TESTS PASSED (", passed_tests, "/", total_tests, ")"
         print *, ""
         print *, "Issue #304 Branch Coverage: ACCURATE SIMULATION ACHIEVED"
-        call exit(0)
     else
         print '(A,I0,A,I0,A)', "✗ BRANCH TESTS FAILED (", passed_tests, "/", total_tests, " passed)"
-        call exit(1)
+        stop 1
     end if
     
 contains

@@ -42,7 +42,7 @@ program test_cli_consistency_validation
     call test_architecture_compliance_verification()
     
     call print_test_summary("CLI CONSISTENCY VALIDATION", .false.)
-    if (.not. passed_tests == test_count) call exit(1)
+    if (.not. passed_tests == test_count) stop 1
     write(output_unit, '(A)') "   Architecture decomposition: QADS compliant"
     write(output_unit, '(A)') "   Original 553 lines → distributed <500 line modules"
 

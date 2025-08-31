@@ -18,9 +18,8 @@ program test_security_validation_core
     call runner%print_summary()
     
     if (runner%get_pass_rate() == 100.0) then
-        call exit(0)
     else
-        call exit(1)
+        stop 1
     end if
     
 contains

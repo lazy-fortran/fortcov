@@ -55,7 +55,7 @@ contains
         
         if (counter%failed > 0) then
             print *, "Status:      FAILED"
-            call exit(1)
+            stop 1
         else
             print *, "Status:      PASSED"
         end if

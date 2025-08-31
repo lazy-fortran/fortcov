@@ -72,11 +72,10 @@ program test_bugfix_469
     if (all_tests_passed) then
         print *, "=== Test completed - Bug #469 is FIXED ==="
         print *, "Auto-discovery properly uses .gcov file globbing"
-        call exit(0)  ! Success - test passes
     else
         print *, "=== Test FAILED - Issue #469 regression detected ==="
         print *, "Auto-discovery is not finding all .gcov files correctly"
-        call exit(1)  ! Failure - bug has reappeared
+        stop 1  ! Failure - bug has reappeared
     end if
     
 contains

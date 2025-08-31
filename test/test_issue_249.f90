@@ -182,7 +182,9 @@ program test_issue_249
     end if
     print *, "==============================================================="
     
-    call exit(exit_code)
+    if (exit_code /= 0) then
+        stop 1
+    end if
     
 contains
 

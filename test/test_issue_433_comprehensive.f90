@@ -183,10 +183,9 @@ program test_issue_433_comprehensive
     if (test_failures == 0) then
         print *, "All tests passed! Issue #433 is resolved."
         print *, "Configuration validation now provides specific error messages."
-        call exit(0)
     else
         print *, "Some tests failed."
-        call exit(1)
+        stop 1
     end if
     
 end program test_issue_433_comprehensive

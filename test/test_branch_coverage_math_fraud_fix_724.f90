@@ -34,10 +34,9 @@ program test_branch_coverage_math_fraud_fix_724
     if (all_tests_passed) then
         print '(A,I0,A,I0,A)', "✓ ALL MATHEMATICAL FRAUD TESTS PASSED (", passed_tests, "/", total_tests, ")"
         print *, "Issue #724: MATHEMATICAL CORRECTNESS ACHIEVED"
-        call exit(0)
     else
         print '(A,I0,A,I0,A)', "✗ MATHEMATICAL FRAUD TESTS FAILED (", passed_tests, "/", total_tests, " passed)"
-        call exit(1)
+        stop 1
     end if
     
 contains

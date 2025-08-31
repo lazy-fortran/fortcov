@@ -233,7 +233,6 @@ contains
         
         ! Always exit with success since failing tests are expected
         ! until Issue #251 functionality is implemented
-        call exit(0)
     end subroutine print_test_summary
     
 end program test_diff_mode_source_requirement_issue_251

@@ -107,10 +107,9 @@ contains
             write(output_unit, '(A)') "  • All modules <500 lines (QADS compliance)"
             write(output_unit, '(A)') "  • Functionality preserved via decomposition"
             write(output_unit, '(A)') "  • Architecture compliance achieved (#518)"
-            call exit(0)
         else
             write(output_unit, '(A)') "❌ AUTO-DISCOVERY VALIDATION FAILED"
-            call exit(1)
+            stop 1
         end if
         
     end subroutine print_final_validation_summary

@@ -31,10 +31,9 @@ program test_zero_config_complete_workflow
     
     if (passed_tests == test_count) then
         print *, "✅ All workflow integration tests PASSED"
-        call exit(0)
     else
         print *, "❌ Some workflow integration tests FAILED"
-        call exit(1)
+        stop 1
     end if
 
 contains

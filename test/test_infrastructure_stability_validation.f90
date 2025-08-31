@@ -37,11 +37,10 @@ program test_infrastructure_stability_validation
     if (all_tests_passed) then
         write(output_unit, '(A)') "✅ TEST INFRASTRUCTURE FULLY STABLE"
         write(output_unit, '(A)') "   All tests can rely on stable foundation"
-        call exit(0)
     else
         write(output_unit, '(A)') "❌ INFRASTRUCTURE INSTABILITY DETECTED"
         write(output_unit, '(A)') "   Test infrastructure needs fixes before validation"
-        call exit(1)
+        stop 1
     end if
 
 end program test_infrastructure_stability_validation

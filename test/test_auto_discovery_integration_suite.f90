@@ -89,14 +89,13 @@ contains
             write(output_unit, '(A)') ""
             write(output_unit, '(A)') "SRP-driven decomposition maintained test quality"
             write(output_unit, '(A)') "while achieving <500 line target per module."
-            call exit(0)
         else
             write(output_unit, '(A)') ""
             write(output_unit, '(A)') "❌ AUTO-DISCOVERY INTEGRATION SUITE FAILED"
             write(output_unit, '(A)') ""
             write(output_unit, '(A)') "One or more test modules failed validation."
             write(output_unit, '(A)') "Check individual module output for details."
-            call exit(1)
+            stop 1
         end if
         
     end subroutine print_integration_summary

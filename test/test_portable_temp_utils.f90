@@ -32,10 +32,9 @@ program test_portable_temp_utils
     
     if (all_tests_passed) then
         write(output_unit, '(A)') "All tests PASSED"
-        call exit(0)
     else
         write(error_unit, '(A)') "Some tests FAILED"
-        call exit(1)
+        stop 1
     end if
 
 contains

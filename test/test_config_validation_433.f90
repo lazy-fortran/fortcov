@@ -82,10 +82,9 @@ program test_config_validation_433
     print *, "================================"
     if (test_failures == 0) then
         print *, "All tests passed!"
-        call exit(0)
     else
         print *, "Test failures: ", test_failures
-        call exit(1)
+        stop 1
     end if
     
 end program test_config_validation_433

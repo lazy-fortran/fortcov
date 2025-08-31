@@ -28,7 +28,7 @@ program test_marker_cleanup_integration
         print *, "   Fork bomb marker cleanup working correctly"
     else
         print *, "❌ SOME INTEGRATION TESTS FAILED"
-        call exit(1)  
+        stop 1  
     end if
     
 contains
