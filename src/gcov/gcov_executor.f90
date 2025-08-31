@@ -143,9 +143,66 @@ contains
         character(len=*), intent(in) :: source_file, temp_filename
         type(error_context_t), intent(out) :: error_ctx
         
-        ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
-        ! Return success to maintain functionality without shell execution risk
+        character(len=1024) :: command
+        character(len=512) :: safe_source_file, safe_working_dir
+        character(len=256) :: base_name
+        integer :: exit_code
+        logical :: source_exists
+        
         call clear_error_context(error_ctx)
+        
+        ! SECURITY IMPLEMENTATION Issue #1035: Restore secure gcov functionality
+        ! Validate and sanitize all inputs before command execution
+        
+        ! Validate source file exists and sanitize path
+        inquire(file=source_file, exist=source_exists)
+        if (.not. source_exists) then
+            call handle_missing_source(source_file, error_ctx)
+            return
+        end if
+        
+        ! Sanitize source file path (remove any dangerous characters)
+        safe_source_file = trim(source_file)
+        call sanitize_file_path(safe_source_file)
+        
+        ! Sanitize working directory if specified
+        if (len_trim(this%working_directory) > 0) then
+            safe_working_dir = trim(this%working_directory)
+            call sanitize_file_path(safe_working_dir)
+        else
+            safe_working_dir = ""
+        end if
+        
+        ! Extract base name for gcov processing
+        base_name = get_base_name(safe_source_file)
+        
+        ! Build secure gcov command with validated arguments
+        if (len_trim(safe_working_dir) > 0) then
+            ! Command with working directory: cd to directory and run gcov
+            command = 'cd ' // escape_shell_argument(safe_working_dir) // ' && ' // &
+                     trim(this%gcov_command) // ' ' // escape_shell_argument(safe_source_file)
+        else
+            ! Simple command: gcov source_file
+            command = trim(this%gcov_command) // ' ' // escape_shell_argument(safe_source_file)
+        end if
+        
+        ! Add branch coverage flag if enabled
+        if (this%branch_coverage) then
+            command = trim(this%gcov_command) // ' -b ' // escape_shell_argument(safe_source_file)
+            if (len_trim(safe_working_dir) > 0) then
+                command = 'cd ' // escape_shell_argument(safe_working_dir) // ' && ' // command
+            end if
+        end if
+        
+        ! Execute gcov command securely
+        call execute_command_line(command, exitstat=exit_code)
+        
+        if (exit_code /= 0) then
+            call handle_gcov_command_failure(command, exit_code, temp_filename, error_ctx)
+            return
+        end if
+        
+        ! Success - gcov command executed successfully
         error_ctx%error_code = ERROR_SUCCESS
     end subroutine execute_gcov_command
     
@@ -371,5 +428,46 @@ contains
         write(temp_str, '(I0)') int_val
         str_val = trim(temp_str)
     end function integer_to_string
+    
+    ! SECURITY HELPERS: Path sanitization and shell argument escaping
+    
+    subroutine sanitize_file_path(path)
+        !! Sanitize file path to prevent directory traversal and injection attacks
+        character(len=*), intent(inout) :: path
+        integer :: i, len_path
+        character :: c
+        
+        len_path = len_trim(path)
+        
+        ! Remove dangerous characters and patterns
+        do i = 1, len_path
+            c = path(i:i)
+            ! Replace dangerous shell characters with underscores
+            if (c == ';' .or. c == '|' .or. c == '&' .or. c == '$' .or. &
+                c == '`' .or. c == '<' .or. c == '>' .or. c == '(' .or. &
+                c == ')' .or. c == '{' .or. c == '}') then
+                path(i:i) = '_'
+            end if
+        end do
+        
+        ! Remove directory traversal patterns
+        call remove_pattern(path, '../')
+        call remove_pattern(path, '/./')
+        call remove_pattern(path, '//')
+    end subroutine sanitize_file_path
+    
+    subroutine remove_pattern(str, pattern)
+        !! Remove all occurrences of pattern from string
+        character(len=*), intent(inout) :: str
+        character(len=*), intent(in) :: pattern
+        integer :: pos, pattern_len
+        
+        pattern_len = len(pattern)
+        do
+            pos = index(str, pattern)
+            if (pos == 0) exit
+            str = str(1:pos-1) // str(pos+pattern_len:)
+        end do
+    end subroutine remove_pattern
 
 end module gcov_executor
