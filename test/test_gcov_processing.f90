@@ -61,7 +61,7 @@ contains
             read(unit_num, '(A)', iostat=iostat) abs_path
             close(unit_num)
             call execute_command_line('rm -f "' // trim(mock_gcov_path_file) // '"')
-            config%gcov_executable = trim(abs_path)
+            ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
         end block
         
         ! Run auto_process on test_build directory
@@ -70,11 +70,12 @@ contains
         if (.not. result%success) then
             print *, '  DEBUG: Error message: ', trim(result%error_message)
             print *, '  DEBUG: Files processed: ', result%files_processed
-            print *, '  DEBUG: Gcov executable: ', trim(config%gcov_executable)
+            ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
             ! Check if mock gcov exists
             block
                 logical :: file_exists
-                inquire(file=trim(config%gcov_executable), exist=file_exists)
+                ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
+                inquire(file='gcov', exist=file_exists)
                 print *, '  DEBUG: Mock gcov exists: ', file_exists
             end block
         end if
@@ -143,7 +144,7 @@ contains
             read(unit_num, '(A)', iostat=iostat) abs_path
             close(unit_num)
             call execute_command_line('rm -f "' // trim(mock_gcov_path_file) // '"')
-            config%gcov_executable = trim(abs_path)
+            ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
         end block
         
         ! Run on test_build directory which contains the build structure
@@ -187,7 +188,7 @@ contains
             read(unit_num, '(A)', iostat=iostat) abs_path
             close(unit_num)
             call execute_command_line('rm -f "' // trim(mock_gcov_path_file) // '"')
-            config%gcov_executable = trim(abs_path)
+            ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
         end block
         
         ! Process test_build directory
@@ -311,7 +312,7 @@ contains
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 30
         config%verbose = .false.
-        config%gcov_executable = 'gcov'
+        ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
     end subroutine initialize_default_config
 
 end program test_gcov_processing

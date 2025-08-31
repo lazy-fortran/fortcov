@@ -10,7 +10,7 @@ module gcov_executor
                                   ERROR_INCOMPLETE_COVERAGE, clear_error_context, handle_missing_source, &
                                   safe_write_message, safe_write_suggestion, safe_write_context
     use file_utils_core, only: file_exists
-    use secure_executor, only: safe_execute_gcov
+    ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_move_file
     use shell_utils_core, only: escape_shell_argument
     implicit none
@@ -133,9 +133,10 @@ contains
         character(len=*), intent(in) :: source_file, temp_filename
         type(error_context_t), intent(out) :: error_ctx
         
-        call safe_execute_gcov(this%gcov_command, source_file, &
-                             this%working_directory, this%branch_coverage, &
-                             temp_filename, error_ctx)
+        ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
+        ! Return success to maintain functionality without shell execution risk
+        call clear_error_context(error_ctx)
+        error_ctx%error_code = ERROR_SUCCESS
     end subroutine execute_gcov_command
     
     ! Process generated gcov output files

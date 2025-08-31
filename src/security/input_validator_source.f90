@@ -79,11 +79,7 @@ contains
             if (.not. is_valid) return
         end if
 
-        ! Validate gcov executable if using source paths (skip in zero-config mode)
-        if (has_source_paths .and. .not. config%zero_configuration_mode) then
-            call validate_gcov_executable(config%gcov_executable, is_valid, error_message)
-            if (.not. is_valid) return
-        end if
+        ! SECURITY FIX Issue #963: gcov_executable validation removed - hardcoded 'gcov' command
 
     end subroutine validate_input_sources
 

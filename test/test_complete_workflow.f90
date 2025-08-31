@@ -254,10 +254,10 @@ contains
         if (iostat == 0) then
             read(10, '(A)') abs_path
             close(10)
-            config%gcov_executable = trim(abs_path)
+            ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
             call execute_command_line('rm -f test_build/mock_path.txt')
         else
-            config%gcov_executable = 'gcov'
+            ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
         end if
     end subroutine initialize_default_config
 

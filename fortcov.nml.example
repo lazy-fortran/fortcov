@@ -12,7 +12,7 @@
 ! - output_format: 'text', 'markdown' (default), 'json', 'html', 'xml'
 ! - output_path: Output file path, use '-' for stdout (default)
 ! - minimum_coverage: Coverage threshold 0.0-100.0 for warnings
-! - gcov_executable: Path to gcov executable (default: 'gcov')
+! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
 ! - verbose: Enable detailed output (logical, default: .false.)
 ! - quiet: Suppress non-essential output (logical, default: .false.)
 
@@ -22,7 +22,7 @@
     output_format = 'markdown'
     output_path = '-'
     minimum_coverage = 80.0
-    gcov_executable = 'gcov'
+    ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
     verbose = .false.
     quiet = .false.
 /

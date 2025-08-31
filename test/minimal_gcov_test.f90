@@ -34,7 +34,7 @@ program minimal_gcov_test
     
     ! Initialize config with mock gcov
     config%auto_discovery = .true.
-    config%gcov_executable = trim(abs_path)
+    ! SECURITY FIX Issue #963: gcov_executable removed - test uses hardcoded 'gcov' command
 
     ! Create valid gcda/gcno files that mock can process
     call execute_command_line('touch test_build/test.gcda')

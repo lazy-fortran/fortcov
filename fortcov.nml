@@ -38,7 +38,7 @@
     include_patterns = '*.f90',
                        '*.F90',
                        '*.f95'
-    gcov_executable = 'gcov'
+    ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
     fail_under_threshold = 80.0
     threads = 1
     verbose = .false.
