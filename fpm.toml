@@ -1,8 +1,24 @@
-name = "test_project"
-version = "0.1.0"
-license = "MIT"
-author = "Test Author"
+name = "fortcov"
+version = "0.4.0"
 
 [build]
 auto-executables = true
 auto-tests = true
+auto-examples = true
+
+[install]
+library = false
+
+[fortran]
+implicit-typing = false
+implicit-external = false
+source-form = "free"
+
+[[executable]]
+name = "fortcov"
+source-dir = "app"
+main = "main.f90"
+
+
+[dependencies]
+json-fortran = { git = "https://github.com/jacobwilliams/json-fortran.git", tag = "9.0.5" }
