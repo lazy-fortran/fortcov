@@ -155,6 +155,10 @@ program main
       if (index(error_ctx%message, "Source path not found") > 0 .or. &
           index(error_ctx%message, "Coverage file not found") > 0) then
         call exit_no_coverage_data_clean()
+      ! ZERO-CONFIG EXIT CODE FIX: Issue #1061 - Zero-config mode should return exit code 3
+      else if (index(error_ctx%message, "No input sources specified") > 0 .and. &
+               config%zero_configuration_mode) then
+        call exit_no_coverage_data_clean()
       else
         call exit_invalid_config_clean()
       end if
