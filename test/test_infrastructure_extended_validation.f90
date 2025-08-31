@@ -250,6 +250,12 @@ contains
                         "Should manage file handles properly", &
                         test_count, passed_tests, all_tests_passed)
         
+        ! Cleanup: Remove test handle files to maintain repository hygiene
+        do i = 1, 5
+            write(test_file, '(A,I0,A)') "test_infra_handle_", i, ".txt"
+            call safe_cleanup_test_file(trim(test_file))
+        end do
+        
     end subroutine test_resource_leak_prevention
 
     subroutine test_environment_detection_accuracy(test_count, &
