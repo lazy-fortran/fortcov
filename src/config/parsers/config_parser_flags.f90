@@ -279,13 +279,15 @@ contains
             if (len_trim(value) > 0) then
                 config%architecture_output_format = value
             end if
-        case ("--validate")
-            config%validate_config_only = .true.
-         case ("--validate-architecture")
-             config%validate_architecture = .true.
-         case ("--fail-on-size-warnings")
-             config%fail_on_size_warnings = .true.
-         case default
+         case ("--validate")
+             config%validate_config_only = .true.
+          case ("--validate-architecture")
+              config%validate_architecture = .true.
+          case ("--fail-on-size-warnings")
+              config%fail_on_size_warnings = .true.
+          case ("--zero-config")
+              config%zero_configuration_mode = .true.
+          case default
             ! Unknown flag - reject with error message
             success = .false.
             error_message = "Unknown flag: '" // trim(flag) // "'"

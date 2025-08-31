@@ -1,0 +1,7 @@
+# FortCov Meson build options
+# 
+# PRIMARY BUILD SYSTEM: FPM (Fortran Package Manager)
+# See examples/build_systems/meson/ for complete integration examples
+#
+option('coverage', type: 'boolean', value: false, 
+       description: 'Enable coverage analysis (use FPM for comprehensive coverage)')
