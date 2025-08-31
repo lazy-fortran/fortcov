@@ -32,20 +32,18 @@ print_error() {
     echo -e "${RED}ERROR:${NC} $1"
 }
 
-# Main workflow function
-generate_fpm_application_coverage() {
-    print_info "FPM Coverage Workflow Fix - Issue #1052"
-    print_info "Generating application source coverage (not test coverage)"
+# Function 1: Build instrumented application with coverage flags
+build_instrumented_application() {
+    print_info "Building application with coverage instrumentation..."
     
-    # Step 1: Clean only project root coverage files (preserve build directory)
+    # Clean previous coverage files from project root (preserve build directory)
     print_info "Cleaning previous .gcov files from project root..."
     rm -f *.gcov
     
-    # Step 2: Build application with coverage instrumentation
-    print_info "Building application with coverage instrumentation..."
+    # Build with coverage instrumentation
     fpm build --flag "-fprofile-arcs -ftest-coverage"
     
-    # Step 3: Find the instrumented executable
+    # Find the instrumented executable
     local fortcov_exe
     fortcov_exe=$(find build -name fortcov -type f -executable | head -1)
     
@@ -56,8 +54,14 @@ generate_fpm_application_coverage() {
     fi
     
     print_success "Found instrumented executable: $fortcov_exe"
+    echo "$fortcov_exe"
+    return 0
+}
+
+# Function 2: Execute application scenarios to generate .gcda files
+execute_application_scenarios() {
+    local fortcov_exe="$1"
     
-    # Step 4: Execute the instrumented application to generate coverage
     print_info "Running instrumented application to generate coverage data..."
     print_info "Command: $fortcov_exe --help"
     
@@ -77,7 +81,7 @@ generate_fpm_application_coverage() {
     
     print_success "Application execution completed - coverage data generated"
     
-    # Step 5: Verify coverage data generation
+    # Verify coverage data generation
     local gcda_count gcno_count
     gcda_count=$(find build -name "*.gcda" 2>/dev/null | wc -l)
     gcno_count=$(find build -name "*.gcno" 2>/dev/null | wc -l)
@@ -91,15 +95,20 @@ generate_fpm_application_coverage() {
         return 1
     fi
     
-    # Step 6: Generate .gcno files by rebuilding (they're consumed during runtime)
+    # Regenerate .gcno files for gcov processing (they're consumed during runtime)
     print_info "Regenerating .gcno files for gcov processing..."
     fpm build --flag "-fprofile-arcs -ftest-coverage" > /dev/null
     
     gcno_count=$(find build -name "*.gcno" 2>/dev/null | wc -l)
     print_info "Regenerated .gcno files: $gcno_count"
     
-    # Step 7: Process coverage data with gcov
+    return 0
+}
+
+# Function 3: Process coverage data with gcov and manage files
+process_coverage_data() {
     print_info "Processing coverage data with gcov..."
+    
     local build_dirs
     build_dirs=$(find build -name "*.gcda" | xargs dirname | sort -u 2>/dev/null || true)
     
@@ -138,7 +147,7 @@ generate_fpm_application_coverage() {
         fi
     done
     
-    # Step 8: Verify .gcov files available for analysis
+    # Verify .gcov files available for analysis
     local gcov_files_root
     gcov_files_root=$(ls *.gcov 2>/dev/null | wc -l || echo "0")
     
@@ -168,8 +177,13 @@ generate_fpm_application_coverage() {
         return 1
     fi
     
-    # Step 9: Generate coverage report using FortCov
+    return 0
+}
+
+# Function 4: Generate final FortCov coverage report
+generate_coverage_report() {
     print_info "Generating coverage report..."
+    
     local clean_fortcov_exe
     clean_fortcov_exe=$(find build -name fortcov -type f -executable | head -1)
     
@@ -186,9 +200,7 @@ generate_fpm_application_coverage() {
         fi
     fi
     
-    print_success "FPM application coverage workflow completed!"
-    
-    # Step 10: Report summary
+    # Report summary
     if [ -f "$COVERAGE_OUTPUT" ]; then
         print_success "Coverage report generated: $COVERAGE_OUTPUT"
         local lines
@@ -201,6 +213,29 @@ generate_fpm_application_coverage() {
     
     print_info "Cleanup: .gcov files available for manual analysis"
     print_info "To clean: rm -f *.gcov"
+    
+    return 0
+}
+
+# Main workflow orchestrator function
+generate_fpm_application_coverage() {
+    print_info "FPM Coverage Workflow Fix - Issue #1052"
+    print_info "Generating application source coverage (not test coverage)"
+    
+    # Step 1: Build instrumented application
+    local fortcov_exe
+    fortcov_exe=$(build_instrumented_application) || return 1
+    
+    # Step 2: Execute application scenarios to generate coverage data
+    execute_application_scenarios "$fortcov_exe" || return 1
+    
+    # Step 3: Process coverage data with gcov
+    process_coverage_data || return 1
+    
+    # Step 4: Generate final coverage report
+    generate_coverage_report || return 1
+    
+    print_success "FPM application coverage workflow completed!"
     
     return 0
 }
