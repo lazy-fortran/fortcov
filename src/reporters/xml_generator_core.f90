@@ -39,7 +39,7 @@ contains
         pos = 1
 
         call append_text(buffer, pos, '<sources>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
 
         if (allocated(coverage_data%files)) then
@@ -48,7 +48,7 @@ contains
                 call append_text(buffer, pos, '  <source>')
                 call append_text(buffer, pos, trim(source_path))
                 call append_text(buffer, pos, '</source>')
-                buffer(pos:pos) = new_line('')
+                buffer(pos:pos) = new_line('a')
                 pos = pos + 1
             end do
         end if
@@ -130,13 +130,13 @@ contains
         pos = 1
 
         call append_text(buffer, pos, '<packages>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '  <package name="fortcov-coverage">')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '    <classes>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
 
         if (allocated(coverage_data%files)) then
@@ -155,11 +155,11 @@ contains
                 call append_text(buffer, pos, '" branch-rate="')
                 call append_text(buffer, pos, trim(rate_str))
                 call append_text(buffer, pos, '" complexity="0.0">')
-                buffer(pos:pos) = new_line('')
+                buffer(pos:pos) = new_line('a')
                 pos = pos + 1
 
                 call append_text(buffer, pos, '        <lines>')
-                buffer(pos:pos) = new_line('')
+                buffer(pos:pos) = new_line('a')
                 pos = pos + 1
 
                 if (allocated(coverage_data%files(i)%lines)) then
@@ -172,26 +172,26 @@ contains
                             call append_text(buffer, pos, '" hits="')
                             call append_text(buffer, pos, trim(hits_str))
                             call append_text(buffer, pos, '" branch="false"/>')
-                            buffer(pos:pos) = new_line('')
+                            buffer(pos:pos) = new_line('a')
                             pos = pos + 1
                         end if
                     end do
                 end if
 
                 call append_text(buffer, pos, '        </lines>')
-                buffer(pos:pos) = new_line('')
+                buffer(pos:pos) = new_line('a')
                 pos = pos + 1
                 call append_text(buffer, pos, '      </class>')
-                buffer(pos:pos) = new_line('')
+                buffer(pos:pos) = new_line('a')
                 pos = pos + 1
             end do
         end if
 
         call append_text(buffer, pos, '    </classes>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '  </package>')
-        buffer(pos:pos) = new_line('')
+        buffer(pos:pos) = new_line('a')
         pos = pos + 1
         call append_text(buffer, pos, '</packages>')
 
