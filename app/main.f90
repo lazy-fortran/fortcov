@@ -151,8 +151,9 @@ program main
       print *, "For configuration help:"
       print *, "   • See example: cat fortcov.nml.example"
       print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
-      ! EPIC 1 FIX: Map source path errors to proper exit codes
-      if (index(error_ctx%message, "Source path not found") > 0) then
+      ! EPIC 1 FIX: Map data availability errors to proper exit codes
+      if (index(error_ctx%message, "Source path not found") > 0 .or. &
+          index(error_ctx%message, "Coverage file not found") > 0) then
         call exit_no_coverage_data_clean()
       else
         call exit_invalid_config_clean()

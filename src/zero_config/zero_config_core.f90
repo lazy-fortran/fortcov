@@ -4,7 +4,8 @@ module zero_config_core
     use coverage_test_executor, only: execute_auto_test_workflow
     use zero_config_manager
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
-    use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
+    use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE, EXIT_NO_COVERAGE_DATA, &
+                              EXIT_INVALID_CONFIG
     use fortcov_core, only: run_coverage_analysis
     implicit none
     private
@@ -161,6 +162,7 @@ contains
         call enhance_zero_config_with_auto_discovery(config, success, error_message)
         if (.not. success) then
             call show_zero_configuration_error_guidance()
+            exit_code = EXIT_INVALID_CONFIG  ! Exit code 4 for configuration issues
             return
         end if
         
@@ -180,6 +182,7 @@ contains
         call ensure_output_directory_structure(config%output_path, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call show_zero_configuration_error_guidance()
+            exit_code = EXIT_INVALID_CONFIG  ! Exit code 4 for directory access issues
             return
         end if
         
@@ -190,6 +193,12 @@ contains
                 print '(A)', "FortCov: " // trim(error_message)
             end if
             call show_zero_configuration_error_guidance()
+            ! CRITICAL FIX: Return proper exit code based on the specific error
+            if (index(error_message, "No coverage files found") > 0) then
+                exit_code = EXIT_NO_COVERAGE_DATA  ! Exit code 3
+            else
+                exit_code = EXIT_FAILURE  ! Exit code 1 for other errors
+            end if
             return
         end if
         
