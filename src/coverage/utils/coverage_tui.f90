@@ -35,14 +35,14 @@ contains
         end if
 
         if (.not. config%quiet) then
-            print *, "🎯 Starting TUI mode - Interactive Coverage Analysis"
+            print *, "[INFO] Starting TUI mode - Interactive Coverage Analysis"
             
             ! Check if sources are configured, offer interactive setup
             if (.not. allocated(config%source_paths)) then
-                print *, "⚠️  No source paths configured. Use [c]onfigure to set up sources."
+                print *, "[WARN] No source paths configured. Use [c]onfigure to set up sources."
             else if (size(config%source_paths) == 0 .or. &
                      all(len_trim(config%source_paths) == 0)) then
-                print *, "⚠️  No source paths configured. Use [c]onfigure to set up sources."
+                print *, "[WARN] No source paths configured. Use [c]onfigure to set up sources."
             end if
             
             print *, "   Commands: [h]elp, [c]onfigure, [a]nalyze, [r]efresh, [f]ilter, [e]xport, [q]uit"
@@ -72,7 +72,7 @@ contains
         end do
         
         if (.not. config%quiet) then
-            print *, "✅ TUI session completed"
+            print *, "[OK] TUI session completed"
         end if
         
         exit_code = EXIT_SUCCESS
@@ -90,12 +90,12 @@ contains
             
             ! Show current source status
             if (.not. allocated(config%source_paths)) then
-                print *, "📁 Sources: Not configured - use [c] to set up"
+            print *, "Sources: Not configured - use [c] to set up"
             else if (size(config%source_paths) == 0 .or. &
                      all(len_trim(config%source_paths) == 0)) then
-                print *, "📁 Sources: Not configured - use [c] to set up"
+                print *, "Sources: Not configured - use [c] to set up"
             else
-                print *, "📁 Sources:", trim(config%source_paths(1))
+                print *, "Sources:", trim(config%source_paths(1))
                 if (size(config%source_paths) > 1) print *, "           (and", size(config%source_paths)-1, "more)"
             end if
             
@@ -186,28 +186,28 @@ contains
         
         if (.not. config%quiet) then
             print *, ""
-            print *, "📁 Configure Source Paths"
+            print *, "Configure Source Paths"
             print *, "---------------------------------------------"
             print *, "Enter source directory path (e.g., 'src', 'lib', etc.):"
             write(*, '(A)', advance='no') "Source path: "
             
             read(*, '(A)', iostat=iostat) source_path
             if (iostat /= 0) then
-                print *, "❌ Input error occurred"
+                print *, "[ERROR] Input error occurred"
                 return
             end if
             
             source_path = trim(adjustl(source_path))
             if (len_trim(source_path) == 0) then
-                print *, "❌ Empty path provided, keeping current configuration"
+                print *, "[ERROR] Empty path provided, keeping current configuration"
                 return
             end if
             
             ! Validate path exists
             inquire(file=trim(source_path), exist=path_exists)
             if (.not. path_exists) then
-                print *, "⚠️  Warning: Path '", trim(source_path), "' does not exist"
-                print *, "   You can still proceed - path might be created later"
+                print *, "[WARN] Path '", trim(source_path), "' does not exist"
+                print *, "       You can still proceed - path might be created later"
             end if
             
             ! Update config with new source path
@@ -215,7 +215,7 @@ contains
             allocate(character(len=256) :: config%source_paths(1))
             config%source_paths(1) = trim(source_path)
             
-            print *, "✅ Source path configured: ", trim(source_path)
+            print *, "[OK] Source path configured: ", trim(source_path)
             print *, ""
         end if
         
@@ -228,14 +228,14 @@ contains
         if (.not. config%quiet) then
             ! Check if sources are configured before analysis
             if (.not. allocated(config%source_paths)) then
-                print *, "❌ Cannot analyze: No source paths configured"
-                print *, "   Use [c]onfigure command to set up source directories first"
+                print *, "[ERROR] Cannot analyze: No source paths configured"
+                print *, "        Use [c]onfigure command to set up source directories first"
                 print *, ""
                 return
             else if (size(config%source_paths) == 0 .or. &
                      all(len_trim(config%source_paths) == 0)) then
-                print *, "❌ Cannot analyze: No source paths configured"
-                print *, "   Use [c]onfigure command to set up source directories first"
+                print *, "[ERROR] Cannot analyze: No source paths configured"
+                print *, "        Use [c]onfigure command to set up source directories first"
                 print *, ""
                 return
             end if
@@ -252,7 +252,7 @@ contains
         
         if (.not. config%quiet) then
             print *, "Refreshing coverage data..."
-            print *, "✓ Coverage files refreshed"
+            print *, "[OK] Coverage files refreshed"
         end if
         
     end subroutine handle_tui_refresh
@@ -277,7 +277,7 @@ contains
         
         if (.not. config%quiet) then
             print *, "Exporting coverage report..."
-            print *, "✓ Report exported to: ", trim(config%output_path)
+            print *, "[OK] Report exported to: ", trim(config%output_path)
         end if
         
     end subroutine handle_tui_export
@@ -288,7 +288,7 @@ contains
         
         ! Actual coverage analysis implementation needed
         print *, "TUI coverage analysis functionality"
-        print *, "✓ Analysis complete"
+        print *, "[OK] Analysis complete"
         
     end subroutine perform_tui_coverage_analysis
     

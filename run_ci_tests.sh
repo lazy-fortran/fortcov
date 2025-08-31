@@ -142,16 +142,16 @@ if [[ $REMAINING_ARTIFACTS -gt 0 ]]; then
     echo "  WARNING: Some test artifacts remain in project root:"
     find . -maxdepth 1 -name "test_infra_*" 2>/dev/null || true
 else
-    echo "  ✅ Project root clean - no test artifacts remaining"
+echo "  Project root clean - no test artifacts remaining"
 fi
 
 # Final CI hygiene using dedicated cleanup script
 echo ""
 echo "Final CI hygiene check using comprehensive cleanup script..."
 if ./scripts/ci_hygiene_cleanup.sh; then
-    CI_HYGIENE_STATUS="✅ CLEAN"
+    CI_HYGIENE_STATUS="CLEAN"
 else
-    CI_HYGIENE_STATUS="⚠️ ARTIFACTS REMAIN"
+    CI_HYGIENE_STATUS="ARTIFACTS REMAIN"
 fi
 
 if [[ $FAILED -eq 0 ]]; then

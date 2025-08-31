@@ -52,6 +52,6 @@ if [ -n "$REMAINING_ARTIFACTS" ]; then
     echo "$REMAINING_ARTIFACTS"
     exit 1
 else
-    echo "✅ CI Hygiene Success: Project root clean"
+    echo "CI Hygiene Success: Project root clean"
     exit 0
 fi
