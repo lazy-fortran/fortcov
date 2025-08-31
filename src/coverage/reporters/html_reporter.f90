@@ -277,11 +277,16 @@ contains
         
         css = '        /* Modern HTML5 reset and base styles */' // new_line('a') // &
               '        * { margin: 0; padding: 0; box-sizing: border-box; }' // new_line('a') // &
-              '        body { font-family: "SF Mono", Monaco, Inconsolata, "Roboto Mono", monospace; background: var(--background-color, #1a1a1a); color: var(--text-color, #ffffff); line-height: 1.6; margin: 0; padding: 20px; }' // new_line('a') // &
-              '        .report-header { background: linear-gradient(135deg, var(--accent-color, #ff00ff), var(--secondary-color, #00ffff)); padding: 2rem; margin-bottom: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }' // new_line('a') // &
+              '        body { font-family: "SF Mono", Monaco, Inconsolata, "Roboto Mono", ' // &
+              'monospace; background: var(--background-color, #1a1a1a); color: ' // &
+              'var(--text-color, #ffffff); line-height: 1.6; margin: 0; padding: 20px; }' // new_line('a') // &
+              '        .report-header { background: linear-gradient(135deg, var(--accent-color, #ff00ff), ' // &
+              'var(--secondary-color, #00ffff)); padding: 2rem; margin-bottom: 2rem; ' // &
+              'border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }' // new_line('a') // &
               '        .report-header h1 { font-size: 2.5rem; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }' // new_line('a') // &
               '        .theme-info { font-size: 1.1rem; opacity: 0.9; margin-top: 0.5rem; }' // new_line('a') // &
-              '        .report-footer { margin-top: 3rem; padding: 1.5rem; text-align: center; border-top: 1px solid var(--accent-color, #ff00ff); opacity: 0.8; }' // new_line('a') // &
+              '        .report-footer { margin-top: 3rem; padding: 1.5rem; text-align: center; ' // &
+              'border-top: 1px solid var(--accent-color, #ff00ff); opacity: 0.8; }' // new_line('a') // &
               '        .timestamp { font-size: 0.9rem; margin-top: 0.5rem; opacity: 0.7; }'
     end function generate_base_css_styles
     
