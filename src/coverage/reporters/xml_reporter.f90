@@ -103,12 +103,12 @@ contains
         buffer(pos:pos) = new_line('a'); pos = pos + 1
 
         call append(buffer, pos, "    <lines_covered>")
-        call append(buffer, pos, trim(int_to_string(stats%covered_count)))
+        call append(buffer, pos, trim(covered_str))
         call append(buffer, pos, "</lines_covered>")
         buffer(pos:pos) = new_line('a'); pos = pos + 1
 
         call append(buffer, pos, "    <total_lines>")
-        call append(buffer, pos, trim(int_to_string(stats%total_count)))
+        call append(buffer, pos, trim(total_str))
         call append(buffer, pos, "</total_lines>")
         buffer(pos:pos) = new_line('a'); pos = pos + 1
 
