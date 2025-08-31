@@ -53,6 +53,13 @@ test_*.nml
 test_*.cfg
 test_*/
 
+# Test workspace directories (created by auto-discovery tests)
+*workspace*
+test_*_workspace*/
+auto_discovery_*
+coverage_test_workspace*/
+gcov_test_workspace*/
+
 # Test infrastructure artifacts (cleaned up by tests) - CI HYGIENE ENHANCED
 test_infra_handle_*.txt
 test_infra_cleanup_*.txt
