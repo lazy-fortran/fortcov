@@ -15,6 +15,8 @@ program test_auto_discovery_error_handling
     use iso_fortran_env, only: output_unit, error_unit
     use build_detector_core, only: detect_build_system, build_system_info_t
     use test_auto_discovery_shared_utilities
+    use file_ops_secure, only: safe_mkdir, safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     
     character(len=256) :: base_test_dir = "test_auto_discovery_error_workspace"
@@ -53,7 +55,8 @@ contains
         write(output_unit, '(A)') "=== MISSING BUILD SYSTEM HANDLING ==="
         
         empty_workspace = trim(base_test_dir) // "_empty"
-        ! call execute_command_line('mkdir -p ' // trim(empty_workspace)) ! CI-disabled for reliability
+        ! Workspace creation disabled for CI reliability
+        call safe_mkdir_for_error_tests(empty_workspace)
         
         call detect_build_system_with_error_handling(empty_workspace, &
                                                      build_info, detected)
@@ -64,7 +67,8 @@ contains
         call assert_test(.true., "Missing build system handled gracefully", &
                         "System should handle missing build systems")
         
-        ! call execute_command_line('rm -rf ' // trim(empty_workspace)) ! CI-disabled for reliability
+        ! Workspace cleanup - using secure methods
+        call safe_cleanup_error_test_workspace(empty_workspace)
         
     end subroutine test_missing_build_system_handling
 
@@ -78,7 +82,7 @@ contains
         write(output_unit, '(A)') "=== TEST FAILURE HANDLING ==="
         
         workspace_path = trim(base_test_dir) // "_test_failure"
-        ! call execute_command_line('mkdir -p ' // trim(workspace_path)) ! CI-disabled for reliability
+        call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create a project with failing tests to simulate test failures
         call create_fmp_project_with_failing_tests(workspace_path)
@@ -91,7 +95,7 @@ contains
         call assert_test(.true., "Test failure error reporting", &
                         "System should report test failures clearly")
         
-        ! call execute_command_line ! CI-disabled for reliability('rm -rf ' // trim(workspace_path))
+        call safe_cleanup_error_test_workspace(workspace_path)
         
     end subroutine test_test_failure_handling
 
@@ -106,7 +110,7 @@ contains
         write(output_unit, '(A)') "=== CORRUPTED GCOV HANDLING ==="
         
         workspace_path = trim(base_test_dir) // "_corrupted"
-        ! call execute_command_line('mkdir -p ' // trim(workspace_path)) ! CI-disabled for reliability
+        call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create corrupted gcov file
         call create_corrupted_gcov_files(workspace_path)
@@ -122,7 +126,7 @@ contains
         call assert_test(.true., "Invalid gcov format handling", &
                         "System should detect and handle invalid gcov format")
         
-        ! call execute_command_line ! CI-disabled for reliability('rm -rf ' // trim(workspace_path))
+        call safe_cleanup_error_test_workspace(workspace_path)
         
     end subroutine test_corrupted_gcov_handling
 
@@ -171,7 +175,7 @@ contains
         write(output_unit, '(A)') "=== EMPTY PROJECT HANDLING ==="
         
         workspace_path = trim(base_test_dir) // "_empty_project"
-        ! call execute_command_line('mkdir -p ' // trim(workspace_path)) ! CI-disabled for reliability
+        call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create empty FPM project (fpm.toml exists but no sources)
         call create_empty_fpm_project(workspace_path)
@@ -187,7 +191,7 @@ contains
                             "Should identify correct build system type")
         end if
         
-        ! call execute_command_line ! CI-disabled for reliability('rm -rf ' // trim(workspace_path))
+        call safe_cleanup_error_test_workspace(workspace_path)
         
     end subroutine test_empty_project_handling
 
@@ -202,7 +206,7 @@ contains
         call create_fpm_test_project(workspace_path)
         
         ! Create a failing test file
-        ! call execute_command_line ! CI-disabled for reliability('mkdir -p ' // trim(workspace_path) // '/test')
+        call safe_mkdir_for_error_tests(trim(workspace_path) // '/test')
         open(newunit=unit_number, file=trim(workspace_path) // '/test/failing_test.f90', &
              status='replace', action='write')
         write(unit_number, '(A)') 'program failing_test'
@@ -224,7 +228,7 @@ contains
         integer :: unit_number
         
         ! Create the workspace directory first
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
+        call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create corrupted gcov file with invalid format
         open(newunit=unit_number, file=trim(workspace_path) // '/corrupted.gcov', &
@@ -256,7 +260,7 @@ contains
         integer :: unit_number
         
         ! Create the workspace directory first
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
+        call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create minimal fpm.toml
         open(newunit=unit_number, file=trim(workspace_path) // '/fpm.toml', &
@@ -266,8 +270,8 @@ contains
         close(unit_number)
         
         ! Create empty directories
-        ! call execute_command_line ! CI-disabled for reliability('mkdir -p ' // trim(workspace_path) // '/src')
-        ! call execute_command_line ! CI-disabled for reliability('mkdir -p ' // trim(workspace_path) // '/test')
+        call safe_mkdir_for_error_tests(trim(workspace_path) // '/src')
+        call safe_mkdir_for_error_tests(trim(workspace_path) // '/test')
         
         ! No source files created - this is intentionally empty
         
@@ -311,5 +315,32 @@ contains
             call exit(1)
         end if
     end subroutine print_test_summary
+
+    subroutine safe_mkdir_for_error_tests(directory)
+        !! Safely create directory for error handling tests
+        character(len=*), intent(in) :: directory
+        type(error_context_t) :: error_ctx
+        
+        call safe_mkdir(directory, error_ctx)
+        ! Ignore errors - directory may already exist or creation may fail intentionally for tests
+    end subroutine safe_mkdir_for_error_tests
+
+    subroutine safe_cleanup_error_test_workspace(workspace)
+        !! Safely cleanup error test workspace
+        character(len=*), intent(in) :: workspace
+        type(error_context_t) :: error_ctx
+        
+        ! Clean up common test files
+        call safe_remove_file(trim(workspace) // '/fpm.toml', error_ctx)
+        call safe_remove_file(trim(workspace) // '/CMakeLists.txt', error_ctx)  
+        call safe_remove_file(trim(workspace) // '/Makefile', error_ctx)
+        call safe_remove_file(trim(workspace) // '/src/main.f90', error_ctx)
+        call safe_remove_file(trim(workspace) // '/test/test.f90', error_ctx)
+        call safe_remove_file(trim(workspace) // '/src', error_ctx)
+        call safe_remove_file(trim(workspace) // '/test', error_ctx)
+        call safe_remove_file(workspace, error_ctx)
+        
+        ! Ignore all errors - files/directories may not exist or cleanup may fail
+    end subroutine safe_cleanup_error_test_workspace
 
 end program test_auto_discovery_error_handling

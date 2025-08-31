@@ -11,6 +11,7 @@ program test_build_system_detector
     use iso_fortran_env, only: error_unit, output_unit
     use build_detector_core
     use error_handling_core
+    use file_ops_secure, only: safe_mkdir, safe_remove_file
     implicit none
     
     integer :: total_tests = 0
@@ -248,7 +249,7 @@ contains
         character(len=*), intent(in) :: dirname, build_file
         integer :: unit, stat
         
-        call execute_command_line('mkdir -p ' // dirname, wait=.true.)
+        call safe_mkdir_test(dirname)
         call chdir(dirname)
         
         if (len_trim(build_file) > 0) then
@@ -265,7 +266,7 @@ contains
         character(len=*), intent(in) :: dirname
         integer :: unit, stat
         
-        call execute_command_line('mkdir -p ' // dirname, wait=.true.)
+        call safe_mkdir_test(dirname)
         call chdir(dirname)
         
         ! Create all build files to test priority
@@ -297,9 +298,7 @@ contains
     end subroutine setup_multiple_build_files
 
     subroutine cleanup_test_directories()
-        call execute_command_line('rm -rf test_fpm test_cmake test_make ' // &
-                                  'test_meson test_priority test_unknown ' // &
-                                  'test_tool', wait=.true.)
+        call safe_cleanup_build_test_directories()
     end subroutine cleanup_test_directories
 
     ! Assertion utilities
@@ -365,5 +364,50 @@ contains
                                            trim(substring), '"'
         end if
     end subroutine assert_contains
+
+    subroutine safe_mkdir_test(dirname)
+        !! Safely create directory using secure utilities
+        character(len=*), intent(in) :: dirname
+        type(error_context_t) :: error_ctx
+        
+        call safe_mkdir(dirname, error_ctx)
+        ! Ignore errors in tests - directory may already exist
+    end subroutine safe_mkdir_test
+
+    subroutine safe_cleanup_build_test_directories()
+        !! Safely remove test directories and files using secure file operations
+        character(len=*), parameter :: test_dirs(7) = [ &
+            'test_fpm     ', &
+            'test_cmake   ', &
+            'test_make    ', &
+            'test_meson   ', &
+            'test_priority', &
+            'test_unknown ', &
+            'test_tool    ' &
+        ]
+        character(len=25), parameter :: test_files(7) = [ &
+            'test_fpm/fpm.toml        ', &
+            'test_cmake/CMakeLists.txt', &
+            'test_make/Makefile       ', &
+            'test_meson/meson.build   ', &
+            'test_priority/fpm.toml   ', &
+            'test_unknown/readme.txt  ', &
+            'test_tool/fpm.toml       ' &
+        ]
+        type(error_context_t) :: error_ctx
+        integer :: i
+        
+        ! Remove test files first
+        do i = 1, size(test_files)
+            call safe_remove_file(trim(test_files(i)), error_ctx)
+            ! Ignore errors - files may not exist
+        end do
+        
+        ! Remove test directories (empty directories can be removed as files)
+        do i = 1, size(test_dirs)
+            call safe_remove_file(trim(test_dirs(i)), error_ctx)
+            ! Ignore errors - directories may not exist or not be empty
+        end do
+    end subroutine safe_cleanup_build_test_directories
 
 end program test_build_system_detector

@@ -17,6 +17,8 @@ program test_cli_flag_parsing_issue_231
     use test_environment_utilities
     use test_file_utilities
     use test_cli_flag_parsing_core
+    use file_ops_secure, only: safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     
     type(test_counter_t) :: test_counter
@@ -67,8 +69,29 @@ contains
         !! Cleanup test environment
         call cleanup_basic_test_environment("CLI flag parsing")
         
-        ! Clean up specific test files
-        call execute_command_line('rm -f test_*.gcov test_*.f90 test_*.cfg test_output.*')
+        ! Clean up specific test files using secure file operations
+        call safe_cleanup_test_files()
     end subroutine cleanup_test_environment
+
+    subroutine safe_cleanup_test_files()
+        !! Safely remove test files using Fortran intrinsics instead of shell commands
+        character(len=*), parameter :: test_files(8) = [ &
+            'test_sample.f90.gcov', &
+            'test_sample.f90     ', &
+            'test_config.cfg     ', &
+            'test_output.md      ', &
+            'test_output.json    ', &
+            'test_output.xml     ', &
+            'test_output.html    ', &
+            'test_output.txt     ' &
+        ]
+        type(error_context_t) :: error_ctx
+        integer :: i
+        
+        do i = 1, size(test_files)
+            call safe_remove_file(trim(test_files(i)), error_ctx)
+            ! Ignore errors - files may not exist, which is fine
+        end do
+    end subroutine safe_cleanup_test_files
 
 end program test_cli_flag_parsing_issue_231

@@ -6,6 +6,8 @@ module test_infrastructure_core_validation
     
     use iso_fortran_env, only: output_unit, error_unit, iostat_end
     use portable_temp_utils, only: get_temp_dir, create_temp_subdir
+    use file_ops_secure, only: safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     private
     
@@ -38,8 +40,8 @@ contains
                                               all_tests_passed)
         call test_error_handling_robustness(test_count, passed_tests, all_tests_passed)
         
-        ! Cleanup test environment
-        call execute_command_line('rm -rf "' // temp_dir // '"')
+        ! Cleanup test environment using secure directory removal
+        call safe_cleanup_test_directory(temp_dir)
         
     end subroutine run_core_infrastructure_tests
 
@@ -80,11 +82,10 @@ contains
         
         test_file = trim(temp_dir) // "/cmd_test.txt"
         
-        ! Test 1: Basic command execution
-        call execute_command_line('echo "test" > "' // trim(test_file) // '"', &
-                                  wait=.true., exitstat=exit_status)
-        call assert_test(exit_status == 0, "Basic command execution", &
-                        "Simple echo command should succeed", &
+        ! Test 1: Basic file creation (secure replacement for echo command)
+        call create_test_file_secure(test_file, "test", exit_status)
+        call assert_test(exit_status == 0, "Secure file creation", &
+                        "File creation should succeed using Fortran I/O", &
                         test_count, passed_tests, all_tests_passed)
         
         ! Test 2: File creation verification
@@ -93,22 +94,20 @@ contains
                         "Echo command should create file", &
                         test_count, passed_tests, all_tests_passed)
         
-        ! Test 3: Multiple rapid commands
+        ! Test 3: Multiple rapid file creation (secure replacement for touch)
         do i = 1, 5
-            call execute_command_line('touch "' // trim(temp_dir) // '/rapid_' // &
-                                     char(48 + i) // '.txt"', &
-                                     wait=.true., exitstat=exit_status)
+            call create_test_file_secure(trim(temp_dir) // '/rapid_' // &
+                                        char(48 + i) // '.txt', '', exit_status)
             if (exit_status /= 0) exit
         end do
-        call assert_test(exit_status == 0, "Rapid command execution", &
-                        "Multiple rapid commands should succeed", &
+        call assert_test(exit_status == 0, "Rapid file creation", &
+                        "Multiple rapid file creation should succeed", &
                         test_count, passed_tests, all_tests_passed)
         
-        ! Test 4: Error handling in commands
-        call execute_command_line('ls /nonexistent/path', &
-                                  wait=.true., exitstat=exit_status)
-        call assert_test(exit_status /= 0, "Command error detection", &
-                        "Failed commands should return non-zero", &
+        ! Test 4: Error handling - access non-existent path (secure replacement)
+        call test_nonexistent_path_access(exit_status)
+        call assert_test(exit_status /= 0, "File access error detection", &
+                        "Non-existent path access should return error", &
                         test_count, passed_tests, all_tests_passed)
         
     end subroutine test_command_execution_stability
@@ -250,16 +249,100 @@ contains
                         "Should detect missing file errors", &
                         test_count, passed_tests, all_tests_passed)
         
-        ! Test 3: Graceful degradation
+        ! Test 3: Graceful degradation - test invalid file operation
         error_detected = .false.
-        call execute_command_line('invalid_command_that_does_not_exist', &
-                                  wait=.true., exitstat=iostat, cmdstat=cmdstat_val)
-        if (iostat /= 0 .or. cmdstat_val /= 0) error_detected = .true.
+        call test_invalid_file_operation(iostat)
+        if (iostat /= 0) error_detected = .true.
         
         call assert_test(error_detected, "Command error handling", &
                         "Should handle invalid command gracefully", &
                         test_count, passed_tests, all_tests_passed)
         
     end subroutine test_error_handling_robustness
+
+    subroutine safe_cleanup_test_directory(temp_dir)
+        !! Safely remove test directory and contents using Fortran intrinsics
+        character(len=*), intent(in) :: temp_dir
+        type(error_context_t) :: error_ctx
+        character(len=512) :: test_files(10)
+        integer :: i
+        
+        ! List common test files to clean up
+        test_files(1) = trim(temp_dir) // '/cmd_test.txt'
+        test_files(2) = trim(temp_dir) // '/rapid_1.txt'
+        test_files(3) = trim(temp_dir) // '/rapid_2.txt'
+        test_files(4) = trim(temp_dir) // '/rapid_3.txt'
+        test_files(5) = trim(temp_dir) // '/rapid_4.txt'
+        test_files(6) = trim(temp_dir) // '/rapid_5.txt'
+        test_files(7) = trim(temp_dir) // '/io_test.tmp'
+        test_files(8) = trim(temp_dir) // '/missing_file.txt'
+        test_files(9) = trim(temp_dir) // '/test_file.tmp'
+        test_files(10) = trim(temp_dir) // '/.fortcov_temp_dir_marker'
+        
+        ! Remove individual files
+        do i = 1, 10
+            call safe_remove_file(test_files(i), error_ctx)
+            ! Ignore errors - files may not exist
+        end do
+    end subroutine safe_cleanup_test_directory
+
+    subroutine create_test_file_secure(filepath, content, exit_status)
+        !! Create a test file securely using Fortran I/O instead of shell commands
+        character(len=*), intent(in) :: filepath
+        character(len=*), intent(in) :: content
+        integer, intent(out) :: exit_status
+        integer :: unit, iostat
+        
+        exit_status = 0
+        
+        open(newunit=unit, file=filepath, status='replace', action='write', iostat=iostat)
+        if (iostat /= 0) then
+            exit_status = 1
+            return
+        end if
+        
+        if (len_trim(content) > 0) then
+            write(unit, '(A)', iostat=iostat) trim(content)
+            if (iostat /= 0) exit_status = 1
+        end if
+        
+        close(unit)
+    end subroutine create_test_file_secure
+
+    subroutine test_nonexistent_path_access(exit_status)
+        !! Test access to non-existent path using Fortran I/O instead of shell ls
+        integer, intent(out) :: exit_status
+        integer :: unit, iostat
+        logical :: file_exists
+        
+        ! Try to access non-existent file
+        inquire(file='/nonexistent/path/file.txt', exist=file_exists)
+        if (file_exists) then
+            exit_status = 0  ! Unexpected - file exists
+        else
+            ! Try to open non-existent file to generate error
+            open(newunit=unit, file='/nonexistent/path/file.txt', status='old', iostat=iostat)
+            if (iostat /= 0) then
+                exit_status = 1  ! Expected error
+            else
+                close(unit)
+                exit_status = 0  ! Unexpected success
+            end if
+        end if
+    end subroutine test_nonexistent_path_access
+
+    subroutine test_invalid_file_operation(iostat)
+        !! Test invalid file operation to generate controlled error
+        integer, intent(out) :: iostat
+        integer :: unit
+        
+        ! Try to open a file with invalid parameters
+        open(newunit=unit, file='/dev/null/invalid/path/file.txt', &
+             status='new', action='write', iostat=iostat)
+        if (iostat == 0) then
+            close(unit)
+        end if
+        ! iostat should be non-zero for invalid path
+    end subroutine test_invalid_file_operation
 
 end module test_infrastructure_core_validation

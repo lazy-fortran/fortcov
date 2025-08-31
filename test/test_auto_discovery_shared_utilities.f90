@@ -9,6 +9,8 @@ module test_auto_discovery_shared_utilities
     !! - Test environment detection for safe test execution
     
     use iso_fortran_env, only: output_unit
+    use file_ops_secure, only: safe_mkdir, safe_remove_file
+    use error_handling_core, only: error_context_t
     implicit none
     
     private
@@ -65,9 +67,9 @@ contains
         write(output_unit, '(A)') "Setting up test workspace..."
         
         ! Create directories for CI compatibility
-        call execute_command_line('mkdir -p "' // trim(workspace_dir) // '"', wait=.true.)
-        call execute_command_line('mkdir -p "' // trim(workspace_dir) // '/src"', wait=.true.)
-        call execute_command_line('mkdir -p "' // trim(workspace_dir) // '/test"', wait=.true.)
+        call safe_mkdir_for_discovery_tests(workspace_dir)
+        call safe_mkdir_for_discovery_tests(trim(workspace_dir) // '/src')
+        call safe_mkdir_for_discovery_tests(trim(workspace_dir) // '/test')
         
     end subroutine setup_test_workspace
 
@@ -83,7 +85,7 @@ contains
         end if
         
         write(output_unit, '(A)') "Cleaning up test workspace..."
-        call execute_command_line('rm -rf "' // trim(workspace_dir) // '"', wait=.true.)
+        call safe_cleanup_discovery_workspace(workspace_dir)
         
     end subroutine cleanup_test_workspace
 
@@ -93,9 +95,9 @@ contains
         integer :: unit_number
         
         ! Create the workspace directory first
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '/src"', wait=.true.)
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '/test"', wait=.true.)
+        call safe_mkdir_for_discovery_tests(workspace_path)
+        call safe_mkdir_for_discovery_tests(trim(workspace_path) // '/src')
+        call safe_mkdir_for_discovery_tests(trim(workspace_path) // '/test')
         
         ! Create fpm.toml
         open(newunit=unit_number, file=trim(workspace_path) // '/fpm.toml', &
@@ -123,7 +125,7 @@ contains
         integer :: unit_number
         
         ! Create the workspace directory first
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
+        call safe_mkdir_for_discovery_tests(workspace_path)
         
         ! Create CMakeLists.txt
         open(newunit=unit_number, file=trim(workspace_path) // '/CMakeLists.txt', &
@@ -141,7 +143,7 @@ contains
         integer :: unit_number
         
         ! Create the workspace directory first
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
+        call safe_mkdir_for_discovery_tests(workspace_path)
         
         ! Create Makefile
         open(newunit=unit_number, file=trim(workspace_path) // '/Makefile', &
@@ -160,7 +162,7 @@ contains
         integer :: unit_number
         
         ! Create the workspace directory first
-        call execute_command_line('mkdir -p "' // trim(workspace_path) // '"', wait=.true.)
+        call safe_mkdir_for_discovery_tests(workspace_path)
         
         ! Create realistic mock gcov file with coverage data
         open(newunit=unit_number, file=trim(workspace_path) // '/main.f90.gcov', &
@@ -204,5 +206,34 @@ contains
         
         is_test_env = test_environment_detected_util()
     end function test_environment_detected
+
+    subroutine safe_mkdir_for_discovery_tests(directory)
+        !! Safely create directory for discovery tests
+        character(len=*), intent(in) :: directory
+        type(error_context_t) :: error_ctx
+        
+        call safe_mkdir(directory, error_ctx)
+        ! Ignore errors - directory may already exist
+    end subroutine safe_mkdir_for_discovery_tests
+
+    subroutine safe_cleanup_discovery_workspace(workspace)
+        !! Safely cleanup discovery test workspace
+        character(len=*), intent(in) :: workspace
+        type(error_context_t) :: error_ctx
+        
+        ! Clean up common files in the workspace
+        call safe_remove_file(trim(workspace) // '/fpm.toml', error_ctx)
+        call safe_remove_file(trim(workspace) // '/CMakeLists.txt', error_ctx)
+        call safe_remove_file(trim(workspace) // '/Makefile', error_ctx)
+        call safe_remove_file(trim(workspace) // '/meson.build', error_ctx)
+        call safe_remove_file(trim(workspace) // '/src/main.f90', error_ctx)
+        call safe_remove_file(trim(workspace) // '/test/test_main.f90', error_ctx)
+        call safe_remove_file(trim(workspace) // '/test/test.gcov', error_ctx)
+        call safe_remove_file(trim(workspace) // '/src', error_ctx)  ! Remove subdirectory
+        call safe_remove_file(trim(workspace) // '/test', error_ctx)  ! Remove subdirectory
+        call safe_remove_file(workspace, error_ctx)  ! Remove main directory
+        
+        ! Ignore all errors - files/directories may not exist
+    end subroutine safe_cleanup_discovery_workspace
 
 end module test_auto_discovery_shared_utilities
