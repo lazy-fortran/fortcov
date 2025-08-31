@@ -56,11 +56,16 @@ echo "Pre-test cleanup: Removing any pre-existing test artifacts..."
 rm -f test_infra_handle_*.txt test_infra_cleanup_*.txt test_infra_rapid_*.txt test_infra_cmd_test.txt test_infra_io_test.txt test_infra_isolation_test.txt test_infra_temp_mgmt_test.tmp test_infra_concurrent_*.txt 2>/dev/null || true
 echo "Pre-test cleanup completed"
 
-# Run each test individually with timeout, skipping excluded ones
-PASSED=0
-FAILED=0
-SKIPPED=0
+###############################################
+# Fast path: batch run all non-excluded tests #
+###############################################
 
+# Build once to avoid repeated overhead
+fpm build >/dev/null || true
+
+# Split excluded vs included sets
+INCLUDED_TESTS=()
+SKIPPED=0
 for test in $ALL_TESTS; do
     skip=false
     for exclude in "${EXCLUDE_TESTS[@]}"; do
@@ -69,28 +74,43 @@ for test in $ALL_TESTS; do
             break
         fi
     done
-    
     if $skip; then
         echo "[SKIP] $test (known issue from main branch)"
         SKIPPED=$((SKIPPED + 1))
     else
-        echo "[RUN] $test"
-        # Create temporary file for capturing output
-        TEMP_OUTPUT=$(mktemp)
-        if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
-            echo "[PASS] $test"
-            PASSED=$((PASSED + 1))
-            rm -f "$TEMP_OUTPUT"
-        else
-            echo "[FAIL] $test"
-            echo "--- Error Output for $test ---"
-            cat "$TEMP_OUTPUT"
-            echo "--- End Error Output ---"
-            FAILED=$((FAILED + 1))
-            rm -f "$TEMP_OUTPUT"
-        fi
+        INCLUDED_TESTS+=("$test")
     fi
 done
+
+PASSED=0
+FAILED=0
+
+if [[ ${#INCLUDED_TESTS[@]} -gt 0 ]]; then
+    echo "[RUN] Batch executing ${#INCLUDED_TESTS[@]} tests"
+    if fpm test "${INCLUDED_TESTS[@]}" >/dev/null 2>&1; then
+        PASSED=${#INCLUDED_TESTS[@]}
+    else
+        echo "Batch execution reported failure; falling back to per-test mode for diagnostics"
+        PASSED=0
+        FAILED=0
+        # Fallback: per-test execution to pinpoint failures
+        for test in "${INCLUDED_TESTS[@]}"; do
+            echo "[RUN] $test"
+            TEMP_OUTPUT=$(mktemp)
+            if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
+                echo "[PASS] $test"
+                PASSED=$((PASSED + 1))
+            else
+                echo "[FAIL] $test"
+                echo "--- Error Output for $test ---"
+                cat "$TEMP_OUTPUT"
+                echo "--- End Error Output ---"
+                FAILED=$((FAILED + 1))
+            fi
+            rm -f "$TEMP_OUTPUT"
+        done
+    fi
+fi
 
 echo ""
 echo "Test Summary:"
