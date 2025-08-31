@@ -13,9 +13,9 @@ module tui_launcher_core
 contains
 
     function launch_coverage_tui_mode(config) result(exit_code)
-        !! TUI mode launch workflow implementation
+        !! TUI mode launch workflow implementation with interactive configuration
         !! Extracted from original launch_tui_mode function
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
         integer :: exit_code
         
         logical :: tui_success
@@ -39,9 +39,9 @@ contains
     end function launch_coverage_tui_mode
     
     subroutine start_tui_interface(config, success)
-        !! Starts the terminal user interface
+        !! Starts the terminal user interface with interactive configuration
         use coverage_tui, only: perform_tui_analysis
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
         logical, intent(out) :: success
         
         integer :: exit_code

@@ -69,9 +69,9 @@ contains
     end function perform_coverage_diff_analysis
     
     function launch_coverage_tui_mode(config) result(exit_code)
-        !! TUI mode launch workflow implementation
+        !! TUI mode launch workflow implementation with interactive configuration
         !! Extracted from original launch_tui_mode function
-        type(config_t), intent(in) :: config
+        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
         integer :: exit_code
         
         logical :: tui_success
@@ -122,8 +122,8 @@ contains
     end subroutine output_coverage_diff_summary
     
     subroutine start_tui_interface(config, success)
-        !! Starts the terminal user interface
-        type(config_t), intent(in) :: config
+        !! Starts the terminal user interface with interactive configuration
+        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
         logical, intent(out) :: success
         
         integer :: exit_code
