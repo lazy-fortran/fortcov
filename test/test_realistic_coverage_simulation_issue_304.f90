@@ -7,7 +7,7 @@ program test_realistic_coverage_simulation_issue_304
     
     use coverage_parser_factory
     use coverage_model_core
-    use file_utils_core
+    use file_utilities
     use file_ops_secure, only: safe_remove_file
     use error_handling_core, only: error_context_t
     implicit none

@@ -9,7 +9,7 @@ module coverage_validation
     use config_core
     use input_validation_core
     use error_handling_core
-    use file_utils_core, only: file_exists
+    use file_utilities, only: file_exists
     
     implicit none
     private

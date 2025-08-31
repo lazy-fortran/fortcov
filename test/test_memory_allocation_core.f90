@@ -1,8 +1,8 @@
 program test_memory_allocation_core
     !! Memory allocation core functionality tests
-    !! Tests memory_management_core and coverage_data_utils allocation patterns
+    !! Tests memory_management and coverage_data_utils allocation patterns
     
-    use memory_management_core
+    use memory_management
     use coverage_data_utils
     use coverage_data_core
     implicit none

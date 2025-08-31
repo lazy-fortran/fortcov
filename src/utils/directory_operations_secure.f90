@@ -5,7 +5,7 @@ module directory_operations_secure
     !! operations using Fortran intrinsics to prevent shell injection
     !! vulnerabilities. Includes comprehensive test file cleanup patterns.
     use error_handling_core
-    use path_security_core, only: validate_path_security
+    use path_security, only: validate_path_security
     use file_operations_secure, only: safe_remove_file
     implicit none
     private

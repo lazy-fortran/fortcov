@@ -1,4 +1,4 @@
-module command_utils_core
+module command_utilities
     !! Command utility functions extracted from zero_configuration_manager
     !! 
     !! This module provides command execution, shell escaping, and system
@@ -186,4 +186,4 @@ contains
         
     end subroutine execute_secure_find_from_command
 
-end module command_utils_core
+end module command_utilities

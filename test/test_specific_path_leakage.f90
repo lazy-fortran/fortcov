@@ -9,7 +9,7 @@ program test_specific_path_leakage
     !! This test targets the exact path leakage vulnerabilities in issue #310
     !!
     use file_ops_secure, only: safe_find_files, safe_mkdir
-    use path_security_core, only: validate_path_security, validate_executable_path
+    use path_security, only: validate_path_security, validate_executable_path
     use error_handling_core
     implicit none
     

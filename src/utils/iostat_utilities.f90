@@ -1,4 +1,4 @@
-module iostat_utils_core
+module iostat_utilities
     !! IOSTAT Error Interpretation and Handling Module
     !! 
     !! Provides granular error handling for Fortran iostat operations
@@ -382,4 +382,4 @@ contains
         str = trim(temp_str)
     end function integer_to_string
 
-end module iostat_utils_core
+end module iostat_utilities

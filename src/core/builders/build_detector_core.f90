@@ -13,8 +13,8 @@ module build_detector_core
 
     use iso_fortran_env, only: error_unit
     use error_handling_core
-    use path_security_core, only: validate_executable_path, validate_path_security
-    use file_utils_core, only: file_exists
+    use path_security, only: validate_executable_path, validate_path_security
+    use file_utilities, only: file_exists
     use string_utils, only: trim_string
     implicit none
     private

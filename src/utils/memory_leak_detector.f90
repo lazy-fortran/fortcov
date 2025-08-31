@@ -12,7 +12,7 @@ module memory_leak_detector
     !! - Performance-optimized tracking with minimal overhead
 
     use iso_fortran_env, only: error_unit
-    use memory_management_core, only: memory_allocation_stats_t, memory_status_t
+    use memory_management, only: memory_allocation_stats_t, memory_status_t
     implicit none
     private
 

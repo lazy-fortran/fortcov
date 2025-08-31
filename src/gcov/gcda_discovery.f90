@@ -6,7 +6,7 @@ module gcda_discovery
     !! - Priority-based search across multiple build directory structures
     !! - Support for various build system conventions
     
-    use file_utils_core, only: find_files_with_glob
+    use file_utilities, only: find_files_with_glob
     implicit none
     private
     

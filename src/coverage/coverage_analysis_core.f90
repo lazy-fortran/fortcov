@@ -17,7 +17,7 @@ module coverage_analysis_core
     use coverage_tui
     use coverage_workflows, only: execute_auto_test_workflow, perform_coverage_diff_analysis
     use error_handling_core
-    use file_utils_core, only: file_exists
+    use file_utilities, only: file_exists
     
     implicit none
     private

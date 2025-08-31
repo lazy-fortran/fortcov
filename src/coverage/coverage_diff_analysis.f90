@@ -9,7 +9,7 @@ module coverage_diff_analysis
     use coverage_types, only: coverage_diff_t
     use json_io, only: import_coverage_from_json_file
     use coverage_model_core, only: coverage_data_t
-    use file_utils_core, only: file_exists
+    use file_utilities, only: file_exists
     implicit none
     private
     

@@ -15,7 +15,7 @@ module auto_discovery_core
     !! - Auto-discover source files from src/ and current directory
     !! - Coordinate gcov file generation from gcda files
     use coverage_discovery_core, only: discover_coverage_files
-    use file_utils_core, only: find_files, find_files_with_glob
+    use file_utilities, only: find_files, find_files_with_glob
     use file_search_secure, only: safe_find_files_with_glob, safe_find_files_recursive
     use gcda_discovery, only: discover_gcda_files_priority
     use gcov_generator, only: generate_gcov_files_from_gcda, &

@@ -5,7 +5,7 @@ module config_positional_args
     !! Provides clean separation of positional argument logic.
     use config_types, only: config_t, MAX_ARRAY_SIZE
     use config_parser_utils, only: add_string_to_array, add_source_path
-    use file_utils_core
+    use file_utilities
     implicit none
     private
     

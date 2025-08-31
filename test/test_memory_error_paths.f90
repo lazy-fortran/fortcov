@@ -2,7 +2,7 @@ program test_memory_error_paths
     !! Memory error path testing - validation of error conditions
     !! Tests edge cases and error conditions in memory allocation paths
     
-    use memory_management_core
+    use memory_management
     use coverage_data_utils
     use coverage_data_core
     implicit none

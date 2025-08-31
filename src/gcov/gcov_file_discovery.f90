@@ -14,7 +14,7 @@ module gcov_file_discovery
 
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context, &
                               safe_write_message, safe_write_suggestion, safe_write_context
-    use path_security_core, only: validate_path_security
+    use path_security, only: validate_path_security
     use file_ops_secure, only: safe_find_files, safe_remove_file
     use file_search_secure, only: safe_find_files_with_glob
     implicit none

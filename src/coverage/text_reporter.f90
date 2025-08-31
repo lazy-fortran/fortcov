@@ -24,7 +24,7 @@ contains
     subroutine text_generate_report(this, coverage_data, output_path, &
                                   success, error_message, &
                                   diff_data, threshold)
-        use file_utils_core, only: write_text_file
+        use file_utilities, only: write_text_file
         use coverage_stats_core, only: calculate_line_coverage, coverage_stats_t
         class(text_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data

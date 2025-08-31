@@ -9,10 +9,10 @@ program test_issue_249
     use config_core
     use zero_config_manager
     use error_handling_core
-    use file_utils_core
+    use file_utilities
     use file_ops_secure, only: safe_find_files, safe_mkdir
-    use path_security_core, only: validate_path_security, validate_executable_path
-    use shell_utils_core, only: escape_shell_argument
+    use path_security, only: validate_path_security, validate_executable_path
+    use shell_utilities, only: escape_shell_argument
     implicit none
     
     type(config_t) :: config

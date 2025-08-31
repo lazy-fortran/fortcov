@@ -1,4 +1,4 @@
-module memory_management_core
+module memory_management
     !! Core Memory Management Infrastructure
     !!
     !! Provides centralized, fraud-proof memory allocation/deallocation utilities
@@ -280,4 +280,4 @@ contains
         end if
     end subroutine finalize_memory_management
 
-end module memory_management_core
+end module memory_management

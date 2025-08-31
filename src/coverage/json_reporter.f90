@@ -23,7 +23,7 @@ contains
                                   success, error_message, &
                                   diff_data, threshold)
         use json_io, only: export_coverage_to_json
-        use file_utils_core, only: write_text_file
+        use file_utilities, only: write_text_file
         class(json_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path

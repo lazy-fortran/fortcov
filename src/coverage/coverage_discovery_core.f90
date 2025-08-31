@@ -5,7 +5,7 @@ module coverage_discovery_core
     !! for automated gcov workflow. It can recursively search directories for
     !! .gcda/.gcno pairs and validate their consistency.
     use iso_fortran_env, only: error_unit
-    use file_utils_core
+    use file_utilities
     use string_utils
     implicit none
     private
