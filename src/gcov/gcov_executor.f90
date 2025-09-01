@@ -14,7 +14,7 @@ module gcov_executor
     use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_move_file
     use shell_utilities, only: escape_shell_argument
     use secure_command_execution, only: secure_execute_command
-    use xml_utils_core, only: get_base_name
+    use xml_utils, only: get_base_name
     use string_utils, only: int_to_string
     use gcov_executor_helpers, only: sanitize_file_path, is_safe_gcov_command
     implicit none
