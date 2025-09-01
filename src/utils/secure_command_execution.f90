@@ -27,13 +27,14 @@ module secure_command_execution
     public :: secure_remove_command  
     public :: secure_move_command
     public :: secure_test_command
+    public :: secure_execute_command
     public :: log_blocked_command
     
     ! Security parameters
     integer, parameter :: MAX_COMMAND_LENGTH = 4096
     integer, parameter :: MAX_ARGS = 16
     
-contains
+    contains
 
     ! Secure directory creation - replaces "mkdir -p" commands
     subroutine secure_mkdir_command(dir_path, exit_code)
@@ -186,5 +187,21 @@ contains
         write(error_unit, '(A)') '  This prevents potential shell injection attacks'
         
     end subroutine log_blocked_command
+
+    ! Centralized safe command execution wrapper
+    ! Assumes caller has already validated the command string.
+    subroutine secure_execute_command(command, exit_code)
+        character(len=*), intent(in) :: command
+        integer, intent(out) :: exit_code
+
+        ! Basic sanity checks to avoid obvious misuse
+        if (len_trim(command) == 0 .or. len_trim(command) > MAX_COMMAND_LENGTH) then
+            exit_code = 1
+            return
+        end if
+
+        call execute_command_line(command, wait=.true., exitstat=exit_code)
+
+    end subroutine secure_execute_command
 
 end module secure_command_execution
