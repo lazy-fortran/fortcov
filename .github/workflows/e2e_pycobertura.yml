@@ -24,6 +24,8 @@ jobs:
 
       - name: Set up fpm
         uses: fortran-lang/setup-fpm@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build tests, generate Cobertura XML and FortCov markdown
         run: |
