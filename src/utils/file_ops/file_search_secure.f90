@@ -32,9 +32,7 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         character(len=:), allocatable :: safe_pattern
-        character(len=:), allocatable :: temp_filename
         logical :: has_security_assessment
-        character(len=512) :: security_message
         
         call clear_error_context(error_ctx)
         
@@ -45,17 +43,11 @@ contains
             return
         end if
         
-        ! Create secure temporary filename for output
-        call create_secure_temp_filename(temp_filename)
-        
         ! Security pre-assessment for pattern-based vulnerabilities
         call assess_pattern_security_risks(safe_pattern, error_ctx)
         
-        ! Preserve security assessment for priority reporting
+        ! Preserve whether assessment produced an error
         has_security_assessment = (error_ctx%error_code /= ERROR_SUCCESS)
-        if (has_security_assessment) then
-            security_message = error_ctx%message
-        end if
         
         ! Use secure Fortran-based file search instead of shell commands
         call fortran_find_files(safe_pattern, files, error_ctx, has_security_assessment)
@@ -154,11 +146,10 @@ contains
             allocate(character(len=256) :: files(num_files))
             files(1:num_files) = found_files(1:num_files)
         else
-            ! Allocate empty array
+            ! Allocate empty array and do not treat as an error here
             allocate(character(len=1) :: files(0))
-            if (.not. has_security_assessment) then
-                error_ctx%error_code = ERROR_MISSING_FILE
-                call safe_write_message(error_ctx, "No files found matching pattern: " // pattern)
+            if (has_security_assessment) then
+                return
             end if
         end if
 
