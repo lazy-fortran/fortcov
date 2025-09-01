@@ -359,7 +359,7 @@ These integration patterns work across different build systems:
 
 ### Performance Considerations
 
-- Use `--threads=N` to match available CPU cores
+- Parallel processing is not implemented; FortCov runs single-threaded
 - Exclude build artifacts and vendor code with patterns
 - Use appropriate output formats for different environments:
   - JSON for automated processing

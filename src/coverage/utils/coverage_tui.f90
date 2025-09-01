@@ -311,7 +311,7 @@ contains
             print *, "Source paths: ", size(config%source_paths), " configured"
         end if
         if (config%threads > 1) then
-            print *, "Parallel threads: ", config%threads
+            print *, "[WARN] --threads > 1 is not implemented; running single-threaded"
         end if
         print *, ""
         
