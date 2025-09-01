@@ -7,7 +7,8 @@ module json_parsing
     use coverage_model_core
     use coverage_data_utils
     use json_module, only: json_file, json_value, json_core
-    use json_kinds, only: RK, IK
+    use json_kinds, only: IK
+    use string_utils, only: int_to_string
     implicit none
     private
     
@@ -28,7 +29,6 @@ contains
         logical, intent(out) :: found
         
         type(json_value), pointer :: files_array => null()
-        type(json_value), pointer :: summary_obj => null()
         character(len=:), allocatable :: version_str, tool_str, timestamp_str
         
         found = .false.
@@ -189,7 +189,7 @@ contains
         
         character(len=:), allocatable :: version_str, tool_str, timestamp_str
         type(file_coverage_t), allocatable :: files_array(:)
-        integer :: num_files, i
+        integer :: num_files, i, j
         
         found = .false.
         
@@ -206,7 +206,9 @@ contains
         ! Get number of files
         call json%info('files', n_children=num_files, found=found)
         if (.not. found .or. num_files <= 0) then
-            print *, "Warning: No files array found or empty"
+            ! Maintain consistency with value-based parser: allocate zero-size array
+            call allocate_files_array(coverage_data, 0)
+            found = .true.
             return
         end if
         
@@ -218,7 +220,23 @@ contains
             call parse_file_from_json_file(json, i, files_array(i))
         end do
         
-        ! Assign to coverage data - use proper files field during refactoring
+        ! Populate coverage_data%files from parsed simple structures
+        if (allocated(coverage_data%files)) deallocate(coverage_data%files)
+        allocate(coverage_data%files(num_files))
+        do i = 1, num_files
+            coverage_data%files(i)%filename = files_array(i)%filename
+            if (allocated(files_array(i)%lines)) then
+                allocate(coverage_data%files(i)%lines(size(files_array(i)%lines)))
+                do j = 1, size(files_array(i)%lines)
+                    call coverage_data%files(i)%lines(j)%init( &
+                        files_array(i)%filename, &
+                        files_array(i)%lines(j)%line_number, &
+                        files_array(i)%lines(j)%execution_count, &
+                        .true.)
+                end do
+            end if
+        end do
+
         coverage_data%total_files = num_files
         
         found = .true.
@@ -230,14 +248,16 @@ contains
         integer, intent(in) :: file_index
         type(file_coverage_t), intent(out) :: file_coverage
         
-        character(len=:), allocatable :: filename, path
-        character(len=64) :: index_str
+        character(len=:), allocatable :: filename
+        character(len=256) :: path
+        character(len=:), allocatable :: index_str
         integer :: num_lines, line_index
         type(line_coverage_t), allocatable :: lines_array(:)
         logical :: found
         integer(IK) :: line_number, execution_count
+        character(len=:), allocatable :: line_str
         
-        write(index_str, '(I0)') file_index
+        index_str = int_to_string(file_index)
         
         ! Get filename
         path = 'files(' // trim(index_str) // ').filename'
@@ -254,11 +274,12 @@ contains
         
         ! Extract each line
         do line_index = 1, num_lines
-            write(path, '(A,I0,A,I0,A)') 'files(', file_index, ').lines(', line_index, ').line_number'
+            line_str = int_to_string(line_index)
+            path = 'files(' // trim(index_str) // ').lines(' // trim(line_str) // ').line_number'
             call json%get(path, line_number, found)
             if (found) lines_array(line_index)%line_number = int(line_number)
             
-            write(path, '(A,I0,A,I0,A)') 'files(', file_index, ').lines(', line_index, ').execution_count' 
+            path = 'files(' // trim(index_str) // ').lines(' // trim(line_str) // ').execution_count'
             call json%get(path, execution_count, found)
             if (found) lines_array(line_index)%execution_count = int(execution_count)
         end do

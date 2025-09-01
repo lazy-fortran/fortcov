@@ -13,7 +13,6 @@ module json_io
     use error_handling_core
     ! Replace manual JSON parsing with json-fortran library
     use json_module, only: json_file, json_value, json_core
-    use json_kinds, only: RK, IK
     use json_parsing, only: parse_coverage_from_json_value, &
                                  parse_coverage_from_json_file, &
                                  parse_files_from_json_array, &
@@ -70,7 +69,7 @@ contains
         ! Check for parsing errors
         if (json_parser%failed()) then
             call json_parser%print_error_message()
-            print *, "❌ Failed to parse JSON content with json-fortran"
+            print *, 'ERROR: Failed to parse JSON content with json-fortran'
             if (associated(root_obj)) call json_parser%destroy(root_obj)
             return
         end if
@@ -79,7 +78,7 @@ contains
         call parse_coverage_from_json_value(json_parser, root_obj, coverage_data, found)
         
         if (.not. found) then
-            print *, "❌ Failed to extract coverage data from JSON"
+            print *, 'ERROR: Failed to extract coverage data from JSON'
         end if
         
         ! Clean up
@@ -220,37 +219,43 @@ contains
     end subroutine import_json_coverage_safe
     
     subroutine import_coverage_from_json_file(filename, coverage_data, error_caught)
-        !! Import coverage from JSON file using json-fortran
+        !! Import coverage from JSON file: load contents and reuse in-memory path
         character(len=*), intent(in) :: filename
         type(coverage_data_t), intent(out) :: coverage_data
         logical, intent(out) :: error_caught
         
-        type(json_file) :: json
-        logical :: found
+        integer :: unit, ios
+        character(len=4096) :: buffer
+        character(len=:), allocatable :: content
         
         error_caught = .false.
         call initialize_coverage_data(coverage_data)
         
-        ! Load JSON file using json-fortran
-        call json%initialize()
-        call json%load(filename=filename)
-        
-        if (json%failed()) then
-            call json%print_error_message()
-            print *, "❌ Failed to load JSON file:", filename
+        content = ""
+        open(newunit=unit, file=filename, status='old', action='read', iostat=ios)
+        if (ios /= 0) then
+            print *, 'ERROR: Failed to open JSON file:', filename
             error_caught = .true.
-            call json%destroy()
+            return
+        end if
+        do
+            read(unit, '(A)', iostat=ios) buffer
+            if (ios /= 0) exit
+            content = content // trim(buffer)
+        end do
+        close(unit)
+        
+        if (len(content) == 0) then
+            print *, 'ERROR: Empty JSON file:', filename
+            error_caught = .true.
             return
         end if
         
-        call parse_coverage_from_json_file(json, coverage_data, found)
+        call import_coverage_from_json(content, coverage_data)
         
-        if (.not. found) then
-            print *, "❌ Failed to extract coverage data from JSON file:", filename
+        if (.not. is_coverage_data_valid(coverage_data)) then
             error_caught = .true.
         end if
-        
-        call json%destroy()
     end subroutine import_coverage_from_json_file
     
     ! === HELPER FUNCTIONS (json-fortran implementation) ===
