@@ -4,7 +4,6 @@ module portable_temp_utils
     !! This module provides portable temporary directory and file operations
     !! that work across different operating systems and environments.
     
-    use iso_fortran_env, only: int32
     use file_ops_secure, only: safe_mkdir
     use error_handling_core, only: error_context_t, clear_error_context, ERROR_SUCCESS
     implicit none

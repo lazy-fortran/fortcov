@@ -27,7 +27,6 @@ module secure_command_execution
     
     ! Security parameters
     integer, parameter :: MAX_COMMAND_LENGTH = 4096
-    integer, parameter :: MAX_ARGS = 16
     
     contains
 
