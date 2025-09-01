@@ -127,7 +127,15 @@ process_coverage_data() {
             (
                 cd "$build_dir" || exit 1
                 if ls *.gcno >/dev/null 2>&1; then
-                    gcov *.gcno 2>/dev/null || true
+                    # Prefer invoking gcov with an explicit object directory and
+                    # source files to avoid "Cannot open source file" path issues.
+                    SRC_LIST=$(find "$PROJECT_ROOT/$SOURCE_DIR" -type f -name "*.f90" 2>/dev/null | tr '\n' ' ')
+                    if [ -n "$SRC_LIST" ]; then
+                        # shellcheck disable=SC2086
+                        gcov --object-directory="$PWD" $SRC_LIST 2>/dev/null || true
+                    else
+                        gcov --object-directory="$PWD" *.gcno 2>/dev/null || true
+                    fi
                     local gcov_count
                     gcov_count=$(ls *.gcov 2>/dev/null | wc -l || echo "0")
                     print_info "    Generated $gcov_count .gcov files"

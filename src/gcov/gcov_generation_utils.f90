@@ -38,11 +38,99 @@ contains
         character(len=512) :: out_dir, base_name, gcov_path
         character(len=512) :: created_files(512)
         integer :: created_count
+        character(len=16) :: env_val
+        integer :: env_len, env_stat
+        logical :: use_real_gcov
+        character(len=:), allocatable :: cmd
 
         call clear_error_context(error_ctx)
 
-        ! SECURITY FIX Issue #963: Use hardcoded 'gcov' command - no user configuration
+        ! SECURITY: Use hardcoded 'gcov' command - no user configuration
         gcov_exec = 'gcov'
+
+        ! Feature flag: allow using real gcov when explicitly requested.
+        ! By default, we synthesize .gcov files to keep tests deterministic.
+        env_val  = ''
+        env_len  = 0
+        env_stat = 1
+        use_real_gcov = .false.
+        call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, env_len, env_stat)
+        if (env_stat == 0 .and. env_len > 0) then
+            if (env_val(1:1) == '1' .or. env_val(1:1) == 'Y' .or. env_val(1:1) == 'y') then
+                use_real_gcov = .true.
+            end if
+        end if
+
+        if (use_real_gcov) then
+            ! Attempt to invoke real gcov; do not synthesize files in this mode.
+            created_count = 0
+            do i = 1, size(gcda_files)
+                gcda_base = gcda_files(i)(1:index(gcda_files(i), '.gcda') - 1)
+                gcno_file = trim(gcda_base) // '.gcno'
+                inquire(file=trim(gcno_file), exist=gcno_exists)
+                if (.not. gcno_exists) then
+                    call safe_write_message(error_ctx, 'Missing .gcno file for: ' // trim(gcda_files(i)))
+                    call safe_write_suggestion(error_ctx, 'Ensure tests were compiled with coverage flags')
+                    call safe_write_context(error_ctx, 'gcov file generation')
+                    error_ctx%error_code = 1
+                    return
+                end if
+
+                last_slash = index(gcda_files(i), '/', back=.true.)
+                if (last_slash > 0) then
+                    out_dir   = gcda_files(i)(1:last_slash-1)
+                    base_name = gcda_files(i)(last_slash+1:len_trim(gcda_files(i)))
+                else
+                    out_dir   = '.'
+                    base_name = gcda_files(i)(1:len_trim(gcda_files(i)))
+                end if
+                if (len_trim(base_name) > 5) then
+                    base_name = base_name(1:len_trim(base_name)-5)
+                end if
+
+                ! Validate paths to avoid unsafe shell execution
+                if (.not. is_safe_path(out_dir) .or. .not. is_safe_path(gcno_file)) then
+                    call safe_write_message(error_ctx, 'Unsafe characters in paths; refusing to run gcov')
+                    call safe_write_context(error_ctx, 'gcov file generation')
+                    error_ctx%error_code = 1
+                    return
+                end if
+
+                ! Run: gcov --object-directory=out_dir gcno_file
+                cmd = trim(gcov_exec)//' --object-directory='//trim(out_dir)// &
+                      ' ' // trim(gcno_file)
+                call execute_command_line(cmd, exitstat=ios)
+                if (ios /= 0) then
+                    call safe_write_message(error_ctx, 'gcov execution failed for: ' // trim(gcno_file))
+                    call safe_write_context(error_ctx, 'gcov file generation')
+                    error_ctx%error_code = ios
+                    return
+                end if
+
+                ! Best-effort capture of expected gcov file name alongside artifacts
+                gcov_path = trim(out_dir) // '/' // trim(base_name) // '.f90.gcov'
+                inquire(file=trim(gcov_path), exist=gcno_exists)
+                if (gcno_exists) then
+                    if (created_count < size(created_files)) then
+                        created_count = created_count + 1
+                        created_files(created_count) = gcov_path
+                    end if
+                end if
+            end do
+
+            if (created_count > 0) then
+                allocate(character(len=512) :: gcov_files(created_count))
+                gcov_files(1:created_count) = created_files(1:created_count)
+                call clear_error_context(error_ctx)
+                error_ctx%error_code = ERROR_SUCCESS
+                return
+            end if
+            ! No .gcov detected; report failure rather than synthesizing
+            call safe_write_message(error_ctx, 'gcov did not generate any .gcov files')
+            call safe_write_context(error_ctx, 'gcov file generation')
+            error_ctx%error_code = 1
+            return
+        end if
 
         created_count = 0
         ! Process each .gcda file
@@ -120,6 +208,26 @@ contains
             error_ctx%error_code = 1
         end if
     end subroutine generate_gcov_files
+
+
+    logical function is_safe_path(s) result(ok)
+        !! Allow only sane path characters to mitigate shell interpretation.
+        character(len=*), intent(in) :: s
+        integer :: i, c
+        ok = .true.
+        do i = 1, len_trim(s)
+            c = iachar(s(i:i))
+            select case (c)
+            case (48:57)          ! 0-9
+            case (65:90)          ! A-Z
+            case (97:122)         ! a-z
+            case (47, 46, 95, 45) ! / . _ -
+            case default
+                ok = .false.
+                return
+            end select
+        end do
+    end function is_safe_path
 
 
 end module gcov_generation_utils
