@@ -21,11 +21,15 @@ cd your-fortran-project
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
 # Manual gcov file generation (if needed)
-# Note: Due to FPM limitations, coverage may not always work correctly.
-# See doc/user/coverage-workflow.md for troubleshooting.
+# Note: Run gcov from inside each build directory to avoid
+#       "No executable lines" and timestamp mismatch issues.
 fpm test --flag "-fprofile-arcs -ftest-coverage"
+project_root="$(pwd)"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+  (
+    cd "$dir" && gcov *.gcno >/dev/null 2>&1 || true
+    mv ./*.gcov "$project_root" 2>/dev/null || true
+  )
 done
 fortcov --source=src *.gcov --output=coverage.md
 ```
@@ -81,9 +85,13 @@ Coverage Statistics:
 ```bash
 # NOTE: Use --flag, not --coverage (which doesn't exist in FPM)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-# Generate .gcov files manually:
+# Generate .gcov files manually (from inside build dirs):
+project_root="$(pwd)"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+  (
+    cd "$dir" && gcov *.gcno >/dev/null 2>&1 || true
+    mv ./*.gcov "$project_root" 2>/dev/null || true
+  )
 done
 fortcov --source=src *.gcov  # Shows terminal coverage output
 ```

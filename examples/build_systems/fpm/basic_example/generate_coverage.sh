@@ -18,9 +18,13 @@ echo "Method 1: Manual Coverage Generation"
 echo "Command: fpm test --flag \"-fprofile-arcs -ftest-coverage\""
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-echo "Generating .gcov files..."
+echo "Generating .gcov files (run gcov from within build dirs)..."
+project_root="$(pwd)"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+  (
+    cd "$dir" && gcov *.gcno >/dev/null 2>&1 || true
+    mv ./*.gcov "$project_root" 2>/dev/null || true
+  )
 done
 
 echo "Command: gcov src/*.f90"
@@ -43,7 +47,7 @@ echo
 echo "=== FPM Integration Summary ==="
 echo "Current workflow:"
 echo "1. fpm test --flag \"-fprofile-arcs -ftest-coverage\""
-echo "2. find build -name \"*.gcda\" | xargs dirname | sort -u | while read dir; do gcov --object-directory=\"\$dir\" \"\$dir\"/*.gcno; done"
+echo "2. find build -name \"*.gcda\" | xargs dirname | sort -u | while read dir; do (cd \"\$dir\" && gcov *.gcno && mv ./*.gcov \"$PWD\" ); done"
 echo "3. fortcov --source=src *.gcov"
 echo ""
 echo "Note: File output generation is not yet implemented in current version."
