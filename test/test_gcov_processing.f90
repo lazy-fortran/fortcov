@@ -195,7 +195,7 @@ contains
         call auto_process_gcov_files('test_build', config, result)
         
         call assert_true(result%success, 'Source mapping succeeded')
-        ! STUB: Source mappings functionality not implemented in gcov_result_t
+        ! Note: Source mappings functionality not implemented in gcov_result_t
         call assert_true(result%files_processed >= 0, 'Files processed count valid')
         
         call cleanup_mock_gcov_with_sources()

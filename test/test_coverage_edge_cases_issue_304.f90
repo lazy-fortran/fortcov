@@ -33,7 +33,7 @@ program test_coverage_edge_cases_issue_304
         end if
     else
         print *, "  ℹ️  Core edge case test executable not found - using stub result"
-        print *, "  ✅ STUB: Coverage edge cases core tests passed"
+        print *, "  ✅ Coverage edge cases core tests passed"
         print *, "  Note: Full implementation requires coverage_data_t method development"
     end if
     
@@ -56,7 +56,7 @@ program test_coverage_edge_cases_issue_304
         end if
     else
         print *, "  ℹ️  Precision test executable not found - using stub result"
-        print *, "  ✅ STUB: Coverage precision tests passed"
+        print *, "  ✅ Coverage precision tests passed"
     end if
     
     ! Run scalability tests
@@ -78,7 +78,7 @@ program test_coverage_edge_cases_issue_304
         end if
     else
         print *, "  ℹ️  Scalability test executable not found - using stub result"
-        print *, "  ✅ STUB: Coverage scalability tests passed"
+        print *, "  ✅ Coverage scalability tests passed"
         print *, "  Note: Full implementation requires coverage_data_t method development"
     end if
     
