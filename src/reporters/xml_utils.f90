@@ -3,11 +3,14 @@ module xml_utils
     !! 
     !! Coordinates XML processing by delegating to specialized modules.
     !! Decomposed from 460 lines for Issue #718 size management.
-    use coverage_model_core
-    use xml_generator_core
-    use xml_parser_core
-    use xml_utils_core
-    use xml_attribute_parser
+    use xml_generator_core, only: generate_sources_section, generate_packages_section, &
+                                 calculate_file_line_rate
+    use xml_parser_core,    only: parse_cobertura_xml, count_xml_elements, &
+                                 parse_classes_from_xml, is_well_formed_xml
+    use xml_utils_core,     only: get_current_timestamp, get_directory_path, &
+                                 get_base_name
+    use xml_attribute_parser, only: extract_filename_from_class, parse_lines_from_class, &
+                                   extract_line_attributes
     use string_utils, only: int_to_string, real_to_string
     implicit none
     private
