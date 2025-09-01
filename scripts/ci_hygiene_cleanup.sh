@@ -1,10 +1,11 @@
 #!/bin/bash
 # CI Hygiene Cleanup Script - Comprehensive test artifact removal
-# 
+#
 # This script ensures CI environments maintain clean project root by
 # removing all possible test artifacts that could contaminate the workspace.
 
-set -e
+# Harden shell behavior: abort on any error, unset var, or pipeline failure
+set -Eeuo pipefail
 
 echo "CI Hygiene Cleanup: Comprehensive test artifact removal"
 
