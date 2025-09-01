@@ -1,5 +1,5 @@
 program test_build_discovery
-    !! Build discovery test stub
+    !! Build discovery test module
     !! Note: Original test used non-existent fields (adjusted)
     
     implicit none

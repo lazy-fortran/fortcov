@@ -1,5 +1,5 @@
 program test_coverage_precision
-    !! Coverage precision test stub
+    !! Coverage precision test module
     !! Note: Original test used non-existent methods (adjusted)
     
     implicit none

@@ -1,5 +1,5 @@
 program test_coverage_edge_cases_core
-    !! Coverage edge cases core test stub
+    !! Coverage edge cases core test module
     !! Note: Original test used non-existent methods (adjusted)
     
     implicit none

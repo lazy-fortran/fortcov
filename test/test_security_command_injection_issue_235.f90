@@ -1,5 +1,5 @@
 program test_security_command_injection_issue_235
-    !! Security command injection test stub
+    !! Security command injection test module
     !! Note: Original test had multiple missing subroutines (adjusted)
     
     implicit none

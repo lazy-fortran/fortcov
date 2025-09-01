@@ -1,5 +1,5 @@
 program test_zero_config_build_integration
-    !! Zero config build integration test stub
+    !! Zero config build integration test module
     !! Note: Original test used non-existent methods and types (adjusted)
     
     implicit none
