@@ -3,8 +3,6 @@ module xml_utils_core
     !! 
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
     !! Handles utility functions for XML processing and file operations.
-    use coverage_model_core
-    use string_utils, only: int_to_string
     use timestamp_utils, only: get_current_timestamp
     implicit none
     private
