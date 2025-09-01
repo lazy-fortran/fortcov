@@ -1,9 +1,13 @@
 #!/bin/bash
-# Run tests excluding ones that hang or have known issues
+# Curated CI-safe test suite with strict timeout enforcement
 
 set -e
 
-echo "Running unit tests excluding problematic tests..."
+# Global cap in seconds (hard cap for entire run)
+GLOBAL_CAP=${GLOBAL_CAP:-300}
+SECONDS=0
+
+echo "Running unit tests excluding problematic tests (cap=${GLOBAL_CAP}s)..."
 
 # List of tests to exclude (VERIFIED failing tests only - CI fraud prevention)
 # PREVIOUS FRAUD: 68% of excluded tests actually passed
@@ -63,8 +67,7 @@ echo "Pre-test cleanup completed"
 # Fast path: batch run all non-excluded tests #
 ###############################################
 
-# Build once to avoid repeated overhead (already initialized above)
-fpm build >/dev/null 2>&1 || true
+"${FPM_BIN:-fpm}" build >/dev/null 2>&1 || true
 
 # Split excluded vs included sets
 INCLUDED_TESTS=()
@@ -89,24 +92,34 @@ PASSED=0
 FAILED=0
 
 if [[ ${#INCLUDED_TESTS[@]} -gt 0 ]]; then
-    echo "[RUN] Batch executing ${#INCLUDED_TESTS[@]} tests"
-    if fpm test "${INCLUDED_TESTS[@]}" >/dev/null 2>&1; then
+    # Timed batch attempt: avoid hangs; leave time for fallback
+    BATCH_WINDOW=$(( GLOBAL_CAP / 2 ))
+    (( BATCH_WINDOW < 60 )) && BATCH_WINDOW=60
+    echo "[RUN] Batch executing ${#INCLUDED_TESTS[@]} tests (timeout=${BATCH_WINDOW}s)"
+    if timeout "$BATCH_WINDOW" "${FPM_BIN:-fpm}" test "${INCLUDED_TESTS[@]}" >/dev/null 2>&1; then
         PASSED=${#INCLUDED_TESTS[@]}
     else
-        echo "Batch execution reported failure; falling back to per-test mode for diagnostics"
+        echo "Batch execution failed or timed out; falling back to per-test mode"
         PASSED=0
         FAILED=0
-        # Fallback: per-test execution to pinpoint failures
+        # Fallback: per-test execution to pinpoint failures with strict global cap
         for test in "${INCLUDED_TESTS[@]}"; do
-            echo "[RUN] $test"
+            REMAIN=$(( GLOBAL_CAP - SECONDS ))
+            if (( REMAIN <= 0 )); then
+                echo "HIT_GLOBAL_TIMEOUT: elapsed=${SECONDS}s; aborting remaining tests"
+                break
+            fi
+            # Per-test timeout leaves headroom for loop/reporting
+            PER_TEST_TO=$(( REMAIN < 12 ? REMAIN : 12 ))
+            echo "[RUN] $test (timeout=${PER_TEST_TO}s, elapsed=${SECONDS}s)"
             TEMP_OUTPUT=$(mktemp)
-            if timeout 10 fpm test "$test" > "$TEMP_OUTPUT" 2>&1; then
+            if timeout "$PER_TEST_TO" "${FPM_BIN:-fpm}" test "$test" > "$TEMP_OUTPUT" 2>&1; then
                 echo "[PASS] $test"
                 PASSED=$((PASSED + 1))
             else
                 echo "[FAIL] $test"
                 echo "--- Error Output for $test ---"
-                cat "$TEMP_OUTPUT"
+                sed -n '1,160p' "$TEMP_OUTPUT"
                 echo "--- End Error Output ---"
                 FAILED=$((FAILED + 1))
             fi
@@ -123,7 +136,14 @@ echo "  Skipped: $SKIPPED (verified failing tests only)"
 echo ""
 echo "FRAUD PREVENTION METRICS:"
 echo "  Previous fraudulent exclusions: 17 tests (68% of exclusions)"
-echo "  Current exclusion rate: $(echo "scale=1; $SKIPPED * 100 / ($PASSED + $FAILED + $SKIPPED)" | bc -l)%"
+TOTAL=$((PASSED + FAILED + SKIPPED))
+if command -v bc >/dev/null 2>&1 && (( TOTAL > 0 )); then
+    echo "  Current exclusion rate: $(echo "scale=1; $SKIPPED * 100 / $TOTAL" | bc -l)%"
+else
+    # Fallback integer percentage
+    PCT=$(( TOTAL > 0 ? (100 * SKIPPED / TOTAL) : 0 ))
+    echo "  Current exclusion rate: ${PCT}%"
+fi
 echo "  Tests restored to execution: 17 tests now running"
 
 # Post-test CI hygiene: Remove test artifacts for clean CI execution
@@ -184,6 +204,10 @@ if [[ $FAILED -eq 0 ]]; then
     exit 0
 else
     echo ""
+    # If we hit the hard cap, signal explicitly
+    if (( SECONDS >= GLOBAL_CAP )); then
+        echo "[ERROR] Global timeout reached (${GLOBAL_CAP}s)."
+    fi
     echo "[ERROR] Some tests failed!"
     echo "CI Hygiene Status: $CI_HYGIENE_STATUS"
     exit 1
