@@ -13,7 +13,6 @@ module json_io
     use error_handling_core
     ! Replace manual JSON parsing with json-fortran library
     use json_module, only: json_file, json_value, json_core
-    use json_kinds, only: RK, IK
     use json_parsing, only: parse_coverage_from_json_value, &
                                  parse_coverage_from_json_file, &
                                  parse_files_from_json_array, &
@@ -70,7 +69,7 @@ contains
         ! Check for parsing errors
         if (json_parser%failed()) then
             call json_parser%print_error_message()
-            print *, "❌ Failed to parse JSON content with json-fortran"
+            print *, 'ERROR: Failed to parse JSON content with json-fortran'
             if (associated(root_obj)) call json_parser%destroy(root_obj)
             return
         end if
@@ -79,7 +78,7 @@ contains
         call parse_coverage_from_json_value(json_parser, root_obj, coverage_data, found)
         
         if (.not. found) then
-            print *, "❌ Failed to extract coverage data from JSON"
+            print *, 'ERROR: Failed to extract coverage data from JSON'
         end if
         
         ! Clean up
@@ -235,7 +234,7 @@ contains
         content = ""
         open(newunit=unit, file=filename, status='old', action='read', iostat=ios)
         if (ios /= 0) then
-            print *, "❌ Failed to open JSON file:", filename
+            print *, 'ERROR: Failed to open JSON file:', filename
             error_caught = .true.
             return
         end if
@@ -247,7 +246,7 @@ contains
         close(unit)
         
         if (len(content) == 0) then
-            print *, "❌ Empty JSON file:", filename
+            print *, 'ERROR: Empty JSON file:', filename
             error_caught = .true.
             return
         end if

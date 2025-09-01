@@ -7,7 +7,7 @@ module json_parsing
     use coverage_model_core
     use coverage_data_utils
     use json_module, only: json_file, json_value, json_core
-    use json_kinds, only: RK, IK
+    use json_kinds, only: IK
     use string_utils, only: int_to_string
     implicit none
     private
@@ -29,7 +29,6 @@ contains
         logical, intent(out) :: found
         
         type(json_value), pointer :: files_array => null()
-        type(json_value), pointer :: summary_obj => null()
         character(len=:), allocatable :: version_str, tool_str, timestamp_str
         
         found = .false.
