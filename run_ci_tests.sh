@@ -25,6 +25,10 @@ EXCLUDE_TESTS=(
     # - All timeout exclusions without legitimate cause removed
 )
 
+# Ensure dependencies and build artifacts are initialized before listing tests
+# This prevents runtime initialization during test listing (fixes #861)
+fpm build >/dev/null 2>&1 || true
+
 # Get list of all tests - ROBUST pattern matching that handles malformed output
 # Skip the "Matched names:" header and extract test names  
 # Strip ANSI color codes and filter properly
@@ -59,7 +63,7 @@ echo "Pre-test cleanup completed"
 # Fast path: batch run all non-excluded tests #
 ###############################################
 
-# Build once to avoid repeated overhead
+# Build once to avoid repeated overhead (already initialized above)
 fpm build >/dev/null || true
 
 # Split excluded vs included sets
