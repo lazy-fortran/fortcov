@@ -66,7 +66,7 @@ fortcov --source=src *.gcov --output=coverage.md
 ./scripts/validate_commands.sh
 
 # FPM coverage bridge (handle FPM coverage limitations)  
-./scripts/fpm_coverage_bridge.sh
+fortcov
 
 # Version management
 ./scripts/version_manager.sh

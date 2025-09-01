@@ -5,7 +5,7 @@
 - `src/`: Core modules by domain: `config/`, `core/`, `coverage/`, `gcov/`,
   `utils/`, `reporters/`, `syntax/`, `security/`, `zero_config/`.
 - `test/`: Unit, integration, security, performance, and CLI tests.
-- `scripts/`: CI helpers and utilities (`run_ci_tests.sh`, coverage bridge).
+- `scripts/`: CI helpers and utilities (`run_ci_tests.sh`).
 - `build/`: Compiler outputs (ignored in VCS).
 
 ## Build, Test, and Development Commands

@@ -16,16 +16,11 @@ contains
     
     subroutine execute_tests_with_timeout(test_command, config, exit_code, &
                                          success)
-        !! SECURITY FIX Issue #963: Native test execution with ZERO shell execution
+        !! Secure test execution with strict validation
         !!
-        !! COMPLETE REPLACEMENT of execute_command_line with native Fortran processes.
-        !! Eliminates ALL shell injection vulnerabilities by avoiding shell completely.
-        !!
-        !! NATIVE SECURITY APPROACH:
-        !! 1. NO SHELL COMMANDS: Pure Fortran process management
-        !! 2. NO TIMEOUT EXECUTABLE: Built-in timing using Fortran intrinsics  
-        !! 3. NO COMMAND CONSTRUCTION: Direct process execution
-        !! 4. NO INJECTION VECTORS: No shell metacharacter processing
+        !! Runs the detected build-system test command (e.g., FPM) using the
+        !! centralized secure command executor. Input is not user-provided; it
+        !! comes from validated build system detection.
         !!
         !! Args:
         !!   test_command: The test command to execute natively
@@ -38,6 +33,7 @@ contains
         integer, intent(out) :: exit_code
         logical, intent(out) :: success
         
+        use secure_command_execution, only: secure_execute_command
         character(len=32) :: timeout_str
         
         success = .false.
@@ -52,20 +48,11 @@ contains
             write(error_unit, '(A)') "Timeout: " // trim(timeout_str) // " seconds"
         end if
         
-        ! SECURITY FIX: Native process execution - NO execute_command_line
-        call secure_native_execution(test_command, config%test_timeout_seconds, &
-                                     exit_code, success)
-        
-        ! Results evaluation
-        if (exit_code == 0) then
-            success = .true.
-        else if (exit_code == 124) then
-            ! Timeout simulation
-            success = .false.
-        else
-            ! Test failure or other error
-            success = .false.
-        end if
+        ! Execute via centralized secure executor. The command originates from
+        ! build_detector_core and is not raw user input.
+        call secure_execute_command(trim(test_command), exit_code)
+
+        success = (exit_code == 0)
         
     end subroutine execute_tests_with_timeout
     
@@ -86,67 +73,6 @@ contains
         end if
     end function format_timeout_message
     
-    subroutine secure_native_execution(command, timeout_seconds, exit_code, success)
-        !! SECURITY FIX Issue #963: Secure native process execution
-        !!
-        !! This subroutine provides native Fortran process execution without
-        !! ANY shell interaction. Completely eliminates execute_command_line
-        !! vulnerabilities by using pure Fortran process management.
-        !!
-        !! ZERO ATTACK SURFACE:
-        !! - NO shell execution anywhere
-        !! - NO command line construction
-        !! - NO user input to shell metacharacter processing
-        !! - NO external timeout executable dependency
-        !!
-        !! NATIVE IMPLEMENTATION:
-        !! - Direct process spawning using Fortran intrinsics
-        !! - Built-in timeout using system_clock
-        !! - Process isolation without shell environment
-        !! - Safe argument parsing without shell interpretation
-        character(len=*), intent(in) :: command
-        integer, intent(in) :: timeout_seconds
-        integer, intent(out) :: exit_code
-        logical, intent(out) :: success
-        
-        ! Safe default initialization
-        exit_code = 0
-        success = .true.
-        
-        ! Input validation
-        if (len_trim(command) == 0) then
-            exit_code = 1
-            success = .false.
-            return
-        end if
-        
-        ! Secure logging (no shell interaction)
-        write(error_unit, '(A)') "NATIVE SECURE EXEC: " // trim(command)
-        write(error_unit, '(A,I0,A)') "NATIVE TIMEOUT: ", timeout_seconds, "s"
-        
-        ! SECURITY FIX: Safe command simulation for testing
-        ! This eliminates shell execution while maintaining test compatibility
-        ! Pattern matching to simulate expected behaviors
-        
-        if (index(command, 'sleep') > 0) then
-            ! Simulate timeout for sleep commands that exceed timeout
-            if (timeout_seconds < 3) then  ! Short timeout with sleep should timeout
-                exit_code = 124  ! Standard timeout exit code
-                success = .false.
-            else
-                exit_code = 0
-                success = .true.
-            end if
-        else if (trim(command) == 'false') then
-            ! Simulate failing command
-            exit_code = 1
-            success = .false.
-        else
-            ! Default: simulate successful execution
-            exit_code = 0
-            success = .true.
-        end if
-        
-    end subroutine secure_native_execution
+    ! secure_native_execution removed: using secure_execute_command instead
     
 end module test_executor_core

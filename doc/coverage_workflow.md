@@ -10,36 +10,19 @@ with `--gcov` (alias: `--discover-and-gcov`).
 
 ## Options
 
-- Bridge script (recommended): Simple, copy-paste friendly helper that runs the
-  typical steps and then FortCov. Best for CI and local use.
-- Manual steps: Equivalent explicit commands if you prefer not to use scripts.
+- Single command (recommended): Just run `fortcov` and let it do everything.
+- Manual steps: Equivalent explicit commands if you prefer precise control.
 
-## A) Built-in Bridge (Recommended)
+## A) Single Command (Recommended)
 
 Requirements: `gfortran`, `gcov`, `fpm`.
 
 From the root of your FPM project:
 
-## Option 1: FortCov built-in
-
 ```bash
-# Auto-discover build dirs, generate .gcov, produce coverage.md
-fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
+# Auto-detect FPM, run tests with coverage, generate .gcov, produce coverage.md
+fortcov
 ```
-
-## Option 2: Bridge scripts
-
-```bash
-# Generate application coverage end-to-end and write coverage.md
-./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
-
-# Or: quick bridge that assumes you already produced .gcda/.gcno
-./scripts/fpm_coverage_bridge.sh src
-```
-
-Notes:
-- If a script is not present in your project, copy it from this repository's
-  `scripts/` directory or run it via a full path from the FortCov repository.
 Outputs:
 - `coverage.md`: Markdown report (project summary and per-file stats)
 - `.gcov` files in the working directory
@@ -84,6 +67,6 @@ fortcov --fail-under 80 --source=src *.gcov --output=coverage.md --quiet
 
 ## Notes on built-in bridge
 
-The built-in bridge uses safe, internal discovery and does not execute user-
-provided `gcov` commands. Prefer `--gcov` for the simplest setup, and use the
-bridge scripts or manual steps when you need explicit control.
+The built-in bridge `--gcov` remains available for explicit `.gcov` generation
+when needed. The default `fortcov` command already performs discovery and
+production of coverage files for FPM projects, so `--gcov` is optional.

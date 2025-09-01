@@ -287,7 +287,7 @@ project/
 ├── test/          # Tests
 ├── build/         # Build artifacts (excluded from coverage)
 ├── coverage/      # Coverage reports
-└── scripts/       # Build and coverage scripts
+└── scripts/       # CI helpers (no coverage orchestration needed)
 ```
 
 ### Coverage Workflow Script
