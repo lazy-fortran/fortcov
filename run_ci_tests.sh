@@ -7,7 +7,7 @@ echo "Running unit tests excluding problematic tests..."
 
 # List of tests to exclude (VERIFIED failing tests only - CI fraud prevention)
 # PREVIOUS FRAUD: 68% of excluded tests actually passed
-# CORRECTED: Only 8 legitimately failing tests excluded (9.2% vs previous 28.7%)
+# CORRECTED: Only legitimately failing tests excluded (significantly reduced from previous ~29%)
 EXCLUDE_TESTS=(
     # LEGITIMATELY FAILING TESTS (verified 2025-08-31):
     "test_gcov_processing"                 # Exit code 1 - Gcov processing issue
@@ -20,7 +20,7 @@ EXCLUDE_TESTS=(
     
     # FRAUD PREVENTION NOTES:
     # - 17 previously excluded tests now ENABLED (actually pass)
-    # - Total exclusion reduced from 28.7% to 9.2%
+    # - Total exclusion rate significantly reduced from prior levels
     # - All "Permission denied" exclusions were fraudulent
     # - All timeout exclusions without legitimate cause removed
 )
