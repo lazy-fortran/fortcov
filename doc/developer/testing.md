@@ -80,6 +80,17 @@ gcov test/*.f90
 fortcov --source=test --output=test-coverage.md
 ```
 
+### E2E Validation vs pycobertura
+
+```bash
+# End-to-end check comparing FortCov markdown to pycobertura markdown
+# Requires: gcovr, pycobertura
+scripts/e2e_validate_vs_pycobertura.sh
+
+# Optional: override timeout or tolerance
+TEST_TIMEOUT=300 TOL=0.5 scripts/e2e_validate_vs_pycobertura.sh
+```
+
 ### Performance Testing
 
 ```bash
