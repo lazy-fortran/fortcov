@@ -160,9 +160,9 @@ jobs:
         find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
           gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
         done
-        fortcov --source=src *.gcov --fail-under=80
-        # Note: FortCov outputs coverage analysis to stdout by default
-        # File output formats are not yet implemented in current version
+        # Generate a markdown report file and enforce a threshold
+        fortcov --source=src *.gcov --format=markdown --output=coverage.md --fail-under=80
+        test -f coverage.md
 ```
 
 **GitLab CI:**
@@ -186,9 +186,8 @@ coverage_analysis:
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"
     - find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true; done
-    - fortcov --source=src *.gcov --fail-under=75
-  # Note: File output formats not yet implemented in current version
-  # FortCov outputs coverage analysis to stdout for now
+    - fortcov --source=src *.gcov --format=json --output=coverage.json --fail-under=75
+    - test -f coverage.json
 ```
 
 ## Advanced Usage Patterns
@@ -204,8 +203,8 @@ fortcov --source=src src_*.gcov lib_*.gcov modules_*.gcov
 ```bash
 #!/bin/bash
 # quality-gate.sh
-# Note: File output not yet implemented, use --fail-under option
-fortcov --source=src *.gcov --fail-under=80 --quiet
+fortcov --source=src *.gcov --format=markdown --output=coverage.md --fail-under=80 --quiet
+test -f coverage.md
 echo "Coverage check passed"
 ```
 
@@ -219,7 +218,8 @@ echo "Coverage check passed"
     exclude_patterns = '*.mod', 'test/*'
     verbose = .true.
     minimum_coverage = 70.0
-    ! Note: output_format not yet implemented
+    output_format = 'markdown'
+    output_path   = 'coverage.md'
 /
 ```
 
@@ -231,7 +231,8 @@ echo "Coverage check passed"
     exclude_patterns = '*.mod', 'test/*', 'vendor/*', 'build/*'
     quiet = .true.
     minimum_coverage = 90.0
-    ! Note: output_format and output_path not yet implemented
+    output_format     = 'json'
+    output_path       = 'coverage.json'
 /
 ```
 

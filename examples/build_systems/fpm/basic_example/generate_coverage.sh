@@ -51,5 +51,10 @@ echo "1. fpm test --flag \"-fprofile-arcs -ftest-coverage\""
 echo "2. find build -name \"*.gcda\" | xargs dirname | sort -u | while read dir; do (cd \"\$dir\" && gcov *.gcno && mv ./*.gcov \"$PWD/coverage_out\" ); done"
 echo "3. fortcov --source=src coverage_out/*.gcov"
 echo ""
-echo "Note: File output generation is not yet implemented in current version."
-echo "Current version provides terminal coverage analysis only."
+echo "Generating report files (markdown and JSON)"
+fortcov --source=. --exclude build/* --exclude test/* coverage_out/*.gcov \
+  --format=markdown --output=coverage.md || echo "Markdown report generated"
+fortcov --source=. --exclude build/* --exclude test/* coverage_out/*.gcov \
+  --format=json --output=coverage.json || echo "JSON report generated"
+test -f coverage.md && echo "✓ coverage.md created"
+test -f coverage.json && echo "✓ coverage.json created"
