@@ -8,13 +8,25 @@ program test_complete_workflow
     use config_types, only: config_t
     use error_handling_core, only: error_context_t, clear_error_context
     use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_remove_directory
+    use portable_temp_utils, only: get_temp_dir
     use iso_fortran_env, only: output_unit
     implicit none
 
     integer :: test_count = 0
     integer :: passed_count = 0
+    character(len=512) :: original_cwd, temp_workspace
 
     write(output_unit, '(A)') 'Running complete workflow tests...'
+    ! Isolate in temp workspace to avoid polluting repo root
+    call getcwd(original_cwd)
+    block
+        character(len=:), allocatable :: base
+        type(error_context_t) :: err
+        base = get_temp_dir()
+        temp_workspace = trim(base) // '/fortcov_tests/complete_workflow'
+        call safe_mkdir(temp_workspace, err)
+        call chdir(temp_workspace)
+    end block
     write(output_unit, '(A)') ''
 
     call test_complete_auto_workflow_success()
@@ -28,8 +40,10 @@ program test_complete_workflow
     
     if (passed_count /= test_count) then
         write(output_unit, '(A)') 'Some tests failed!'
+        call chdir(original_cwd)
         stop 1
     else
+        call chdir(original_cwd)
         stop 0
     end if
 

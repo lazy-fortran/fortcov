@@ -11,6 +11,7 @@ module test_auto_discovery_shared_utilities
     use iso_fortran_env, only: output_unit
     use file_ops_secure, only: safe_mkdir, safe_remove_file
     use error_handling_core, only: error_context_t
+    use portable_temp_utils, only: get_temp_dir
     implicit none
     
     private
@@ -30,6 +31,7 @@ module test_auto_discovery_shared_utilities
     public :: create_mock_gcov_files
     public :: create_complete_project_scenario
     public :: test_environment_detected
+    public :: get_discovery_workspace_path
     
     ! Constants
     character(len=*), parameter :: DEFAULT_TEST_DIR = "test_auto_discovery_workspace"
@@ -53,10 +55,23 @@ contains
         end if
     end subroutine assert_test
 
+    function get_discovery_workspace_path(name) result(full_path)
+        !! Compute the absolute path for a discovery test workspace
+        !! under the system temporary directory to ensure CI hygiene.
+        character(len=*), intent(in) :: name
+        character(len=:), allocatable :: temp_base
+        character(len=512) :: full_path
+
+        temp_base = get_temp_dir()
+        full_path = trim(temp_base) // '/fortcov_tests/' // trim(name)
+    end function get_discovery_workspace_path
+
     subroutine setup_test_workspace(test_dir)
         !! Creates a temporary workspace for testing auto-discovery
         character(len=*), intent(in), optional :: test_dir
         character(len=256) :: workspace_dir
+        character(len=:), allocatable :: temp_base
+        character(len=512) :: base_dir
         
         if (present(test_dir)) then
             workspace_dir = test_dir
@@ -64,12 +79,18 @@ contains
             workspace_dir = DEFAULT_TEST_DIR
         end if
         
+        ! Place all test workspaces under a system temp base to avoid
+        ! polluting the project root (CI hygiene compliance)
+        temp_base = get_temp_dir()
+        base_dir = trim(temp_base) // '/fortcov_tests'
+        
         write(output_unit, '(A)') "Setting up test workspace..."
         
         ! Create directories for CI compatibility
-        call safe_mkdir_for_discovery_tests(workspace_dir)
-        call safe_mkdir_for_discovery_tests(trim(workspace_dir) // '/src')
-        call safe_mkdir_for_discovery_tests(trim(workspace_dir) // '/test')
+        call safe_mkdir_for_discovery_tests(base_dir)
+        call safe_mkdir_for_discovery_tests(trim(base_dir) // '/' // trim(workspace_dir))
+        call safe_mkdir_for_discovery_tests(trim(base_dir) // '/' // trim(workspace_dir) // '/src')
+        call safe_mkdir_for_discovery_tests(trim(base_dir) // '/' // trim(workspace_dir) // '/test')
         
     end subroutine setup_test_workspace
 
@@ -77,6 +98,8 @@ contains
         !! Removes the test workspace
         character(len=*), intent(in), optional :: test_dir
         character(len=256) :: workspace_dir
+        character(len=:), allocatable :: temp_base
+        character(len=512) :: full_path
         
         if (present(test_dir)) then
             workspace_dir = test_dir
@@ -84,8 +107,11 @@ contains
             workspace_dir = DEFAULT_TEST_DIR
         end if
         
+        temp_base = get_temp_dir()
+        full_path = trim(temp_base) // '/fortcov_tests/' // trim(workspace_dir)
+
         write(output_unit, '(A)') "Cleaning up test workspace..."
-        call safe_cleanup_discovery_workspace(workspace_dir)
+        call safe_cleanup_discovery_workspace(full_path)
         
     end subroutine cleanup_test_workspace
 
