@@ -1,0 +1,53 @@
+name: E2E Coverage Validation
+
+on:
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  validate-coverage:
+    name: Compare FortCov vs Cobertura (gcovr)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install gfortran and Python tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran python3 python3-pip
+          python3 -m pip install --upgrade pip
+          python3 -m pip install gcovr pycobertura
+
+      - name: Install fpm
+        run: |
+          curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
+          chmod +x fpm
+          sudo mv fpm /usr/local/bin/
+          fpm --version
+
+      - name: Build with coverage and generate FortCov markdown
+        run: |
+          ./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
+
+      - name: Generate Cobertura XML via gcovr
+        run: |
+          # Use project root as base; gcovr will discover .gcno/.gcda in build/
+          gcovr -r . --xml-pretty -o coverage.xml
+
+      - name: Compare totals (Cobertura vs FortCov)
+        run: |
+          python3 scripts/compare_coverage_metrics.py coverage.xml coverage.md
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-coverage-artifacts
+          path: |
+            coverage.xml
+            coverage.md
+
