@@ -194,15 +194,29 @@ contains
         character(len=256) :: base, pat
         integer :: slash_pos, exitstat
         character(len=1024) :: cmd
+        logical :: tb_exists
 
         call clear_error_context(error_ctx)
 
         ! Split into base dir and simple -name pattern
         if (index(pattern, '**/') > 0) then
-            slash_pos = index(pattern, '**/') - 1
-            if (slash_pos >= 1) then
-                base = pattern(1:slash_pos)
+            ! Correctly split at the "**/" marker: base is everything
+            ! before the slash preceding the asterisks, pattern is
+            ! everything after the "**/" sequence.
+            slash_pos = index(pattern, '**/')
+            if (slash_pos > 0) then
+                ! "slash_pos" points at first '*'. Trim any trailing '/'
+                if (slash_pos >= 2) then
+                    if (pattern(slash_pos-1:slash_pos-1) == '/') then
+                        base = pattern(1:slash_pos-2)
+                    else
+                        base = pattern(1:slash_pos-1)
+                    end if
+                else
+                    base = '.'
+                end if
                 pat  = pattern(slash_pos+3:)
+                if (len_trim(base) == 0) base = '.'
             else
                 base = '.'
                 pat  = pattern
@@ -223,6 +237,18 @@ contains
                 error_ctx%error_code = ERROR_MISSING_FILE
                 call safe_write_message(error_ctx, 'No files found matching pattern: ' // trim(pattern))
                 return
+            end if
+        end if
+
+        ! If searching from project root for coverage artifacts, bias towards
+        ! the conventional test workspace directory when present.
+        if (trim(base) == '.') then
+            if (len_trim(pat) >= 5) then
+                select case (pat(len_trim(pat)-4:len_trim(pat)))
+                case ('.gcda', '.gcno')
+                    inquire(file='test_build', exist=tb_exists)
+                    if (tb_exists) base = 'test_build'
+                end select
             end if
         end if
 
