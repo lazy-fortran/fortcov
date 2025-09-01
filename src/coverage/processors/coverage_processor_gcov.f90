@@ -119,32 +119,24 @@ contains
     end subroutine find_coverage_build_directories
     
     subroutine collect_generated_gcov_files(build_dirs, gcov_files)
-        !! Collects generated .gcov files and copies them to build/gcov directory
+        !! Collects generated .gcov files from canonical output directory
         character(len=*), intent(in) :: build_dirs(:)
         character(len=:), allocatable, intent(out) :: gcov_files(:)
         
         character(len=:), allocatable :: found_gcov_files(:)
         character(len=256), parameter :: GCOV_OUTPUT_DIR = "build/gcov"
-        integer :: i, stat
         logical :: dir_exists
         
-        ! Ensure the gcov output directory exists
+        ! Find the .gcov files in the gcov output directory if present
         inquire(file=GCOV_OUTPUT_DIR, exist=dir_exists)
-        if (.not. dir_exists) then
-            ! SECURITY FIX Issue #963: Use secure directory creation
-            call create_gcov_output_directory(GCOV_OUTPUT_DIR, stat)
+        if (dir_exists) then
+            found_gcov_files = find_files(GCOV_OUTPUT_DIR // "/*.gcov")
         end if
-        
-        ! SECURITY FIX Issue #963: Copy all .gcov files using secure file operations
-        do i = 1, size(build_dirs)
-            call copy_gcov_files_secure(trim(build_dirs(i)), GCOV_OUTPUT_DIR)
-        end do
-        
-        ! Now find the .gcov files in the gcov output directory
-        found_gcov_files = find_files(GCOV_OUTPUT_DIR // "/*.gcov")
         
         if (allocated(found_gcov_files)) then
             gcov_files = found_gcov_files
+        else
+            allocate(character(len=1) :: gcov_files(0))
         end if
         
     end subroutine collect_generated_gcov_files
@@ -250,8 +242,9 @@ contains
             else
                 ! Report incompatibility issue for debugging
                 if (.not. config%quiet) then
-                    print *, "⚠️  Skipping directory due to gcno/gcda incompatibility: ", trim(build_dirs(i))
-                    print *, "   .gcno files: ", gcno_count, ", .gcda files: ", gcda_count
+                    print *, "Warning: Skipping directory due to gcno/gcda incompatibility:", &
+                             trim(build_dirs(i))
+                    print *, "   .gcno files:", gcno_count, ", .gcda files:", gcda_count
                 end if
             end if
         end do
@@ -360,30 +353,16 @@ contains
     ! Secure directory creation for gcov output
     ! SECURITY FIX Issue #963: Replace mkdir -p shell vulnerability
     subroutine create_gcov_output_directory(dir_path, exit_status)
+        use directory_operations, only: ensure_directory_safe
+        use error_handling_core, only: error_context_t, ERROR_SUCCESS
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: exit_status
+        type(error_context_t) :: error_ctx
         
-        character(len=:), allocatable :: temp_file_path
-        integer :: temp_unit
-        logical :: dir_exists
-        
-        exit_status = 0
-        
-        ! Check if directory already exists
-        inquire(file=dir_path, exist=dir_exists)
-        if (dir_exists) return
-        
-        ! Use file creation to force directory creation
-        temp_file_path = trim(dir_path) // '/.gcov_marker'
-        
-        ! Try to create the temporary file which forces directory creation
-        open(newunit=temp_unit, file=temp_file_path, status='new', iostat=exit_status)
-        if (exit_status == 0) then
-            ! Directory was created successfully
-            close(temp_unit, status='delete')  ! Remove the temporary file
+        call ensure_directory_safe(trim(dir_path), error_ctx)
+        if (error_ctx%error_code == ERROR_SUCCESS) then
             exit_status = 0
         else
-            ! Directory creation failed
             exit_status = 1
         end if
         
@@ -392,33 +371,44 @@ contains
     ! Secure file copying without shell commands
     ! SECURITY FIX Issue #963: Replace find -exec cp shell vulnerability
     subroutine copy_gcov_files_secure(source_dir, target_dir)
+        use file_utils_consolidated, only: find_files_with_glob, basename
+        use file_ops_secure,          only: safe_move_file
+        use error_handling_core,      only: error_context_t
         character(len=*), intent(in) :: source_dir, target_dir
+        character(len=:), allocatable :: files(:)
+        character(len=256) :: dst
+        type(error_context_t) :: err
+        integer :: i
         
-        ! Simple secure implementation - copy known patterns
-        ! This replaces the find -name "*.gcov" -exec cp functionality
-        ! In a production system, this would use directory traversal
+        files = find_files_with_glob(trim(source_dir), '*.gcov')
+        if (.not. allocated(files) .or. size(files) == 0) return
         
-        ! Note: This is a simplified approach that prioritizes security
-        ! The original find command was vulnerable to shell injection
-        ! This secure version handles common gcov file patterns safely
+        do i = 1, size(files)
+            dst = trim(target_dir) // '/' // trim(basename(files(i)))
+            call safe_move_file(trim(files(i)), trim(dst), err)
+        end do
         
     end subroutine copy_gcov_files_secure
     
     ! Secure gcov generation without shell cd && commands
     ! SECURITY FIX Issue #963: Replace cd && gcov shell vulnerability
     subroutine generate_gcov_files_secure(build_path, gcov_exe, exit_status)
+        use gcov_generator,          only: generate_gcov_files_from_gcda
+        use file_utils_consolidated, only: find_files
         character(len=*), intent(in) :: build_path, gcov_exe
         integer, intent(out) :: exit_status
+        character(len=:), allocatable :: gcda(:)
+        character(len=:), allocatable :: generated(:)
         
-        ! Use secure gcov execution from secure_executor
-        ! This avoids the dangerous cd && command pattern
-        ! The secure_executor already handles working directory properly
+        exit_status = 1
         
-        exit_status = 0  ! Default to success for security
+        gcda = find_files(trim(build_path) // '/*.gcda')
+        if (.not. allocated(gcda) .or. size(gcda) == 0) return
         
-        ! Note: This should use safe_execute_gcov from secure_executor
-        ! but requires pattern matching for *.gcno files
-        ! For now, return success to maintain functionality without shell risk
+        call generate_gcov_files_from_gcda(gcda, generated)
+        if (allocated(generated) .and. size(generated) > 0) then
+            exit_status = 0
+        end if
         
     end subroutine generate_gcov_files_secure
 
