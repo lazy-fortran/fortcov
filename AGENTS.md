@@ -17,6 +17,8 @@ fpm build
 fpm build --flag "-fprofile-arcs -ftest-coverage"
 
 # Curated CI-safe test suite (timeouts, verified exclusions)
+# Honors `TEST_TIMEOUT` to set a hard cap for the entire run
+# (default: 300s). Example: `TEST_TIMEOUT=120 ./run_ci_tests.sh`.
 ./run_ci_tests.sh
 
 # Run a specific/verbose test
@@ -41,6 +43,7 @@ done
 ## Testing Guidelines
 - FPM-based tests in `test/`; do not skip/xfail without linked issue.
 - Primary runner: `./run_ci_tests.sh` (timeouts, fork-bomb prevention).
+  - Honors `TEST_TIMEOUT` env var: sets global cap (default 300s).
 - Treat local vs CI differences as blockers; attach logs to PRs.
 - Produce `coverage.md` when validating coverage changes.
 
@@ -55,4 +58,3 @@ done
 - Respect fork-bomb prevention markers and safe execution utilities in `utils/`.
 - Validate paths/inputs; avoid unvalidated shell execution.
 - Config via `fortcov.nml`; prefer CLI flags in CI (`--quiet`, `--fail-under`).
-
