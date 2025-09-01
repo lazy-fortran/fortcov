@@ -88,7 +88,7 @@ contains
         print *, "  - Parallel processing: not implemented (threads flag ignored)"
         print *, ""
         print *, "Repository: https://github.com/lazy-fortran/fortcov"
-        print *, "License: Apache-2.0"
+        print *, "License: MIT"
 
     end subroutine show_version_information
 
