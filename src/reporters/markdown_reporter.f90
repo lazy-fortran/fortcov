@@ -261,21 +261,67 @@ contains
     end function escape_markdown
 
 
-    ! Clean gcov filename by removing "0:Source:" prefix
+    ! Clean gcov filename by removing "0:Source:" prefix, collapsing
+    ! duplicate path separators, and stripping duplicated extensions
     function clean_gcov_filename(filename) result(cleaned)
         character(len=*), intent(in) :: filename
         character(len=:), allocatable :: cleaned
+        character(len=:), allocatable :: work
+        character(len=:), allocatable :: result_path
         integer :: colon_pos
+        integer :: i, out_pos, in_len
+        integer :: last_dot, prev_dot
+        character(len=:), allocatable :: ext_last, ext_prev
+        character(len=:), allocatable :: base_no_dup_ext
+        character(len=:), allocatable :: tmp
         
-        ! Find the pattern "0:Source:"
+        ! Step 1: remove gcov source prefix if present
         colon_pos = index(filename, ":Source:")
         if (colon_pos > 0) then
-            ! Remove the "0:Source:" prefix
-            cleaned = filename(colon_pos + 8:)
+            work = filename(colon_pos + 8:)
         else
-            ! No prefix found, return as-is
-            cleaned = trim(filename)
+            work = trim(filename)
         end if
+
+        ! Defensive empty handling
+        if (len_trim(work) == 0) then
+            cleaned = ""
+            return
+        end if
+
+        ! Step 2: collapse duplicate '/' path separators
+        tmp = work
+        result_path = repeat(' ', len(tmp))
+        out_pos = 1
+        in_len = len_trim(tmp)
+        do i = 1, in_len
+            if (tmp(i:i) == '/') then
+                if (i < in_len) then
+                    if (tmp(i+1:i+1) == '/') cycle
+                end if
+            end if
+            result_path(out_pos:out_pos) = tmp(i:i)
+            out_pos = out_pos + 1
+        end do
+        work = result_path(1:out_pos-1)
+
+        ! Step 3: strip duplicated extensions at the end (e.g., .f90.f90)
+        last_dot = index(work, '.', back=.true.)
+        if (last_dot > 0) then
+            prev_dot = index(work(1:last_dot-1), '.', back=.true.)
+        else
+            prev_dot = 0
+        end if
+        if (last_dot > 0 .and. prev_dot > 0) then
+            ext_last = work(last_dot+1:)
+            ext_prev = work(prev_dot+1:last_dot-1)
+            if (len_trim(ext_last) > 0 .and. trim(ext_last) == trim(ext_prev)) then
+                base_no_dup_ext = work(1:last_dot-1)
+                work = base_no_dup_ext
+            end if
+        end if
+
+        cleaned = work
     end function clean_gcov_filename
 
     ! Calculate total statistics across all files
