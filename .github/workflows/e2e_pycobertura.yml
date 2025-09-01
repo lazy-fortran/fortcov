@@ -25,15 +25,9 @@ jobs:
       - name: Set up fpm
         uses: fortran-lang/setup-fpm@v5
 
-      - name: Build with coverage and generate FortCov markdown
+      - name: Build tests, generate Cobertura XML and FortCov markdown
         run: |
           ./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
-
-      - name: Generate Cobertura XML via gcovr
-        run: |
-          # Use existing .gcov files generated earlier to avoid re-running gcov
-          # and keep source path resolution consistent. Filter to project src/.
-          gcovr -r . --filter src --xml-pretty -o coverage.xml --gcov-use-existing-files
 
       - name: Compare totals (Cobertura vs FortCov)
         run: |
