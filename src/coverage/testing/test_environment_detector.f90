@@ -21,9 +21,12 @@ contains
         !! Uses multiple detection strategies including recursion marker files.
         logical :: in_test_env
         
-        ! Only rely on the explicit recursion marker to prevent fork bombs.
-        ! This allows FortCov to run tests in CI and normal environments.
+        ! Prevent recursion via explicit marker; also avoid running inside
+        ! an active FPM test environment to prevent re-entrancy loops.
         in_test_env = check_recursion_marker()
+        if (.not. in_test_env) then
+            in_test_env = is_fpm_test_environment()
+        end if
         
     end function is_running_in_test_environment
     
@@ -98,5 +101,14 @@ contains
         in_test_env = .false.
         
     end subroutine check_build_directory_context
+    
+    logical function is_fpm_test_environment() result(in_fpm_test)
+        !! Detect if running under `fpm test` via environment variable
+        character(len=1024) :: env_value
+        integer :: stat
+        in_fpm_test = .false.
+        call get_environment_variable('FPM_TEST', env_value, status=stat)
+        if (stat == 0 .and. len_trim(env_value) > 0) in_fpm_test = .true.
+    end function is_fpm_test_environment
     
 end module test_environment_detector
