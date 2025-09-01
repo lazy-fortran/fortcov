@@ -272,82 +272,80 @@ contains
         end do
     end function to_lower
 
-    ! Simple pattern matching (supports * wildcard)
+    ! Glob matching supporting multiple * (no slash-crossing)
     function matches_pattern(filepath, pattern) result(matches)
         character(len=*), intent(in) :: filepath
         character(len=*), intent(in) :: pattern
         logical :: matches
-        
-        character(len=:), allocatable :: pattern_trimmed, filepath_trimmed
-        integer :: star_pos, prefix_len, suffix_len
-        integer :: second_star_pos
-        
-        ! Use case-sensitive matching to maintain backward compatibility
-        pattern_trimmed = trim(pattern)
-        filepath_trimmed = trim(filepath)
-        
-        ! Handle edge cases first
-        if (len(pattern_trimmed) == 0) then
-            ! Empty pattern only matches empty filepath
-            matches = (len(filepath_trimmed) == 0)
+        character(len=:), allocatable :: f, p
+        integer :: i, j, n, m
+        integer :: star_p, star_i
+
+        f = trim(filepath)
+        p = trim(pattern)
+        n = len_trim(f)
+        m = len_trim(p)
+
+        ! Quick exact match path (no wildcards)
+        if (index(p, '*') == 0) then
+            matches = (f == p)
             return
         end if
-        
-        if (len(filepath_trimmed) == 0) then
-            ! Empty filepath only matches empty pattern or single "*"
-            matches = (pattern_trimmed == "*")
-            return
-        end if
-        
-        star_pos = index(pattern_trimmed, "*")
-        
-        if (star_pos == 0) then
-            ! No wildcard, exact match
-            matches = (filepath_trimmed == pattern_trimmed)
-        else if (star_pos == len(pattern_trimmed)) then
-            ! Pattern ends with *, check prefix
-            prefix_len = star_pos - 1
-            if (prefix_len == 0) then
-                ! Just "*", matches everything non-empty
-                matches = .true.
-            else if (len(filepath_trimmed) >= prefix_len) then
-                matches = (filepath_trimmed(1:prefix_len) == pattern_trimmed(1:prefix_len))
-            else
-                matches = .false.
+
+        i = 1; j = 1
+        star_p = 0; star_i = 0
+
+        do while (i <= n)
+            if (j <= m) then
+                if (p(j:j) == '*') then
+                    ! Collapse consecutive '*'
+                    do
+                        if (j > m) exit
+                        if (p(j:j) /= '*') exit
+                        star_p = j
+                        j = j + 1
+                    end do
+                    star_i = i
+                    cycle
+                else if (f(i:i) == p(j:j)) then
+                    ! When a '/' is matched literally, a previous '*' segment
+                    ! cannot be extended across it; clear star markers to avoid
+                    ! backtracking loops across directory separators.
+                    if (p(j:j) == '/') then
+                        star_p = 0
+                        star_i = 0
+                    end if
+                    i = i + 1
+                    j = j + 1
+                    cycle
+                end if
             end if
-        else if (star_pos == 1) then
-            ! Pattern starts with *, check for second wildcard
-            second_star_pos = index(pattern_trimmed(2:), "*")
-            if (second_star_pos == 0) then
-                ! Pattern is "*suffix", check suffix
-                suffix_len = len(pattern_trimmed) - 1
-                if (suffix_len == 0) then
-                    ! Just "*", matches everything
-                    matches = .true.
-                else if (len(filepath_trimmed) >= suffix_len) then
-                    matches = (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
-                              pattern_trimmed(2:))
+
+            if (star_p /= 0) then
+                ! Extend previous '*' match by one non-slash character
+                if (star_i <= n .and. f(star_i:star_i) /= '/') then
+                    star_i = star_i + 1
+                    i = star_i
+                    j = star_p + 1
                 else
-                    matches = .false.
+                    ! Cannot extend across '/', align to match the '/'
+                    i = star_i
+                    j = star_p + 1
+                    cycle
                 end if
             else
-                ! Pattern is "*middle*", check if middle is contained in filepath
-                ! Extract the middle part (between the two asterisks)
-                ! second_star_pos is relative to pattern_trimmed(2:), so adjust
-                matches = (index(filepath_trimmed, pattern_trimmed(2:1+second_star_pos-1)) > 0)
-            end if
-        else
-            ! Wildcard in middle - check both prefix and suffix match
-            prefix_len = star_pos - 1
-            suffix_len = len(pattern_trimmed) - star_pos
-            if (len(filepath_trimmed) >= prefix_len + suffix_len) then
-                matches = (filepath_trimmed(1:prefix_len) == pattern_trimmed(1:prefix_len)) .and. &
-                         (filepath_trimmed(len(filepath_trimmed) - suffix_len + 1:) == &
-                          pattern_trimmed(star_pos + 1:))
-            else
                 matches = .false.
+                return
             end if
-        end if
+        end do
+
+        ! Consume remaining '*' in pattern
+        do
+            if (j > m) exit
+            if (p(j:j) /= '*') exit
+            j = j + 1
+        end do
+        matches = (j > m)
     end function matches_pattern
 
     ! Check if filepath matches any exclude pattern in a list
