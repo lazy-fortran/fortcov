@@ -47,6 +47,13 @@ program test_line_counts_are_correct_issue_1118
         if (data%files(1)%covered_lines /= 2) then
             ok = .false.
         end if
+        ! Also validate aggregated totals on coverage_data
+        if (data%total_lines /= 4) then
+            ok = .false.
+        end if
+        if (data%covered_lines /= 2) then
+            ok = .false.
+        end if
     end if
 
     if (ok) then
@@ -70,4 +77,3 @@ contains
     end subroutine cleanup
 
 end program test_line_counts_are_correct_issue_1118
-
