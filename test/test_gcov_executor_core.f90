@@ -5,6 +5,7 @@ program test_gcov_executor_core
     use gcov_executor, only: gcov_executor_t
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_remove_directory
+    use portable_temp_utils, only: get_temp_dir
     implicit none
 
     integer :: test_count = 0
@@ -15,7 +16,11 @@ program test_gcov_executor_core
     write(output_unit, '(A)') 'Running gcov_executor core tests...'
     write(output_unit, '(A)') ''
 
-    test_workspace = './gcov_executor_test/core'
+    block
+        character(len=:), allocatable :: temp_base
+        temp_base = get_temp_dir()
+        test_workspace = trim(temp_base) // '/fortcov_tests/gcov_executor/core'
+    end block
     call setup_test_environment()
 
     ! Core functionality tests
@@ -247,4 +252,3 @@ contains
     end subroutine run_test
 
 end program test_gcov_executor_core
-

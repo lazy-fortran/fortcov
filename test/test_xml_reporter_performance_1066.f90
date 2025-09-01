@@ -4,6 +4,9 @@ program test_xml_reporter_performance_1066
     use coverage_stats_core, only: calculate_line_coverage
     use file_utilities, only: read_file_content
     use xml_reporter
+    use file_ops_secure, only: safe_mkdir
+    use error_handling_core, only: error_context_t
+    use portable_temp_utils, only: get_temp_dir
     implicit none
 
     type(xml_reporter_t) :: reporter
@@ -13,7 +16,7 @@ program test_xml_reporter_performance_1066
     integer :: i, j, nfiles, nlines
     logical :: success, read_error
     character(len=:), allocatable :: content
-    character(len=*), parameter :: out_path = 'test_temp_dir/xml_reporter_1066.xml'
+    character(len=:), allocatable :: out_path
 
     ! Build a moderately large dataset to exercise performance
     nfiles = 120
@@ -31,6 +34,14 @@ program test_xml_reporter_performance_1066
     end do
 
     call data%init(files)
+
+    block
+        character(len=:), allocatable :: base
+        type(error_context_t) :: err
+        base = get_temp_dir()
+        out_path = trim(base) // '/fortcov_tests/test_temp_dir/xml_reporter_1066.xml'
+        call safe_mkdir(trim(base) // '/fortcov_tests/test_temp_dir', err)
+    end block
 
     call reporter%generate_report(data, out_path, success, content)
     if (.not. success) then

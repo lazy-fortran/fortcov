@@ -10,13 +10,23 @@ program minimal_gcov_test
     type(config_t) :: config
     type(gcov_result_t) :: result
     character(len=256) :: cwd
+    character(len=512) :: temp_workspace
     character(len=512) :: abs_path
 
     write(output_unit, '(A)') 'Minimal test: Starting...'
 
-    ! Get current directory
+    ! Prepare isolated temp workspace and chdir into it
     call getcwd(cwd)
-    write(output_unit, '(A,A)') 'Current directory: ', trim(cwd)
+    block
+        use portable_temp_utils, only: get_temp_dir
+        character(len=:), allocatable :: base
+        type(error_context_t) :: err
+        base = get_temp_dir()
+        temp_workspace = trim(base) // '/fortcov_tests/minimal_gcov'
+        call safe_mkdir(temp_workspace, err)
+        call chdir(temp_workspace)
+    end block
+    write(output_unit, '(A,A)') 'Current directory: ', trim(temp_workspace)
 
     ! Clean up any previous test artifacts
     ! SECURITY FIX Issue #971: Use secure file operations
@@ -62,6 +72,7 @@ program minimal_gcov_test
     ! Cleanup
     ! SECURITY FIX Issue #971: Use secure cleanup
     call cleanup_test_build_secure()
+    call chdir(cwd)
     write(output_unit, '(A)') 'Test completed.'
 
 contains

@@ -23,13 +23,23 @@ program test_build_system_detector
     type(error_context_t) :: error_ctx
     character(len=256) :: test_dir
     character(len=256) :: current_dir
+    character(len=512) :: temp_workspace
     logical :: success
     
     write(output_unit, '(A)') 'Running build_system_detector tests...'
     write(output_unit, *)
     
-    ! Save current directory
+    ! Save current directory and switch to temp workspace
     call getcwd(current_dir)
+    block
+        use portable_temp_utils, only: get_temp_dir
+        type(error_context_t) :: err
+        character(len=:), allocatable :: base
+        base = get_temp_dir()
+        temp_workspace = trim(base) // '/fortcov_tests/build_detector'
+        call safe_mkdir(temp_workspace, err)
+        call chdir(temp_workspace)
+    end block
     
     ! Test 1: FPM detection
     call test_fpm_detection()

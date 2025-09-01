@@ -4,6 +4,7 @@ module test_environment_utilities
     !! SECURITY FIX Issue #971: Complete elimination of execute_command_line
     
     use file_ops_secure, only: safe_mkdir, safe_remove_file
+    use portable_temp_utils, only: get_temp_dir
     use directory_operations, only: ensure_directory_safe
     use error_handling_core, only: error_context_t, clear_error_context
     implicit none
@@ -50,16 +51,21 @@ contains
     subroutine create_test_directories_secure()
         !! Create test directories using secure operations
         type(error_context_t) :: error_ctx
-        call safe_mkdir('test_temp', error_ctx)
-        call safe_mkdir('test_output', error_ctx)
+        character(len=:), allocatable :: base
+        base = get_temp_dir() // '/fortcov_tests'
+        call safe_mkdir(base, error_ctx)
+        call safe_mkdir(trim(base) // '/test_temp', error_ctx)
+        call safe_mkdir(trim(base) // '/test_output', error_ctx)
         ! Note: Permissions handled by filesystem - no chmod needed
     end subroutine create_test_directories_secure
     
     subroutine cleanup_test_directories_secure()
         !! Clean up test directories securely
         type(error_context_t) :: error_ctx
-        call safe_remove_file('test_temp', error_ctx)
-        call safe_remove_file('test_output', error_ctx)
+        character(len=:), allocatable :: base
+        base = get_temp_dir() // '/fortcov_tests'
+        call safe_remove_file(trim(base) // '/test_temp', error_ctx)
+        call safe_remove_file(trim(base) // '/test_output', error_ctx)
         ! Ignore errors - directories may not exist
     end subroutine cleanup_test_directories_secure
     
@@ -70,9 +76,11 @@ contains
             '*.tmp      ', '*.temp     ', '*.test     ', '*.gcov     ', &
             '*.gcda     ', '*.gcno     ', 'test_*     ', 'temp_*     ' ]
         integer :: i
-        
+        character(len=:), allocatable :: base
+
+        base = get_temp_dir() // '/fortcov_tests'
         do i = 1, size(common_patterns)
-            call safe_remove_file(trim(common_patterns(i)), error_ctx)
+            call safe_remove_file(trim(base) // '/' // trim(common_patterns(i)), error_ctx)
             ! Ignore errors - files may not exist
         end do
     end subroutine cleanup_test_files_secure
