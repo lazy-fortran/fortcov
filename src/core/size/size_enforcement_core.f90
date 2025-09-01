@@ -11,6 +11,8 @@ module size_enforcement_core
     !! - GitHub Actions compatible output formatting
     !! - Automated violation blocking with clear remediation guidance
     use architectural_size_validator
+    use size_report_generator, only: count_file_violations_by_severity, &
+                                     count_directory_violations_by_severity
     use error_handling_core
     use string_utils, only: int_to_string
     implicit none
@@ -171,16 +173,21 @@ contains
         
         ! Count violations and warnings
         if (allocated(size_report%file_violations)) then
-            result%violations_count = count_severity_level(size_report%file_violations, "VIOLATION")
-            result%warnings_count = count_severity_level(size_report%file_violations, "WARNING") + &
-                                   count_severity_level(size_report%file_violations, "CRITICAL")
+            result%violations_count = count_file_violations_by_severity( &
+                size_report%file_violations, "VIOLATION")
+            result%warnings_count = count_file_violations_by_severity( &
+                size_report%file_violations, "WARNING") + &
+                count_file_violations_by_severity(size_report%file_violations, &
+                "CRITICAL")
         end if
         
         if (allocated(size_report%directory_violations)) then
             result%violations_count = result%violations_count + &
-                count_directory_severity_level(size_report%directory_violations, "VIOLATION")
+                count_directory_violations_by_severity( &
+                    size_report%directory_violations, "VIOLATION")
             result%warnings_count = result%warnings_count + &
-                count_directory_severity_level(size_report%directory_violations, "WARNING")
+                count_directory_violations_by_severity( &
+                    size_report%directory_violations, "WARNING")
         end if
         
         ! Determine exit code and blocking behavior
