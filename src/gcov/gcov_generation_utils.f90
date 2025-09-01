@@ -41,6 +41,7 @@ contains
         character(len=16) :: env_val
         integer :: env_len, env_stat
         logical :: use_real_gcov
+        character(len=:), allocatable :: cmd
 
         call clear_error_context(error_ctx)
 
@@ -96,7 +97,9 @@ contains
                 end if
 
                 ! Run: gcov --object-directory=out_dir gcno_file
-                call execute_command_line(trim(gcov_exec)//' --object-directory='//trim(out_dir)//' ' // trim(gcno_file), exitstat=ios)
+                cmd = trim(gcov_exec)//' --object-directory='//trim(out_dir)// &
+                      ' ' // trim(gcno_file)
+                call execute_command_line(cmd, exitstat=ios)
                 if (ios /= 0) then
                     call safe_write_message(error_ctx, 'gcov execution failed for: ' // trim(gcno_file))
                     call safe_write_context(error_ctx, 'gcov file generation')
