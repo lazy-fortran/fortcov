@@ -240,6 +240,12 @@ contains
         out_pos = 1
         in_len = len_trim(input)
         
+        ! Handle empty input defensively to avoid zero-length slicing
+        if (in_len <= 0) then
+            escaped = ""
+            return
+        end if
+        
         ! Replace pipe characters with escaped version
         do i = 1, in_len
             if (input(i:i) == "|") then
