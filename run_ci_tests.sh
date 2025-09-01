@@ -172,7 +172,7 @@ for pattern in "${TEST_ARTIFACTS[@]}"; do
 done
 
 # Final verification: Check for any remaining test artifacts
-REMAINING_ARTIFACTS=$(find . -maxdepth 1 -name "test_infra_*.txt" -o -name "test_infra_*.tmp" 2>/dev/null | wc -l)
+REMAINING_ARTIFACTS=$(find . -maxdepth 1 \( -name "test_infra_*.txt" -o -name "test_infra_*.tmp" \) 2>/dev/null | wc -l)
 
 echo "CI Hygiene Report:"
 echo "  Artifact patterns cleaned: $ARTIFACTS_REMOVED"
