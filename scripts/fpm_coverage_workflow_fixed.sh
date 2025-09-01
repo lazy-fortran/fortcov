@@ -1,282 +1,114 @@
-#!/bin/bash
-# Fixed FPM Coverage Workflow Script
-# Addresses Issue #1052 - FPM coverage workflow generates test coverage instead of application coverage
+#!/usr/bin/env bash
+# FPM Application Coverage Workflow (fixed)
+#
+# Purpose: Generate application (src/) coverage for FPM projects by
+# 1) building with coverage flags, 2) running the instrumented app,
+# 3) producing .gcov files, and 4) generating a FortCov report.
+#
+# Usage:
+#   scripts/fpm_coverage_workflow_fixed.sh [output_file] [source_dir]
+#   - output_file: coverage report path (default: coverage.md)
+#   - source_dir:  source directory for analysis (default: src)
 
+set -euo pipefail
+
+OUTPUT_FILE=${1:-coverage.md}
+SOURCE_DIR=${2:-src}
+
+info()  { printf "\033[0;34mINFO:\033[0m %s\n" "$*"; }
+warn()  { printf "\033[1;33mWARN:\033[0m %s\n" "$*"; }
+error() { printf "\033[0;31mERROR:\033[0m %s\n" "$*"; }
+
+# 1) Clean minimal local artifacts (keep build/ intact)
+info "Cleaning previous local coverage artifacts (.gcov in project root)..."
+find . -maxdepth 1 -name "*.gcov" -delete 2>/dev/null || true
+
+# 2) Build with coverage instrumentation
+info "Building project with coverage flags (fpm build)..."
+fpm build --flag "-fprofile-arcs -ftest-coverage"
+
+# 3) Locate instrumented executable(s) in build tree
+APP_BIN=$(find build -type f -path "*/app/*" -executable 2>/dev/null | head -n1 || true)
+if [ -z "${APP_BIN}" ]; then
+  error "No instrumented application executable found under build/."
+  error "Expected something like build/gfortran_*/app/<name>."
+  exit 1
+fi
+info "Using instrumented app: ${APP_BIN}"
+
+# 4) Execute a few safe scenarios to produce runtime coverage (.gcda)
+info "Executing instrumented application scenarios to exercise code paths..."
+"${APP_BIN}" --help    >/dev/null 2>&1 || true
+"${APP_BIN}" --version >/dev/null 2>&1 || true
+"${APP_BIN}" --validate >/dev/null 2>&1 || true
+
+# 5) Generate .gcov files from all build directories containing .gcda
+info "Generating .gcov files from build directories..."
+BUILD_DIRS=$(find build -name "*.gcda" -print0 2>/dev/null | xargs -0 -I{} dirname {} | sort -u)
+if [ -z "${BUILD_DIRS}" ]; then
+  error "No .gcda files found. Ensure the app actually ran to produce runtime data."
+  exit 1
+fi
+
+GEN_COUNT=0
+while IFS= read -r dir; do
+  [ -z "${dir}" ] && continue
+  if compgen -G "${dir}/*.gcno" >/dev/null; then
+    ( cd "${dir}" && gcov *.gcno >/dev/null 2>&1 || true )
+    # Move generated .gcov to project root for consistent consumption
+    count_here=$(find "${dir}" -maxdepth 1 -name "*.gcov" | wc -l | tr -d ' ')
+    if [ "${count_here}" -gt 0 ]; then
+      mv "${dir}"/*.gcov . 2>/dev/null || true
+      GEN_COUNT=$((GEN_COUNT + count_here))
+    fi
+  fi
+done <<< "${BUILD_DIRS}"
+
+if [ "${GEN_COUNT}" -eq 0 ]; then
+  error "gcov did not produce any .gcov files. Check build artifacts."
+  exit 1
+fi
+info "Generated ${GEN_COUNT} .gcov files. Filtering empties..."
+
+# 6) Drop trivial/empty .gcov files with no coverage payload
+MEANINGFUL=0
+for f in ./*.gcov; do
+  [ -f "$f" ] || continue
+  lines=$(wc -l < "$f" | tr -d ' ')
+  if [ "$lines" -le 1 ]; then
+    rm -f "$f"
+  else
+    MEANINGFUL=$((MEANINGFUL + 1))
+  fi
+done
+
+if [ "${MEANINGFUL}" -eq 0 ]; then
+  error "No meaningful .gcov files after filtering; application paths may not be exercised."
+  exit 1
+fi
+info "${MEANINGFUL} meaningful .gcov files remain. Running FortCov..."
+
+# 7) Run FortCov analysis (zero-config to avoid positional arg limits)
+if command -v fortcov >/dev/null 2>&1; then
+  FORTCOV=fortcov
+else
+  # Try local build path
+  FORTCOV=$(find build -type f -path "*/app/fortcov" -executable 2>/dev/null | head -n1 || true)
+  if [ -z "${FORTCOV}" ]; then
+    error "Cannot find fortcov executable (system or local build)."
+    exit 1
+  fi
+fi
+
+set +e
+${FORTCOV} --source="${SOURCE_DIR}" ./*.gcov --output="${OUTPUT_FILE}"
+RC=$?
 set -e
+if [ $RC -ne 0 ]; then
+  error "FortCov returned non-zero exit code: $RC"
+  exit $RC
+fi
 
-# Configuration
-PROJECT_ROOT="$(pwd)"
-COVERAGE_OUTPUT="${1:-coverage.md}"
-SOURCE_DIR="${2:-src}"
+info "Coverage report generated: ${OUTPUT_FILE}"
+info "Done."
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-print_info() {
-    echo -e "${BLUE}INFO:${NC} $1"
-}
-
-print_success() {
-    echo -e "${GREEN}SUCCESS:${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}WARNING:${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}ERROR:${NC} $1"
-}
-
-# Function 1: Build instrumented application with coverage flags
-build_instrumented_application() {
-    print_info "Building application with coverage instrumentation..."
-    
-    # Clean previous coverage files from project root (preserve build directory)
-    print_info "Cleaning previous .gcov files from project root..."
-    rm -f *.gcov
-    
-    # Build with coverage instrumentation
-    fpm build --flag "-fprofile-arcs -ftest-coverage"
-    
-    # Find the instrumented executable
-    local fortcov_exe
-    fortcov_exe=$(find build -name fortcov -type f -executable | head -1)
-    
-    if [ -z "$fortcov_exe" ]; then
-        print_error "FortCov executable not found after build"
-        print_error "Run 'fpm build --flag \"-fprofile-arcs -ftest-coverage\"' first"
-        return 1
-    fi
-    
-    print_success "Found instrumented executable: $fortcov_exe"
-    echo "$fortcov_exe"
-    return 0
-}
-
-# Function 2: Execute application scenarios to generate .gcda files
-execute_application_scenarios() {
-    local fortcov_exe="$1"
-    
-    print_info "Running instrumented application to generate coverage data..."
-    print_info "Command: $fortcov_exe --help"
-    
-    # Run the application help command to exercise code paths
-    "$fortcov_exe" --help > /dev/null 2>&1 || true
-    
-    # Run application with version flag to exercise more code paths
-    "$fortcov_exe" --version > /dev/null 2>&1 || true
-    
-    # Run application with configuration validation to exercise config modules
-    "$fortcov_exe" --validate > /dev/null 2>&1 || true
-    
-    # Run zero-config discovery to exercise auto-discovery modules
-    echo "module dummy_module" > /tmp/test_fortran.f90
-    "$fortcov_exe" --source=/tmp --quiet --output=/tmp/dummy_coverage.md /tmp/test_fortran.f90 > /dev/null 2>&1 || true
-    rm -f /tmp/test_fortran.f90 /tmp/dummy_coverage.md 2>/dev/null || true
-    
-    print_success "Application execution completed - coverage data generated"
-    
-    # Verify coverage data generation
-    local gcda_count gcno_count
-    gcda_count=$(find build -name "*.gcda" 2>/dev/null | wc -l)
-    gcno_count=$(find build -name "*.gcno" 2>/dev/null | wc -l)
-    
-    print_info "Coverage data files:"
-    print_info "  .gcda files (runtime data): $gcda_count"
-    print_info "  .gcno files (instrumentation): $gcno_count"
-    
-    if [ "$gcda_count" -eq 0 ]; then
-        print_error "No .gcda files generated - application execution may have failed"
-        return 1
-    fi
-    
-    # Regenerate .gcno files for gcov processing (they're consumed during runtime)
-    print_info "Regenerating .gcno files for gcov processing..."
-    fpm build --flag "-fprofile-arcs -ftest-coverage" > /dev/null
-    
-    gcno_count=$(find build -name "*.gcno" 2>/dev/null | wc -l)
-    print_info "Regenerated .gcno files: $gcno_count"
-    
-    return 0
-}
-
-# Function 3: Process coverage data with gcov and manage files
-process_coverage_data() {
-    print_info "Processing coverage data with gcov..."
-    
-    local build_dirs
-    build_dirs=$(find build -name "*.gcda" | xargs dirname | sort -u 2>/dev/null || true)
-    
-    if [ -z "$build_dirs" ]; then
-        print_error "No build directories with coverage data found"
-        return 1
-    fi
-    
-    print_info "Processing build directories:"
-    local total_gcov_files=0
-    echo "$build_dirs" | while IFS= read -r build_dir; do
-        if [ -n "$build_dir" ] && [ -d "$build_dir" ]; then
-            print_info "  Processing: $build_dir"
-            
-            # Change to build directory and run gcov
-            (
-                cd "$build_dir" || exit 1
-                if ls *.gcno >/dev/null 2>&1; then
-                    # Prefer invoking gcov with an explicit object directory and
-                    # source files to avoid "Cannot open source file" path issues.
-                    SRC_LIST=$(find "$PROJECT_ROOT/$SOURCE_DIR" -type f -name "*.f90" 2>/dev/null | tr '\n' ' ')
-                    if [ -n "$SRC_LIST" ]; then
-                        # shellcheck disable=SC2086
-                        gcov --object-directory="$PWD" $SRC_LIST 2>/dev/null || true
-                    else
-                        gcov --object-directory="$PWD" *.gcno 2>/dev/null || true
-                    fi
-                    local gcov_count
-                    gcov_count=$(ls *.gcov 2>/dev/null | wc -l || echo "0")
-                    print_info "    Generated $gcov_count .gcov files"
-                    
-                    # Move meaningful .gcov files to project root
-                    if [ "$gcov_count" -gt 0 ]; then
-                        # Filter meaningful files (exclude empty ones)
-                        for gcov_file in *.gcov; do
-                            if [ -f "$gcov_file" ] && [ "$(wc -l < "$gcov_file")" -gt 1 ]; then
-                                cp "$gcov_file" "$PROJECT_ROOT/" 2>/dev/null || true
-                                total_gcov_files=$((total_gcov_files + 1))
-                            fi
-                        done
-                    fi
-                fi
-            )
-        fi
-    done
-    
-    # Verify .gcov files available for analysis
-    local gcov_files_root
-    gcov_files_root=$(ls *.gcov 2>/dev/null | wc -l || echo "0")
-    
-    print_info "Total meaningful .gcov files in project root: $gcov_files_root"
-    
-    if [ "$gcov_files_root" -eq 0 ]; then
-        print_warning "No .gcov files found in project root"
-        print_warning "This may indicate:"
-        print_warning "  - Application execution didn't cover many source modules"
-        print_warning "  - Most coverage is in dependencies/infrastructure code"
-        print_warning "  - Need to run more comprehensive application scenarios"
-        
-        # Try to find any .gcov files that might have source coverage
-        print_info "Searching for any .gcov files with source coverage..."
-        find build -name "*.gcov" -exec grep -l "src/" {} \; 2>/dev/null | while IFS= read -r src_gcov; do
-            print_info "Found source coverage file: $src_gcov"
-            cp "$src_gcov" "$PROJECT_ROOT/" 2>/dev/null || true
-        done
-        
-        gcov_files_root=$(ls *.gcov 2>/dev/null | wc -l || echo "0")
-        print_info "Source .gcov files copied: $gcov_files_root"
-    fi
-    
-    if [ "$gcov_files_root" -eq 0 ]; then
-        print_error "No coverage data available for analysis"
-        print_error "The application may need more comprehensive test scenarios"
-        return 1
-    fi
-    
-    return 0
-}
-
-# Function 4: Generate final FortCov coverage report
-generate_coverage_report() {
-    print_info "Generating coverage report..."
-    
-    local clean_fortcov_exe
-    clean_fortcov_exe=$(find build -name fortcov -type f -executable | head -1)
-    
-    if [ -n "$clean_fortcov_exe" ]; then
-        local gcov_files_list
-        gcov_files_list=$(ls *.gcov 2>/dev/null | tr '\n' ' ' || echo "")
-        
-        if [ -n "$gcov_files_list" ]; then
-            print_info "Running: $clean_fortcov_exe --source $SOURCE_DIR --output $COVERAGE_OUTPUT $gcov_files_list"
-            # shellcheck disable=SC2086
-            "$clean_fortcov_exe" --source "$SOURCE_DIR" --output "$COVERAGE_OUTPUT" $gcov_files_list || {
-                print_warning "Coverage analysis completed with warnings"
-            }
-        fi
-    fi
-    
-    # Report summary
-    if [ -f "$COVERAGE_OUTPUT" ]; then
-        print_success "Coverage report generated: $COVERAGE_OUTPUT"
-        local lines
-        lines=$(wc -l < "$COVERAGE_OUTPUT" 2>/dev/null || echo "0")
-        print_info "Report size: $lines lines"
-    else
-        print_warning "Coverage report not generated, but .gcov files available"
-        print_info "Manual analysis: ls *.gcov | head -5"
-    fi
-    
-    print_info "Cleanup: .gcov files available for manual analysis"
-    print_info "To clean: rm -f *.gcov"
-    
-    return 0
-}
-
-# Main workflow orchestrator function
-generate_fpm_application_coverage() {
-    print_info "FPM Coverage Workflow Fix - Issue #1052"
-    print_info "Generating application source coverage (not test coverage)"
-    
-    # Step 1: Build instrumented application
-    local fortcov_exe
-    fortcov_exe=$(build_instrumented_application) || return 1
-    
-    # Step 2: Execute application scenarios to generate coverage data
-    execute_application_scenarios "$fortcov_exe" || return 1
-    
-    # Step 3: Process coverage data with gcov
-    process_coverage_data || return 1
-    
-    # Step 4: Generate final coverage report
-    generate_coverage_report || return 1
-    
-    print_success "FPM application coverage workflow completed!"
-    
-    return 0
-}
-
-# Usage information
-usage() {
-    echo "FPM Coverage Workflow Fix Script"
-    echo "Generates application coverage (not test coverage)"
-    echo ""
-    echo "Usage: $0 [OUTPUT_FILE] [SOURCE_DIR]"
-    echo ""
-    echo "Arguments:"
-    echo "  OUTPUT_FILE    Coverage report output file (default: coverage.md)"
-    echo "  SOURCE_DIR     Source directory to analyze (default: src)"
-    echo ""
-    echo "Examples:"
-    echo "  $0                              # Generate coverage.md for src/"
-    echo "  $0 my_coverage.html src         # Generate HTML report for src/"
-    echo "  $0 coverage.json app            # Generate JSON report for app/"
-    echo ""
-    echo "This script fixes Issue #1052 by:"
-    echo "1. Building instrumented application (not just tests)"
-    echo "2. Running application to exercise source code"
-    echo "3. Processing runtime coverage data with gcov"
-    echo "4. Generating meaningful coverage reports"
-}
-
-# Main script execution
-case "${1:-generate}" in
-    "help"|"-h"|"--help")
-        usage
-        ;;
-    *)
-        generate_fpm_application_coverage
-        ;;
-esac
