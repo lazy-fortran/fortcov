@@ -19,8 +19,9 @@ contains
         print '(A)', ""
         print '(A)', "Usage: fortcov [OPTIONS] [COVERAGE_FILES...]"
         print '(A)', ""
-        print '(A)', "Note: FortCov analyzes .gcov files; it does not run gcov."
-        print '(A)', "      Generate .gcov with gcov (or scripts/fpm_coverage_bridge.sh) first."
+        print '(A)', "Note: By default, FortCov analyzes existing .gcov files and"
+        print '(A)', "      does not invoke gcov. Use --gcov to auto-discover builds"
+        print '(A)', "      and generate .gcov from coverage artifacts when needed."
         print '(A)', ""
         print '(A)', "Options:"
         print '(A)', "  -h, --help                Show this help message and exit"
@@ -33,8 +34,8 @@ contains
         print '(A)', "  -e, --exclude PATTERN     Exclude files matching pattern"
         print '(A)', "  -i, --include PATTERN     Include only files matching pattern"
         print '(A)', "  --import FILE             Import coverage data from JSON/XML file"
-        ! SECURITY FIX Issue #963: --gcov-executable REMOVED - shell injection vulnerability
-        ! FortCov does not invoke gcov; gcov-related invocation flags removed
+        ! SECURITY: No user-defined gcov executable flag; FortCov uses a
+        ! built-in safe path when --gcov is specified. External overrides removed.
         print '(A)', ""
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
@@ -57,6 +58,8 @@ contains
         print '(A)', "Auto-Discovery Options:"
         print '(A)', "  --auto-discovery          Enable auto-discovery of sources (default)"
         print '(A)', "  --no-auto-discovery       Disable auto-discovery"
+        print '(A)', "  --gcov                    Discover build dirs and generate .gcov"
+        print '(A)', "  --discover-and-gcov       Alias for --gcov"
         print '(A)', "  --auto-test               Enable automatic test execution (default)"
         print '(A)', "  --no-auto-test            Disable automatic test execution"
         print '(A)', "  --test-timeout SECONDS    Test execution timeout in seconds (default: 300)"
@@ -71,6 +74,7 @@ contains
         print '(A)', "  fortcov --source=src *.gcov             # Analyze gcov files with source"
         print '(A)', "  fortcov --source=src *.gcov --output=report.md # Generate markdown report"
         print '(A)', "  fortcov --source=. *.gcov --format=json        # JSON output format"
+        print '(A)', "  fortcov --gcov --output=coverage.md     # Auto-generate .gcov then analyze"
         print '(A)', ""
         print '(A)', "For more information, visit: https://github.com/lazy-fortran/fortcov"
 
