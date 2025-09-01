@@ -3,6 +3,7 @@ module report_generator_core
     !! 
     !! Extracted from report_engine.f90 for SRP compliance (Issue #718).
     !! Responsible for generating HTML and terminal reports.
+    use iso_fortran_env, only: real64
     use coverage_model_core
     use data_transformer_core
     use data_transformer_types
@@ -127,8 +128,9 @@ contains
             return
         end if
         
-        ! Start interactive TUI
-        call start_interactive_tui(session, terminal_output, success, error_msg)
+        ! Start interactive TUI with configurable timeout
+        call start_interactive_tui(session, terminal_output, success, error_msg, &
+                                   real(config%startup_timeout_seconds, real64))
     end subroutine generator_generate_terminal
     
     ! Generate diff report between two coverage datasets
