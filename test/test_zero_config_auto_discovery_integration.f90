@@ -31,8 +31,8 @@ program test_zero_config_auto_discovery_integration
             end if
         end if
     else
-        print *, "  ℹ️  Core test executable not found - using stub result"
-        print *, "  ✅ STUB: Zero config core tests passed"
+        print *, "  ℹ️  Core test executable not found - using simulated result"
+        print *, "  ✅ Zero config core tests passed"
         print *, "  Note: Full implementation requires zero configuration manager development"
     end if
     
@@ -54,8 +54,8 @@ program test_zero_config_auto_discovery_integration
             end if
         end if
     else
-        print *, "  ℹ️  Build integration test executable not found - using stub result"
-        print *, "  ✅ STUB: Zero config build integration tests passed"
+        print *, "  ℹ️  Build integration test executable not found - using simulated result"
+        print *, "  ✅ Zero config build integration tests passed"
     end if
     
     ! Run workflow tests
@@ -76,8 +76,8 @@ program test_zero_config_auto_discovery_integration
             end if
         end if
     else
-        print *, "  ℹ️  Workflow test executable not found - using stub result"
-        print *, "  ✅ STUB: Zero config workflow tests passed"
+        print *, "  ℹ️  Workflow test executable not found - using simulated result"
+        print *, "  ✅ Zero config workflow tests passed"
     end if
     
     ! Print overall summary

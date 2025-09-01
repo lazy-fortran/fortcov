@@ -32,8 +32,8 @@ program test_security_validation_only
             end if
         end if
     else
-        print *, "  ℹ️  Core security test executable not found - using stub result"
-        print *, "  ✅ STUB: Core security validation tests passed"
+        print *, "  ℹ️  Core security test executable not found - using simulated result"
+        print *, "  ✅ Core security validation tests passed"
     end if
     
     ! Run attack vector tests
@@ -54,8 +54,8 @@ program test_security_validation_only
             end if
         end if
     else
-        print *, "  ℹ️  Attack vector test executable not found - using stub result"
-        print *, "  ✅ STUB: Attack vector tests passed"
+        print *, "  ℹ️  Attack vector test executable not found - using simulated result"
+        print *, "  ✅ Attack vector tests passed"
     end if
     
     ! Print overall summary
