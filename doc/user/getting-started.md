@@ -50,8 +50,12 @@ EOF
 # 4. Generate coverage
 # NOTE: FPM does not have a --coverage flag. Use --flag with compiler options:
 fpm test --flag "-fprofile-arcs -ftest-coverage"
+project_root="$(pwd)"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  gcov --object-directory="$dir" "$dir"/*.gcno 2>/dev/null || true
+  (
+    cd "$dir" && gcov *.gcno >/dev/null 2>&1 || true
+    mv ./*.gcov "$project_root" 2>/dev/null || true
+  )
 done
 fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown report
 # Optional: Generate JSON output using json-fortran library
