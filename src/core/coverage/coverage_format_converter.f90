@@ -14,7 +14,7 @@ module coverage_format_converter
     use coverage_model_core
     use json_io, only: export_json_coverage, import_json_coverage
     use string_utils, only: real_to_string, int_to_string
-    use json_module, only: json_file, json_value, json_core
+    use json_module, only: json_value, json_core
     use json_kinds, only: RK, IK
     use xml_utils, only: is_well_formed_xml, parse_cobertura_xml
     use timestamp_utils, only: get_current_timestamp
