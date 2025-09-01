@@ -129,18 +129,24 @@ contains
     
     subroutine apply_coverage_file_filtering(all_files, config, filtered_files)
         !! Apply filtering to coverage files if needed
+        !! Issue #884: Exclude patterns must NOT filter .gcov discovery
+        !!             Filtering is applied later to source paths within
+        !!             the parsed coverage data, not to the coverage files
+        !!             themselves. Here we simply pass through discovered
+        !!             coverage files unchanged.
         character(len=:), allocatable, intent(in) :: all_files(:)
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: filtered_files(:)
-        
-        ! Filter files by exclude patterns
-        if (allocated(all_files)) then
-            ! Bypass filtering for empty arrays to avoid allocation issues
-            if (size(all_files) == 0) then
-                allocate(character(len=256) :: filtered_files(0))
-            else
-                filtered_files = filter_coverage_files_by_patterns(all_files, config)
-            end if
+
+        if (.not. allocated(all_files)) then
+            return
+        end if
+
+        if (size(all_files) == 0) then
+            allocate(character(len=256) :: filtered_files(0))
+        else
+            allocate(character(len=len(all_files(1))) :: filtered_files(size(all_files)))
+            filtered_files = all_files
         end if
     end subroutine apply_coverage_file_filtering
     
@@ -182,7 +188,7 @@ contains
         integer, intent(in) :: file_count
         
         if (.not. config%quiet) then
-            print *, "⚠️  Limiting coverage files from", file_count, "to", config%max_files
+            print *, "Limiting coverage files from", file_count, "to", config%max_files
         end if
     end subroutine report_file_count_limit
     
@@ -201,7 +207,7 @@ contains
         end if
         
         copy_size = min(size(files), new_size)
-        allocate(character(len=len(files)) :: temp_files(new_size))
+        allocate(character(len=len(files(1))) :: temp_files(new_size))
         
         do i = 1, copy_size
             temp_files(i) = files(i)
