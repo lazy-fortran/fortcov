@@ -20,14 +20,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y gfortran python3 python3-pip
           python3 -m pip install --upgrade pip
-          python3 -m pip install gcovr pycobertura
+          python3 -m pip install gcovr
 
-      - name: Install fpm
-        run: |
-          curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
-          chmod +x fpm
-          sudo mv fpm /usr/local/bin/
-          fpm --version
+      - name: Set up fpm
+        uses: fortran-lang/setup-fpm@v5
 
       - name: Build with coverage and generate FortCov markdown
         run: |
