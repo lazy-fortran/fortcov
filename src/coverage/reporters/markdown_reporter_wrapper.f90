@@ -23,7 +23,8 @@ contains
                                       success, error_message, &
                                       diff_data, threshold)
         use markdown_reporter, only: generate_markdown_report, markdown_report_options_t
-        use file_utilities, only: write_text_file
+        use file_utilities, only: write_text_file_safe
+        use error_handling_core, only: error_context_t, ERROR_SUCCESS
         class(markdown_reporter_t), intent(in) :: this
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=*), intent(in) :: output_path
@@ -34,7 +35,7 @@ contains
         
         character(len=:), allocatable :: markdown_content
         type(markdown_report_options_t) :: options
-        logical :: write_error
+        type(error_context_t) :: err_ctx
         
         ! Initialize markdown options with defaults
         call options%init()
@@ -48,10 +49,9 @@ contains
             return
         end if
         
-        ! Write markdown content to file
-        call write_text_file(output_path, markdown_content, write_error)
-        
-        if (write_error) then
+        ! Write markdown content to file (safe: ensures directory exists)
+        call write_text_file_safe(output_path, markdown_content, err_ctx)
+        if (err_ctx%error_code /= ERROR_SUCCESS) then
             success = .false.
             error_message = "Failed to write markdown file: " // trim(output_path)
         else
