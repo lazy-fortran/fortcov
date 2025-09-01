@@ -48,7 +48,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== FPM PROJECT SCENARIO ==="
         
-        workspace_path = trim(base_test_dir) // "_fmp"
+        workspace_path = get_discovery_workspace_path(trim(base_test_dir) // "_fmp")
         ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path))
         
         call create_fpm_test_project(workspace_path)
@@ -117,7 +117,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== CMAKE PROJECT SCENARIO ==="
         
-        workspace_path = trim(base_test_dir) // "_cmake"
+        workspace_path = get_discovery_workspace_path(trim(base_test_dir) // "_cmake")
         ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path))
         
         call create_cmake_test_project(workspace_path)
@@ -182,7 +182,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== MAKE PROJECT SCENARIO ==="
         
-        workspace_path = trim(base_test_dir) // "_make"
+        workspace_path = get_discovery_workspace_path(trim(base_test_dir) // "_make")
         ! call execute_command_line( ! CI-disabled:'mkdir -p ' // trim(workspace_path))
         
         call create_make_test_project(workspace_path)

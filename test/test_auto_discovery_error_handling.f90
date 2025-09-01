@@ -54,7 +54,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== MISSING BUILD SYSTEM HANDLING ==="
         
-        empty_workspace = trim(base_test_dir) // "_empty"
+        empty_workspace = get_discovery_workspace_path(trim(base_test_dir) // "_empty")
         ! Workspace creation disabled for CI reliability
         call safe_mkdir_for_error_tests(empty_workspace)
         
@@ -81,7 +81,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== TEST FAILURE HANDLING ==="
         
-        workspace_path = trim(base_test_dir) // "_test_failure"
+        workspace_path = get_discovery_workspace_path(trim(base_test_dir) // "_test_failure")
         call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create a project with failing tests to simulate test failures
@@ -109,7 +109,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== CORRUPTED GCOV HANDLING ==="
         
-        workspace_path = trim(base_test_dir) // "_corrupted"
+        workspace_path = get_discovery_workspace_path(trim(base_test_dir) // "_corrupted")
         call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create corrupted gcov file
@@ -174,7 +174,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== EMPTY PROJECT HANDLING ==="
         
-        workspace_path = trim(base_test_dir) // "_empty_project"
+        workspace_path = get_discovery_workspace_path(trim(base_test_dir) // "_empty_project")
         call safe_mkdir_for_error_tests(workspace_path)
         
         ! Create empty FPM project (fpm.toml exists but no sources)

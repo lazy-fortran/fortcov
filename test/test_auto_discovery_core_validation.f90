@@ -54,7 +54,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== BUILD SYSTEM DETECTION ACCURACY ==="
         
-        workspace_path = trim(test_dir)
+        workspace_path = get_discovery_workspace_path(trim(test_dir))
         
         ! Test FPM detection
         call execute_command_line('echo "name = ""test_project""" > ' // &
@@ -128,7 +128,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== AUTO TEST EXECUTION WORKFLOW ==="
         
-        workspace_path = trim(test_dir)
+        workspace_path = get_discovery_workspace_path(trim(test_dir))
         
         ! Setup FPM project for testing
         call create_fpm_test_project(workspace_path)
@@ -172,7 +172,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== GCOV GENERATION AND DISCOVERY ==="
         
-        workspace_path = trim(test_dir)
+        workspace_path = get_discovery_workspace_path(trim(test_dir))
         
         ! Create mock gcov files to simulate successful test execution
         call create_mock_gcov_files(workspace_path)
@@ -230,7 +230,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== COVERAGE PARSING INTEGRATION ==="
         
-        workspace_path = trim(test_dir)
+        workspace_path = get_discovery_workspace_path(trim(test_dir))
         
         ! Ensure we have mock gcov files
         call create_mock_gcov_files(workspace_path)

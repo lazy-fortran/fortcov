@@ -31,6 +31,7 @@ module test_auto_discovery_shared_utilities
     public :: create_mock_gcov_files
     public :: create_complete_project_scenario
     public :: test_environment_detected
+    public :: get_discovery_workspace_path
     
     ! Constants
     character(len=*), parameter :: DEFAULT_TEST_DIR = "test_auto_discovery_workspace"
@@ -53,6 +54,17 @@ contains
             write(output_unit, '(A)') "   Details: " // trim(details)
         end if
     end subroutine assert_test
+
+    function get_discovery_workspace_path(name) result(full_path)
+        !! Compute the absolute path for a discovery test workspace
+        !! under the system temporary directory to ensure CI hygiene.
+        character(len=*), intent(in) :: name
+        character(len=:), allocatable :: temp_base
+        character(len=512) :: full_path
+
+        temp_base = get_temp_dir()
+        full_path = trim(temp_base) // '/fortcov_tests/' // trim(name)
+    end function get_discovery_workspace_path
 
     subroutine setup_test_workspace(test_dir)
         !! Creates a temporary workspace for testing auto-discovery
