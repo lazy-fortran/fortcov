@@ -90,7 +90,6 @@ contains
         character(len=:), allocatable, intent(out) :: build_dirs(:)
         
         character(len=:), allocatable :: gcda_files(:)
-        character(len=500) :: dir_path
         integer :: i
         
         ! Find all .gcda files (indicates executed coverage data)
@@ -108,18 +107,12 @@ contains
         end if
         
         if (allocated(gcda_files) .and. size(gcda_files) > 0) then
-            ! Use first .gcda file to determine build directory structure
-            ! For simplicity, assume all build dirs follow same pattern
-            dir_path = gcda_files(1)
-            
-            ! Extract directory path (remove filename)
-            i = index(dir_path, '/', back=.true.)
+            ! Use first .gcda file to determine build directory path
+            i = index(gcda_files(1), '/', back=.true.)
             if (i > 0) then
-                dir_path = dir_path(1:i-1)
-                
-                ! Allocate and set single build directory
-                allocate(character(len=500) :: build_dirs(1))
-                build_dirs(1) = trim(dir_path)
+                ! Allocate and set single build directory with exact length
+                allocate(character(len=i-1) :: build_dirs(1))
+                build_dirs(1) = gcda_files(1)(1:i-1)
             end if
         end if
         
@@ -131,7 +124,6 @@ contains
         character(len=:), allocatable, intent(out) :: gcov_files(:)
         
         character(len=:), allocatable :: found_gcov_files(:)
-        character(len=300) :: command
         character(len=256), parameter :: GCOV_OUTPUT_DIR = "build/gcov"
         integer :: i, stat
         logical :: dir_exists
@@ -223,7 +215,7 @@ contains
         else
             ! CRITICAL FIX: Ensure files is always allocated to prevent memory issues
             ! If no files found and no files generated, allocate empty array
-            allocate(character(len=256) :: files(0))
+            allocate(character(len=1) :: files(0))
         end if
     end subroutine finalize_gcov_file_result
     
@@ -234,7 +226,6 @@ contains
         logical, intent(out) :: success
         
         character(len=300) :: command
-        character(len=1000) :: build_path
         character(len=:), allocatable :: gcov_exe
         integer :: i, exit_status, gcno_count, gcda_count
         logical :: has_compatible_files
@@ -246,14 +237,12 @@ contains
         
         ! Process each build directory
         do i = 1, size(build_dirs)
-            build_path = trim(build_dirs(i))
-            
             ! Check for gcno/gcda file compatibility before running gcov
-            call check_coverage_file_compatibility(build_path, has_compatible_files, gcno_count, gcda_count)
+            call check_coverage_file_compatibility(trim(build_dirs(i)), has_compatible_files, gcno_count, gcda_count)
             
             if (has_compatible_files) then
                 ! SECURITY FIX Issue #963: Generate gcov files using secure execution
-                call generate_gcov_files_secure(trim(build_path), trim(gcov_exe), exit_status)
+                call generate_gcov_files_secure(trim(build_dirs(i)), trim(gcov_exe), exit_status)
                 
                 if (exit_status == 0) then
                     success = .true.
@@ -261,7 +250,7 @@ contains
             else
                 ! Report incompatibility issue for debugging
                 if (.not. config%quiet) then
-                    print *, "⚠️  Skipping directory due to gcno/gcda incompatibility: ", trim(build_path)
+                    print *, "⚠️  Skipping directory due to gcno/gcda incompatibility: ", trim(build_dirs(i))
                     print *, "   .gcno files: ", gcno_count, ", .gcda files: ", gcda_count
                 end if
             end if
@@ -279,7 +268,7 @@ contains
         logical :: path_exists
         
         ! Initialize to empty
-        allocate(character(len=256) :: all_files(0))
+        allocate(character(len=1) :: all_files(0))
         total_files = 0
         
         ! Search each path for .gcov files
@@ -304,7 +293,7 @@ contains
             found_files = all_files
         else
             ! Return empty array
-            allocate(character(len=256) :: found_files(0))
+            allocate(character(len=1) :: found_files(0))
         end if
         
     end subroutine search_gcov_files_in_paths
@@ -345,22 +334,19 @@ contains
         integer, intent(out) :: gcno_count, gcda_count
         
         character(len=:), allocatable :: gcno_files(:), gcda_files(:)
-        character(len=300) :: search_pattern
         
         has_compatible_files = .false.
         gcno_count = 0
         gcda_count = 0
         
         ! Find .gcno files in build directory
-        write(search_pattern, '(A)') trim(build_path) // "/*.gcno"
-        gcno_files = find_files(trim(search_pattern))
+        gcno_files = find_files(trim(build_path) // "/*.gcno")
         if (allocated(gcno_files)) then
             gcno_count = size(gcno_files)
         end if
         
         ! Find .gcda files in build directory
-        write(search_pattern, '(A)') trim(build_path) // "/*.gcda"
-        gcda_files = find_files(trim(search_pattern))
+        gcda_files = find_files(trim(build_path) // "/*.gcda")
         if (allocated(gcda_files)) then
             gcda_count = size(gcda_files)
         end if
@@ -377,7 +363,7 @@ contains
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: exit_status
         
-        character(len=512) :: temp_file_path
+        character(len=:), allocatable :: temp_file_path
         integer :: temp_unit
         logical :: dir_exists
         
