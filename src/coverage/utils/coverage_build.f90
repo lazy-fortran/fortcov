@@ -8,10 +8,8 @@ module coverage_build
     use config_core
     use build_detector_core
     use build_system_validation, only: detect_and_validate_build_system, &
-                                       report_build_detection_failed, &
                                        report_unknown_build_system, &
-                                       report_build_tool_unavailable, &
-                                       report_build_system_detected
+                                       report_build_tool_unavailable
     use error_handling_core
     implicit none
     private
@@ -51,8 +49,8 @@ contains
             exit_code = 3  ! Coverage support validation failed
             return
         end if
-        
-        call report_build_system_detected(config, build_info)
+        ! Successful detection already reported by detect_and_validate_build_system
+        ! Avoid duplicate reporting here
         
     end function detect_and_validate_build_system_for_coverage
 

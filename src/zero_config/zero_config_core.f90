@@ -252,8 +252,8 @@ contains
         
         if (.not. config%quiet) then
             if (allocated(discovered_coverage_files)) then
-                print '(A,I0)', "FortCov: Discovery returned ", &
-                                  size(discovered_coverage_files), " files"
+                print '(A,I0,A)', "FortCov: Discovery returned ", &
+                                   size(discovered_coverage_files), " files"
             else
                 print '(A)', "FortCov: Discovery returned no allocated array"
             end if
