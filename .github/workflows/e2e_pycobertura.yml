@@ -35,8 +35,9 @@ jobs:
 
       - name: Generate Cobertura XML via gcovr
         run: |
-          # Use project root as base; gcovr will discover .gcno/.gcda in build/
-          gcovr -r . --xml-pretty -o coverage.xml
+          # Use existing .gcov files generated earlier to avoid re-running gcov
+          # and keep source path resolution consistent. Filter to project src/.
+          gcovr -r . --filter src --xml-pretty -o coverage.xml --gcov-use-existing-files
 
       - name: Compare totals (Cobertura vs FortCov)
         run: |
@@ -50,4 +51,3 @@ jobs:
           path: |
             coverage.xml
             coverage.md
-
