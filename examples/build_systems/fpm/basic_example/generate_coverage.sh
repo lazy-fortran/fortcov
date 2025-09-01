@@ -29,15 +29,15 @@ find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
 done
 
 echo "Command: gcov src/*.f90"
-gcov src/*.f90 >/dev/null 2>&1 || echo "Source gcov generation completed"
+gcov src/*.f90 >/dev/null 2>&1 && echo "Source gcov generation completed"
 
 echo "Command: fortcov --source . --exclude build/* --exclude test/* coverage_out/*.gcov"
-fortcov --source . --exclude build/* --exclude test/* coverage_out/*.gcov || echo "Coverage analysis completed"
+fortcov --source . --exclude build/* --exclude test/* coverage_out/*.gcov && echo "Coverage analysis completed"
 
 echo
 echo "Method 2: Alternative approach with different files"
 echo "Command: fortcov --source=src demo_calculator.f90.gcov"
-fortcov --source=src demo_calculator.f90.gcov 2>/dev/null || echo "Single file analysis completed"
+fortcov --source=src demo_calculator.f90.gcov 2>/dev/null && echo "Single file analysis completed"
 
 echo
 echo "=== Results ==="
@@ -53,8 +53,8 @@ echo "3. fortcov --source=src coverage_out/*.gcov"
 echo ""
 echo "Generating report files (markdown and JSON)"
 fortcov --source=. --exclude build/* --exclude test/* coverage_out/*.gcov \
-  --format=markdown --output=coverage.md || echo "Markdown report generated"
+  --format=markdown --output=coverage.md && echo "Markdown report generated"
 fortcov --source=. --exclude build/* --exclude test/* coverage_out/*.gcov \
-  --format=json --output=coverage.json || echo "JSON report generated"
+  --format=json --output=coverage.json && echo "JSON report generated"
 test -f coverage.md && echo "✓ coverage.md created"
 test -f coverage.json && echo "✓ coverage.json created"
