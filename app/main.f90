@@ -149,8 +149,8 @@ program main
       end if
       print *, ""
       print *, "For configuration help:"
-      print *, "   • See example: cat fortcov.nml.example"
-      print *, "   • Documentation: https://github.com/lazy-fortran/fortcov"
+      print *, "   * See example: cat fortcov.nml.example"
+      print *, "   * Documentation: https://github.com/lazy-fortran/fortcov"
       ! EPIC 1 FIX: Map data availability errors to proper exit codes
       if (index(error_ctx%message, "Source path not found") > 0 .or. &
           index(error_ctx%message, "Coverage file not found") > 0) then
