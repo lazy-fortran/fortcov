@@ -21,6 +21,17 @@ program test_string_utils_matches_pattern_issue_1106
         "matches_pattern false for src/*/def.* with two dirs", &
         "Expected false for src/x/y/def.f90 vs src/*/def.*")
 
+    ! Expect true: two directory wildcards should match exactly two dirs
+    ok = matches_pattern("src/a/b/def.f90", "src/*/*/def.*")
+    call assert_test(ok, &
+        "matches_pattern true for src/*/*/def.* with two dirs", &
+        "Expected true for src/a/b/def.f90 vs src/*/*/def.*")
+
+    ! Expect false: "src/*/def.*" should not match with zero dirs
+    ok = matches_pattern("src/def.f90", "src/*/def.*")
+    call assert_test(.not. ok, &
+        "matches_pattern false for src/*/def.* with zero dirs", &
+        "Expected false for src/def.f90 vs src/*/def.*")
+
     call print_test_summary("string_utils.matches_pattern issue #1106", .true.)
 end program test_string_utils_matches_pattern_issue_1106
-
