@@ -8,6 +8,7 @@ module file_search_secure
     use path_security, only: validate_path_security
     use security_assessment_core, only: assess_pattern_security_risks
     use file_deletion_secure, only: safe_close_and_delete
+    use iso_c_binding, only: c_int
     implicit none
     private
     
@@ -276,6 +277,7 @@ contains
         character(len=64) :: test_extensions(10)
         integer :: i, ext_count
         logical :: file_exists
+        character(len=32) :: numstr
         
         ! Common file extensions to check for gcov files
         test_extensions(1) = '.gcda'
@@ -293,14 +295,15 @@ contains
         ! Simple pattern matching for common cases
         if (pattern == '*.gcda' .or. pattern == '*.gcno' .or. pattern == '*.gcov') then
             do i = 1, 100  ! Check up to 100 potential file numbers
-                write(full_path, '(A,"/app_",I0,A)') trim(directory), i, trim(pattern(2:))
+                write(numstr, '(I0)') i
+                full_path = trim(directory) // '/app_' // trim(numstr) // trim(pattern(2:))
                 inquire(file=full_path, exist=file_exists)
                 if (file_exists .and. num_files < size(files)) then
                     num_files = num_files + 1
                     files(num_files) = full_path
                 end if
                 
-                write(full_path, '(A,"/src_",I0,A)') trim(directory), i, trim(pattern(2:))
+                full_path = trim(directory) // '/src_' // trim(numstr) // trim(pattern(2:))
                 inquire(file=full_path, exist=file_exists)
                 if (file_exists .and. num_files < size(files)) then
                     num_files = num_files + 1
@@ -368,7 +371,14 @@ contains
     ! Get process ID helper
     subroutine get_process_id(pid)
         integer, intent(out) :: pid
-        pid = 1234  ! Simplified - in real implementation would get actual PID
+        interface
+            function c_getpid() bind(C, name="getpid") result(c_pid)
+                import :: c_int
+                integer(c_int) :: c_pid
+            end function c_getpid
+        end interface
+        pid = int(c_getpid())
+        if (pid <= 0) pid = 1
     end subroutine get_process_id
 
 end module file_search_secure
