@@ -31,6 +31,10 @@ contains
         
         ! Setup test environment - isolate into a temp workspace (CI-safe)
         call create_temp_subdir('fortcov_infra_ext', temp_dir, setup_success)
+        if (.not. setup_success) then
+            write(error_unit, '(A)') "Failed to create temp test directory"
+            return
+        end if
         
         ! Extended infrastructure tests
         call test_test_isolation_guarantees(temp_dir, test_count, &

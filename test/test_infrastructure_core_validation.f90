@@ -26,9 +26,8 @@ contains
         
         ! Setup test environment - isolate into a temp workspace (CI-safe)
         call create_temp_subdir('fortcov_infra_core', temp_dir, setup_success)
-        call setup_core_test_directory(temp_dir, setup_success)
         if (.not. setup_success) then
-            write(error_unit, '(A)') "Failed to create test environment"
+            write(error_unit, '(A)') "Failed to create temp test directory"
             return
         end if
         
@@ -265,31 +264,7 @@ contains
         
     end subroutine test_error_handling_robustness
 
-    subroutine safe_cleanup_test_directory(temp_dir)
-        !! Safely remove test directory and contents using Fortran intrinsics
-        character(len=*), intent(in) :: temp_dir
-        type(error_context_t) :: error_ctx
-        character(len=512) :: test_files(10)
-        integer :: i
-        
-        ! List common test files to clean up
-        test_files(1) = 'test_infra_cmd_test.txt'
-        test_files(2) = 'test_infra_rapid_1.txt'
-        test_files(3) = 'test_infra_rapid_2.txt'
-        test_files(4) = 'test_infra_rapid_3.txt'
-        test_files(5) = 'test_infra_rapid_4.txt'
-        test_files(6) = 'test_infra_rapid_5.txt'
-        test_files(7) = 'test_infra_io_test.txt'
-        test_files(8) = 'test_infra_missing_file.txt'
-        test_files(9) = 'test_infra_test_file.tmp'
-        test_files(10) = 'test_infra_temp_dir_marker'
-        
-        ! Remove individual files
-        do i = 1, 10
-            call safe_remove_file(test_files(i), error_ctx)
-            ! Ignore errors - files may not exist
-        end do
-    end subroutine safe_cleanup_test_directory
+    ! (removed) safe_cleanup_test_directory: unused legacy helper
 
     subroutine create_test_file_secure(filepath, content, exit_status)
         !! Create a test file securely using Fortran I/O instead of shell commands
@@ -352,17 +327,7 @@ contains
 
     ! SECURITY FIX Issue #971: Secure setup and cleanup helper functions
     
-    subroutine setup_core_test_directory(temp_dir, success)
-        !! Secure setup of core test directory - simplified for test reliability
-        character(len=*), intent(in) :: temp_dir
-        logical, intent(out) :: success
-        
-        ! For test infrastructure validation, we don't need actual directories
-        ! We can test file operations in the current directory with unique filenames
-        ! This eliminates directory creation complexity while maintaining security
-        success = .true.
-        
-    end subroutine setup_core_test_directory
+    ! (removed) setup_core_test_directory: temp dir is created by create_temp_subdir
     
     subroutine safe_cleanup_core_test_directory(temp_dir)
         !! Secure cleanup of core test directory
