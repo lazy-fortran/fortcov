@@ -24,8 +24,8 @@ contains
         character(len=:), allocatable :: temp_dir
         logical :: setup_success
         
-        ! Setup test environment - use current directory for test isolation
-        temp_dir = "./test_infra_core_temp"
+        ! Setup test environment - isolate into a temp workspace (CI-safe)
+        call create_temp_subdir('fortcov_infra_core', temp_dir, setup_success)
         call setup_core_test_directory(temp_dir, setup_success)
         if (.not. setup_success) then
             write(error_unit, '(A)') "Failed to create test environment"
@@ -82,7 +82,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== COMMAND EXECUTION STABILITY ==="
         
-        test_file = "test_infra_cmd_test.txt"
+        test_file = trim(temp_dir) // "/test_infra_cmd_test.txt"
         
         ! Test 1: Basic file creation (secure replacement for echo command)
         call create_test_file_secure(test_file, "test", exit_status)
@@ -98,7 +98,7 @@ contains
         
         ! Test 3: Multiple rapid file creation (secure replacement for touch)
         do i = 1, 5
-            call create_test_file_secure('test_infra_rapid_' // &
+            call create_test_file_secure(trim(temp_dir) // '/test_infra_rapid_' // &
                                         char(48 + i) // '.txt', '', exit_status)
             if (exit_status /= 0) exit
         end do
@@ -130,7 +130,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== FILE I/O RELIABILITY ==="
         
-        test_file = "test_infra_io_test.txt"
+        test_file = trim(temp_dir) // "/test_infra_io_test.txt"
         
         ! Test 1: Basic file write
         open(newunit=unit_number, file=trim(test_file), &
@@ -233,12 +233,15 @@ contains
         integer :: unit_number, iostat, cmdstat_val
         character(len=256) :: error_message
         logical :: error_detected
+        character(len=512) :: invalid_path
         
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== ERROR HANDLING ROBUSTNESS ==="
         
-        ! Test 1: File operation error handling
-        open(newunit=unit_number, file="/root/cannot_write_here.txt", &
+        ! Test 1: File operation error handling (robust across privilege levels)
+        ! Use a guaranteed-invalid path under a non-existent subdirectory.
+        invalid_path = './__fortcov_invalid__/cannot_write_here.txt'
+        open(newunit=unit_number, file=trim(invalid_path), &
              status='new', action='write', iostat=iostat, iomsg=error_message)
         call assert_test(iostat /= 0, "File permission error detection", &
                         "Should detect permission errors", &

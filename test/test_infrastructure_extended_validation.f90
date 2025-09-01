@@ -29,9 +29,8 @@ contains
         character(len=:), allocatable :: temp_dir
         logical :: setup_success
         
-        ! Setup test environment - use current directory for test isolation
-        temp_dir = "."  ! Use current directory to avoid directory creation issues
-        setup_success = .true.  ! No setup needed for current directory
+        ! Setup test environment - isolate into a temp workspace (CI-safe)
+        call create_temp_subdir('fortcov_infra_ext', temp_dir, setup_success)
         
         ! Extended infrastructure tests
         call test_test_isolation_guarantees(temp_dir, test_count, &
@@ -91,7 +90,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== TEST ISOLATION GUARANTEES ==="
         
-        isolation_file = "test_infra_isolation_test.txt"
+        isolation_file = trim(temp_dir) // "/test_infra_isolation_test.txt"
         
         ! Test 1: Environment detection
         call assert_test(test_environment_detected(), &
@@ -198,7 +197,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== CLEANUP MECHANISMS ==="
         
-        cleanup_file = "test_infra_cleanup_test.txt"
+        cleanup_file = trim(temp_dir) // "/test_infra_cleanup_test.txt"
         
         ! Test 1: File cleanup
         open(newunit=unit_number, file=trim(cleanup_file), &
@@ -238,7 +237,7 @@ contains
         
         ! Test 1: File handle management
         do i = 1, 5
-            write(test_file, '(A,I0,A)') "test_infra_handle_", i, ".txt"
+            write(test_file, '(A,A,I0,A)') trim(temp_dir), "/test_infra_handle_", i, ".txt"
             open(newunit=unit_number, file=trim(test_file), &
                  status='replace', action='write', iostat=iostat)
             if (iostat == 0) then
@@ -252,7 +251,7 @@ contains
         
         ! ENHANCED CI HYGIENE: Remove test handle files with verification
         do i = 1, 5
-            write(test_file, '(A,I0,A)') "test_infra_handle_", i, ".txt"
+            write(test_file, '(A,A,I0,A)') trim(temp_dir), "/test_infra_handle_", i, ".txt"
             call safe_cleanup_test_file(trim(test_file))
         end do
         
@@ -296,7 +295,7 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== TEMPORARY FILE MANAGEMENT ==="
         
-        temp_file = "test_infra_temp_mgmt_test.tmp"
+        temp_file = trim(temp_dir) // "/test_infra_temp_mgmt_test.tmp"
         
         ! Test 1: Temporary file creation
         open(newunit=unit_number, file=trim(temp_file), &
