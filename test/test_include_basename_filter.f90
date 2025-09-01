@@ -34,7 +34,8 @@ program test_include_basename_filter
     allocate(character(len=256) :: criteria%include_patterns(1))
     criteria%include_patterns(1) = "examples/build_systems/fpm/basic_example/src/*"
 
-    call apply_filter_criteria(input_data, criteria, filtered_data, success, error_msg)
+    call apply_filter_criteria(input_data, criteria, filtered_data, success, &
+        error_msg)
     if (.not. success) then
         print *, "Failed to apply filter: ", trim(error_msg)
         test_passed = .false.
@@ -43,10 +44,13 @@ program test_include_basename_filter
             print *, "Filtered data has no files"
             test_passed = .false.
         else if (size(filtered_data%files) /= 1) then
-            print *, "Expected 1 file after filtering, got", size(filtered_data%files)
+            print *, "Expected 1 file after filtering, got", &
+                size(filtered_data%files)
             test_passed = .false.
-        else if (trim(filtered_data%files(1)%filename) /= "demo_calculator.f90") then
-            print *, "Unexpected filename after filtering: ", trim(filtered_data%files(1)%filename)
+        else if (trim(filtered_data%files(1)%filename) /= &
+                 "demo_calculator.f90") then
+            print *, "Unexpected filename after filtering: ", &
+                trim(filtered_data%files(1)%filename)
             test_passed = .false.
         end if
     end if
