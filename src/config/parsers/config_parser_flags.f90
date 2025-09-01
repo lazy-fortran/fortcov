@@ -44,7 +44,8 @@ contains
          case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
                "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
                "--auto-test", "--no-auto-test", "--auto-discovery", &
-               "--no-auto-discovery", "--zero-config", "--tui", "--fail-on-size-warnings")
+               "--no-auto-discovery", "--zero-config", "--tui", "--fail-on-size-warnings", &
+               "--gcov", "--discover-and-gcov")
              requires_value = .false.
         end select
     end function flag_requires_value
@@ -287,6 +288,10 @@ contains
               config%fail_on_size_warnings = .true.
           case ("--zero-config")
               config%zero_configuration_mode = .true.
+          case ("--gcov", "--discover-and-gcov")
+              ! Enable explicit gcov discovery/generation path by disabling
+              ! generic auto-discovery. This routes discovery to gcov processor.
+              config%auto_discovery = .false.
           case default
             ! Unknown flag - reject with error message
             success = .false.

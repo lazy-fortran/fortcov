@@ -4,7 +4,9 @@ This document provides a single, canonical coverage workflow for FPM-based
 projects. It consolidates prior guidance and ensures copy-paste runnable
 commands.
 
-FortCov consumes `.gcov` files produced by `gcov`; it does not invoke `gcov` itself.
+FortCov consumes `.gcov` files produced by `gcov`. It can also auto-discover
+build directories and generate `.gcov` via the built-in bridge when invoked
+with `--gcov` (alias: `--discover-and-gcov`).
 
 ## Options
 
@@ -12,26 +14,33 @@ FortCov consumes `.gcov` files produced by `gcov`; it does not invoke `gcov` its
   typical steps and then FortCov. Best for CI and local use.
 - Manual steps: Equivalent explicit commands if you prefer not to use scripts.
 
-## A) Bridge Script (Recommended)
+## A) Built-in Bridge (Recommended)
 
 Requirements: `gfortran`, `gcov`, `fpm`.
 
 From the root of your FPM project:
 
 ```bash
+## Option 1: FortCov built-in
+
+```bash
+# Auto-discover build dirs, generate .gcov, produce coverage.md
+fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
+```
+
+## Option 2: Bridge scripts
+
+```bash
 # Generate application coverage end-to-end and write coverage.md
 ./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
 
-# Note: If `./scripts/fpm_coverage_workflow_fixed.sh` is not present in your
-# project, copy it from the FortCov repository's `scripts/` directory or invoke
-# it via a full path to that script.
-
 # Or: quick bridge that assumes you already produced .gcda/.gcno
 ./scripts/fpm_coverage_bridge.sh src
+```
 
-# Note: If `./scripts/fpm_coverage_bridge.sh` is not present in your project,
-# copy it from the FortCov repository's `scripts/` directory or invoke it via a
-# full path to that script.
+Notes:
+- If a script is not present in your project, copy it from this repository's
+  `scripts/` directory or run it via a full path from the FortCov repository.
 ```
 
 Outputs:
@@ -76,7 +85,8 @@ done
 fortcov --fail-under 80 --source=src *.gcov --output=coverage.md --quiet
 ```
 
-## Future: Built-in auto-gcov
+## Notes on built-in bridge
 
-An integrated "auto-gcov" mode may be added to FortCov in the future. Until
-then, prefer the bridge scripts above or use the manual steps.
+The built-in bridge uses safe, internal discovery and does not execute user-
+provided `gcov` commands. Prefer `--gcov` for the simplest setup, and use the
+bridge scripts or manual steps when you need explicit control.
