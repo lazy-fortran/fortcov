@@ -12,6 +12,8 @@ module size_report_generator
     public :: generate_comprehensive_size_report
     public :: generate_report_in_format
     public :: architectural_size_report_t
+    public :: count_file_violations_by_severity
+    public :: count_directory_violations_by_severity
     
     ! Comprehensive architectural size report
     type :: architectural_size_report_t
