@@ -71,7 +71,8 @@ validate_pattern() {
     
     local missing_patterns=()
     for pattern in "${required_patterns[@]}"; do
-        if ! grep -q "$pattern" "$file_path"; then
+        # Use -e for patterns (handles leading dashes) and -- to end options
+        if ! grep -q -e "$pattern" -- "$file_path"; then
             missing_patterns+=("$pattern")
         fi
     done
@@ -162,7 +163,7 @@ run_test "Meson Basic Example" \
 # Validate Meson patterns from georg's tests  
 validate_pattern "Meson Configuration" \
     "$SCRIPT_DIR/meson/basic_example/meson.build" \
-    "get_option('coverage')" "add_project_arguments" "-fprofile-arcs" "find_program('fortcov')"
+    "get_option('coverage')" "add_project_arguments" "-fprofile-arcs" "find_program('fortcov'"
 
 validate_pattern "Meson Options" \
     "$SCRIPT_DIR/meson/basic_example/meson_options.txt" \
