@@ -11,7 +11,7 @@ module xml_utils
                                  get_base_name
     use xml_attribute_parser, only: extract_filename_from_class, parse_lines_from_class, &
                                    extract_line_attributes
-    use string_utils, only: int_to_string, real_to_string
+    use string_utils, only: int_to_string
     implicit none
     private
     
