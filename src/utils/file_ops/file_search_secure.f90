@@ -321,7 +321,7 @@ contains
         call c_f_pointer(cstr, buf, [n])
         allocate(character(len=n) :: fstr)
         do i = 1, n
-            fstr(i:i) = transfer(buf(i), ' ')
+            fstr(i:i) = buf(i)
         end do
     end function from_c_string
 
