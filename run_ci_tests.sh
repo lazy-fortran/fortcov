@@ -19,6 +19,10 @@ SECONDS=0
 
 echo "Running unit tests excluding problematic tests (cap=${GLOBAL_CAP}s)..."
 
+# Signal to FortCov that we are running under fpm test to avoid recursive
+# auto-test execution during tests (prevents fork-bomb style recursion).
+export FPM_TEST=1
+
 # List of tests to exclude (VERIFIED failing tests only - CI fraud prevention)
 # PREVIOUS FRAUD: 68% of excluded tests actually passed
 # CORRECTED: Only legitimately failing tests excluded (significantly reduced from previous ~29%)
