@@ -8,6 +8,9 @@ module config_defaults_core
     use constants_core
     use zero_config_manager
     use shell_utilities, only: escape_shell_argument
+    use file_processor, only: ensure_output_directory_structure
+    use file_utilities, only: ensure_directory
+    use error_handling_core, only: error_context_t, ERROR_SUCCESS
     
     implicit none
     private
@@ -125,36 +128,34 @@ contains
 
     subroutine ensure_zero_config_output_directory(config)
         !! Ensure output directory exists for zero-configuration mode
+        !! Uses consolidated secure directory creation utilities
         type(config_t), intent(inout) :: config
+        type(error_context_t) :: error_ctx
+        logical :: dir_error
+        integer :: last_slash_pos
+        character(len=512) :: directory_path
 
-        logical :: dir_exists
-        character(len=512) :: command, directory_path
-        integer :: exit_status, last_slash_pos
-
-        if (config%zero_configuration_mode .and. &
-            len_trim(config%output_path) > 0) then
-            
-            ! Extract directory path from output file path
-            last_slash_pos = index(config%output_path, '/', back=.true.)
-            if (last_slash_pos > 0) then
-                directory_path = config%output_path(1:last_slash_pos-1)
-                
-                ! Check if directory exists
-                inquire(file=trim(directory_path), exist=dir_exists)
-                if (.not. dir_exists) then
-                    ! SECURITY FIX Issue #963: Use secure directory creation instead of shell
-                    call create_secure_config_directory(directory_path, exit_status)
-                    
-                    ! Handle directory creation failure
-                    if (exit_status /= 0) then
-                        write(*,'(A)') "Warning: Failed to create output directory: " // &
-                                       trim(directory_path)
-                        write(*,'(A)') "Please ensure the directory is writable or " // &
-                                       "create it manually"
-                    end if
+        if (config%zero_configuration_mode .and. len_trim(config%output_path) > 0) then
+            call ensure_output_directory_structure(trim(config%output_path), error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) then
+                ! Fallback: attempt direct directory creation
+                last_slash_pos = index(config%output_path, '/', back=.true.)
+                if (last_slash_pos > 0) then
+                    directory_path = config%output_path(1:last_slash_pos-1)
+                else
+                    directory_path = '.'
+                end if
+                ! Attempt direct creation of the directory path
+                call ensure_directory(trim(directory_path), dir_error)
+                if (dir_error) then
+                    ! Fallback failed: warn user
+                    write(*,'(A)') "Warning: Failed to create output directory: " // trim(directory_path)
+                    write(*,'(A)') "Please ensure the directory is writable or create it manually"
+                else
+                    ! Fallback succeeded: clear error
+                    error_ctx%error_code = ERROR_SUCCESS
                 end if
             end if
-            ! If no directory in path, current directory will be used (no mkdir needed)
         end if
 
     end subroutine ensure_zero_config_output_directory
@@ -244,36 +245,6 @@ contains
 
     end subroutine apply_legacy_zero_config_defaults
     
-    ! Create directory securely without shell commands
-    ! SECURITY FIX Issue #963: Replace mkdir -p shell vulnerability
-    subroutine create_secure_config_directory(dir_path, exit_status)
-        character(len=*), intent(in) :: dir_path
-        integer, intent(out) :: exit_status
-        
-        character(len=512) :: temp_file_path
-        integer :: temp_unit
-        logical :: dir_exists
-        
-        exit_status = 0
-        
-        ! Check if directory already exists
-        inquire(file=dir_path, exist=dir_exists)
-        if (dir_exists) return
-        
-        ! Use file creation to force directory creation
-        temp_file_path = trim(dir_path) // '/.config_marker'
-        
-        ! Try to create the temporary file which forces directory creation
-        open(newunit=temp_unit, file=temp_file_path, status='new', iostat=exit_status)
-        if (exit_status == 0) then
-            ! Directory was created successfully
-            close(temp_unit, status='delete')  ! Remove the temporary file
-            exit_status = 0
-        else
-            ! Directory creation failed
-            exit_status = 1
-        end if
-        
-    end subroutine create_secure_config_directory
+    ! Legacy create_secure_config_directory removed.
 
 end module config_defaults_core

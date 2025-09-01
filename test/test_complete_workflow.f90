@@ -7,7 +7,7 @@ program test_complete_workflow
     use auto_discovery_utils
     use config_types, only: config_t
     use error_handling_core, only: error_context_t, clear_error_context
-    use file_ops_secure, only: safe_mkdir, safe_remove_file
+    use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_remove_directory
     use iso_fortran_env, only: output_unit
     implicit none
 
@@ -389,12 +389,8 @@ contains
         !! Secure directory removal (best effort)
         character(len=*), intent(in) :: dir_path
         type(error_context_t) :: error_ctx
-        logical :: dir_exists
-        inquire(file=dir_path, exist=dir_exists)
-        if (dir_exists) then
-            ! Note: Complete directory removal requires platform-specific code
-            ! For test purposes, we rely on test isolation and cleanup
-        end if
+        call safe_remove_directory(dir_path, error_ctx)
+        ! Ignore errors in test cleanup
     end subroutine remove_test_directory_secure
     
     subroutine remove_test_file_secure(file_path)

@@ -363,16 +363,15 @@ contains
     end subroutine assert_contains
 
     subroutine safe_mkdir_test(dirname)
-        !! Create directory using simple approach for tests
+        !! Create directory using secure helper (reliable across runtimes)
         character(len=*), intent(in) :: dirname
-        character(len=:), allocatable :: marker_file
+        type(error_context_t) :: err
         integer :: unit, stat
-        
-        ! Create directory by creating a marker file in it
-        ! This forces most Fortran runtimes to create the directory
+        character(len=:), allocatable :: marker_file
+
+        call safe_mkdir(trim(dirname), err)
+        ! Best-effort: even if mkdir reports error, try to place a marker
         marker_file = trim(dirname) // '/.test_marker'
-        
-        ! Try to create the marker file which should create the directory
         open(newunit=unit, file=marker_file, status='replace', iostat=stat)
         if (stat == 0) then
             write(unit, '(A)') '! Test directory marker'

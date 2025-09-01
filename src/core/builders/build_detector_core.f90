@@ -89,12 +89,15 @@ contains
         call validate_path_security(project_path, safe_path, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) return
         
-        ! Check if directory exists
-        inquire(file=safe_path, exist=path_valid)
-        if (.not. path_valid) then
-            error_ctx%error_code = ERROR_MISSING_FILE
-            error_ctx%message = 'Project directory not found: ' // safe_path
-            return
+        ! Only hard-error for clearly invalid absolute paths to avoid
+        ! compiler-dependent directory INQUIRE behavior on relative paths.
+        if (len_trim(safe_path) > 0 .and. safe_path(1:1) == '/') then
+            inquire(file=safe_path, exist=path_valid)
+            if (.not. path_valid) then
+                error_ctx%error_code = ERROR_MISSING_FILE
+                error_ctx%message = 'Project directory not found: ' // safe_path
+                return
+            end if
         end if
         
         ! Initialize build_info with defaults
