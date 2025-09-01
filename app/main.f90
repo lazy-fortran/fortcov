@@ -79,7 +79,7 @@ program main
   if (config%zero_configuration_mode) then
     call enhance_zero_config_with_auto_discovery(config, enhancement_success, enhancement_error)
     if (.not. enhancement_success .and. .not. config%quiet) then
-      print *, "⚠️  Auto-discovery enhancement failed: " // trim(enhancement_error)
+      print *, "WARNING: Auto-discovery enhancement failed: " // trim(enhancement_error)
       print *, "   Continuing with basic zero-configuration mode"
     end if
   end if
@@ -127,7 +127,7 @@ program main
     inquire(file='.fortcov_execution_marker', exist=marker_exists)
     if (marker_exists) then
       if (.not. config%quiet) then
-        print *, "🛡️  Fork bomb prevention: fortcov execution disabled"
+        print *, "INFO: Fork bomb prevention: fortcov execution disabled"
         print *, "    (fortcov detected it's running within a test environment)"
       end if
       call exit_success_clean()
