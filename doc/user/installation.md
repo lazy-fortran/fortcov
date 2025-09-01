@@ -12,7 +12,7 @@ chmod +x /tmp/fpm && sudo mv /tmp/fpm /usr/local/bin/
 git clone https://github.com/lazy-fortran/fortcov.git
 # json-fortran dependency automatically handled by FPM during build
 cd fortcov && fpm build --profile release
-sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
+sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
 ```
 
 **macOS:**
@@ -22,7 +22,7 @@ brew install gcc fortran-lang/tap/fpm
 git clone https://github.com/lazy-fortran/fortcov.git
 # json-fortran dependency automatically handled by FPM during build
 cd fortcov && fpm build --profile release
-sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
+sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
 ```
 
 **Windows (MSYS2):**
@@ -33,7 +33,7 @@ unzip fpm.zip && mv fpm.exe /usr/local/bin/
 git clone https://github.com/lazy-fortran/fortcov.git
 # json-fortran dependency automatically handled by FPM during build
 cd fortcov && fpm build --profile release
-cp build/gfortran_*/app/fortcov.exe /usr/local/bin/
+install -m 0755 "$(find build -type f -path '*/app/fortcov.exe' | head -n1)" /usr/local/bin/fortcov.exe
 ```
 
 ## Troubleshooting
