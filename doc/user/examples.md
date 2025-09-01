@@ -152,7 +152,7 @@ jobs:
         git clone https://github.com/lazy-fortran/fortcov.git
         # json-fortran dependency automatically handled by FPM
         cd fortcov && fpm build --profile release
-        sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
+        sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
     
     - name: Generate Coverage
       run: |
@@ -181,7 +181,7 @@ coverage_analysis:
     - git clone https://github.com/lazy-fortran/fortcov.git
     # json-fortran dependency automatically handled by FPM
     - cd fortcov && fpm build --profile release
-    - cp build/gfortran_*/app/fortcov /usr/local/bin/
+    - install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
     - cd ..
   script:
     - fpm test --flag "-fprofile-arcs -ftest-coverage"

@@ -28,7 +28,7 @@ rm -rf build/ && fpm build --profile release
 ```bash
 # Update to latest version
 git pull && fpm build --profile release
-sudo cp build/gfortran_*/app/fortcov /usr/local/bin/
+sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
 ```
 
 **Security Messages:**
@@ -68,7 +68,7 @@ See the detailed [Coverage Workflow Guide](coverage-workflow.md) for solutions t
 **Permission Errors:**
 ```bash
 # Install to user directory instead
-cp build/gfortran_*/app/fortcov ~/.local/bin/
+install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" ~/.local/bin/fortcov
 export PATH=$HOME/.local/bin:$PATH
 ```
 
