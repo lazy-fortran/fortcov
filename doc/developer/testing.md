@@ -350,7 +350,11 @@ else
 fi
 ```
 
-### Thread Safety Testing
+### Thread Safety Testing (future)
+
+Note: FortCov does not implement parallel processing and is not thread-safe at
+this time. The following example is illustrative only and not part of the
+current test suite.
 
 ```fortran
 program test_thread_safety

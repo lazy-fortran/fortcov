@@ -191,12 +191,12 @@ end program
 
 ## Thread Safety
 
-FortCov modules are designed to be thread-safe:
+Parallel processing is not implemented. FortCov is not thread-safe at this time:
 
-- All global state is properly protected
-- Configuration objects are immutable after initialization
-- File operations use atomic writes where possible
-- Memory allocation is thread-local where applicable
+- Do not run FortCov concurrently within the same process
+- The `--threads` flag is reserved and currently ignored (single-threaded)
+- File operations aim for safety (e.g., atomic writes) but are not a
+  substitute for full synchronization primitives
 
 ## Memory Management
 

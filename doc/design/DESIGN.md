@@ -383,7 +383,7 @@ Instead of creating minimal binary files:
 - **Text file processing**: Much faster than binary parsing
 - **gcov command caching**: Reuse .gcov files if newer than source
 - String buffer reuse for markdown generation  
-- **Parallel gcov execution**: Run gcov commands in parallel (future)
+- **Parallel gcov execution**: (future) Not implemented; single-threaded today
 - **Memory efficiency**: Process files one at a time, not batch loading
 
 ## Error Handling - ROBUST AND CLEAR
@@ -508,7 +508,7 @@ While the current implementation is production-ready, potential enhancements cou
 - **Risk Assessment**: Coverage impact on code stability
 
 #### Performance Optimizations
-- **Parallel Processing**: Multi-threaded statistics calculation
+- **Parallel Processing**: Multi-threaded statistics (future; not implemented)
 - **Incremental Updates**: Delta processing for large codebases
 - **Memory Streaming**: Reduced memory footprint for massive projects
 - **Caching Layer**: Persistent statistics caching

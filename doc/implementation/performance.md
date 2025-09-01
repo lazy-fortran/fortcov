@@ -81,7 +81,7 @@ type(memory_pool_t) :: coverage_pool
 ### Scalability Analysis
 - **Linear Time Scaling**: O(n) confirmed across all project sizes
 - **Constant Memory Growth**: Memory usage grows linearly with active data, not total data
-- **Thread Scaling**: Near-linear improvement with thread count up to CPU cores
+- **Threading**: Not implemented; FortCov currently runs single-threaded
 
 ## Performance Optimization Techniques
 
@@ -227,7 +227,6 @@ echo "Memory usage test:"
 ## Performance Best Practices
 
 ### For Users
-- Use `--threads=N` to match CPU core count
 - Exclude unnecessary files with `--exclude` patterns
 - Use `--quiet` mode in automated scripts
 - Process large projects in batches if memory constrained
@@ -261,7 +260,7 @@ call buffered_writer%write_line(data)
 
 ### Planned Optimizations
 - **SIMD Vectorization**: Accelerate text processing operations
-- **Parallel File Processing**: Multi-threaded file discovery and parsing
+- **Parallel File Processing**: Multi-threaded discovery and parsing (not implemented)
 - **Smart Caching**: Cache coverage data for incremental analysis
 - **Compression**: Reduce memory usage for large coverage datasets
 
