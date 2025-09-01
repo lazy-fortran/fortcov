@@ -19,6 +19,9 @@ contains
         print '(A)', ""
         print '(A)', "Usage: fortcov [OPTIONS] [COVERAGE_FILES...]"
         print '(A)', ""
+        print '(A)', "Note: FortCov analyzes .gcov files; it does not run gcov."
+        print '(A)', "      Generate .gcov with gcov (or scripts/fpm_coverage_bridge.sh) first."
+        print '(A)', ""
         print '(A)', "Options:"
         print '(A)', "  -h, --help                Show this help message and exit"
         print '(A)', "  -V, --version             Show version information and exit"
@@ -31,8 +34,7 @@ contains
         print '(A)', "  -i, --include PATTERN     Include only files matching pattern"
         print '(A)', "  --import FILE             Import coverage data from JSON/XML file"
         ! SECURITY FIX Issue #963: --gcov-executable REMOVED - shell injection vulnerability
-        print '(A)', "  --gcov-args ARGS          Additional arguments for gcov"
-        print '(A)', "  --keep-gcov-files         Keep intermediate .gcov files"
+        ! FortCov does not invoke gcov; gcov-related invocation flags removed
         print '(A)', ""
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
@@ -82,7 +84,7 @@ contains
         print *, ""
         print *, "Built with:"
         print *, "  - Fortran compiler support"
-        print *, "  - gcov integration"
+        print *, "  - gcov file analysis (does not invoke gcov)"
         print *, "  - JSON/XML/HTML output formats"
         print *, "  - Terminal User Interface (TUI)"
         print *, "  - Parallel processing: not implemented (threads flag ignored)"
