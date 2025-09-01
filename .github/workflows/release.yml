@@ -155,9 +155,14 @@ jobs:
         # Copy executable with version-specific name
         cp "${{ env.EXECUTABLE_PATH }}" "release-artifacts/${{ matrix.artifact_name }}-${{ needs.validate-version.outputs.version }}"
         
-        # Create checksums
+        # Create checksums (portable across Linux/macOS)
         cd release-artifacts
-        sha256sum "${{ matrix.artifact_name }}-${{ needs.validate-version.outputs.version }}" > "${{ matrix.artifact_name }}-${{ needs.validate-version.outputs.version }}.sha256"
+        ART="${{ matrix.artifact_name }}-${{ needs.validate-version.outputs.version }}"
+        if command -v sha256sum >/dev/null 2>&1; then
+          sha256sum "$ART" > "$ART.sha256"
+        else
+          shasum -a 256 "$ART" | awk '{print $1}' > "$ART.sha256"
+        fi
         
         echo "✅ Release artifact packaged"
         
