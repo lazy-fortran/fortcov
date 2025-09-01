@@ -163,11 +163,13 @@ TEST_ARTIFACTS=(
 # Remove artifacts and count removed files for reporting
 for pattern in "${TEST_ARTIFACTS[@]}"; do
     # Use find to handle patterns properly and count removed files
-    found_files=$(find . -maxdepth 1 -name "$pattern" 2>/dev/null)
+    found_files=$(find . -maxdepth 1 -type f -name "$pattern" 2>/dev/null)
     if [ -n "$found_files" ]; then
-        echo "Removing artifacts: $pattern"
+        # Count matched files precisely (not just patterns)
+        count=$(printf "%s\n" "$found_files" | sed '/^$/d' | wc -l)
+        echo "Removing artifacts: $pattern ($count)"
         rm -f $pattern 2>/dev/null || true
-        ARTIFACTS_REMOVED=$((ARTIFACTS_REMOVED + 1))
+        ARTIFACTS_REMOVED=$((ARTIFACTS_REMOVED + count))
     fi
 done
 
@@ -175,7 +177,7 @@ done
 REMAINING_ARTIFACTS=$(find . -maxdepth 1 \( -name "test_infra_*.txt" -o -name "test_infra_*.tmp" \) 2>/dev/null | wc -l)
 
 echo "CI Hygiene Report:"
-echo "  Artifact patterns cleaned: $ARTIFACTS_REMOVED"
+echo "  Artifact files removed: $ARTIFACTS_REMOVED"
 echo "  Remaining artifacts: $REMAINING_ARTIFACTS"
 
 if [[ $REMAINING_ARTIFACTS -gt 0 ]]; then
