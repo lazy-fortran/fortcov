@@ -33,19 +33,25 @@ contains
     function get_base_name(filename) result(base_name)
         character(len=*), intent(in) :: filename
         character(len=:), allocatable :: base_name
-        integer :: last_slash, last_dot
+        integer :: last_slash, last_dot, name_start
         
         last_slash = index(filename, '/', back=.true.)
         last_dot = index(filename, '.', back=.true.)
         
-        if (last_slash > 0 .and. last_dot > last_slash) then
-            base_name = filename(last_slash+1:last_dot-1)
-        else if (last_slash > 0) then
-            base_name = filename(last_slash+1:)
-        else if (last_dot > 0) then
-            base_name = filename(1:last_dot-1)
+        ! Determine start of the name component (after the last slash, if any)
+        if (last_slash > 0) then
+            name_start = last_slash + 1
         else
-            base_name = filename
+            name_start = 1
+        end if
+        
+        ! If the dot is after the start of the name, treat as extension separator;
+        ! otherwise (including hidden dotfiles like ".bashrc" or "dir/.hidden"),
+        ! return the full name component
+        if (last_dot > name_start) then
+            base_name = filename(name_start:last_dot-1)
+        else
+            base_name = filename(name_start:)
         end if
         
     end function get_base_name
