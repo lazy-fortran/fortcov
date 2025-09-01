@@ -1,10 +1,11 @@
 # FortCov – Precise FPM Coverage
 
 FortCov turns gfortran/gcov coverage into clear reports. By default it analyzes
-existing `.gcov` files. You can also use the built-in bridge with `--gcov` to
-auto-discover FPM/CMake build dirs and generate `.gcov` from coverage artifacts
-before analysis. For manual control, use `gcov` (or helper scripts in
-`scripts/`) to generate `.gcov`, then run FortCov to create the report.
+existing `.gcov` files. You can also use the built-in bridge with `--gcov`
+(alias: `--discover-and-gcov`) to auto-discover FPM/CMake build dirs and
+generate `.gcov` from coverage artifacts before analysis. For manual control,
+use `gcov` (or helper scripts in `scripts/`) to generate `.gcov`, then run
+FortCov to create the report.
 
 See the consolidated coverage workflow: `doc/coverage_workflow.md`.
 
@@ -83,7 +84,7 @@ $ fortcov --source=src *.gcov --output=coverage.md
 Or with the built-in bridge:
 
 ```bash
-$ fortcov --gcov --output=coverage.md
+$ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
 # Auto-discovers build dirs, generates .gcov, and produces coverage.md
 ```
 
