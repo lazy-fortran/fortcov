@@ -3,8 +3,7 @@ module fork_bomb_prevention
     !! 
     !! Handles detection of test execution environments to prevent infinite recursion.
     !! Extracted from coverage_test_executor.f90 for SRP compliance (Issue #718).
-    use config_core, only: config_t
-    use test_reporter_core, only: report_fork_bomb_prevention
+    ! Note: reporting handled by coverage_test_executor via test_reporter_core
     use file_ops_secure, only: safe_remove_file
     use error_handling_core, only: error_context_t
     implicit none
