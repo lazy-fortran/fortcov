@@ -52,6 +52,7 @@ test_format.cfg
 test_*.nml
 test_*.cfg
 test_*/
+test_build/
 
 # Test workspace directories (created by auto-discovery tests)
 *workspace*
@@ -129,4 +130,3 @@ test_specific_buffer_overflow
 
 # Python package installations
 site-packages/
-
