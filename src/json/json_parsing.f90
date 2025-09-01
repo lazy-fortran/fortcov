@@ -206,7 +206,9 @@ contains
         ! Get number of files
         call json%info('files', n_children=num_files, found=found)
         if (.not. found .or. num_files <= 0) then
-            print *, "Warning: No files array found or empty"
+            ! Maintain consistency with value-based parser: allocate zero-size array
+            call allocate_files_array(coverage_data, 0)
+            found = .true.
             return
         end if
         
