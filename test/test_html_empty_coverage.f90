@@ -9,8 +9,9 @@ program test_html_empty_coverage
     type(data_transformer_t) :: transformer
     type(theme_manager_t) :: theme_mgr
     logical :: success
+    logical :: exists
     character(len=:), allocatable :: err
-    character(len=*), parameter :: out_path = 'build/test_empty_coverage.html'
+    character(len=*), parameter :: out_path = 'test_empty_coverage.html'
 
     call coverage%init()         ! creates empty files array
     call transformer%init()
@@ -23,8 +24,12 @@ program test_html_empty_coverage
         print *, 'HTML generation should succeed on empty coverage. Error: ', trim(err)
         stop 1
     else
-        print *, '✅ HTML generation with empty coverage succeeded'
+        inquire(file=out_path, exist=exists)
+        if (.not. exists) then
+            print *, 'HTML file was not created at: ', trim(out_path)
+            stop 1
+        end if
+        print *, 'OK: HTML generation with empty coverage succeeded'
     end if
 
 end program test_html_empty_coverage
-
