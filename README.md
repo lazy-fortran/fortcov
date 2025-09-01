@@ -1,6 +1,6 @@
 # FortCov - Fortran Coverage Analysis Tool
 
-Fortran code coverage analysis tool that generates markdown reports from gfortran gcov data.
+Fortran code coverage analysis tool that generates coverage reports from gcov data. FortCov can auto-discover coverage artifacts and securely invoke `gcov` for you in zero-config/auto-discovery modes, or you can provide `.gcov` files explicitly.
 
 ## Quick Start
 
@@ -15,15 +15,31 @@ cd fortcov && fpm build --profile release
 # Install the first built binary found (handles multiple build dirs)
 sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
 
-# Manual coverage generation
+# Zero-config (auto) coverage generation
 cd your-fortran-project
 # IMPORTANT: FPM does not have a --coverage flag. Use --flag with compiler options:
 fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# Manual gcov file generation (if needed)
-# Note: Run gcov from inside each build directory to avoid
-#       "No executable lines" and timestamp mismatch issues.
+# Then let FortCov auto-discover and run gcov securely
+fortcov                        # zero-config mode: discovers build, runs gcov, analyzes
+
+# Or generate a markdown report directly
+fortcov --output=coverage.md   # writes coverage.md (markdown report)
+
+# Explicit mode (optional): provide coverage files or source roots if you prefer
+# fortcov --source=src *.gcov --output=coverage.md
+```
+
+## Manual Workflow (Fallback)
+
+If auto-discovery cannot run `gcov` in your environment (unusual build layouts
+or strict sandboxing), generate `.gcov` files yourself and pass them to FortCov:
+
+```bash
+# 1) Instrument and run tests
 fpm test --flag "-fprofile-arcs -ftest-coverage"
+
+# 2) Generate .gcov files from each build directory (avoids timestamp issues)
 project_root="$(pwd)"
 find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
   (
@@ -31,6 +47,8 @@ find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
     mv ./*.gcov "$project_root" 2>/dev/null || true
   )
 done
+
+# 3) Analyze
 fortcov --source=src *.gcov --output=coverage.md
 ```
 
@@ -57,6 +75,7 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 
 ## Features
 
+- **Automatic gcov integration**: discovers `.gcda/.gcno` and securely runs `gcov`
 - **Multiple output formats**: text, markdown (default), json, html, xml
 - **JSON-fortran integration**: Robust JSON processing using json-fortran library
 - **Build system integration**: Works with FPM, CMake, Make, and custom build systems  
@@ -67,12 +86,11 @@ Complete documentation is available in the [`doc/`](doc/) directory:
 ## Example Output
 
 ```bash
-$ fortcov --source=src *.gcov --output=coverage.md
+$ fortcov --output=coverage.md
 📊 Analyzing coverage...
-Found coverage file 1: demo_calculator.f90.gcov
-Found coverage file 2: main.f90.gcov
-Found coverage file 3: test_demo.f90.gcov
-Found 3 coverage files
+🔍 Orchestrating coverage file discovery...
+📦 Using build system integration for discovery: fpm
+✅ Discovered 3 coverage files
 
 Coverage Statistics:
   Line Coverage:  72.86%
@@ -81,22 +99,15 @@ Coverage Statistics:
 
 ## Quick Examples
 
-**Basic usage:**
+**Basic usage (auto):**
 ```bash
 # NOTE: Use --flag, not --coverage (which doesn't exist in FPM)
 fpm test --flag "-fprofile-arcs -ftest-coverage"
-# Generate .gcov files manually (from inside build dirs):
-project_root="$(pwd)"
-find build -name "*.gcda" | xargs dirname | sort -u | while read dir; do
-  (
-    cd "$dir" && gcov *.gcno >/dev/null 2>&1 || true
-    mv ./*.gcov "$project_root" 2>/dev/null || true
-  )
-done
-fortcov --source=src *.gcov  # Shows terminal coverage output
+fortcov                       # Auto-discover + run gcov + analyze
+fortcov --output=coverage.md  # Write markdown report
 ```
 
-**Generate markdown report:**
+**Generate markdown report (explicit files):**
 ```bash
 fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown report
 ```
@@ -115,6 +126,10 @@ if ! fortcov --source=src *.gcov --fail-under 80 --quiet; then
     exit 1
 fi
 ```
+
+### Tips
+- Prefer zero-config in CI when possible: run `fpm test` with coverage flags, then `fortcov --fail-under 80 --output=coverage.md`.
+- If your CI restricts running `gcov`, use the Manual Workflow above and pass `.gcov` files explicitly.
 
 ## Known Issues
 
