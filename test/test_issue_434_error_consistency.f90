@@ -28,7 +28,9 @@ program test_issue_434_error_consistency
     if (success) then
         call validate_config_with_context(config, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            if (index(error_ctx%message, "Source path not found") > 0) then
+            ! Accept either missing path error or security block on absolute root paths
+            if (index(error_ctx%message, "Source path not found") > 0 .or. &
+                index(error_ctx%message, "Root-level directory access not allowed") > 0) then
                 print *, "  PASS: Specific error for invalid source"
             else
                 print *, "  FAIL: Generic error instead of specific"
