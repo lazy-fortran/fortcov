@@ -171,11 +171,21 @@ contains
 
         integer :: i
         logical :: path_exists
+        character(len=:), allocatable :: safe_path
+        type(error_context_t) :: error_ctx
 
         is_valid = .true.
         error_message = ""
 
         do i = 1, size(paths)
+            ! SECURITY: Validate path safety before existence checks
+            call validate_path_security(paths(i), safe_path, error_ctx)
+            if (error_ctx%error_code /= ERROR_SUCCESS) then
+                is_valid = .false.
+                error_message = "Invalid source path: " // trim(error_ctx%message)
+                return
+            end if
+
             ! Check path exists (file or directory)
             inquire(file=trim(paths(i)), exist=path_exists)
             if (.not. path_exists) then
