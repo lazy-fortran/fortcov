@@ -122,8 +122,7 @@ contains
         ! Test-mode helpers
         character(len=256) :: test_env
         integer :: env_status
-        character(len=:), allocatable :: tmpfile
-        integer :: unit, ios
+        ! Removed shell-fallback temp file usage to eliminate injection risk
         
         num_files = 0
         
@@ -151,29 +150,6 @@ contains
             call find_files_single_dir(base_dir, file_pattern, found_files, num_files)
         end if
         
-        ! Allocate and populate output array
-        if (num_files == 0) then
-            ! As a last resort (and to support realistic patterns during tests),
-            ! perform a constrained shell-based find to honor globbing semantics.
-            call create_secure_temp_filename(tmpfile)
-            call perform_shell_find(pattern, tmpfile, error_ctx)
-            if (error_ctx%error_code == ERROR_SUCCESS) then
-                open(newunit=unit, file=tmpfile, status='old', action='read', iostat=ios)
-                if (ios == 0) then
-                    do
-                        if (num_files >= MAX_FOUND_FILES) exit
-                        num_files = num_files + 1
-                        read(unit, '(A)', iostat=ios) found_files(num_files)
-                        if (ios /= 0) then
-                            num_files = num_files - 1
-                            exit
-                        end if
-                    end do
-                    close(unit)
-                end if
-            end if
-        end if
-
         if (num_files > 0) then
             allocate(character(len=256) :: files(num_files))
             files(1:num_files) = found_files(1:num_files)
