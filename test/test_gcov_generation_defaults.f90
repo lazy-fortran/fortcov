@@ -50,12 +50,11 @@ contains
         logical, intent(in) :: cond
         character(len=*), intent(in) :: desc
         if (cond) then
-            write(output_unit,'(A,A)') '  ✓ ', trim(desc)
+            write(output_unit,'(A,A)') '  OK ', trim(desc)
         else
-            write(output_unit,'(A,A)') '  ✗ ', trim(desc)
+            write(output_unit,'(A,A)') '  FAIL ', trim(desc)
             stop 1
         end if
     end subroutine report_assert
 
 end program test_gcov_generation_defaults
-

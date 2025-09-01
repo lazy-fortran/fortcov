@@ -87,8 +87,16 @@ contains
                     base_name = base_name(1:len_trim(base_name)-5)
                 end if
 
-                ! Run: gcov --object-directory="out_dir" gcno_file, suppressing output
-                call execute_command_line(trim(gcov_exec)//' --object-directory="'//trim(out_dir)//'" "'//trim(gcno_file)//'" > /dev/null 2>&1', exitstat=ios)
+                ! Validate paths to avoid unsafe shell execution
+                if (.not. is_safe_path(out_dir) .or. .not. is_safe_path(gcno_file)) then
+                    call safe_write_message(error_ctx, 'Unsafe characters in paths; refusing to run gcov')
+                    call safe_write_context(error_ctx, 'gcov file generation')
+                    error_ctx%error_code = 1
+                    return
+                end if
+
+                ! Run: gcov --object-directory=out_dir gcno_file
+                call execute_command_line(trim(gcov_exec)//' --object-directory='//trim(out_dir)//' ' // trim(gcno_file), exitstat=ios)
                 if (ios /= 0) then
                     call safe_write_message(error_ctx, 'gcov execution failed for: ' // trim(gcno_file))
                     call safe_write_context(error_ctx, 'gcov file generation')
@@ -197,6 +205,26 @@ contains
             error_ctx%error_code = 1
         end if
     end subroutine generate_gcov_files
+
+
+    logical function is_safe_path(s) result(ok)
+        !! Allow only sane path characters to mitigate shell interpretation.
+        character(len=*), intent(in) :: s
+        integer :: i, c
+        ok = .true.
+        do i = 1, len_trim(s)
+            c = iachar(s(i:i))
+            select case (c)
+            case (48:57)          ! 0-9
+            case (65:90)          ! A-Z
+            case (97:122)         ! a-z
+            case (47, 46, 95, 45) ! / . _ -
+            case default
+                ok = .false.
+                return
+            end select
+        end do
+    end function is_safe_path
 
 
 end module gcov_generation_utils
