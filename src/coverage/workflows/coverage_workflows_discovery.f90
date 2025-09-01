@@ -188,7 +188,7 @@ contains
         integer, intent(in) :: file_count
         
         if (.not. config%quiet) then
-            print *, "⚠️  Limiting coverage files from", file_count, "to", config%max_files
+            print *, "Limiting coverage files from", file_count, "to", config%max_files
         end if
     end subroutine report_file_count_limit
     
@@ -207,7 +207,7 @@ contains
         end if
         
         copy_size = min(size(files), new_size)
-        allocate(character(len=len(files)) :: temp_files(new_size))
+        allocate(character(len=len(files(1))) :: temp_files(new_size))
         
         do i = 1, copy_size
             temp_files(i) = files(i)
