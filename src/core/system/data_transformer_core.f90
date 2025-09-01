@@ -93,29 +93,22 @@ contains
         
         call output_data%init()
         
-        ! Check if input data has files
-        if (.not. allocated(input_data%files)) then
-            error_msg = "No files in input coverage data"
-            return
+        ! Handle empty or uninitialized input gracefully
+        ! Empty coverage is valid; proceed to generate empty structures/summary
+        if (allocated(input_data%files) .and. size(input_data%files) > 0) then
+            ! Allocate output files with proper error handling
+            allocate(output_data%files(size(input_data%files)), stat=stat, errmsg=errmsg)
+            if (stat /= 0) then
+                error_msg = "Failed to allocate output files: " // trim(errmsg)
+                return
+            end if
+            
+            ! Transform each file
+            do i = 1, size(input_data%files)
+                call transform_single_file(this, input_data%files(i), &
+                                           output_data%files(i))
+            end do
         end if
-        
-        if (size(input_data%files) == 0) then
-            error_msg = "Empty file list in input coverage data"
-            return
-        end if
-        
-        ! Allocate output files with proper error handling
-        allocate(output_data%files(size(input_data%files)), stat=stat, errmsg=errmsg)
-        if (stat /= 0) then
-            error_msg = "Failed to allocate output files: " // trim(errmsg)
-            return
-        end if
-        
-        ! Transform each file
-        do i = 1, size(input_data%files)
-            call transform_single_file(this, input_data%files(i), &
-                                       output_data%files(i))
-        end do
         
         ! Generate summary
         call generate_coverage_summary(input_data, output_data%summary, success)
