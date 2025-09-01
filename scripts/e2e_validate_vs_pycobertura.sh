@@ -18,9 +18,14 @@ echo "[1/5] Running tests with coverage (timeout=${TEST_TIMEOUT}s)"
 timeout "${TEST_TIMEOUT}" fpm test --flag "-fprofile-arcs -ftest-coverage" >/dev/null
 
 echo "[2/5] Generating .gcov artifacts"
+# Ensure a clean gcov collection directory
+rm -rf build/gcov
+mkdir -p build/gcov
 find build -name "*.gcda" | xargs -r dirname | sort -u | while read -r d; do
     gcov --object-directory="$d" "$d"/*.gcno >/dev/null 2>&1 || true
 done
+# Move generated .gcov files from repo root into build/gcov for stable discovery
+find . -maxdepth 1 -name "*.gcov" -print0 | xargs -0 -r -I{} mv "{}" build/gcov/
 
 echo "[3/5] Rendering FortCov markdown"
 FORTCOV_BIN=$(ls -d build/gfortran_*/app/fortcov 2>/dev/null | head -n1 || true)
@@ -79,4 +84,3 @@ awk -v d="${DIFF}" -v tol="${TOL}" 'BEGIN { if (d>tol) { exit 1 } else { exit 0 
 }
 
 echo "Match within tolerance (${TOL}pp)."
-
