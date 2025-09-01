@@ -4,7 +4,7 @@ module size_scanner_core
     !! Provides efficient file and directory scanning capabilities for 
     !! architectural size validation. Single responsibility: data collection.
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
-                                   ERROR_FILE_OPERATION_FAILED, clear_error_context
+                                   clear_error_context
     use error_handlers, only: handle_out_of_memory
     use file_search_secure, only: safe_find_files_recursive, safe_find_files_with_glob
     implicit none
@@ -93,8 +93,7 @@ contains
         type(scan_result_t) :: temp_results(200)  ! Temp storage
         integer :: stat
         character(len=256) :: errmsg
-        character(len=:), allocatable :: entries(:)
-        integer :: nitems
+        ! no extra locals
         
         call clear_error_context(error_ctx)
         total_scanned = 0
