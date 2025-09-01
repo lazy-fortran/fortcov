@@ -26,13 +26,12 @@ contains
 
         if (index(buf, new_line('a')) == 0 .and. trim(buf) == expected) then
             passed = passed + 1
-            write(output_unit,'(A)') '  ✓ Discovery message formatted on a single line'
+            write(output_unit,'(A)') '  [PASS] Discovery message formatted on a single line'
         else
-            write(output_unit,'(A)') '  ✗ Discovery message formatting contains newline or mismatch'
+            write(output_unit,'(A)') '  [FAIL] Discovery message formatting contains newline or mismatch'
             write(output_unit,'(A,A)') '    Expected: ', expected
             write(output_unit,'(A,A)') '    Actual:   ', trim(buf)
         end if
     end subroutine test_discovery_message_format
 
 end program test_logging_glitches_1123
-
