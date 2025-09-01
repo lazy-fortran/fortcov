@@ -45,13 +45,15 @@ gcovr -r . --filter "${SOURCE_DIR}" --xml-pretty -o coverage.xml --gcov-use-exis
 
 # 5) Generate minimal markdown summary from Cobertura XML (TOTAL row only)
 info "Generating markdown summary from Cobertura XML..."
-python3 - <<'PY'
+python3 - "$OUTPUT_FILE" <<'PY'
+import sys
 import xml.etree.ElementTree as ET
+outfile = sys.argv[1]
 root = ET.parse('coverage.xml').getroot()
 lv = int(float(root.get('lines-valid', '0')))
 lc = int(float(root.get('lines-covered', '0')))
 rate = float(root.get('line-rate', '0')) * 100.0
-with open('coverage.md', 'w', encoding='utf-8') as f:
+with open(outfile, 'w', encoding='utf-8') as f:
     f.write('| Filename | Stmts | Covered | Cover | Missing |\n')
     f.write('|----------|-------|---------|-------|---------|\n')
     f.write(f"| TOTAL | {lv} | {lc} | {rate:.2f}% |  |\n")

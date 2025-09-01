@@ -35,6 +35,7 @@ fpm_scratch_*/
 *.gcno
 *.gcda
 *.gcov
+*.gcov.json.gz
 *.info
 *.xml
 coverage.info
