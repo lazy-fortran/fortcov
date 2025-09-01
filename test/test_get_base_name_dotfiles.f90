@@ -35,6 +35,17 @@ program test_get_base_name_dotfiles
         "xml_utility_helpers: dir/.hidden -> .hidden", &
         'Expected .hidden, got: ' // trim(result))
 
+    ! Hidden dotfile with extension: strip extension but keep leading dot
+    result = xml_utils_get_base_name('dir/.config.json')
+    call assert_test(trim(result) == '.config', &
+        "xml_utils_core: dir/.config.json -> .config", &
+        'Expected .config, got: ' // trim(result))
+
+    result = xml_helpers_get_base_name('dir/.config.json')
+    call assert_test(trim(result) == '.config', &
+        "xml_utility_helpers: dir/.config.json -> .config", &
+        'Expected .config, got: ' // trim(result))
+
     ! Regular names remain unchanged in behavior
     result = xml_utils_get_base_name('file.f90')
     call assert_test(trim(result) == 'file', &
@@ -59,4 +70,3 @@ program test_get_base_name_dotfiles
     call print_test_summary("GET_BASE_NAME DOTFILES", .true.)
 
 end program test_get_base_name_dotfiles
-
