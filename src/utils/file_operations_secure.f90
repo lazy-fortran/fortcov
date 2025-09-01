@@ -5,6 +5,7 @@ module file_operations_secure
     !! and directory creation using Fortran intrinsics to prevent shell injection
     !! vulnerabilities. All operations include comprehensive security validation.
     use error_handling_core
+    use iso_c_binding, only: c_char, c_int, c_null_char
     use path_security, only: validate_path_security
     implicit none
     private
@@ -217,22 +218,18 @@ contains
             if (stat /= 0) return
         end if
         
-        ! Create this directory using a simple method
-        ! Note: Fortran doesn't have built-in mkdir, so we use a workaround
-        ! Create a temporary file in the directory path to force creation
+        ! Create this directory using a secure POSIX mkdir via C binding
         call create_single_directory(dir_path, stat)
         
     end subroutine create_directory_recursive
     
-    ! Create a single directory (non-recursive)
+    ! Create a single directory (non-recursive) using POSIX mkdir
     ! SECURITY FIX Issue #926: Secure directory creation with input validation
     subroutine create_single_directory(dir_path, stat)
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: stat
         
         logical :: dir_exists
-        integer :: command_exit_status
-        character(len=1024) :: safe_command
         
         stat = 0
         
@@ -240,31 +237,55 @@ contains
         inquire(file=dir_path, exist=dir_exists)
         if (dir_exists) return
         
-        ! SECURITY FIX: Validate path and use controlled command execution
-        ! Only allow safe directory names (alphanumeric, _, -, /, .)
+        ! SECURITY: Avoid shell commands entirely. Use POSIX mkdir via
+        ! ISO_C_BINDING for safe directory creation.
         if (.not. is_safe_directory_path(dir_path)) then
             stat = 1
             return
         end if
-        
-        ! Use controlled mkdir command with validated input
-        write(safe_command, '(A,A)') 'mkdir -p ', trim(dir_path)
-        call execute_command_line(safe_command, wait=.true., &
-                                 exitstat=command_exit_status)
-        
-        if (command_exit_status == 0) then
-            ! Verify directory was actually created
-            inquire(file=dir_path, exist=dir_exists)
-            if (dir_exists) then
-                stat = 0
-            else
-                stat = 1
-            end if
-        else
-            stat = command_exit_status
-        end if
+
+        call posix_mkdir(dir_path, stat)
         
     end subroutine create_single_directory
+
+    ! POSIX mkdir via C binding (no shell involvement)
+    subroutine posix_mkdir(path, stat)
+        character(len=*), intent(in) :: path
+        integer, intent(out) :: stat
+        
+        interface
+            function c_mkdir(pathname, mode) bind(C, name="mkdir") result(ret)
+                import :: c_char, c_int
+                character(kind=c_char), dimension(*) :: pathname
+                integer(c_int), value :: mode
+                integer(c_int) :: ret
+            end function c_mkdir
+        end interface
+
+        character(kind=c_char), allocatable :: c_path(:)
+        integer :: n, i
+        integer(c_int), parameter :: mode = int(493, c_int)  ! 0755
+        integer(c_int) :: ret
+
+        n = len_trim(path)
+        if (n == 0) then
+            stat = 1
+            return
+        end if
+
+        allocate(c_path(n+1))
+        do i = 1, n
+            c_path(i) = transfer(path(i:i), c_path(i))
+        end do
+        c_path(n+1) = c_null_char
+
+        ret = c_mkdir(c_path, mode)
+        if (ret == 0) then
+            stat = 0
+        else
+            stat = 1
+        end if
+    end subroutine posix_mkdir
     
     ! Validate directory path for safe command execution
     logical function is_safe_directory_path(path) result(is_safe)

@@ -17,7 +17,6 @@ EXCLUDE_TESTS=(
     "test_auto_discovery_core_validation" # Exit code 2 - Core validation failure
     "test_bugfix_469"                     # Exit code 1 - Bug fix validation failure
     "test_build_system_detector"          # Exit code 1 - Build detection failure
-    "test_portable_temp_utils"           # Exit code 1 - Temp utilities failure
     
     # FRAUD PREVENTION NOTES:
     # - 17 previously excluded tests now ENABLED (actually pass)
