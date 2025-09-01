@@ -107,7 +107,8 @@ contains
     end subroutine safe_find_files_recursive
 
     ! Secure Fortran-based file finding to replace shell command vulnerabilities
-    ! SECURITY FIX Issue #963: Complete replacement of execute_command_line find usage
+    ! SECURITY FIX Issue #963/#926: Remove shell fallback and avoid any
+    ! execute_command_line usage for file discovery.
     subroutine fortran_find_files(pattern, files, error_ctx, has_security_assessment)
         character(len=*), intent(in) :: pattern
         character(len=:), allocatable, intent(out) :: files(:)
