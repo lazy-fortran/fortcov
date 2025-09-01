@@ -54,9 +54,10 @@ Exit codes: `0` success, `2` threshold not met, `3` no coverage data.
 
 ```bash
 $ fortcov --source=src *.gcov --output=coverage.md
-Coverage Statistics:
-  Line Coverage:  72.9%
-  Lines Covered: 51 of 70 lines
+| Filename | Stmts | Covered | Cover | Missing |
+|----------|-------|---------|-------|---------|
+| src/example.f90 | 10 | 7 | 70.00% | 3-4, 9 |
+| TOTAL    | 10 | 7 | 70.00% | |
 ```
 
 ## Notes
