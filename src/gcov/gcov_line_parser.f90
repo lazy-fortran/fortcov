@@ -3,6 +3,7 @@ module gcov_line_parser
     use string_utils
     use error_handling_core
     use coverage_data_builder
+    use input_validation_core, only: normalize_execution_count
     implicit none
     private
     

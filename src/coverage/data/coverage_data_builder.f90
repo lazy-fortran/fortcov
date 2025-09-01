@@ -7,7 +7,7 @@ module coverage_data_builder
     public :: build_coverage_data_from_files
     public :: add_file_to_array
     public :: resize_files_array
-    public :: normalize_execution_count
+    ! normalization moved to input_validation_core
     
 contains
 
@@ -71,20 +71,6 @@ contains
         
         deallocate(temp_array)
     end subroutine resize_files_array
-    
-    ! Normalize execution count to handle edge cases
-    function normalize_execution_count(exec_count) result(normalized)
-        integer, intent(in) :: exec_count
-        integer :: normalized
-        
-        ! Handle negative values and very large values
-        if (exec_count < 0) then
-            normalized = 0
-        else if (exec_count > 999999) then
-            normalized = 999999  ! Cap at reasonable maximum
-        else
-            normalized = exec_count
-        end if
-    end function normalize_execution_count
+
 
 end module coverage_data_builder
