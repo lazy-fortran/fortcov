@@ -22,16 +22,16 @@ From the root of your FPM project:
 # Generate application coverage end-to-end and write coverage.md
 ./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
 
-Note: If `./scripts/fpm_coverage_workflow_fixed.sh` is not present in your
-project, copy it from the FortCov repository's `scripts/` directory or invoke
-it via a full path to that script.
+# Note: If `./scripts/fpm_coverage_workflow_fixed.sh` is not present in your
+# project, copy it from the FortCov repository's `scripts/` directory or invoke
+# it via a full path to that script.
 
 # Or: quick bridge that assumes you already produced .gcda/.gcno
 ./scripts/fpm_coverage_bridge.sh src
 
-Note: If `./scripts/fpm_coverage_bridge.sh` is not present in your project,
-copy it from the FortCov repository's `scripts/` directory or invoke it via a
-full path to that script.
+# Note: If `./scripts/fpm_coverage_bridge.sh` is not present in your project,
+# copy it from the FortCov repository's `scripts/` directory or invoke it via a
+# full path to that script.
 ```
 
 Outputs:
