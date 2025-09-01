@@ -4,7 +4,6 @@ module config_help_core
     !! This module provides functions to display help text and version information
     !! for the fortcov tool.
 
-    use constants_core
 
     implicit none
     private
