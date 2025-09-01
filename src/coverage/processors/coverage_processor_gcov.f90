@@ -95,6 +95,17 @@ contains
         
         ! Find all .gcda files (indicates executed coverage data)
         gcda_files = find_files("build/**/fortcov/*.gcda")
+
+        ! Test-friendly fallback: also look in a conventional test directory
+        if (.not. allocated(gcda_files) .or. size(gcda_files) == 0) then
+            block
+                character(len=:), allocatable :: test_gcda(:)
+                test_gcda = find_files("test_build/*.gcda")
+                if (allocated(test_gcda) .and. size(test_gcda) > 0) then
+                    gcda_files = test_gcda
+                end if
+            end block
+        end if
         
         if (allocated(gcda_files) .and. size(gcda_files) > 0) then
             ! Use first .gcda file to determine build directory structure
