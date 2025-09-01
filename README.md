@@ -57,7 +57,7 @@ $ fortcov --source=src *.gcov --output=coverage.md
 | Filename | Stmts | Covered | Cover | Missing |
 |----------|-------|---------|-------|---------|
 | src/example.f90 | 10 | 7 | 70.00% | 3-4, 9 |
-| TOTAL    | 10 | 7 | 70.00% | |
+| TOTAL | 10 | 7 | 70.00% | |
 ```
 
 ## Notes
