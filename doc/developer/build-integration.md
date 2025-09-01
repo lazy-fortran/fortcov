@@ -184,6 +184,8 @@ coverage-all: test
 
 ## Meson Integration
 
+Note: FortCov’s primary build system is FPM. Meson support is provided via example projects under `examples/build_systems/meson/`. The repository no longer includes a top‑level `meson.build`/`meson_options.txt`; use the example as a template for your Meson projects.
+
 ### meson.build Configuration
 
 ```meson
@@ -209,7 +211,7 @@ fortcov = find_program('fortcov', required: false)
 
 if fortcov.found()
     # Custom target for coverage analysis
-    run_target('coverage',
+    run_target('fortcov_coverage',
         command: [
             find_program('bash'), '-c',
             'gcov @0@/*.f90 && fortcov --source=@0@ --output=coverage.html'.format(meson.source_root())
@@ -237,7 +239,7 @@ meson compile
 meson test
 
 # Generate coverage
-meson compile coverage
+meson compile fortcov_coverage
 ```
 
 ## Autotools Integration

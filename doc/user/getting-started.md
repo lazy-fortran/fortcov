@@ -66,7 +66,7 @@ fortcov --source=src *.gcov --output=coverage.md  # Creates detailed markdown re
 
 See main [README.md](../../README.md) for:
 - Complete installation guide
-- Build system integration (CMake, Make, Meson)
+- Build system integration (CMake, Make, Meson — Meson via examples in `examples/build_systems/meson/`)
 - CI/CD examples (GitHub Actions, GitLab)  
 - Configuration files and advanced options
 - Security features and troubleshooting

@@ -17,7 +17,7 @@ Each subdirectory contains a complete, working example with:
 - **[fpm/](fpm/)** - Fortran Package Manager integration patterns
 - **[cmake/](cmake/)** - CMake with cmake-codecov integration
 - **[make/](make/)** - Traditional Makefile-based builds
-- **[meson/](meson/)** - Meson build system integration
+- **[meson/](meson/)** - Meson build system integration (example‑based; no root `meson.build`)
 
 ### CI/CD Platforms
 - **[ci_cd/github_actions/](ci_cd/github_actions/)** - GitHub Actions workflows
@@ -49,7 +49,7 @@ cd fpm/basic_example
 | FPM | `fpm.toml` | `fpm test --flag "-fprofile-arcs -ftest-coverage"` | ✅ |
 | CMake | `CMakeLists.txt` | `make test && make fortcov_report` | ✅ |
 | Make | `Makefile` | `make coverage` | ✅ |
-| Meson | `meson.build` | `ninja coverage` | ✅ |
+| Meson | `meson.build` | `ninja fortcov_coverage` | ✅ |
 
 ## Performance Targets
 
