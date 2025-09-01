@@ -28,9 +28,14 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           fpm-version: v0.10.1
 
-      - name: Build tests, generate Cobertura XML and FortCov markdown
+      - name: Build tests with coverage and generate reports
         run: |
-          ./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
+          # Build and run tests with coverage flags
+          fpm test --flag "-fprofile-arcs -ftest-coverage"
+          # Generate Cobertura XML via gcovr
+          gcovr -r . --xml-pretty -o coverage.xml || gcovr --xml-pretty -o coverage.xml
+          # Generate FortCov markdown (single command workflow)
+          fortcov --output=coverage.md
 
       - name: Compare totals (Cobertura vs FortCov)
         run: |
