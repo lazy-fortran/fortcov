@@ -105,6 +105,7 @@ contains
         type(gcov_result_t), intent(out) :: gcov_result
         integer, intent(out) :: test_exit_code
         type(complete_workflow_result_t), intent(inout) :: result
+        logical :: has_gcda_fast, has_gcno_fast
 
         result%auto_discovery_used = .true.
 
