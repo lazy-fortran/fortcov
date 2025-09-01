@@ -20,10 +20,10 @@ program test_issue_996_memory_allocation_standardization
     ! Test 1: Integer allocation positive size
     call safe_allocate_int_array(int_arr, 5, ok)
     if (ok .and. allocated(int_arr) .and. size(int_arr) == 5) then
-        print *, '  ✓ Integer allocation (5)'
+        print *, '  PASS: Integer allocation (5)'
         passed = passed + 1
     else
-        print *, '  ✗ Integer allocation (5)'
+        print *, '  FAIL: Integer allocation (5)'
         failed = failed + 1
     end if
 
@@ -31,10 +31,10 @@ program test_issue_996_memory_allocation_standardization
     call safe_deallocate_int_array(int_arr, ok)
     call safe_allocate_int_array(int_arr, 0, ok)
     if (ok .and. allocated(int_arr) .and. size(int_arr) == 0) then
-        print *, '  ✓ Integer allocation (0)'
+        print *, '  PASS: Integer allocation (0)'
         passed = passed + 1
     else
-        print *, '  ✗ Integer allocation (0)'
+        print *, '  FAIL: Integer allocation (0)'
         failed = failed + 1
     end if
 
@@ -42,20 +42,20 @@ program test_issue_996_memory_allocation_standardization
     call safe_deallocate_int_array(int_arr, ok)
     call safe_allocate_int_array(int_arr, -1, ok)
     if (.not. ok) then
-        print *, '  ✓ Integer allocation (-1) rejected'
+        print *, '  PASS: Integer allocation (-1) rejected'
         passed = passed + 1
     else
-        print *, '  ✗ Integer allocation (-1) accepted (BUG)'
+        print *, '  FAIL: Integer allocation (-1) accepted (BUG)'
         failed = failed + 1
     end if
 
     ! Test 4: Lines allocation zero size
     call safe_allocate_lines_array(lines, 0, ok)
     if (ok .and. allocated(lines) .and. size(lines) == 0) then
-        print *, '  ✓ Lines allocation (0)'
+        print *, '  PASS: Lines allocation (0)'
         passed = passed + 1
     else
-        print *, '  ✗ Lines allocation (0)'
+        print *, '  FAIL: Lines allocation (0)'
         failed = failed + 1
     end if
 
@@ -63,10 +63,10 @@ program test_issue_996_memory_allocation_standardization
     if (allocated(lines)) deallocate(lines)
     call safe_allocate_lines_array(lines, 3, ok)
     if (ok .and. allocated(lines) .and. size(lines) == 3) then
-        print *, '  ✓ Lines allocation (3)'
+        print *, '  PASS: Lines allocation (3)'
         passed = passed + 1
     else
-        print *, '  ✗ Lines allocation (3)'
+        print *, '  FAIL: Lines allocation (3)'
         failed = failed + 1
     end if
 
@@ -74,10 +74,9 @@ program test_issue_996_memory_allocation_standardization
     print *, ' Tests passed:', passed
     print *, ' Tests failed:', failed
     if (failed == 0) then
-        print *, ' ✅ MEMORY ALLOCATION STANDARDIZATION WORKING'
+        print *, ' MEMORY ALLOCATION STANDARDIZATION: OK'
     else
-        print *, ' ❌ MEMORY ALLOCATION STANDARDIZATION FAILURES'
+        print *, ' MEMORY ALLOCATION STANDARDIZATION: FAILURES'
     end if
 
 end program test_issue_996_memory_allocation_standardization
-
