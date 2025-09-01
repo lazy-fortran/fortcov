@@ -27,11 +27,13 @@ program test_issue_995_tui_manager
         print *, "  PASS: start_interactive_tui returned successfully"
     else
         print *, "  FAIL: start_interactive_tui failed: ", trim(err)
+        stop 1
     end if
     if (elapsed < 1.0_real64) then
         print *, "  PASS: Runtime bounded (", elapsed, "s)"
     else
         print *, "  FAIL: Runtime too long (", elapsed, "s)"
+        stop 1
     end if
 
     ! Test 2: Session state verification prevents unsafe startup
@@ -44,7 +46,7 @@ program test_issue_995_tui_manager
         print *, "  PASS: Inactive session correctly rejected"
     else
         print *, "  FAIL: Inactive session unexpectedly accepted"
+        stop 1
     end if
 
 end program test_issue_995_tui_manager
-
