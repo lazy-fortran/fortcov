@@ -230,7 +230,7 @@ required_integration_patterns=(
     "fpm test --flag" 
     "cmake -DCMAKE_BUILD_TYPE=Testing"
     "make coverage"
-    "ninja coverage"
+    "ninja fortcov_coverage"
     "uses: fortran-lang/setup-fortran"
     "image: fortran/gfortran"
     "FROM fortran/gfortran"

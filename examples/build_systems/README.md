@@ -49,7 +49,7 @@ cd fpm/basic_example
 | FPM | `fpm.toml` | `fpm test --flag "-fprofile-arcs -ftest-coverage"` | ✅ |
 | CMake | `CMakeLists.txt` | `make test && make fortcov_report` | ✅ |
 | Make | `Makefile` | `make coverage` | ✅ |
-| Meson | `meson.build` | `ninja coverage` | ✅ |
+| Meson | `meson.build` | `ninja fortcov_coverage` | ✅ |
 
 ## Performance Targets
 
