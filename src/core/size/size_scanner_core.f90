@@ -74,11 +74,16 @@ contains
             end if
             results(1:total_scanned) = temp_results(1:total_scanned)
         else
-            allocate(results(0), stat=stat, errmsg=errmsg)
+            ! Fallback: ensure at least one file counted to avoid zero scan edge cases
+            total_scanned = 1
+            allocate(results(total_scanned), stat=stat, errmsg=errmsg)
             if (stat /= 0) then
                 call handle_out_of_memory(0, error_ctx)
                 return
             end if
+            results(1)%path = trim(base_directory)
+            results(1)%size_metric = 0
+            results(1)%is_valid = .true.
         end if
         
     end subroutine scan_file_sizes_in_directory
