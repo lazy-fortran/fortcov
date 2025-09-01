@@ -9,6 +9,7 @@ module markdown_reporter
     use coverage_stats_core, only: coverage_stats_t, calculate_line_coverage
     use string_utils, only: int_to_string
     use string_utils, only: compress_ranges, format_percentage
+    use safe_allocation, only: safe_allocate_int_array, safe_deallocate_int_array
     implicit none
     private
     
@@ -132,6 +133,7 @@ contains
         integer :: total_lines, covered_lines, line_idx, stat
         integer, allocatable :: uncovered_lines(:)
         integer :: uncovered_count
+        logical :: success
         character(len=256) :: errmsg
         
         ! Use file's built-in fields which are working correctly
@@ -143,8 +145,8 @@ contains
         
         ! Collect uncovered line numbers
         if (uncovered_count > 0) then
-            allocate(uncovered_lines(uncovered_count), stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
+            call safe_allocate_int_array(uncovered_lines, uncovered_count, success)
+            if (.not. success) then
                 ! Graceful fallback - return basic stats without ranges
                 call stats%init(file%get_line_coverage(), covered_lines, total_lines, "")
                 return
@@ -158,8 +160,8 @@ contains
                 end if
             end do
         else
-            allocate(uncovered_lines(0), stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
+            call safe_allocate_int_array(uncovered_lines, 0, success)
+            if (.not. success) then
                 ! Graceful fallback for empty allocation failure
                 call stats%init(file%get_line_coverage(), covered_lines, total_lines, "")
                 return
@@ -176,7 +178,7 @@ contains
                            compress_ranges(uncovered_lines))
         end if
         
-        deallocate(uncovered_lines, stat=stat)
+        call safe_deallocate_int_array(uncovered_lines, success)
         ! Note: Deallocation stat is checked for completeness, but
         ! failure typically indicates corruption rather than resource exhaustion
     end function calculate_file_coverage
