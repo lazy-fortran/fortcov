@@ -293,7 +293,7 @@ contains
         allocate(character(len=len(input_str)*6) :: temp)
         
         j = 0
-        do i = 1, len_trim(input_str)
+        do i = 1, len(input_str)
             ch = input_str(i:i)
             select case (ch)
             case ('"')
