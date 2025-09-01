@@ -34,8 +34,7 @@ contains
         print '(A)', "  -i, --include PATTERN     Include only files matching pattern"
         print '(A)', "  --import FILE             Import coverage data from JSON/XML file"
         ! SECURITY FIX Issue #963: --gcov-executable REMOVED - shell injection vulnerability
-        print '(A)', "  --gcov-args ARGS          Additional arguments for gcov"
-        print '(A)', "  --keep-gcov-files         Keep intermediate .gcov files"
+        ! FortCov does not invoke gcov; gcov-related invocation flags removed
         print '(A)', ""
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
