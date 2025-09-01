@@ -12,22 +12,9 @@ echo "Running unit tests excluding problematic tests (cap=${GLOBAL_CAP}s)..."
 # List of tests to exclude (VERIFIED failing tests only - CI fraud prevention)
 # PREVIOUS FRAUD: 68% of excluded tests actually passed
 # CORRECTED: Only legitimately failing tests excluded (significantly reduced from previous ~29%)
-EXCLUDE_TESTS=(
-    # LEGITIMATELY FAILING TESTS (verified 2025-08-31):
-    "test_gcov_processing"                 # Exit code 1 - Gcov processing issue
-    "test_complete_workflow"               # Exit code 1 - Workflow integration failure
-    "test_auto_discovery_integration_suite" # Exit code 1 - Command execution failure
-    # re-enabled after TUI quiet-mode fix
-    "test_auto_discovery_core_validation" # Exit code 2 - Core validation failure
-    "test_bugfix_469"                     # Exit code 1 - Bug fix validation failure
-    # Removed: test_build_system_detector now passes locally (verified 2025-09-01)
-    
-    # FRAUD PREVENTION NOTES:
-    # - 17 previously excluded tests now ENABLED (actually pass)
-    # - Total exclusion rate significantly reduced from prior levels
-    # - All "Permission denied" exclusions were fraudulent
-    # - All timeout exclusions without legitimate cause removed
-)
+# Verified 2025-09-01: previously excluded tests now pass locally.
+# Keep the list empty unless a test is verifiably red in CI and locally.
+EXCLUDE_TESTS=( )
 
 # Ensure dependencies and build artifacts are initialized before listing tests
 # This prevents runtime initialization during test listing (fixes #861)
