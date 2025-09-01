@@ -88,7 +88,7 @@ if [ "${MEANINGFUL}" -eq 0 ]; then
 fi
 info "${MEANINGFUL} meaningful .gcov files remain. Running FortCov..."
 
-# 7) Run FortCov analysis
+# 7) Run FortCov analysis (zero-config to avoid positional arg limits)
 if command -v fortcov >/dev/null 2>&1; then
   FORTCOV=fortcov
 else
