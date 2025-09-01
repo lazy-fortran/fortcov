@@ -4,7 +4,8 @@
 set -e
 
 # Global cap in seconds (hard cap for entire run)
-GLOBAL_CAP=${GLOBAL_CAP:-300}
+# Honor TEST_TIMEOUT when provided; fallback to existing behavior
+GLOBAL_CAP=${GLOBAL_CAP:-${TEST_TIMEOUT:-300}}
 SECONDS=0
 
 echo "Running unit tests excluding problematic tests (cap=${GLOBAL_CAP}s)..."
