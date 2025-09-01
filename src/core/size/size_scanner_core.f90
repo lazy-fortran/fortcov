@@ -6,6 +6,7 @@ module size_scanner_core
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
                                    ERROR_FILE_OPERATION_FAILED, clear_error_context
     use error_handlers, only: handle_out_of_memory
+    use file_search_secure, only: safe_find_files_recursive, safe_find_files_with_glob
     implicit none
     private
     
@@ -36,28 +37,32 @@ contains
         integer, intent(out) :: total_scanned
         type(error_context_t), intent(out) :: error_ctx
         
-        character(len=:), allocatable :: find_command, wc_output
-        integer :: wc_exit_code, stat
+        character(len=:), allocatable :: f90_files(:)
+        integer :: stat
         character(len=256) :: errmsg
         type(scan_result_t) :: temp_results(1000)  ! Temp storage
+        integer :: i, nfiles, line_count
         
         call clear_error_context(error_ctx)
         total_scanned = 0
-        
-        ! Use find + wc to get line counts for all .f90 files efficiently  
-        find_command = 'find ' // trim(base_directory) // &
-                      ' -name "*.f90" -exec wc -l {} + 2>/dev/null'
-        
-        call execute_command_with_output(find_command, wc_output, wc_exit_code)
-        
-        if (wc_exit_code /= 0) then
-            error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
-            error_ctx%message = "Failed to execute find/wc command for file scanning"
-            return
+
+        ! Discover Fortran source files recursively under base_directory
+        call safe_find_files_recursive(trim(base_directory), '*.f90', f90_files, error_ctx)
+        if (.not. allocated(f90_files)) then
+            allocate(character(len=1) :: f90_files(0))
         end if
-        
-        ! Parse wc output into scan results
-        call parse_wc_output_to_results(wc_output, temp_results, total_scanned)
+
+        nfiles = size(f90_files)
+        if (nfiles > 0) then
+            do i = 1, nfiles
+                if (total_scanned >= size(temp_results)) exit
+                line_count = count_file_lines(trim(f90_files(i)))
+                total_scanned = total_scanned + 1
+                temp_results(total_scanned)%path = trim(f90_files(i))
+                temp_results(total_scanned)%size_metric = line_count
+                temp_results(total_scanned)%is_valid = .true.
+            end do
+        end if
         
         ! Allocate and copy results with proper error handling
         if (total_scanned > 0) then
@@ -88,12 +93,14 @@ contains
         type(scan_result_t) :: temp_results(200)  ! Temp storage
         integer :: stat
         character(len=256) :: errmsg
+        character(len=:), allocatable :: entries(:)
+        integer :: nitems
         
         call clear_error_context(error_ctx)
         total_scanned = 0
         
         ! Scan specific directories that commonly have violations
-        call scan_specific_directory(base_directory // '/src/coverage', &
+        call scan_specific_directory(resolve_coverage_dir(base_directory), &
                                    temp_results(total_scanned+1))
         if (temp_results(total_scanned+1)%is_valid) then
             total_scanned = total_scanned + 1
@@ -120,102 +127,74 @@ contains
 
     ! ================ INTERNAL IMPLEMENTATION ================
     
-    subroutine parse_wc_output_to_results(wc_output, results, result_count)
-        !! Parses wc command output into scan results
-        character(len=*), intent(in) :: wc_output
-        type(scan_result_t), intent(out) :: results(:)
-        integer, intent(out) :: result_count
-        
-        character(len=1000) :: line_buffer  
-        integer :: line_start, line_end, pos
-        integer :: current_line_count, space_pos, iostat_error
-        character(len=:), allocatable :: filename
-        
-        result_count = 0
-        pos = 1
-        
-        ! Parse each line of wc output
-        do while (pos <= len(wc_output))
-            line_start = pos
-            line_end = index(wc_output(pos:), new_line('')) + pos - 2
-            if (line_end < line_start) line_end = len(wc_output)
-            
-            if (line_end > line_start) then
-                line_buffer = wc_output(line_start:line_end)
-                
-                ! Skip total line
-                if (index(line_buffer, 'total') > 0) then
-                    pos = line_end + 2
-                    cycle
-                end if
-                
-                ! Extract line count and filename
-                space_pos = index(line_buffer, ' ')
-                if (space_pos > 0) then
-                    read(line_buffer(1:space_pos-1), *, iostat=iostat_error) current_line_count
-                    filename = trim(adjustl(line_buffer(space_pos+1:)))
-                    
-                    result_count = result_count + 1
-                    results(result_count)%path = filename
-                    results(result_count)%size_metric = current_line_count
-                    results(result_count)%is_valid = .true.
-                end if
-            end if
-            
-            pos = line_end + 2
+    ! Count lines in a text file (simple wc -l equivalent)
+    function count_file_lines(filename) result(nlines)
+        character(len=*), intent(in) :: filename
+        integer :: nlines
+        integer :: unit, ios
+        character(len=1024) :: buf
+        logical :: exists
+
+        nlines = 0
+        inquire(file=trim(filename), exist=exists)
+        if (.not. exists) return
+
+        open(newunit=unit, file=trim(filename), status='old', action='read', iostat=ios)
+        if (ios /= 0) return
+        do
+            read(unit, '(A)', iostat=ios) buf
+            if (ios /= 0) exit
+            nlines = nlines + 1
         end do
-        
-    end subroutine parse_wc_output_to_results
+        close(unit)
+    end function count_file_lines
     
     subroutine scan_specific_directory(dir_path, result)
         !! Scans specific directory for item count
         character(len=*), intent(in) :: dir_path
         type(scan_result_t), intent(out) :: result
         
-        character(len=:), allocatable :: ls_command, ls_output
-        integer :: ls_exit_code, item_count
-        
-        ! Count items in directory
-        ls_command = 'ls -1 ' // trim(dir_path) // ' 2>/dev/null | wc -l'
-        call execute_command_with_output(ls_command, ls_output, ls_exit_code)
-        
-        if (ls_exit_code == 0) then
-            read(ls_output, *) item_count
-            result%path = trim(dir_path)
-            result%size_metric = item_count
-            result%is_valid = .true.
-        else
-            result%path = ""
+        character(len=:), allocatable :: files(:)
+        integer :: item_count
+        type(error_context_t) :: tmp_error
+
+        if (len_trim(dir_path) == 0) then
+            result%path = ''
             result%size_metric = 0
             result%is_valid = .false.
+            return
         end if
+
+        call safe_find_files_with_glob(trim(dir_path), '*', files, tmp_error)
+        if (allocated(files)) then
+            item_count = size(files)
+        else
+            item_count = 0
+        end if
+        result%path = trim(dir_path)
+        result%size_metric = item_count
+        result%is_valid = .true.
         
     end subroutine scan_specific_directory
-    
-    subroutine execute_command_with_output(command, output, exit_code)
-        !! Executes shell command and captures output (basic implementation)
-        character(len=*), intent(in) :: command
-        character(len=:), allocatable, intent(out) :: output
-        integer, intent(out) :: exit_code
-        
-        ! For demonstration, provide sample data that shows some violations
-        if (index(command, "find") > 0 .and. index(command, "wc -l") > 0) then
-            ! Sample file size data with architectural_size_validator showing 580 lines
-            output = "580 src/core/architectural_size_validator.f90" // new_line('') // &
-                    "364 src/json/json_io.f90" // new_line('') // &
-                    "315 src/coverage/processing/coverage_test_executor.f90" // new_line('') // &
-                    "275 src/core/size_enforcement_core.f90" // new_line('') // &
-                    "150 src/config/config_types.f90" // new_line('') // &
-                    "total"
-        else if (index(command, "ls -1") > 0 .and. index(command, "wc -l") > 0) then
-            ! Sample directory item count - src/coverage has 17 items (exceeds 15 soft limit)
-            output = "17"
+
+    function resolve_coverage_dir(base_directory) result(dir_path)
+        !! Resolve a likely coverage source directory under the base directory
+        character(len=*), intent(in) :: base_directory
+        character(len=:), allocatable :: dir_path
+        character(len=512) :: cand1, cand2
+        logical :: ex1, ex2
+
+        cand1 = trim(base_directory) // '/src/coverage'
+        cand2 = trim(base_directory) // '/coverage'
+        inquire(file=cand1, exist=ex1)
+        inquire(file=cand2, exist=ex2)
+        if (ex1) then
+            dir_path = trim(cand1)
+        else if (ex2) then
+            dir_path = trim(cand2)
         else
-            output = ""
+            dir_path = ''
         end if
-        
-        exit_code = 0
-        
-    end subroutine execute_command_with_output
+    end function resolve_coverage_dir
 
 end module size_scanner_core
