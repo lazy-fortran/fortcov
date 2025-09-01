@@ -5,6 +5,8 @@ module portable_temp_utils
     !! that work across different operating systems and environments.
     
     use iso_fortran_env, only: int32
+    use file_ops_secure, only: safe_mkdir
+    use error_handling_core, only: error_context_t, clear_error_context, ERROR_SUCCESS
     implicit none
     private
     
@@ -121,43 +123,17 @@ contains
         !! SECURITY FIX Issue #971: Secure directory creation without shell commands
         character(len=*), intent(in) :: dir_path
         integer, intent(out) :: exit_status
-        
-        character(len=512) :: parent_path, marker_file
-        integer :: last_slash, unit, iostat
-        logical :: dir_exists, parent_exists
-        
-        exit_status = 0
-        
-        ! Check if directory already exists
-        inquire(file=dir_path, exist=dir_exists)
-        if (dir_exists) return
-        
-        ! For relative paths like "./subdir", ensure parent directory exists
-        last_slash = index(dir_path, '/', back=.true.)
-        if (last_slash > 1) then
-            parent_path = dir_path(1:last_slash-1)
-            inquire(file=parent_path, exist=parent_exists)
-            if (.not. parent_exists) then
-                exit_status = 1
-                return
-            end if
-        end if
-        
-        ! Create directory by creating a marker file in it
-        ! This forces directory creation without shell commands
-        marker_file = trim(dir_path) // '/.fortcov_temp_dir_marker'
-        
-        open(newunit=unit, file=marker_file, status='new', iostat=iostat)
-        if (iostat == 0) then
-            ! Directory created successfully, keep marker for directory verification
-            write(unit, '(A)') "fortcov temporary directory marker"
-            close(unit)
+
+        type(error_context_t) :: err
+
+        call clear_error_context(err)
+        call safe_mkdir(trim(dir_path), err)
+        if (err%error_code == ERROR_SUCCESS) then
             exit_status = 0
         else
-            ! Directory creation failed
             exit_status = 1
         end if
-        
+
     end subroutine create_secure_temp_directory
 
 end module portable_temp_utils
