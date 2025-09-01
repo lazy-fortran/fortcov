@@ -49,6 +49,7 @@ contains
     end subroutine extract_filename_from_class
     
     subroutine parse_lines_from_class(class_xml, lines, success)
+        use safe_allocation, only: safe_allocate_lines_array
         use xml_parser_core, only: count_xml_elements
         character(len=*), intent(in) :: class_xml
         type(coverage_line_t), allocatable, intent(out) :: lines(:)
@@ -66,7 +67,7 @@ contains
             call safe_allocate_lines_array(lines, 0, success)
             return
         end if
-        
+
         call safe_allocate_lines_array(lines, line_count, success)
         if (.not. success) return
         pos = 1
@@ -157,31 +158,5 @@ contains
         
     end subroutine extract_line_attributes
 
-    subroutine safe_allocate_lines_array(lines, size, success)
-        !! Safely allocate lines array with comprehensive error handling
-        type(coverage_line_t), allocatable, intent(out) :: lines(:)
-        integer, intent(in) :: size
-        logical, intent(out) :: success
-        
-        integer :: stat
-        character(len=512) :: errmsg
-        
-        success = .false.
-        
-        ! Input validation
-        if (size < 0) then
-            write(*, '(A)') "Error: Invalid array size for lines allocation"
-            return
-        end if
-        
-        ! Perform allocation with error handling
-        allocate(lines(size), stat=stat, errmsg=errmsg)
-        if (stat /= 0) then
-            write(*, '(A)') "Error: Failed to allocate lines array: " // trim(errmsg)
-            return
-        end if
-        
-        success = .true.
-    end subroutine safe_allocate_lines_array
     
 end module xml_attribute_parser

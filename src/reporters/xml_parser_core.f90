@@ -4,6 +4,7 @@ module xml_parser_core
     !! Handles parsing of XML documents into coverage data structures.
     !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
     use coverage_model_core
+    use safe_allocation, only: safe_allocate_lines_array
     implicit none
     private
     
@@ -191,20 +192,21 @@ contains
         integer :: line_number, hits
         logical :: line_success
         character(len=256) :: errmsg
+        logical :: success_local
         
         success = .false.
         
         ! Count lines
         line_count = count_xml_elements(class_xml, '<line number="')
         if (line_count == 0) then
-            allocate(lines(0), stat=stat, errmsg=errmsg)
-            if (stat /= 0) return
+            call safe_allocate_lines_array(lines, 0, success_local)
+            if (.not. success_local) return
             success = .true.
             return
         end if
         
-        allocate(lines(line_count), stat=stat, errmsg=errmsg)
-        if (stat /= 0) return
+        call safe_allocate_lines_array(lines, line_count, success_local)
+        if (.not. success_local) return
         pos = 1
         
         ! Parse each line element
