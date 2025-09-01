@@ -22,6 +22,8 @@ contains
         if (files_count > 0) then
             call coverage_data%init()
             coverage_data%files = files_array(1:files_count)
+            ! Ensure aggregated totals reflect per-file line counts
+            call coverage_data%calculate_overall_coverage()
             error_flag = .false.
         else
             error_flag = .true.
