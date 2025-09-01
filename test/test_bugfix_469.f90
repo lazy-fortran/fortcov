@@ -8,6 +8,7 @@ program test_bugfix_469
     use iso_fortran_env, only: error_unit
     use zero_config_manager, only: auto_discover_coverage_files_priority
     use file_ops_secure, only: safe_mkdir, safe_remove_file
+    use file_search_secure, only: safe_find_files
     use error_handling_core, only: error_context_t
     implicit none
     
@@ -87,6 +88,9 @@ contains
         ! Create test directory using secure method
         call safe_mkdir_for_tests(test_dir)
         
+        ! Ensure a clean slate: remove any pre-existing *.gcov in build/gcov
+        call remove_all_gcov_in_test_dir()
+        
         ! Create realistic .gcov files that should be found
         do i = 1, size(test_gcov_files)
             open(newunit=unit, file=trim(test_gcov_files(i)), status='replace', iostat=iostat)
@@ -156,9 +160,26 @@ contains
         call safe_remove_file(trim(test_dir) // "/real_test.gcov", error_ctx)
         call safe_remove_file(trim(test_dir) // "/coverage.gcov", error_ctx)
         
+        ! Also remove any other stray *.gcov files in build/gcov to avoid cross-test interference
+        call remove_all_gcov_in_test_dir()
+        
         ! Try to remove directory (works if empty)
         call safe_remove_file(test_dir, error_ctx)
         ! Ignore all errors - files may not exist
     end subroutine safe_cleanup_bugfix_test_files
+    
+    subroutine remove_all_gcov_in_test_dir()
+        !! Remove all existing .gcov files in the test directory
+        character(len=:), allocatable :: files(:)
+        type(error_context_t) :: error_ctx
+        integer :: i
+        
+        call safe_find_files(trim(test_dir) // "/*.gcov", files, error_ctx)
+        if (allocated(files)) then
+            do i = 1, size(files)
+                call safe_remove_file(trim(files(i)), error_ctx)
+            end do
+        end if
+    end subroutine remove_all_gcov_in_test_dir
     
 end program test_bugfix_469
