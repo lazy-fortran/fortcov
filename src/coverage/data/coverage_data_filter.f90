@@ -45,6 +45,15 @@ contains
                     exit
                 end if
             end do
+            ! Allow basename-only filenames (no dir separators) to pass include
+            ! filter. Accommodates gcov files that report only base name in
+            ! "Source:" lines.
+            if (.not. matches_include) then
+                if (index(file%filename, '/') == 0 .and. &
+                    index(file%filename, '\\') == 0) then
+                    matches_include = .true.
+                end if
+            end if
             if (.not. matches_include) then
                 include = .false.
                 return
