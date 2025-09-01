@@ -51,8 +51,8 @@ contains
             exit_code = 3  ! Coverage support validation failed
             return
         end if
-        
-        call report_build_system_detected(config, build_info)
+        ! Successful detection already reported by detect_and_validate_build_system
+        ! Avoid duplicate reporting here
         
     end function detect_and_validate_build_system_for_coverage
 
