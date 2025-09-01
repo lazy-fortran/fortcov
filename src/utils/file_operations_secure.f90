@@ -231,8 +231,8 @@ contains
         integer, intent(out) :: stat
         
         logical :: dir_exists
-        integer :: command_exit_status
-        character(len=1024) :: safe_command
+        character(len=:), allocatable :: marker_path
+        integer :: unit, iostat
         
         stat = 0
         
@@ -240,28 +240,24 @@ contains
         inquire(file=dir_path, exist=dir_exists)
         if (dir_exists) return
         
-        ! SECURITY FIX: Validate path and use controlled command execution
-        ! Only allow safe directory names (alphanumeric, _, -, /, .)
+        ! SECURITY: Avoid shell commands entirely. Attempt to create the
+        ! directory by creating and deleting a temporary marker file
+        ! inside it. This avoids execute_command_line usage.
         if (.not. is_safe_directory_path(dir_path)) then
             stat = 1
             return
         end if
-        
-        ! Use controlled mkdir command with validated input
-        write(safe_command, '(A,A)') 'mkdir -p ', trim(dir_path)
-        call execute_command_line(safe_command, wait=.true., &
-                                 exitstat=command_exit_status)
-        
-        if (command_exit_status == 0) then
-            ! Verify directory was actually created
+
+        marker_path = trim(dir_path) // '/.mkdir_marker'
+        open(newunit=unit, file=marker_path, status='new', iostat=iostat)
+        if (iostat == 0) then
+            close(unit, status='delete', iostat=iostat)
+            ! Verify directory existence after operation
             inquire(file=dir_path, exist=dir_exists)
-            if (dir_exists) then
-                stat = 0
-            else
-                stat = 1
-            end if
+            stat = merge(0, 1, dir_exists)
         else
-            stat = command_exit_status
+            ! Could not create file (likely parent didn't exist or permission issue)
+            stat = 1
         end if
         
     end subroutine create_single_directory
