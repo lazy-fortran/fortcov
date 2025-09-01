@@ -1,14 +1,7 @@
 module markdown_reporter
-    use coverage_model_core, only: source_location_t, coverage_line_t, &
-                              coverage_branch_t, coverage_function_t, &
-                              coverage_file_t, coverage_data_t, &
-                              coverage_diff_t, line_diff_t, file_diff_t, &
-                              line_coverage_t, file_coverage_t, &
-                              calculate_statistics, merge_coverage, &
-                              compare_coverage
-    use coverage_stats_core, only: coverage_stats_t, calculate_line_coverage
-    use string_utils, only: int_to_string
-    use string_utils, only: compress_ranges, format_percentage
+    use coverage_model_core, only: coverage_file_t, coverage_data_t
+    use coverage_stats_core, only: coverage_stats_t
+    use string_utils, only: int_to_string, compress_ranges, format_percentage
     use safe_allocation, only: safe_allocate_int_array, safe_deallocate_int_array
     implicit none
     private
