@@ -7,6 +7,11 @@ module coverage_build
     use constants_core
     use config_core
     use build_detector_core
+    use build_system_validation, only: detect_and_validate_build_system, &
+                                       report_build_detection_failed, &
+                                       report_unknown_build_system, &
+                                       report_build_tool_unavailable, &
+                                       report_build_system_detected
     use error_handling_core
     implicit none
     private
@@ -28,24 +33,16 @@ contains
         
         exit_code = EXIT_SUCCESS
         
-        ! Detect build system
-        call detect_build_system('.', build_info, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            call report_build_detection_failed(config, error_ctx)
-            exit_code = 2  ! Build system detection failed
+        ! Unified detection/validation and reporting
+        exit_code = detect_and_validate_build_system(config, build_info, error_ctx, '.')
+        if (exit_code /= EXIT_SUCCESS) return
+        if (build_info%system_type == 'unknown') then
+            call report_unknown_build_system(config)
             return
         end if
-        
-        ! Handle unknown build system
-        if (build_info%system_type == 'unknown') then
-            call report_unknown_build_system_for_coverage(config)
-            return  ! Skip gracefully
-        end if
-        
-        ! Check if build tool is available
         if (.not. build_info%tool_available) then
-            call report_build_tool_unavailable_for_coverage(config, build_info)
-            return  ! Skip gracefully
+            call report_build_tool_unavailable(config, build_info)
+            return
         end if
         
         ! Validate coverage support for detected build system
@@ -55,7 +52,7 @@ contains
             return
         end if
         
-        call report_build_system_detected_for_coverage(config, build_info)
+        call report_build_system_detected(config, build_info)
         
     end function detect_and_validate_build_system_for_coverage
 
@@ -153,48 +150,6 @@ contains
         
     end subroutine validate_coverage_support
 
-    subroutine report_build_detection_failed(config, error_ctx)
-        !! Report build system detection failure for coverage
-        type(config_t), intent(in) :: config
-        type(error_context_t), intent(in) :: error_ctx
-        
-        if (.not. config%quiet) then
-            print *, "❌ Build system detection failed for coverage analysis: " // &
-                     trim(error_ctx%message)
-        end if
-    end subroutine report_build_detection_failed
-    
-    subroutine report_unknown_build_system_for_coverage(config)
-        !! Report unknown build system detected for coverage
-        type(config_t), intent(in) :: config
-        
-        if (.not. config%quiet) then
-            print *, "⚠️  No known build system detected for coverage analysis"
-            print *, "   Supported: FPM, CMake, Make, Meson"
-            print *, "   Falling back to manual gcov file discovery"
-        end if
-    end subroutine report_unknown_build_system_for_coverage
-    
-    subroutine report_build_tool_unavailable_for_coverage(config, build_info)
-        !! Report build tool not available for coverage
-        type(config_t), intent(in) :: config
-        type(build_system_info_t), intent(in) :: build_info
-        
-        if (.not. config%quiet) then
-            print *, "⚠️  Build tool not available for coverage analysis: " // &
-                     trim(build_info%system_type)
-            print *, "   Falling back to manual gcov file discovery"
-        end if
-    end subroutine report_build_tool_unavailable_for_coverage
-    
-    subroutine report_build_system_detected_for_coverage(config, build_info)
-        !! Report successful build system detection for coverage
-        type(config_t), intent(in) :: config
-        type(build_system_info_t), intent(in) :: build_info
-        
-        if (.not. config%quiet) then
-            print *, "📦 Build system detected for coverage: " // trim(build_info%system_type)
-        end if
-    end subroutine report_build_system_detected_for_coverage
+    ! Note: reporting now standardized via build_system_validation
 
 end module coverage_build

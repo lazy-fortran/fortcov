@@ -12,6 +12,7 @@ module coverage_workflow_core
     use coverage_diff
     use coverage_types, only: coverage_diff_t
     use build_detector_core
+    use build_system_validation, only: detect_and_validate_build_system
     use error_handling_core
     implicit none
     private
@@ -116,9 +117,8 @@ contains
             print *, "🔍 Orchestrating coverage file discovery..."
         end if
         
-        ! Try build system integration for enhanced discovery
-        call detect_build_system('.', build_info, error_ctx)
-        if (error_ctx%error_code == ERROR_SUCCESS .and. &
+        ! Try build system integration for enhanced discovery (unified)
+        if (detect_and_validate_build_system(config, build_info, error_ctx, '.') == EXIT_SUCCESS .and. &
             build_info%system_type /= 'unknown' .and. &
             build_info%tool_available) then
             

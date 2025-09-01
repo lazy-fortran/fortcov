@@ -55,7 +55,7 @@ contains
         call report_workflow_start(config)
         
         ! Detect and validate build system
-        exit_code = detect_and_validate_build_system(config, build_info, error_ctx)
+        exit_code = detect_and_validate_build_system(config, build_info, error_ctx, '.')
         if (exit_code /= EXIT_SUCCESS) return
         
         ! Check if build system is usable
