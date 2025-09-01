@@ -419,7 +419,7 @@ contains
         call safe_write_context(error_ctx, "gcov command execution")
     end subroutine handle_gcov_command_failure
 
-    ! get_base_name now imported from xml_utils_core
+    ! get_base_name now imported from xml_utils
 
     ! integer_to_string now imported from iostat_utilities
     
