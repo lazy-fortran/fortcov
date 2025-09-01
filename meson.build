@@ -85,7 +85,7 @@ fortcov_sources += files(
   'src/utils/file_ops/directory_operations_secure.f90',
   'src/utils/file_ops/file_ops_secure.f90',
   'src/utils/path_ops/path_utils_consolidated.f90',
-  'src/json/json_core.f90',
+  'src/json/json_parsing.f90',
   'src/gcov/gcov_executor.f90',
   'src/reporters/markdown_reporter.f90',
   'src/reporters/html_reporter.f90'

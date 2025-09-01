@@ -1,4 +1,4 @@
-module json_parsing_core
+module json_parsing
     !! Core JSON Parsing Implementation
     !! 
     !! Focused module for low-level JSON parsing using json-fortran library.
@@ -269,4 +269,4 @@ contains
         file_coverage%lines = lines_array
     end subroutine parse_file_from_json_file
     
-end module json_parsing_core
+end module json_parsing

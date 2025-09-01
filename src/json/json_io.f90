@@ -14,7 +14,7 @@ module json_io
     ! Replace manual JSON parsing with json-fortran library
     use json_module, only: json_file, json_value, json_core
     use json_kinds, only: RK, IK
-    use json_parsing_core, only: parse_coverage_from_json_value, &
+    use json_parsing, only: parse_coverage_from_json_value, &
                                  parse_coverage_from_json_file, &
                                  parse_files_from_json_array, &
                                  parse_file_from_json_file
