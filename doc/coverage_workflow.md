@@ -20,7 +20,6 @@ Requirements: `gfortran`, `gcov`, `fpm`.
 
 From the root of your FPM project:
 
-```bash
 ## Option 1: FortCov built-in
 
 ```bash
@@ -41,8 +40,6 @@ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
 Notes:
 - If a script is not present in your project, copy it from this repository's
   `scripts/` directory or run it via a full path from the FortCov repository.
-```
-
 Outputs:
 - `coverage.md`: Markdown report (project summary and per-file stats)
 - `.gcov` files in the working directory
