@@ -184,6 +184,8 @@ coverage-all: test
 
 ## Meson Integration
 
+Note: FortCov’s primary build system is FPM. Meson support is provided via example projects under `examples/build_systems/meson/`. The repository no longer includes a top‑level `meson.build`/`meson_options.txt`; use the example as a template for your Meson projects.
+
 ### meson.build Configuration
 
 ```meson
