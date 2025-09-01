@@ -275,7 +275,7 @@ contains
 
         allocate(c_path(n+1))
         do i = 1, n
-            c_path(i) = transfer(path(i:i), c_path(i))
+            c_path(i) = path(i:i)
         end do
         c_path(n+1) = c_null_char
 

@@ -32,12 +32,12 @@ module file_search_secure
             character(kind=c_char), dimension(*) :: cpattern
             integer(c_int), value :: flags
             type(c_ptr), value :: errfunc
-            type(c_ptr) :: pglob
+            type(c_ptr), value :: pglob
             integer(c_int) :: rc
         end function c_glob
         subroutine c_globfree(pglob) bind(C, name="globfree")
             import :: c_ptr
-            type(c_ptr) :: pglob
+            type(c_ptr), value :: pglob
         end subroutine c_globfree
         function c_strlen(cstr) bind(C, name="strlen") result(n)
             import :: c_ptr, c_size_t
@@ -321,7 +321,7 @@ contains
         call c_f_pointer(cstr, buf, [n])
         allocate(character(len=n) :: fstr)
         do i = 1, n
-            fstr(i:i) = transfer(buf(i), ' ')
+            fstr(i:i) = buf(i)
         end do
     end function from_c_string
 
