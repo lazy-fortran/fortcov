@@ -320,36 +320,6 @@ contains
         
     end subroutine handle_enforcement_error
     
-    function count_severity_level(violations, severity) result(count)
-        !! Counts file violations of specific severity level
-        type(file_size_violation_t), intent(in) :: violations(:)
-        character(len=*), intent(in) :: severity
-        integer :: count
-        
-        integer :: i
-        count = 0
-        do i = 1, size(violations)
-            if (trim(violations(i)%severity_level) == trim(severity)) then
-                count = count + 1
-            end if
-        end do
-        
-    end function count_severity_level
-    
-    function count_directory_severity_level(violations, severity) result(count)
-        !! Counts directory violations of specific severity level
-        type(directory_size_violation_t), intent(in) :: violations(:)
-        character(len=*), intent(in) :: severity
-        integer :: count
-        
-        integer :: i
-        count = 0
-        do i = 1, size(violations)
-            if (trim(violations(i)%severity_level) == trim(severity)) then
-                count = count + 1
-            end if
-        end do
-        
-    end function count_directory_severity_level
+    ! Duplicate counting helpers removed in favor of size_report_generator
 
 end module size_enforcement_core
