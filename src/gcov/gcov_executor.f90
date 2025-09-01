@@ -13,6 +13,9 @@ module gcov_executor
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_move_file
     use shell_utilities, only: escape_shell_argument
+    use xml_utils_core, only: get_base_name
+    use string_utils, only: int_to_string
+    use gcov_executor_helpers, only: sanitize_file_path, is_safe_gcov_command
     implicit none
     private
     
@@ -223,29 +226,7 @@ contains
         
     end subroutine secure_execute_gcov_command
     
-    ! Validate gcov command for safe execution
-    logical function is_safe_gcov_command(command) result(is_safe)
-        character(len=*), intent(in) :: command
-        
-        is_safe = .true.
-        
-        ! Check for dangerous command injection patterns
-        if (index(command, '&&') > 0 .or. index(command, '||') > 0 .or. &
-            index(command, ';') > 0 .or. index(command, '`') > 0 .or. &
-            index(command, '$') > 0 .or. index(command, '|') > 0 .or. &
-            index(command, '>') > 0 .or. index(command, '<') > 0) then
-            is_safe = .false.
-            return
-        end if
-        
-        ! Ensure command starts with safe gcov patterns
-        if (.not. (index(command, 'gcov ') == 1 .or. &
-                   index(command, 'cd ') == 1)) then
-            is_safe = .false.
-            return
-        end if
-        
-    end function is_safe_gcov_command
+    ! is_safe_gcov_command moved to gcov_executor_helpers
     
     ! Process generated gcov output files
     subroutine process_gcov_output_files(this, source_file, temp_files, line_count, error_ctx)
@@ -431,84 +412,18 @@ contains
         error_ctx%error_code = ERROR_INVALID_CONFIG
         call safe_write_message(error_ctx, &
             "gcov command failed with exit code " // &
-            integer_to_string(exit_code))
+            int_to_string(exit_code))
         call safe_write_suggestion(error_ctx, &
             "Verify gcov is installed and coverage files are valid")
         call safe_write_context(error_ctx, "gcov command execution")
     end subroutine handle_gcov_command_failure
 
-    function get_base_name(filepath) result(basename)
-        character(len=*), intent(in) :: filepath
-        character(len=:), allocatable :: basename
-        
-        integer :: dot_pos, slash_pos
-        character(len=256) :: temp_name
-        
-        ! Find last slash
-        slash_pos = index(filepath, "/", back=.true.)
-        if (slash_pos > 0) then
-            temp_name = filepath(slash_pos+1:)
-        else
-            temp_name = filepath
-        end if
-        
-        ! Remove file extension
-        dot_pos = index(temp_name, ".", back=.true.)
-        if (dot_pos > 0) then
-            basename = trim(temp_name(1:dot_pos-1))
-        else
-            basename = trim(temp_name)
-        end if
-    end function get_base_name
+    ! get_base_name now imported from xml_utils_core
 
-    function integer_to_string(int_val) result(str_val)
-        integer, intent(in) :: int_val
-        character(len=:), allocatable :: str_val
-        character(len=32) :: temp_str
-        
-        write(temp_str, '(I0)') int_val
-        str_val = trim(temp_str)
-    end function integer_to_string
+    ! integer_to_string now imported from iostat_utilities
     
     ! SECURITY HELPERS: Path sanitization and shell argument escaping
     
-    subroutine sanitize_file_path(path)
-        !! Sanitize file path to prevent directory traversal and injection attacks
-        character(len=*), intent(inout) :: path
-        integer :: i, len_path
-        character :: c
-        
-        len_path = len_trim(path)
-        
-        ! Remove dangerous characters and patterns
-        do i = 1, len_path
-            c = path(i:i)
-            ! Replace dangerous shell characters with underscores
-            if (c == ';' .or. c == '|' .or. c == '&' .or. c == '$' .or. &
-                c == '`' .or. c == '<' .or. c == '>' .or. c == '(' .or. &
-                c == ')' .or. c == '{' .or. c == '}') then
-                path(i:i) = '_'
-            end if
-        end do
-        
-        ! Remove directory traversal patterns
-        call remove_pattern(path, '../')
-        call remove_pattern(path, '/./')
-        call remove_pattern(path, '//')
-    end subroutine sanitize_file_path
-    
-    subroutine remove_pattern(str, pattern)
-        !! Remove all occurrences of pattern from string
-        character(len=*), intent(inout) :: str
-        character(len=*), intent(in) :: pattern
-        integer :: pos, pattern_len
-        
-        pattern_len = len(pattern)
-        do
-            pos = index(str, pattern)
-            if (pos == 0) exit
-            str = str(1:pos-1) // str(pos+pattern_len:)
-        end do
-    end subroutine remove_pattern
+    ! sanitize_file_path and remove_pattern moved to gcov_executor_helpers
 
 end module gcov_executor
