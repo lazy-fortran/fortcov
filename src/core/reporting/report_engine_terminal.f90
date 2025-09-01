@@ -3,6 +3,7 @@ module report_engine_terminal
     !! 
     !! Handles terminal UI and browser functionality.
     !! Extracted from report_engine.f90 for SRP compliance (Issue #718).
+    use iso_fortran_env, only: real64
     use coverage_model_core
     use data_transformer_core
     use data_transformer_types
@@ -63,7 +64,8 @@ contains
         end if
         
         ! In interactive mode, start the full TUI with proper loop control
-        call start_interactive_tui(session, terminal_output, success, error_msg)
+        call start_interactive_tui(session, terminal_output, success, error_msg, &
+                                   real(config%startup_timeout_seconds, real64))
     end subroutine launch_terminal_browser_session
     
     ! Generate styled terminal output
