@@ -37,7 +37,8 @@ contains
         error_message = ""
         
         ! Apply zero configuration defaults if not already set
-        if (.not. allocated(config%output_path) .or. len_trim(config%output_path) == 0) then
+        if (.not. allocated(config%output_path) .or. &
+            len_trim(config%output_path) == 0) then
             block
                 character(len=:), allocatable :: default_output_path
                 character(len=:), allocatable :: default_output_format
@@ -50,10 +51,18 @@ contains
                                                       default_exclude_patterns)
                 
                 ! Apply defaults to config
-                if (.not. allocated(config%output_path)) config%output_path = default_output_path
-                if (.not. allocated(config%output_format)) config%output_format = default_output_format
-                if (.not. allocated(config%input_format)) config%input_format = default_input_format
-                if (.not. allocated(config%exclude_patterns)) config%exclude_patterns = default_exclude_patterns
+                if (.not. allocated(config%output_path)) then
+                    config%output_path = default_output_path
+                end if
+                if (.not. allocated(config%output_format)) then
+                    config%output_format = default_output_format
+                end if
+                if (.not. allocated(config%input_format)) then
+                    config%input_format = default_input_format
+                end if
+                if (.not. allocated(config%exclude_patterns)) then
+                    config%exclude_patterns = default_exclude_patterns
+                end if
             end block
         end if
         
@@ -97,8 +106,10 @@ contains
             return
         end if
         
-        ! Build system detected - configuration can use the build_info for test commands
-        ! Note: config_t doesn't have build_command field, build_info provides test commands
+        ! Build system detected - configuration can use the build_info
+        ! for test commands
+        ! Note: config_t doesn't have build_command field,
+        ! build_info provides test commands
         
         success = .true.
     end subroutine integrate_build_system_detection
@@ -146,7 +157,8 @@ contains
         if (marker_exists) then
             if (.not. config%quiet) then
                 print '(A)', "🛡️  Fork bomb prevention: zero-config execution disabled"
-                print '(A)', "    (fortcov detected it's running within a test environment)"
+                print '(A)', "    (fortcov detected it's running within a test"
+                print '(A)', "     environment)"
             end if
             exit_code = EXIT_SUCCESS
             return
@@ -171,7 +183,9 @@ contains
             exit_code = execute_auto_test_workflow(config)
             if (exit_code /= 0) then
                 if (.not. config%quiet) then
-                    print '(A)', "FortCov: Auto-test execution failed, proceeding with existing coverage files..."
+                    print '(A)', &
+                        "FortCov: Auto-test execution failed, proceeding " // &
+                        "with existing coverage files..."
                 end if
                 ! Continue with existing coverage files instead of failing
                 exit_code = EXIT_SUCCESS  
@@ -207,14 +221,17 @@ contains
         
         if (.not. config%quiet) then
             if (exit_code == EXIT_SUCCESS) then
-                print '(A)', "FortCov: Zero-configuration coverage analysis completed successfully!"
+                print '(A)', &
+                    "FortCov: Zero-configuration coverage analysis completed " // &
+                    "successfully!"
             else
                 print '(A)', "FortCov: Zero-configuration coverage analysis failed."
             end if
         end if
     end subroutine execute_zero_config_complete_workflow
 
-    subroutine populate_zero_config_with_discovered_files(config, success, error_message)
+    subroutine populate_zero_config_with_discovered_files(config, success, &
+                                                         error_message)
         !! Auto-discover and populate configuration with coverage files and source paths
         type(config_t), intent(inout) :: config
         logical, intent(out) :: success
@@ -235,13 +252,15 @@ contains
         
         if (.not. config%quiet) then
             if (allocated(discovered_coverage_files)) then
-                print '(A,I0)', "FortCov: Discovery returned ", size(discovered_coverage_files), " files"
+                print '(A,I0)', "FortCov: Discovery returned ", &
+                                  size(discovered_coverage_files), " files"
             else
                 print '(A)', "FortCov: Discovery returned no allocated array"
             end if
         end if
         
-        if (.not. allocated(discovered_coverage_files) .or. size(discovered_coverage_files) == 0) then
+        if (.not. allocated(discovered_coverage_files) .or. &
+            size(discovered_coverage_files) == 0) then
             error_message = "No coverage files found in standard locations"
             return
         end if
@@ -257,8 +276,10 @@ contains
         config%source_paths = discovered_source_paths
         
         if (.not. config%quiet) then
-            print '(A,I0,A)', "FortCov: Found ", size(discovered_coverage_files), " coverage files"
-            print '(A,I0,A)', "FortCov: Using ", size(discovered_source_paths), " source paths"
+            print '(A,I0,A)', "FortCov: Found ", &
+                              size(discovered_coverage_files), " coverage files"
+            print '(A,I0,A)', "FortCov: Using ", &
+                              size(discovered_source_paths), " source paths"
         end if
         
         success = .true.
