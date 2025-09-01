@@ -1,7 +1,7 @@
 #!/bin/bash
 # Curated CI-safe test suite with strict timeout enforcement
 
-set -e
+set -Eeuo pipefail
 
 # Preflight: ensure fpm is available (clear error instead of abrupt exit)
 FPM_CMD="${FPM_BIN:-fpm}"
@@ -47,7 +47,7 @@ ALL_TESTS=$(echo "$RAW_OUTPUT" | \
     sed 's/[[:space:]]*$//')
 
 # Debug: Show what we extracted (enhanced for CI debugging)
-if [ -n "$CI" ]; then
+if [ -n "${CI:-}" ]; then
     echo "DEBUG: Extracted test names:"
     echo "$ALL_TESTS" | head -5
     echo "---"
