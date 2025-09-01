@@ -1,7 +1,16 @@
 #!/bin/bash
 # Curated CI-safe test suite with strict timeout enforcement
 
-set -e
+set -Eeuo pipefail
+
+# Preflight: ensure fpm is available (clear error instead of abrupt exit)
+FPM_CMD="${FPM_BIN:-fpm}"
+if ! command -v "$FPM_CMD" >/dev/null 2>&1; then
+    echo "ERROR: '$FPM_CMD' not found in PATH." >&2
+    echo "Install fpm (Fortran Package Manager) and ensure it is on PATH." >&2
+    echo "See: https://fpm.fortran-lang.org/en/latest/installation.html" >&2
+    exit 2
+fi
 
 # Global cap in seconds (hard cap for entire run)
 # Honor TEST_TIMEOUT when provided; fallback to existing behavior
@@ -19,12 +28,12 @@ EXCLUDE_TESTS=( )
 
 # Ensure dependencies and build artifacts are initialized before listing tests
 # This prevents runtime initialization during test listing (fixes #861)
-fpm build >/dev/null 2>&1 || true
+"$FPM_CMD" build >/dev/null 2>&1 || true
 
 # Get list of all tests - ROBUST pattern matching that handles malformed output
 # Skip the "Matched names:" header and extract test names  
 # Strip ANSI color codes and filter properly
-RAW_OUTPUT=$(fpm test --list 2>&1)
+RAW_OUTPUT=$("$FPM_CMD" test --list 2>&1)
 # Remove ANSI escape sequences, compilation progress, and filter for actual test names
 # Test names start with test_, check, or minimal_ and don't contain dots or percentages
 ALL_TESTS=$(echo "$RAW_OUTPUT" | \
@@ -38,7 +47,7 @@ ALL_TESTS=$(echo "$RAW_OUTPUT" | \
     sed 's/[[:space:]]*$//')
 
 # Debug: Show what we extracted (enhanced for CI debugging)
-if [ -n "$CI" ]; then
+if [ -n "${CI:-}" ]; then
     echo "DEBUG: Extracted test names:"
     echo "$ALL_TESTS" | head -5
     echo "---"
@@ -55,7 +64,7 @@ echo "Pre-test cleanup completed"
 # Fast path: batch run all non-excluded tests #
 ###############################################
 
-"${FPM_BIN:-fpm}" build >/dev/null 2>&1 || true
+"$FPM_CMD" build >/dev/null 2>&1 || true
 
 # Split excluded vs included sets
 INCLUDED_TESTS=()
@@ -84,7 +93,7 @@ if [[ ${#INCLUDED_TESTS[@]} -gt 0 ]]; then
     BATCH_WINDOW=$(( GLOBAL_CAP / 2 ))
     (( BATCH_WINDOW < 60 )) && BATCH_WINDOW=60
     echo "[RUN] Batch executing ${#INCLUDED_TESTS[@]} tests (timeout=${BATCH_WINDOW}s)"
-    if timeout "$BATCH_WINDOW" "${FPM_BIN:-fpm}" test "${INCLUDED_TESTS[@]}" >/dev/null 2>&1; then
+    if timeout "$BATCH_WINDOW" "$FPM_CMD" test "${INCLUDED_TESTS[@]}" >/dev/null 2>&1; then
         PASSED=${#INCLUDED_TESTS[@]}
     else
         echo "Batch execution failed or timed out; falling back to per-test mode"
@@ -101,7 +110,7 @@ if [[ ${#INCLUDED_TESTS[@]} -gt 0 ]]; then
             PER_TEST_TO=$(( REMAIN < 12 ? REMAIN : 12 ))
             echo "[RUN] $test (timeout=${PER_TEST_TO}s, elapsed=${SECONDS}s)"
             TEMP_OUTPUT=$(mktemp)
-            if timeout "$PER_TEST_TO" "${FPM_BIN:-fpm}" test "$test" > "$TEMP_OUTPUT" 2>&1; then
+            if timeout "$PER_TEST_TO" "$FPM_CMD" test "$test" > "$TEMP_OUTPUT" 2>&1; then
                 echo "[PASS] $test"
                 PASSED=$((PASSED + 1))
             else
