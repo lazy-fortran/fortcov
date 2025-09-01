@@ -4,6 +4,7 @@ module fork_bomb_prevention
     !! Handles detection of test execution environments to prevent infinite recursion.
     !! Extracted from coverage_test_executor.f90 for SRP compliance (Issue #718).
     use config_core, only: config_t
+    use test_reporter_core, only: report_fork_bomb_prevention
     use file_ops_secure, only: safe_remove_file
     use error_handling_core, only: error_context_t
     implicit none
@@ -11,7 +12,6 @@ module fork_bomb_prevention
     
     public :: is_running_in_test_environment
     public :: prepare_for_auto_test_execution, cleanup_recursion_marker
-    public :: report_fork_bomb_prevention
 
 contains
 
@@ -174,14 +174,6 @@ contains
         
     end subroutine check_build_directory_context
     
-    subroutine report_fork_bomb_prevention(config)
-        !! Report that fork bomb prevention was triggered
-        type(config_t), intent(in) :: config
-        
-        if (.not. config%quiet) then
-            print *, "🛡️  Fork bomb prevention: auto-test execution disabled"
-            print *, "   (fortcov detected it's running within a test environment)"
-        end if
-    end subroutine report_fork_bomb_prevention
+    ! Reporting is provided by test_reporter_core to avoid duplication
 
 end module fork_bomb_prevention
