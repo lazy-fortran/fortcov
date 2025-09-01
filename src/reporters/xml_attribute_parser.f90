@@ -9,7 +9,7 @@ module xml_attribute_parser
     !! - Comprehensive error handling for all allocations
     !! - Safe deallocation patterns with stat= checking
     !! - Proper error reporting for memory failures
-    use coverage_model_core
+    use coverage_model_core, only: coverage_line_t
     implicit none
     private
     
