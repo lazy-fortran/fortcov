@@ -1,6 +1,9 @@
 # FortCov – Precise FPM Coverage
 
-FortCov turns gfortran/gcov coverage into clear reports. It analyzes `.gcov` files produced by `gcov`; it does not invoke `gcov` itself. For FPM builds, use `gcov` (or the helper scripts in `scripts/`) to generate `.gcov` files, then run FortCov to create the report.
+FortCov turns gfortran/gcov coverage into clear reports. It analyzes `.gcov`
+files produced by `gcov`; it does not invoke `gcov` itself. For FPM builds,
+use `gcov` (or the helper scripts in `scripts/`) to generate `.gcov` files,
+then run FortCov to create the report.
 
 See the consolidated coverage workflow: `doc/coverage_workflow.md`.
 
@@ -23,9 +26,9 @@ sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /u
 Run these from the root of your FPM project:
 
 ```bash
-# Recommended: end‑to‑end application coverage with helper script
-# If the script isn’t in your project, copy it from this repo’s `scripts/` directory
-# or invoke it via its full path from the FortCov repository.
+# Recommended: end-to-end application coverage with helper script
+# If the script isn't in your project, copy it from this repo's `scripts/`
+# directory or invoke it via its full path from the FortCov repository.
 ./scripts/fpm_coverage_workflow_fixed.sh coverage.md src
 ```
 
@@ -46,7 +49,12 @@ fortcov --source=src *.gcov --output=coverage.md
 
 The file `coverage.md` contains a project summary and per-file stats.
 
-Tip: Convenience scripts are available in this repository’s `scripts/` directory: `scripts/fpm_coverage_bridge.sh src` performs the manual steps and then runs FortCov. For end‑to‑end application coverage, use `scripts/fpm_coverage_workflow_fixed.sh`. If these scripts aren’t in your project, copy them over or run them via a full path from the FortCov repository. See `doc/coverage_workflow.md`.
+Tip: Convenience scripts are available in this repository's `scripts/`
+directory: `scripts/fpm_coverage_bridge.sh src` performs the manual steps and
+then runs FortCov. For end-to-end application coverage, use
+`scripts/fpm_coverage_workflow_fixed.sh`. If these scripts aren't in your
+project, copy them over or run them via a full path from the FortCov
+repository. See `doc/coverage_workflow.md`.
 
 ## CI Recipe (Fail Under Threshold)
 
