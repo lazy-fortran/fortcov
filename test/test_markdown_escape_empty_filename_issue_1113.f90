@@ -37,7 +37,11 @@ program test_markdown_escape_empty_filename_issue_1113
         "markdown report contains table header", &
         "Expected standard table header present")
 
+    ! AND: data row renders with an empty filename cell without crashing
+    call assert_test(index(report, "|  | ") > 0, &
+        "data row starts with empty filename cell", &
+        "Expected a row beginning with '|  | ' for empty filename")
+
     call print_test_summary("MARKDOWN REPORTER ESCAPE EMPTY FILENAME")
 
 end program test_markdown_escape_empty_filename_issue_1113
-
