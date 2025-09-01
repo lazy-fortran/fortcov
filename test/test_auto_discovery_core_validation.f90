@@ -16,6 +16,7 @@ program test_auto_discovery_core_validation
         execute_zero_config_complete_workflow
     use config_core, only: config_t, parse_config
     use fortcov_core, only: run_coverage_analysis
+    use file_ops_secure, only: safe_remove_file
     use test_auto_discovery_shared_utilities
     implicit none
     
@@ -56,9 +57,16 @@ contains
         
         workspace_path = get_discovery_workspace_path(trim(test_dir))
         
-        ! Test FPM detection
-        call execute_command_line('echo "name = ""test_project""" > ' // &
-                                 trim(workspace_path) // '/fpm.toml')
+        ! Test FPM detection (write fpm.toml without shell)
+        block
+            integer :: unit, ios
+            open(newunit=unit, file=trim(workspace_path)//'/fpm.toml', &
+                 status='replace', action='write', iostat=ios)
+            if (ios == 0) then
+                write(unit, '(A)') 'name = "test_project"'
+                close(unit)
+            end if
+        end block
         
         call test_build_system_detection("FPM", workspace_path, build_info, &
                                         detected)
@@ -68,30 +76,57 @@ contains
                         "FPM system type correct", &
                         "Expected fpm, got: " // trim(build_info%system_type))
         
-        ! Clean and test CMake detection
-        call execute_command_line('rm -f ' // trim(workspace_path) // '/fpm.toml')
-        call execute_command_line('echo "cmake_minimum_required(VERSION 3.10)" > ' // &
-                                 trim(workspace_path) // '/CMakeLists.txt')
+        ! Clean and test CMake detection (no shell)
+        block
+            use error_handling_core, only: error_context_t
+            type(error_context_t) :: err
+            integer :: unit, ios
+            call safe_remove_file(trim(workspace_path)//'/fpm.toml', err)
+            open(newunit=unit, file=trim(workspace_path)//'/CMakeLists.txt', &
+                 status='replace', action='write', iostat=ios)
+            if (ios == 0) then
+                write(unit, '(A)') 'cmake_minimum_required(VERSION 3.10)'
+                close(unit)
+            end if
+        end block
         
         call test_build_system_detection("CMake", workspace_path, build_info, &
                                         detected)
         call assert_test(detected, "CMake project detection", &
                         "Should detect CMakeLists.txt")
         
-        ! Clean and test Make detection
-        call execute_command_line('rm -f ' // trim(workspace_path) // '/CMakeLists.txt')
-        call execute_command_line('echo "all:" > ' // &
-                                  trim(workspace_path) // '/Makefile')
+        ! Clean and test Make detection (no shell)
+        block
+            use error_handling_core, only: error_context_t
+            type(error_context_t) :: err
+            integer :: unit, ios
+            call safe_remove_file(trim(workspace_path)//'/CMakeLists.txt', err)
+            open(newunit=unit, file=trim(workspace_path)//'/Makefile', &
+                 status='replace', action='write', iostat=ios)
+            if (ios == 0) then
+                write(unit, '(A)') 'all:'
+                close(unit)
+            end if
+        end block
         
         call test_build_system_detection("Make", workspace_path, build_info, &
                                         detected)
         call assert_test(detected, "Make project detection", &
                         "Should detect Makefile")
         
-        ! Clean and test Meson detection
-        call execute_command_line('rm -f ' // trim(workspace_path) // '/Makefile')
-        call execute_command_line('echo "project(\"test\")" > ' // &
-                                 trim(workspace_path) // '/meson.build')
+        ! Clean and test Meson detection (no shell)
+        block
+            use error_handling_core, only: error_context_t
+            type(error_context_t) :: err
+            integer :: unit, ios
+            call safe_remove_file(trim(workspace_path)//'/Makefile', err)
+            open(newunit=unit, file=trim(workspace_path)//'/meson.build', &
+                 status='replace', action='write', iostat=ios)
+            if (ios == 0) then
+                write(unit, '(A)') 'project("test")'
+                close(unit)
+            end if
+        end block
         
         call test_build_system_detection("Meson", workspace_path, build_info, &
                                         detected)
@@ -177,30 +212,9 @@ contains
         ! Create mock gcov files to simulate successful test execution
         call create_mock_gcov_files(workspace_path)
         
-        ! Test gcov file discovery  
-        block
-            use portable_temp_utils, only: get_temp_dir
-            character(len=:), allocatable :: temp_dir
-            character(len=512) :: found_gcov_file
-            
-            temp_dir = get_temp_dir()
-            found_gcov_file = temp_dir // '/found_gcov.txt'
-            
-            call execute_command_line('find ' // trim(workspace_path) // &
-                                     ' -name "*.gcov" > "' // &
-                                     trim(found_gcov_file) // '"')
-            
-            open(newunit=unit_number, file=trim(found_gcov_file), &
-                 status='old', iostat=iostat, action='read')
-        
+        ! Test gcov file discovery (direct check, no shell)
         gcov_files_exist = .false.
-        if (iostat == 0) then
-            read(unit_number, '(A)', iostat=iostat) line
-            if (iostat == 0 .and. len_trim(line) > 0) then
-                gcov_files_exist = .true.
-            end if
-            close(unit_number)
-        end if
+        inquire(file=trim(workspace_path)//'/main.f90.gcov', exist=gcov_files_exist)
         
         call assert_test(gcov_files_exist, "Gcov files discoverable", &
                         "Should find created gcov files")
@@ -211,9 +225,7 @@ contains
                             "Mock gcov files should be readable")
         end if
         
-            ! Cleanup
-            call execute_command_line('rm -f "' // trim(found_gcov_file) // '"')
-        end block
+        
         
     end subroutine test_gcov_generation_and_discovery
 
