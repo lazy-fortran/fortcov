@@ -17,8 +17,9 @@ module build_discovery_core
     !! - Provides test_build_result_t for standardized result reporting
     !! - Integrates with auto_discovery_utilities workflow orchestration
 
-    use build_detector_core, only: build_system_info_t, detect_build_system, &
-                                    get_coverage_test_command
+    use build_detector_core, only: build_system_info_t, get_coverage_test_command
+    use build_system_validation, only: detect_and_validate_build_system
+    use constants_core, only: EXIT_SUCCESS
     use config_types, only: config_t
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
     use path_security, only: validate_path_security
@@ -71,41 +72,22 @@ contains
         
         type(build_system_info_t) :: build_info
         type(error_context_t) :: error_ctx
-        character(len=:), allocatable :: safe_directory
-        logical :: dir_exists
         
         ! Initialize result with defaults
         call initialize_result(result)
         
-        ! Validate input directory
+        ! Preserve specific local validations for message compatibility
         if (len_trim(directory) == 0) then
             call handle_invalid_directory('Empty directory path provided', result)
             return
         end if
-        
         if (len_trim(directory) > MAX_PATH_LEN) then
             call handle_invalid_directory('Directory path too long', result)
             return
         end if
-        
-        ! Secure path validation
-        call validate_path_security(directory, safe_directory, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            call handle_path_security_error(error_ctx, result)
-            return
-        end if
-        
-        ! Check directory existence using inquire
-        inquire(file=safe_directory, exist=dir_exists)
-        if (.not. dir_exists) then
-            call handle_invalid_directory( &
-                'Directory not found: ' // safe_directory, result)
-            return
-        end if
-        
-        ! Detect build system
-        call detect_build_system(safe_directory, build_info, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
+
+        ! Unified: validate path, detect and standardize reporting
+        if (detect_and_validate_build_system(config, build_info, error_ctx, directory) /= EXIT_SUCCESS) then
             call handle_build_detection_error(error_ctx, result)
             return
         end if

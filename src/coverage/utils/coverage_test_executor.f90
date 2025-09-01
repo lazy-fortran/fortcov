@@ -5,8 +5,9 @@ module coverage_test_executor
     !! Decomposed from 471 lines for Issue #718 size management.
     use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
     use config_core, only: config_t
-    use build_detector_core, only: build_system_info_t, detect_build_system
+    use build_detector_core, only: build_system_info_t
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
+    use build_system_validation, only: detect_and_validate_build_system
     use test_executor_core
     use test_environment_detector
     use test_reporter_core
@@ -54,7 +55,7 @@ contains
         call report_workflow_start(config)
         
         ! Detect and validate build system
-        exit_code = detect_and_validate_build_system(config, build_info, error_ctx)
+        exit_code = detect_and_validate_build_system(config, build_info, error_ctx, '.')
         if (exit_code /= EXIT_SUCCESS) return
         
         ! Check if build system is usable
@@ -85,39 +86,7 @@ contains
         
     end function execute_auto_test_workflow
     
-    ! Helper function for build system detection and validation
-    function detect_and_validate_build_system(config, build_info, error_ctx) result(exit_code)
-        !! Detect build system and validate it's usable
-        type(config_t), intent(in) :: config
-        type(build_system_info_t), intent(out) :: build_info
-        type(error_context_t), intent(out) :: error_ctx
-        integer :: exit_code
-        
-        exit_code = EXIT_SUCCESS
-        
-        ! Detect build system
-        call detect_build_system('.', build_info, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            call report_build_detection_failed(config, error_ctx)
-            exit_code = 2  ! Build system detection failed
-            return
-        end if
-        
-        ! Handle unknown build system
-        if (build_info%system_type == 'unknown') then
-            call report_unknown_build_system(config)
-            return  ! Skip gracefully
-        end if
-        
-        ! Check if build tool is available
-        if (.not. build_info%tool_available) then
-            call report_build_tool_unavailable(config, build_info)
-            return  ! Skip gracefully
-        end if
-        
-        call report_build_system_detected(config, build_info)
-        
-    end function detect_and_validate_build_system
+    ! Note: build system detection/validation unified in build_system_validation
     
     ! Helper function for handling test execution results
     function handle_test_execution_results(config, test_exit_code, execution_success) result(exit_code)

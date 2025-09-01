@@ -1,6 +1,7 @@
 module zero_config_core
     use config_types, only: config_t
-    use build_detector_core, only: build_system_info_t, detect_build_system
+    use build_detector_core, only: build_system_info_t
+    use build_system_validation, only: detect_and_validate_build_system
     use coverage_test_executor, only: execute_auto_test_workflow
     use zero_config_manager
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
@@ -99,9 +100,8 @@ contains
         success = .false.
         error_message = ""
         
-        ! Detect build system
-        call detect_build_system(".", build_info, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
+        ! Detect and validate build system via unified helper
+        if (detect_and_validate_build_system(config, build_info, error_ctx, '.') /= EXIT_SUCCESS) then
             error_message = "Build system detection failed: " // trim(error_ctx%message)
             return
         end if
