@@ -64,7 +64,7 @@ echo "Pre-test cleanup completed"
 ###############################################
 
 # Build once to avoid repeated overhead (already initialized above)
-fpm build >/dev/null || true
+fpm build >/dev/null 2>&1 || true
 
 # Split excluded vs included sets
 INCLUDED_TESTS=()
