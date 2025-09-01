@@ -43,7 +43,7 @@ info "Executing instrumented application scenarios to exercise code paths..."
 "${APP_BIN}" --validate >/dev/null 2>&1 || true
 
 # 5) Generate .gcov files from all build directories containing .gcda
-info "Generating .gcov files from build directories..."
+info "Generating .gcov files from build directories (root-invocation for proper paths)..."
 BUILD_DIRS=$(find build -name "*.gcda" -print0 2>/dev/null | xargs -0 -I{} dirname {} | sort -u)
 if [ -z "${BUILD_DIRS}" ]; then
   error "No .gcda files found. Ensure the app actually ran to produce runtime data."
@@ -51,18 +51,19 @@ if [ -z "${BUILD_DIRS}" ]; then
 fi
 
 GEN_COUNT=0
-while IFS= read -r dir; do
+for dir in ${BUILD_DIRS}; do
   [ -z "${dir}" ] && continue
   if compgen -G "${dir}/*.gcno" >/dev/null; then
-    ( cd "${dir}" && gcov *.gcno >/dev/null 2>&1 || true )
-    # Move generated .gcov to project root for consistent consumption
-    count_here=$(find "${dir}" -maxdepth 1 -name "*.gcov" | wc -l | tr -d ' ')
-    if [ "${count_here}" -gt 0 ]; then
-      mv "${dir}"/*.gcov . 2>/dev/null || true
-      GEN_COUNT=$((GEN_COUNT + count_here))
+    before_count=$(find . -maxdepth 1 -name "*.gcov" | wc -l | tr -d ' ')
+    # Run gcov from project root so recorded source paths (e.g., src/...) resolve
+    gcov --object-directory="${dir}" ${dir}/*.gcno >/dev/null 2>&1 || true
+    after_count=$(find . -maxdepth 1 -name "*.gcov" | wc -l | tr -d ' ')
+    new_count=$(( after_count - before_count ))
+    if [ "${new_count}" -gt 0 ]; then
+      GEN_COUNT=$((GEN_COUNT + new_count))
     fi
   fi
-done <<< "${BUILD_DIRS}"
+done
 
 if [ "${GEN_COUNT}" -eq 0 ]; then
   error "gcov did not produce any .gcov files. Check build artifacts."
@@ -88,7 +89,7 @@ if [ "${MEANINGFUL}" -eq 0 ]; then
 fi
 info "${MEANINGFUL} meaningful .gcov files remain. Running FortCov..."
 
-# 7) Run FortCov analysis (zero-config to avoid positional arg limits)
+# 7) Run FortCov analysis (use auto-discovery to avoid positional arg limits)
 if command -v fortcov >/dev/null 2>&1; then
   FORTCOV=fortcov
 else
@@ -101,7 +102,7 @@ else
 fi
 
 set +e
-${FORTCOV} --source="${SOURCE_DIR}" ./*.gcov --output="${OUTPUT_FILE}"
+${FORTCOV} --source="${SOURCE_DIR}" --output="${OUTPUT_FILE}"
 RC=$?
 set -e
 if [ $RC -ne 0 ]; then
@@ -111,4 +112,3 @@ fi
 
 info "Coverage report generated: ${OUTPUT_FILE}"
 info "Done."
-
