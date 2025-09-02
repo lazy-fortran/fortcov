@@ -2,7 +2,6 @@ module test_env_guard
     !! Runtime test-environment detection to prevent recursive execution
     !! Used to avoid spawning external test runners (e.g., fpm test) when
     !! fortcov itself is being run under a test harness.
-    use iso_fortran_env, only: error_unit
     implicit none
     private
 
@@ -17,6 +16,13 @@ contains
         logical :: marker_exists
 
         is_test_env = .false.
+
+        ! Allow explicit override to enable auto-test/bridge in controlled environments
+        call get_environment_variable('FORTCOV_ALLOW_AUTOTEST', env_value, status=status)
+        if (status == 0 .and. len_trim(env_value) > 0) then
+            is_test_env = .false.
+            return
+        end if
 
         call get_environment_variable('FPM_TEST', env_value, status=status)
         if (status == 0 .and. len_trim(env_value) > 0) then
@@ -50,4 +56,3 @@ contains
     end function running_under_test_env
 
 end module test_env_guard
-

@@ -26,3 +26,8 @@ main = "main.f90"
 name = "cli_flags_rejection_minimal"
 source-dir = "test"
 main = "test_cli_flags_rejection_minimal.f90"
+
+[[test]]
+name = "test_env_guard_override"
+source-dir = "test"
+main = "test_test_env_guard_override.f90"
