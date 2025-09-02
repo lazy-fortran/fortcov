@@ -9,7 +9,6 @@ module coverage_stats_reporter
     use config_core
     use coverage_stats_core, only: coverage_stats_t, extended_coverage_stats_t
     use coverage_reporter
-    use report_engine
     use error_handling_core
     use string_utils, only: int_to_string
     
@@ -64,56 +63,18 @@ contains
         !! Generate coverage reports in specified formats
         use coverage_reporter, only: coverage_reporter_t
         use coverage_reporter_factory, only: create_reporter
-        use report_engine, only: report_engine_t
         type(coverage_data_t), intent(in) :: coverage_data
         type(line_coverage_stats_t), intent(in) :: stats
         type(config_t), intent(in) :: config
         logical, intent(out) :: report_error
         
         class(coverage_reporter_t), allocatable :: reporter
-        type(report_engine_t) :: engine
-        logical :: success, factory_error, engine_success
+        logical :: success, factory_error
         character(len=:), allocatable :: error_message
         
         report_error = .false.
         
-        ! Handle terminal output specially
-        if (trim(config%output_format) == "terminal") then
-            if (.not. config%quiet) then
-                write(*,'(A)') "Coverage report displayed in terminal"
-            end if
-            return
-        end if
-        
-        ! Handle HTML format using report engine
-        if (trim(config%output_format) == "html") then
-            call engine%init(engine_success, error_message)
-            if (.not. engine_success) then
-                if (.not. config%quiet) then
-                    write(*,'(A)') "Error initializing HTML report engine: " // error_message
-                end if
-                report_error = .true.
-                return
-            end if
-            
-            ! Set the source data
-            engine%source_data = coverage_data
-            
-            call engine%generate_html_report(config%output_path, engine_success, error_message)
-            if (.not. engine_success) then
-                if (.not. config%quiet) then
-                    write(*,'(A)') "Error generating HTML report: " // error_message
-                end if
-                report_error = .true.
-            else
-                if (.not. config%quiet) then
-                    write(*,'(A)') "HTML coverage report generated: " // trim(config%output_path)
-                end if
-            end if
-            return
-        end if
-        
-        ! Handle other formats using factory
+        ! Generate report using factory (markdown only)
         call create_reporter(config%output_format, reporter, factory_error)
         if (factory_error) then
             if (.not. config%quiet) then
@@ -134,16 +95,7 @@ contains
             report_error = .true.
         else
             if (.not. config%quiet) then
-                select case (trim(config%output_format))
-                case ("markdown", "md")
-                    write(*,'(A)') "Markdown coverage report generated: " // trim(config%output_path)
-                case ("json")
-                    write(*,'(A)') "JSON coverage report generated: " // trim(config%output_path)
-                case ("xml")
-                    write(*,'(A)') "XML coverage report generated: " // trim(config%output_path)
-                case default
-                    write(*,'(A)') trim(config%output_format) // " coverage report generated: " // trim(config%output_path)
-                end select
+                write(*,'(A)') "Markdown coverage report generated: " // trim(config%output_path)
             end if
         end if
         

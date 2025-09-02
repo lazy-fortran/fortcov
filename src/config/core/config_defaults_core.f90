@@ -72,21 +72,8 @@ contains
 
         ! Apply default output paths for all formats when not specified
         if (len_trim(config%output_path) == 0) then
-            select case (trim(config%output_format))
-            case ("html")
-                config%output_path = "coverage.html"
-            case ("json")
-                config%output_path = "coverage.json"
-            case ("xml")
-                config%output_path = "coverage.xml"
-            case ("markdown", "md")
-                config%output_path = "coverage.md"
-            case ("text")
-                config%output_path = "coverage.txt"
-            case default
-                ! For unknown formats, use generic extension
-                config%output_path = "coverage." // trim(config%output_format)
-            end select
+            ! Only markdown is supported
+            config%output_path = "coverage.md"
         end if
 
     end subroutine apply_default_output_filename
@@ -102,21 +89,8 @@ contains
 
         ! Apply default output paths for all formats when not specified
         if (len_trim(config%output_path) == 0) then
-            select case (trim(config%output_format))
-            case ("html")
-                config%output_path = "coverage.html"
-            case ("json")
-                config%output_path = "coverage.json"
-            case ("xml")
-                config%output_path = "coverage.xml"
-            case ("markdown", "md")
-                config%output_path = "coverage.md"
-            case ("text")
-                config%output_path = "coverage.txt"
-            case default
-                ! For unknown formats, use generic extension
-                config%output_path = "coverage." // trim(config%output_format)
-            end select
+            ! Only markdown is supported
+            config%output_path = "coverage.md"
         end if
 
     end subroutine apply_default_output_path_for_coverage_files

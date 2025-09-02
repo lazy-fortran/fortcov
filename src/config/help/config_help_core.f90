@@ -33,14 +33,13 @@ contains
         print '(A)', "  -s, --source PATH         Add source directory or file to analyze"
         print '(A)', "  -e, --exclude PATTERN     Exclude files matching pattern"
         print '(A)', "  -i, --include PATTERN     Include only files matching pattern"
-        print '(A)', "  --import FILE             Import coverage data from JSON/XML file"
+        ! Import option for JSON/XML removed; only .gcov is analyzed directly
         ! SECURITY: No user-defined gcov executable flag; FortCov uses a
         ! built-in safe path when --gcov is specified. External overrides removed.
         print '(A)', ""
         print '(A)', "Output Options:"
         print '(A)', "  -o, --output PATH         Output file path"
-        print '(A)', "  -f, --format FORMAT       Output format:"
-        print '(A)', "                            text, markdown (default), json, html, xml"
+        print '(A)', "  -f, --format FORMAT       Output format: markdown (default)"
         print '(A)', ""
         print '(A)', "Coverage Options:"
         print '(A)', "  -m, --minimum PERCENT     Set minimum coverage percentage"
@@ -69,7 +68,7 @@ contains
         print '(A)', "Examples:"
         print '(A)', "  fortcov --source=src *.gcov             # Analyze gcov files with source"
         print '(A)', "  fortcov --source=src *.gcov --output=report.md # Generate markdown report"
-        print '(A)', "  fortcov --source=. *.gcov --format=json        # JSON output format"
+        ! Non-markdown formats removed
         print '(A)', "  fortcov --gcov --output=coverage.md     # Auto-generate .gcov then analyze"
         print '(A)', ""
         print '(A)', "For more information, visit: https://github.com/lazy-fortran/fortcov"
@@ -85,7 +84,7 @@ contains
         print *, "Built with:"
         print *, "  - Fortran compiler support"
         print *, "  - gcov file analysis (does not invoke gcov)"
-        print *, "  - JSON/XML/HTML output formats"
+        print *, "  - Markdown output format"
         ! TUI removed
         print *, "  - Parallel processing: not implemented (threads flag ignored)"
         print *, ""

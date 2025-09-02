@@ -19,11 +19,7 @@ contains
 
         lower_format = to_lower(trim(format))
 
-        is_supported = (lower_format == "text" .or. &
-                       lower_format == "html" .or. &
-                       lower_format == "xml" .or. &
-                       lower_format == "json" .or. &
-                       lower_format == "markdown")
+        is_supported = (lower_format == "markdown")
 
     end function is_supported_output_format
 
