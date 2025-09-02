@@ -41,3 +41,8 @@ main = "test_threshold_minimal.f90"
 name = "gcov_smoke"
 source-dir = "test"
 main = "test_gcov_processing_smoke.f90"
+
+[[test]]
+name = "format_rejection_minimal"
+source-dir = "test"
+main = "test_format_rejection_minimal.f90"

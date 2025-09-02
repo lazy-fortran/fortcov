@@ -46,7 +46,7 @@ contains
             if (.not. is_valid_coverage_file_format(files(i))) then
                 is_valid = .false.
                 error_message = "Invalid coverage file format: " // trim(files(i)) // &
-                                ". Expected .gcov, .json, or .xml"
+                                ". Expected .gcov"
                 return
             end if
 
@@ -237,11 +237,11 @@ contains
             return
         end if
 
-        ! Check file format
+        ! Import of external coverage files (JSON/XML) is no longer supported
         if (.not. is_valid_import_file_format(import_file)) then
             is_valid = .false.
-            error_message = "Invalid import file format: " // trim(import_file) // &
-                            ". Expected .json or .xml"
+            error_message = "Unsupported import file: " // trim(import_file) // &
+                            ". Only native .gcov inputs are supported"
             return
         end if
 

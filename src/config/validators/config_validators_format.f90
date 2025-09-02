@@ -38,12 +38,8 @@ contains
         if (dot_pos > 0 .and. dot_pos < len_trim(file_path)) then
             extension = to_lower(file_path(dot_pos:))
             
-            ! Check supported coverage file formats
-            if (extension == ".gcov" .or. &
-                extension == ".json" .or. &
-                extension == ".xml") then
-                is_valid = .true.
-            end if
+            ! Only native .gcov coverage files are supported
+            if (extension == ".gcov") is_valid = .true.
         end if
 
     end function is_valid_coverage_file_format
@@ -56,18 +52,8 @@ contains
         character(len=:), allocatable :: extension
         integer :: dot_pos
 
+        ! Import of JSON/XML has been removed; always return false
         is_valid = .false.
-
-        ! Extract file extension
-        dot_pos = index(file_path, ".", back=.true.)
-        if (dot_pos > 0 .and. dot_pos < len_trim(file_path)) then
-            extension = to_lower(file_path(dot_pos:))
-            
-            ! Import files are typically JSON or XML
-            if (extension == ".json" .or. extension == ".xml") then
-                is_valid = .true.
-            end if
-        end if
 
     end function is_valid_import_file_format
 

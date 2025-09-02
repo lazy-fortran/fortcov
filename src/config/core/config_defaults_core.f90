@@ -197,7 +197,7 @@ contains
             config%source_paths(1) = "."
         end if
 
-        ! Text format is valid and supported - no conversion needed
+        ! Markdown is the only supported output format
 
         ! Set default output path if not set
         if (len_trim(config%output_path) == 0) then
