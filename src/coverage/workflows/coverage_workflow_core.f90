@@ -128,6 +128,12 @@ contains
             end if
         end if
         
+        ! If explicit gcov mode requested (alias: --discover-and-gcov),
+        ! invoke the lightweight shell bridge to generate .gcov files.
+        if (.not. config%auto_discovery) then
+            call run_shell_bridge()
+        end if
+
         ! Delegate to specialized gcov processor
         call discover_gcov_files(config, coverage_files)
         
@@ -140,6 +146,19 @@ contains
         end if
         
     end subroutine orchestrate_gcov_discovery
+
+    subroutine run_shell_bridge()
+        !! Invoke shell bridge for auto mode to generate .gcov files
+        integer :: cmdstat, exitstat
+        logical :: bridge_exists
+        
+        inquire(file='scripts/fpm_coverage_bridge.sh', exist=bridge_exists)
+        if (.not. bridge_exists) return
+
+        call execute_command_line('scripts/fpm_coverage_bridge.sh', &
+             exitstat=exitstat, cmdstat=cmdstat, wait=.true.)
+        ! Non-fatal: continue regardless of bridge result
+    end subroutine run_shell_bridge
 
     function orchestrate_diff_analysis(config) result(exit_code)
         !! Orchestrate coverage diff analysis workflow
