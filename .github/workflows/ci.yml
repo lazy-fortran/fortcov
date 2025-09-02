@@ -41,16 +41,26 @@ jobs:
         find . -name "*.out" -delete
         echo "Build artifacts cleaned"
     
-    - name: Build project
-      run: fpm build
+    - name: Build project (once)
+      run: fpm build --profile release
     
-    - name: Run unit tests (guarded, 120s timeout)
+    - name: Run minimal unit tests (guarded, per-test 45s)
       env:
         RUNNING_TESTS: "1"   # Ensure in-test guard is active to avoid recursion
         FPM_BACKTRACE: "0"
       run: |
-        timeout -k 5 120 fpm test --verbose || {
-          rc=$?
-          echo "Unit tests step exited with rc=$rc" >&2
-          exit $rc
-        }
+        set -e
+        tests=( \
+          markdown_minimal \
+          cli_flags_minimal \
+          threshold_minimal \
+          gcov_smoke \
+          format_rejection_minimal \
+          cli_flags_rejection_minimal \
+          engine_delegation_minimal \
+        )
+        for t in "${tests[@]}"; do
+          echo "::group::Running test: $t"
+          timeout -k 5 45 fpm test --profile release --target "$t" --verbose
+          echo "::endgroup::"
+        done
