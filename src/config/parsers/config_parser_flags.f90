@@ -80,15 +80,14 @@ contains
     end function get_long_form_option
 
     function has_input_related_arguments(args) result(has_input)
-        !! Check if arguments contain input-related flags
+        !! Check if arguments contain input-related flags (CLI-only)
         character(len=*), intent(in) :: args(:)
         logical :: has_input
         integer :: i
         
         has_input = .false.
         do i = 1, size(args)
-            if (trim(args(i)) == "--source" .or. trim(args(i)) == "-s" .or. &
-                trim(args(i)) == "--include" .or. trim(args(i)) == "--exclude") then
+            if (trim(args(i)) == "--source" .or. trim(args(i)) == "-s") then
                 has_input = .true.
                 return
             end if
