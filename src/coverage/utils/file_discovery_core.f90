@@ -4,7 +4,6 @@ module file_discovery_core
     !! Handles discovery of coverage files from different sources.
     !! Extracted from coverage_workflows.f90 for SRP compliance (Issue #718).
     use config_core
-    use zero_config_manager, only: auto_discover_coverage_files_priority
     use coverage_processor_gcov
     implicit none
     private
@@ -42,11 +41,8 @@ contains
         if (allocated(config%coverage_files)) then
             ! Use explicitly specified coverage files
             files = config%coverage_files
-        else if (config%zero_configuration_mode .or. config%auto_discovery) then
-            ! Use zero-configuration or auto-discovery mode
-            files = auto_discover_coverage_files_priority()
         else
-            ! Delegate to gcov processor for discovery
+            ! Delegate to gcov processor for discovery (single supported path)
             call discover_gcov_files(config, files)
         end if
     end subroutine determine_coverage_files_source

@@ -6,7 +6,6 @@ module config_defaults_core
 
     use config_types, only: config_t, MAX_ARRAY_SIZE
     use constants_core
-    use zero_config_manager
     use shell_utilities, only: escape_shell_argument
     use file_processor, only: ensure_output_directory_structure
     use file_utilities, only: ensure_directory

@@ -7,7 +7,6 @@ module coverage_workflows_discovery
     
     use constants_core
     use config_core
-    use zero_config_manager, only: auto_discover_coverage_files_priority
     use coverage_processor_gcov, only: discover_gcov_files
     use coverage_workflows_patterns, only: prepare_pattern_paths, check_include_patterns, &
                                            check_exclude_patterns, check_test_file_exclusion
@@ -118,11 +117,8 @@ contains
         if (allocated(config%coverage_files)) then
             ! Use explicitly specified coverage files
             files = config%coverage_files
-        else if (config%zero_configuration_mode .or. config%auto_discovery) then
-            ! Use zero-configuration or auto-discovery mode
-            files = auto_discover_coverage_files_priority()
         else
-            ! Delegate to gcov processor for discovery
+            ! Delegate to gcov processor for discovery (single supported path)
             call discover_gcov_files(config, files)
         end if
     end subroutine determine_coverage_files_source
