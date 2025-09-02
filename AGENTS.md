@@ -53,6 +53,17 @@ done
 - If auto-test integration needs validation, mock or stub the invocation; do not spawn a real project test runner from within tests.
 - Any change that introduces tests running `fpm test` (or equivalent) during `fpm test` is a hard blocker.
 
+#### Hard Rules (Enforced)
+- Single source of truth: use `fork_bomb_prevention` for environment detection; do not duplicate or bypass detection logic.
+- Code paths reachable from unit/integration tests must never call `execute_auto_test_workflow` or any API that launches external test runners.
+- No wrappers or scripts from tests that indirectly run `fpm test`, `ctest`, or similar.
+- PRs adding or reintroducing such calls will be rejected on sight.
+
+#### Verification Gates
+- Static scan must show no test code or reachable code paths running `fpm test|ctest|make test|run_ci_tests.sh`.
+- `./run_ci_tests.sh` sets `FPM_TEST=1`; however, local plain `fpm test` MUST also be safe via robust detection in `fork_bomb_prevention`.
+- Include logs in PRs showing a clean run: `TEST_TIMEOUT=120 ./run_ci_tests.sh` with 0 recursion and all non-excluded tests passing.
+
 ## Commit & Pull Request Guidelines
 - Conventional Commits (e.g., `feat: add TUI summary`, `fix: handle gcov err`).
 - Stage specific files only (avoid `git add .`); keep commits single-scope.

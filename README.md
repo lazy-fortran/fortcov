@@ -86,10 +86,9 @@ $ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
 
 ## Notes
 
-- Works with FPM default build layout; also supports CMake/Make projects.
-- Meson is supported via example-based integration; see
-  `examples/build_systems/meson/` for a working template.
-- Use `fortcov --help` for additional options (JSON/HTML output, quiet mode, thresholds, etc.).
+- Developed and tested with FPM default build layout.
+- For non-FPM builds, generate `.gcov` with your build system and invoke FortCov as shown above.
+- Use `fortcov --help` for additional options (quiet mode, thresholds, etc.).
 
 ## License
 

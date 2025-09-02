@@ -16,6 +16,7 @@ module gcov_generation_utils
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     use config_types, only: config_t
     use gcov_file_discovery, only: discover_gcov_files
+    use secure_command_execution, only: secure_execute_command
     implicit none
     private
 
@@ -42,6 +43,7 @@ contains
         integer :: env_len, env_stat
         logical :: use_real_gcov
         character(len=:), allocatable :: cmd
+        integer :: cmd_exit
 
         call clear_error_context(error_ctx)
 
@@ -99,11 +101,11 @@ contains
                 ! Run: gcov --object-directory=out_dir gcno_file
                 cmd = trim(gcov_exec)//' --object-directory='//trim(out_dir)// &
                       ' ' // trim(gcno_file)
-                call execute_command_line(cmd, exitstat=ios)
-                if (ios /= 0) then
+                call secure_execute_command(cmd, cmd_exit)
+                if (cmd_exit /= 0) then
                     call safe_write_message(error_ctx, 'gcov execution failed for: ' // trim(gcno_file))
                     call safe_write_context(error_ctx, 'gcov file generation')
-                    error_ctx%error_code = ios
+                    error_ctx%error_code = cmd_exit
                     return
                 end if
 
