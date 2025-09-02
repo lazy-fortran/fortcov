@@ -148,8 +148,8 @@ contains
         type(error_context_t), intent(out) :: error_ctx
         
         character(len=1024) :: command
-        character(len=512) :: safe_source_file, safe_working_dir
-        character(len=256) :: base_name
+        character(len=512) :: safe_source_file
+        character(len=64)  :: branch_flag
         integer :: exit_code
         logical :: source_exists
         
@@ -169,34 +169,11 @@ contains
         safe_source_file = trim(source_file)
         call sanitize_file_path(safe_source_file)
         
-        ! Sanitize working directory if specified
-        if (len_trim(this%working_directory) > 0) then
-            safe_working_dir = trim(this%working_directory)
-            call sanitize_file_path(safe_working_dir)
-        else
-            safe_working_dir = ""
-        end if
-        
-        ! Extract base name for gcov processing
-        base_name = get_base_name(safe_source_file)
-        
-        ! Build secure gcov command with validated arguments
-        if (len_trim(safe_working_dir) > 0) then
-            ! Command with working directory: cd to directory and run gcov
-            command = 'cd ' // escape_shell_argument(safe_working_dir) // ' && ' // &
-                     trim(this%gcov_command) // ' ' // escape_shell_argument(safe_source_file)
-        else
-            ! Simple command: gcov source_file
-            command = trim(this%gcov_command) // ' ' // escape_shell_argument(safe_source_file)
-        end if
-        
-        ! Add branch coverage flag if enabled
-        if (this%branch_coverage) then
-            command = trim(this%gcov_command) // ' -b ' // escape_shell_argument(safe_source_file)
-            if (len_trim(safe_working_dir) > 0) then
-                command = 'cd ' // escape_shell_argument(safe_working_dir) // ' && ' // command
-            end if
-        end if
+        ! Build minimal, safe gcov invocation
+        branch_flag = ''
+        if (this%branch_coverage) branch_flag = ' -b'
+        command = trim(this%gcov_command) // branch_flag // ' ' // &
+                  escape_shell_argument(safe_source_file)
         
         ! SECURITY FIX Issue #926: Use secure process execution instead of execute_command_line
         call secure_execute_gcov_command(command, exit_code)
@@ -239,7 +216,8 @@ contains
             is_safe = .false.
             return
         end if
-        if (.not. (index(command, 'gcov ') == 1 .or. index(command, 'cd ') == 1)) then
+        ! Allow only direct gcov invocations (no directory chaining)
+        if (.not. (index(command, 'gcov ') == 1)) then
             is_safe = .false.
             return
         end if
