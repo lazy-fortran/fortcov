@@ -19,7 +19,7 @@ module test_reporter_core
     public :: report_build_system_detected
     public :: report_test_failure
     public :: report_test_success
-    public :: report_fork_bomb_prevention
+    ! fork-bomb prevention reporting removed
     
 contains
     
@@ -107,14 +107,5 @@ contains
             print *, "✅ Tests completed successfully"
         end if
     end subroutine report_test_success
-    
-    subroutine report_fork_bomb_prevention(config)
-        !! Report that fork bomb prevention activated
-        type(config_t), intent(in) :: config
-        
-        if (.not. config%quiet) then
-            print *, "🛡️  Fork bomb prevention: skipping auto-test (already in test environment)"
-        end if
-    end subroutine report_fork_bomb_prevention
     
 end module test_reporter_core

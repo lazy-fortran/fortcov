@@ -9,10 +9,6 @@ module coverage_test_executor
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use build_system_validation, only: detect_and_validate_build_system
     use test_executor_core
-    ! Use robust fork-bomb prevention (consolidated detection logic)
-    use fork_bomb_prevention, only: is_running_in_test_environment, &
-                                     prepare_for_auto_test_execution,       &
-                                     cleanup_recursion_marker
     use test_reporter_core
     implicit none
     private
@@ -44,12 +40,6 @@ contains
         
         exit_code = EXIT_SUCCESS
         
-        ! CRITICAL: Fork bomb prevention
-        if (is_running_in_test_environment()) then
-            call report_fork_bomb_prevention(config)
-            return
-        end if
-        
         ! Skip if disabled
         if (.not. config%auto_test_execution) then
             call report_auto_test_disabled(config)
@@ -68,25 +58,11 @@ contains
             return
         end if
         
-        ! Execute auto-test with guaranteed cleanup
-        block
-            logical :: marker_created
-            
-            marker_created = .false.
-            call prepare_for_auto_test_execution()
-            marker_created = .true.
-            
-            call execute_tests_with_timeout(build_info%test_command, config, &
-                                           test_exit_code, execution_success)
-            
-            exit_code = handle_test_execution_results(config, test_exit_code, &
-                                                    execution_success)
-            
-            if (marker_created) then
-                call cleanup_recursion_marker()
-            end if
-            
-        end block
+        ! Execute auto-test
+        call execute_tests_with_timeout(build_info%test_command, config, &
+                                       test_exit_code, execution_success)
+        exit_code = handle_test_execution_results(config, test_exit_code, &
+                                                  execution_success)
         
     end function execute_auto_test_workflow
     

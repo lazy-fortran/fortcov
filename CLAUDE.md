@@ -16,8 +16,8 @@ fpm build
 # Build with coverage instrumentation
 fpm build --flag "-fprofile-arcs -ftest-coverage"
 
-# Run all tests (CI-friendly with timeout handling)
-./run_ci_tests.sh
+# Run all tests
+fpm test
 
 # Run specific test by name  
 fpm test test_name
@@ -135,60 +135,8 @@ fortcov
   - CLI validation tests
   - Memory allocation and error handling tests
 
-## Critical Safety Features
-
-### CI Fraud Prevention (CRITICAL UPDATE - Aug 31, 2025)
-**⚠️ MANDATORY CI INTEGRITY PROTOCOL**: Critical CI fraud discovered and resolved.
-
-**FRAUD DISCOVERY SUMMARY:**
-- **Previous State**: 28.7% test exclusion rate (25 out of 87 tests)
-- **Fraud Pattern**: 68% of excluded tests (17 tests) actually passed successfully
-- **Root Cause**: False "Permission denied" and "timeout" exclusions
-- **Resolution**: Corrected exclusion list to only 8 legitimately failing tests
-- **Current State**: 9.1% exclusion rate with verified failures only
-
-**FRAUDULENT EXCLUSIONS REMOVED:**
-- `test_auto_discovery_project_scenarios` - Actually passes ✓
-- `test_memory_allocation_bug_issue_243` - Actually passes ✓  
-- `test_marker_cleanup_integration` - Actually passes ✓
-- `test_issue_434_error_consistency` - Actually passes ✓
-- `test_cli_basic_usage` - Actually passes ✓
-- `test_memory_stress` - Actually passes ✓
-- `test_config_file_auto_discovery` - Actually passes ✓
-- `test_branch_coverage_accuracy_issue_304` - Actually passes ✓
-- `test_cli_flag_parsing_issue_231` - Actually passes ✓
-- `test_path_leakage_security` - Actually passes ✓
-- `test_build_system_discovery` - Actually passes ✓
-- `test_memory_allocation_core` - Actually passes ✓
-- `test_string_concatenation_fix_364` - Actually passes ✓
-- `test_zero_config_build_integration` - Actually passes ✓
-- `test_cli_flag_parsing_issue_472` - Actually passes ✓
-- `test_auto_test_integration` - Actually passes ✓
-- `test_auto_discovery_error_handling` - Actually passes ✓
-
-**LEGITIMATE FAILURES (Properly Excluded):**
-- `test_gcov_processing` - Exit code 1 - Gcov processing issue
-- `test_complete_workflow` - Exit code 1 - Workflow integration failure
-- `test_auto_discovery_integration_suite` - Exit code 1 - Command execution failure
-- `test_coverage_workflows_decomposition` - Test hangs during execution
-- `test_auto_discovery_core_validation` - Exit code 2 - Core validation failure
-- `test_bugfix_469` - Exit code 1 - Bug fix validation failure
-- `test_build_system_detector` - Exit code 1 - Build detection failure
-- `test_portable_temp_utils` - Exit code 1 - Temp utilities failure
-
-### Fork Bomb Prevention
-**⚠️ MANDATORY SAFETY PROTOCOL**: This project includes sophisticated fork bomb prevention due to test-within-test execution risks.
-
-- **Detection**: Automatic detection of recursive test execution
-- **Prevention**: `.fortcov_execution_marker` files prevent recursive execution
-- **Test Exclusions**: Known problematic tests are excluded in `run_ci_tests.sh`
-- **Safety Script**: `run_ci_tests.sh` includes comprehensive test isolation
-
-**Key Prevention Measures:**
-- Tests that hang or cause infinite recursion are automatically excluded
-- Timeout handling (10 seconds per test) prevents CI hangs  
-- Clean execution markers prevent cascading failures
-- Safe test runner with robust error handling
+## Testing
+- Use `fpm test` to run the test suite locally and in CI.
 
 ### Security Architecture
 - **Path Security**: Comprehensive path validation and sanitization
@@ -279,9 +227,8 @@ coverage:
 ## CI/CD Integration
 
 ### GitHub Actions
-- **Workflow**: `.github/workflows/ci.yml` provides complete CI setup
-- **Features**: Multi-compiler testing, timeout handling, detailed reporting
-- **Safety**: Includes fork bomb prevention and proper error handling
+- **Workflow**: `.github/workflows/ci.yml` runs `fpm test` directly.
+- **Features**: Simple, fast test runs with verbose output for debugging.
 
 ### Exit Codes  
 FortCov returns meaningful exit codes for CI/CD:
@@ -298,10 +245,9 @@ FortCov returns meaningful exit codes for CI/CD:
 
 ### Making Changes
 1. **Read existing code**: Always examine current implementation before changes
-2. **Follow safety protocols**: Respect fork bomb prevention measures  
-3. **Test comprehensively**: Use `./run_ci_tests.sh` for thorough testing
-4. **Security first**: All file operations must use secure utilities
-5. **Update tests**: Add appropriate unit and integration tests
+2. **Test comprehensively**: Use `fpm test` locally and in CI
+3. **Security first**: All file operations must use secure utilities
+4. **Update tests**: Add appropriate unit and integration tests
 
 ### Code Organization Principles
 - **Modular Design**: Each module has a single, clear responsibility
@@ -319,12 +265,12 @@ FortCov returns meaningful exit codes for CI/CD:
 4. **Performance Tests**: Large file and stress testing
 5. **CLI Tests**: Command-line interface validation
 6. **Memory Tests**: Allocation and cleanup verification
-7. **Fork Bomb Tests**: Recursive execution prevention
+7. **Memory Tests**: Allocation and cleanup verification
 
 ### Test Execution
-- **Primary**: `./run_ci_tests.sh` (excludes problematic tests)
+- **Primary**: `fpm test`
 - **Individual**: `fpm test test_name` for specific tests
-- **Full Suite**: `fpm test --verbose` (may include hanging tests)
+- **Full Suite**: `fpm test --verbose`
 - **Performance**: `./scripts/test_performance_optimization.sh`
 
 ## Dependencies

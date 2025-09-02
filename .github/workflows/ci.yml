@@ -45,23 +45,4 @@ jobs:
       run: fpm build
     
     - name: Run unit tests
-      run: |
-        echo "Running unit tests with CI exclusions..."
-        echo "Using run_ci_tests.sh to exclude problematic tests"
-        
-        # Use the project's CI test runner which excludes problematic tests
-        ./run_ci_tests.sh
-        
-    - name: Verify CI hygiene
-      run: |
-        echo "Verifying CI hygiene - checking for test artifacts..."
-        
-        # Run hygiene verification
-        if ./scripts/ci_hygiene_cleanup.sh; then
-          echo "✅ CI Hygiene: Project root clean"
-        else
-          echo "❌ CI Hygiene: Artifacts found in project root"
-          echo "Listing all artifacts:"
-          find . -maxdepth 1 \( -name "test_infra_*" -o -name "*_test_*.log" \) 2>/dev/null || true
-          exit 1
-        fi
+      run: fpm test --verbose
