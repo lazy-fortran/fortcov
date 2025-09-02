@@ -5,11 +5,10 @@ module gcov_executor
     !! files to generate .gcov text coverage reports. It handles command
     !! failures gracefully, supports gcov options, and manages temporary files.
     !! All command execution is performed securely to prevent injection attacks.
-    use iso_fortran_env, only: error_unit
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, ERROR_INVALID_CONFIG, &
                                   ERROR_INCOMPLETE_COVERAGE, clear_error_context, handle_missing_source, &
                                   safe_write_message, safe_write_suggestion, safe_write_context
-    use file_utilities, only: file_exists
+    use file_ops_secure, only: safe_mkdir, safe_move_file
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     ! Simplified: avoid security wrapper modules; use minimal local helpers
     use xml_utils, only: get_base_name
@@ -135,7 +134,7 @@ contains
         
         inquire(file=trim(this%gcov_output_dir), exist=output_dir_exists)
         if (.not. output_dir_exists) then
-            call ensure_dir(trim(this%gcov_output_dir))
+            call safe_mkdir(trim(this%gcov_output_dir), error_ctx)
         end if
     end subroutine setup_gcov_output_environment
     
@@ -220,6 +219,7 @@ contains
         character(len=256) :: gcov_file, output_gcov_file, source_basename
         logical :: gcov_file_exists
         integer :: stat
+        type(error_context_t) :: move_err
         
         line_count = 0
         temp_files = ""
@@ -230,10 +230,11 @@ contains
         if (gcov_file_exists) then
             output_gcov_file = trim(this%gcov_output_dir) // "/" // &
                               trim(source_basename) // ".f90.gcov"
-            ! SECURITY FIX Issue #963: Use secure file move instead of execute_command_line
-            call move_file(gcov_file, output_gcov_file, stat)
+            ! SECURITY FIX Issue #963: Use secure file move instead of shell mv
+            call clear_error_context(move_err)
+            call safe_move_file(gcov_file, output_gcov_file, move_err)
             line_count = 1
-            if (stat == 0) then
+            if (move_err%error_code == ERROR_SUCCESS) then
                 temp_files(1) = output_gcov_file
             else
                 temp_files(1) = gcov_file
@@ -366,18 +367,7 @@ contains
         end if
     end subroutine cleanup_temp_file
 
-    subroutine ensure_dir(path)
-        character(len=*), intent(in) :: path
-        integer :: stat
-        call execute_command_line('mkdir -p ' // quote_arg(trim(path)), exitstat=stat)
-    end subroutine ensure_dir
-
-    subroutine move_file(src, dst, stat)
-        character(len=*), intent(in) :: src, dst
-        integer, intent(out) :: stat
-        call execute_command_line('mv ' // quote_arg(trim(src)) // ' ' // &
-                                  quote_arg(trim(dst)), exitstat=stat)
-    end subroutine move_file
+    ! Removed shell-based ensure_dir and move_file in favor of safe_mkdir/safe_move_file
 
     subroutine handle_gcov_command_failure(command, exit_code, temp_file, &
                                          error_ctx)
