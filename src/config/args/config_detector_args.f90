@@ -86,7 +86,6 @@ contains
                 flag_part == "--format" .or. flag_part == "-f" .or. &
                 flag_part == "--verbose" .or. flag_part == "-v" .or. &
                 flag_part == "--quiet" .or. flag_part == "-q" .or. &
-                flag_part == "--tui" .or. &
                 flag_part == "--diff" .or. &
                 flag_part == "--diff-threshold" .or. &
                 flag_part == "--include-unchanged" .or. &

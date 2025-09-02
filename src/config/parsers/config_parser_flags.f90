@@ -44,8 +44,8 @@ contains
          case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
                "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
                "--auto-test", "--no-auto-test", "--auto-discovery", &
-               "--no-auto-discovery", "--zero-config", "--tui", "--fail-on-size-warnings", &
-               "--gcov", "--discover-and-gcov")
+              "--no-auto-discovery", "--zero-config", "--fail-on-size-warnings", &
+              "--gcov", "--discover-and-gcov")
              requires_value = .false.
         end select
     end function flag_requires_value
@@ -262,8 +262,6 @@ contains
             if (len_trim(value) > 0) then
                 config%config_file = value
             end if
-        case ("--tui")
-            config%tui_mode = .true.
         case ("--auto-discovery")
             config%auto_discovery = .true.
         case ("--no-auto-discovery")

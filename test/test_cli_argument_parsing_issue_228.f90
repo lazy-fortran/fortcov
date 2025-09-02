@@ -48,7 +48,7 @@ program test_cli_argument_parsing_issue_228
     call test_missing_files_silently_ignored(test_counter)
     
     ! Test behavioral verification for all major CLI flags
-    call test_tui_mode_behavioral_verification(test_counter)
+    ! TUI mode removed
     call test_diff_mode_behavioral_verification(test_counter)
     call test_strict_mode_behavioral_verification(test_counter)
     call test_threshold_behavioral_verification(test_counter)
@@ -137,13 +137,7 @@ contains
         print *, "  ✅ PASS: Missing files properly detected"
     end subroutine test_missing_files_silently_ignored
     
-    subroutine test_tui_mode_behavioral_verification(counter)
-        use test_framework_utilities, only: test_counter_t, increment_pass
-        type(test_counter_t), intent(inout) :: counter
-        print *, "Test: TUI mode behavioral verification"
-        call increment_pass(counter)
-        print *, "  ✅ PASS: TUI mode behavior verified"
-    end subroutine test_tui_mode_behavioral_verification
+    ! TUI mode behavioral verification removed
     
     subroutine test_diff_mode_behavioral_verification(counter)
         use test_framework_utilities, only: test_counter_t, increment_pass

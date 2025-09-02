@@ -42,7 +42,6 @@ module config_types
         character(len=:), allocatable :: import_file
         logical :: keep_gcov_files
         character(len=:), allocatable :: gcov_args
-        logical :: tui_mode
         logical :: strict_mode
         logical :: zero_configuration_mode
         integer :: max_files  ! Maximum number of files to process

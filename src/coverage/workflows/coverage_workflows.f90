@@ -7,8 +7,7 @@ module coverage_workflows
     use coverage_workflows_discovery, only: discover_coverage_files, &
                                             filter_coverage_files_by_patterns, &
                                             evaluate_exclude_patterns
-    use coverage_workflows_analysis, only: perform_coverage_diff_analysis, &
-                                           launch_coverage_tui_mode
+    use coverage_workflows_analysis, only: perform_coverage_diff_analysis
     use coverage_test_executor, only: execute_auto_test_workflow
     implicit none
     private
@@ -17,7 +16,6 @@ module coverage_workflows
     public :: discover_coverage_files
     public :: evaluate_exclude_patterns
     public :: perform_coverage_diff_analysis
-    public :: launch_coverage_tui_mode
     public :: filter_coverage_files_by_patterns
     public :: execute_auto_test_workflow
 end module coverage_workflows

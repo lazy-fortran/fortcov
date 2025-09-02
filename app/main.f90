@@ -14,7 +14,7 @@ program main
                                     exit_memory_error_clean, exit_validation_error_clean
   use zero_config_core, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
-  use coverage_workflows, only: launch_coverage_tui_mode
+  ! TUI removed: no interactive mode
   use size_enforcement_core, only: enforce_size_limits_for_ci, &
                                    size_enforcement_config_t, ci_enforcement_result_t
   use file_ops_secure, only: safe_remove_file
@@ -119,42 +119,35 @@ program main
   
   ! Removed fork-bomb prevention early exit
   
-  ! Check for TUI mode BEFORE validation to allow interactive source selection
-  if (config%tui_mode) then
-    ! Launch Terminal User Interface with interactive configuration
-    exit_code = launch_coverage_tui_mode(config)
-  else
-    ! Validate configuration for security and accessibility (non-TUI modes only)
-    call validate_config_with_context(config, error_ctx)
-    if (error_ctx%error_code /= ERROR_SUCCESS) then
-      print *, trim(error_ctx%message)
-      if (len_trim(error_ctx%suggestion) > 0) then
-        print *, ""
-        print *, "Suggested fix: " // trim(error_ctx%suggestion)
-      end if
+  ! Validate configuration for security and accessibility
+  call validate_config_with_context(config, error_ctx)
+  if (error_ctx%error_code /= ERROR_SUCCESS) then
+    print *, trim(error_ctx%message)
+    if (len_trim(error_ctx%suggestion) > 0) then
       print *, ""
-      print *, "For configuration help:"
-      print *, "   * See example: cat fortcov.nml.example"
-      print *, "   * Documentation: https://github.com/lazy-fortran/fortcov"
-      ! EPIC 1 FIX: Map data availability errors to proper exit codes
-      if (index(error_ctx%message, "Source path not found") > 0 .or. &
-          index(error_ctx%message, "Coverage file not found") > 0) then
-        call exit_no_coverage_data_clean()
-      ! ZERO-CONFIG EXIT CODE FIX: Issue #1061 - Zero-config mode should return exit code 3
-      else if (index(error_ctx%message, "No input sources specified") > 0 .and. &
-               config%zero_configuration_mode) then
-        call exit_no_coverage_data_clean()
-      else
-        call exit_invalid_config_clean()
-      end if
+      print *, "Suggested fix: " // trim(error_ctx%suggestion)
     end if
-    ! Only proceed with analysis for non-TUI modes
-    if (config%zero_configuration_mode) then
-      ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
-      call execute_zero_config_complete_workflow(config, exit_code)
+    print *, ""
+    print *, "For configuration help:"
+    print *, "   * See example: cat fortcov.nml.example"
+    print *, "   * Documentation: https://github.com/lazy-fortran/fortcov"
+    ! EPIC 1 FIX: Map data availability errors to proper exit codes
+    if (index(error_ctx%message, "Source path not found") > 0 .or. &
+        index(error_ctx%message, "Coverage file not found") > 0) then
+      call exit_no_coverage_data_clean()
+    ! ZERO-CONFIG EXIT CODE FIX: Issue #1061 - Zero-config mode should return exit code 3
+    else if (index(error_ctx%message, "No input sources specified") > 0 .and. &
+             config%zero_configuration_mode) then
+      call exit_no_coverage_data_clean()
     else
-      exit_code = run_coverage_analysis(config)
+      call exit_invalid_config_clean()
     end if
+  end if
+  if (config%zero_configuration_mode) then
+    ! Run coverage analysis - use complete auto-workflow in zero-configuration mode
+    call execute_zero_config_complete_workflow(config, exit_code)
+  else
+    exit_code = run_coverage_analysis(config)
   end if
   
   if (exit_code == EXIT_SUCCESS) then

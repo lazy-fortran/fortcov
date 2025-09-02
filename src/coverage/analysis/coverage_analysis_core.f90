@@ -56,17 +56,11 @@ contains
     end function perform_coverage_analysis
 
     function check_special_modes(config) result(exit_code)
-        !! Check for special analysis modes with interactive configuration
-        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
+        !! Check for special analysis modes
+        type(config_t), intent(inout) :: config
         integer :: exit_code
         
         exit_code = EXIT_SUCCESS
-        
-        ! TUI mode disabled: ignore to avoid interactive/blocking behavior
-        if (config%tui_mode) then
-            exit_code = EXIT_SUCCESS
-            return
-        end if
         
         ! Check for diff mode
         if (config%enable_diff) then

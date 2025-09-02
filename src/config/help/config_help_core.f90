@@ -67,7 +67,7 @@ contains
         print '(A)', "Advanced Options:"
         print '(A)', "  -t, --threads N           Reserved: parallel processing not implemented;"
         print '(A)', "                            this flag is currently ignored (single-threaded)"
-        print '(A)', "  --tui                     Launch terminal UI mode"
+        ! TUI removed
         print '(A)', "  --strict                  Enable strict mode (fail on warnings)"
         print '(A)', ""
         print '(A)', "Examples:"
@@ -90,7 +90,7 @@ contains
         print *, "  - Fortran compiler support"
         print *, "  - gcov file analysis (does not invoke gcov)"
         print *, "  - JSON/XML/HTML output formats"
-        print *, "  - Terminal User Interface (TUI)"
+        ! TUI removed
         print *, "  - Parallel processing: not implemented (threads flag ignored)"
         print *, ""
         print *, "Repository: https://github.com/lazy-fortran/fortcov"
