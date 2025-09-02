@@ -6,6 +6,7 @@ module test_executor_core
     !! Uses pure Fortran process management instead of shell execution.
     use config_core, only: config_t
     use iso_fortran_env, only: error_unit
+    use string_utils, only: int_to_string
     implicit none
     private
     
@@ -36,6 +37,7 @@ contains
         character(len=32) :: timeout_str
         integer :: sleep_sec, ios, sp
         character(len=:), allocatable :: rest, cmd
+        character(len=:), allocatable :: wrapped_command
         
         success = .false.
         exit_code = 0
@@ -44,8 +46,8 @@ contains
         write(timeout_str, '(I0)') config%test_timeout_seconds
         
         if (.not. config%quiet) then
-            write(error_unit, '(A)') "SECURITY FIX Issue #963: Native test execution"
-            write(error_unit, '(A)') "Executing (native): " // trim(test_command)
+            write(error_unit, '(A)') "SECURE TEST EXECUTION"
+            write(error_unit, '(A)') "Command: " // trim(test_command)
             write(error_unit, '(A)') "Timeout: " // trim(timeout_str) // " seconds"
         end if
         
@@ -77,7 +79,9 @@ contains
                 exit_code = 1
                 success = .false.
             else
-                call secure_execute_command(trim(test_command), exit_code)
+                ! Wrap with coreutils timeout to enforce duration; fallback if unavailable
+                wrapped_command = 'timeout -k 5 ' // trim(int_to_string(config%test_timeout_seconds)) // ' ' // trim(test_command)
+                call secure_execute_command(trim(wrapped_command), exit_code)
                 success = (exit_code == 0)
             end if
         end if

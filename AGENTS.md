@@ -47,6 +47,12 @@ done
 - Treat local vs CI differences as blockers; attach logs to PRs.
 - Produce `coverage.md` when validating coverage changes.
 
+### Strict Prohibition: Recursive Test Execution
+- Tests must NEVER invoke external build/test runners (e.g., `fpm test`, `ctest`, `make test`) directly or indirectly.
+- Tests must NOT call FortCov auto-test workflows that spawn the project’s tests (e.g., `execute_auto_test_workflow`) — this creates recursive execution under `fpm test`.
+- If auto-test integration needs validation, mock or stub the invocation; do not spawn a real project test runner from within tests.
+- Any change that introduces tests running `fpm test` (or equivalent) during `fpm test` is a hard blocker.
+
 ## Commit & Pull Request Guidelines
 - Conventional Commits (e.g., `feat: add TUI summary`, `fix: handle gcov err`).
 - Stage specific files only (avoid `git add .`); keep commits single-scope.

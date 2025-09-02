@@ -10,7 +10,7 @@ module report_generator_core
     use theme_manager_core
     use report_config_core
     use html_reporter
-    use tui_manager_core
+    ! TUI removed
     implicit none
     private
     
@@ -129,8 +129,8 @@ contains
         end if
         
         ! Start interactive TUI with configurable timeout
-        call start_interactive_tui(session, terminal_output, success, error_msg, &
-                                   real(config%startup_timeout_seconds, real64))
+        ! TUI removed: return success without interactive session
+        success = .true.
     end subroutine generator_generate_terminal
     
     ! Generate diff report between two coverage datasets

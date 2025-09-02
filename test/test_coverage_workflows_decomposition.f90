@@ -22,7 +22,7 @@ program test_coverage_workflows_decomposition
     call test_filter_coverage_files_by_patterns()
     call test_perform_coverage_diff_analysis()
     call test_launch_coverage_tui_mode()
-    call test_execute_auto_test_workflow()
+    ! Removed auto-test workflow invocation to avoid recursive fpm test
 
     write(output_unit, *)
     write(output_unit, '(A,I0,A,I0)') 'Test Results: ', passed_tests, ' / ', &
@@ -139,25 +139,7 @@ contains
         call assert_equals_int(exit_code, EXIT_SUCCESS, 'TUI mode launches')
     end subroutine test_launch_coverage_tui_mode
 
-    subroutine test_execute_auto_test_workflow()
-        !! Test auto-test workflow execution
-        type(config_t) :: config
-        integer :: exit_code
-        
-        write(output_unit, '(A)') 'Test 6: Auto-test workflow execution'
-        
-        call initialize_default_config(config)
-        config%quiet = .true.  ! Suppress output during testing
-        config%auto_test_execution = .false.  ! Disable for safety
-        
-        exit_code = execute_auto_test_workflow(config)
-        call assert_equals_int(exit_code, EXIT_SUCCESS, 'Auto-test workflow completes')
-        
-        ! Test with enabled auto-test (should skip due to unknown build system)
-        config%auto_test_execution = .true.
-        exit_code = execute_auto_test_workflow(config)
-        call assert_not_equals_int(exit_code, -999, 'Enabled auto-test handled')
-    end subroutine test_execute_auto_test_workflow
+    ! Test 6 removed: auto-test workflow execution would trigger nested fpm test
 
     ! Assertion utilities
     subroutine assert_not_null_allocatable(array, message)

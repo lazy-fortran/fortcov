@@ -19,6 +19,10 @@ module zero_config_core
     public :: provide_zero_config_user_feedback
     public :: execute_zero_config_complete_workflow
     
+    ! Internal helper to detect self-invocation within FortCov repo
+    interface
+    end interface
+    
     ! Constants for default configuration
     integer, parameter :: DEFAULT_TEST_TIMEOUT = 300  ! 5 minutes
     integer, parameter :: DEFAULT_MAX_FILES = 1000
@@ -229,6 +233,8 @@ contains
             end if
         end if
     end subroutine execute_zero_config_complete_workflow
+
+    ! Self-repo detection removed: auto-tests should run unless disabled with --no-auto-test
 
     subroutine populate_zero_config_with_discovered_files(config, success, &
                                                          error_message)
