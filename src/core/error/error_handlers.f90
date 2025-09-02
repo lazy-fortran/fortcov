@@ -109,7 +109,7 @@ contains
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "2. Example: fortcov --source=src *.gcov --output=coverage.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "3. For auto mode: fortcov --discover-and-gcov"
+            "3. For auto mode: fortcov --gcov (alias: --discover-and-gcov)"
         
         write(error_ctx%context, '(A)') "Configuration parsing"
     end subroutine handle_invalid_config
@@ -196,7 +196,7 @@ contains
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "2. Find gcov location: which gcov || find /usr -name 'gcov*'"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "3. Specify path: --gcov=/usr/bin/gcov-11"
+            "3. Ensure gcov is on PATH (e.g., gcov-11)"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "4. Check gcc installation: gcc --version"
         
