@@ -152,21 +152,11 @@ contains
         type(config_t), intent(inout) :: config
         integer, intent(out) :: exit_code
         
-        logical :: success, marker_exists
+        logical :: success
         character(len=:), allocatable :: error_message
         type(error_context_t) :: error_ctx
         
-        ! CRITICAL: Fork bomb prevention - check for recursion marker (Issue #432)
-        inquire(file='.fortcov_execution_marker', exist=marker_exists)
-        if (marker_exists) then
-            if (.not. config%quiet) then
-                print '(A)', "🛡️  Fork bomb prevention: zero-config execution disabled"
-                print '(A)', "    (fortcov detected it's running within a test"
-                print '(A)', "     environment)"
-            end if
-            exit_code = EXIT_SUCCESS
-            return
-        end if
+        ! Removed fork-bomb prevention recursion marker check
         
         if (.not. config%quiet) then
             print '(A)', "FortCov: Starting zero-configuration coverage analysis..."

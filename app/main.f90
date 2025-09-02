@@ -29,11 +29,7 @@ program main
   logical :: success, enhancement_success
   integer :: exit_code, argc, i, arg_len, current_len
   
-  ! CRITICAL: Clean up any stale fork bomb prevention markers from previous runs
-  ! This ensures that crashed or killed previous executions don't block current runs
-  ! SECURITY FIX Issue #963: Use secure file removal instead of execute_command_line
-  call safe_remove_file('.fortcov_execution_marker', marker_error_ctx)
-  ! Note: Ignore errors here - marker file may not exist, which is fine
+  ! Removed fork-bomb prevention marker cleanup
   
   ! Get command line arguments (excluding argv(0) which contains executable path)
   ! command_argument_count() returns number of user arguments (not including argv(0))
@@ -121,18 +117,7 @@ program main
     end if
   end if
   
-  ! CRITICAL: Fork bomb prevention - check before validation (Issue #432)
-  block
-    logical :: marker_exists
-    inquire(file='.fortcov_execution_marker', exist=marker_exists)
-    if (marker_exists) then
-      if (.not. config%quiet) then
-        print *, "INFO: Fork bomb prevention: fortcov execution disabled"
-        print *, "    (fortcov detected it's running within a test environment)"
-      end if
-      call exit_success_clean()
-    end if
-  end block
+  ! Removed fork-bomb prevention early exit
   
   ! Check for TUI mode BEFORE validation to allow interactive source selection
   if (config%tui_mode) then
