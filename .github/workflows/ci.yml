@@ -41,8 +41,12 @@ jobs:
         find . -name "*.out" -delete
         echo "Build artifacts cleaned"
     
-    - name: Build project
-      run: fpm build
+    - name: Build project (once)
+      run: fpm build --profile release
     
-    - name: Run unit tests
-      run: fpm test --verbose
+    - name: Run unit test suite (guarded, 120s)
+      env:
+        RUNNING_TESTS: "1"   # Ensure in-test guard is active to avoid recursion
+        FPM_BACKTRACE: "0"
+      run: |
+        timeout -k 5 120 fpm test --profile release --verbose

@@ -9,6 +9,7 @@ module coverage_test_executor
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use build_system_validation, only: detect_and_validate_build_system
     use test_executor_core
+    use test_env_guard, only: running_under_test_env
     use test_reporter_core
     implicit none
     private
@@ -47,6 +48,15 @@ contains
         end if
         
         call report_workflow_start(config)
+
+        ! Prevent recursive invocation inside test harnesses (e.g., fpm test)
+        if (running_under_test_env()) then
+            if (.not. config%quiet) then
+                print *, '⏭️  Skipping auto-test execution inside test environment'
+            end if
+            exit_code = 2
+            return
+        end if
         
         ! Detect and validate build system
         exit_code = detect_and_validate_build_system(config, build_info, error_ctx, '.')

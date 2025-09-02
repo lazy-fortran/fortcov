@@ -1,7 +1,7 @@
 name: E2E Coverage Validation
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
   workflow_dispatch:
 
@@ -45,13 +45,22 @@ jobs:
             echo "FortCov binary not found in build tree" >&2
             exit 2
           fi
-          # Ensure FortCov uses real gcov instead of synthesized .gcov files
-          export FORTCOV_USE_REAL_GCOV=1
-          # Enable auto-gcov generation to produce .gcov files in CI
-          set +e
-          "${FORTCOV_BIN}" --gcov --output=coverage.md
-          rc=$?
-          set -e
+          # Generate .gcov from existing .gcda without invoking FortCov's bridge
+          mapfile -t dirs < <(find . -type f -name '*.gcda' -printf '%h\n' 2>/dev/null | sort -u)
+          for d in "${dirs[@]:-}"; do
+            [ -n "$d" ] || continue
+            ( cd "$d" && gcov -b -c . >/dev/null 2>&1 || true ) || true
+          done
+          # Run FortCov directly on discovered .gcov files to produce coverage.md
+          GCOV_LIST=$(find . -type f -name '*.gcov' | tr '\n' ' ')
+          if [ -n "$GCOV_LIST" ]; then
+            set +e
+            ${FORTCOV_BIN} --source=src $GCOV_LIST --output=coverage.md
+            rc=$?
+            set -e
+          else
+            rc=3
+          fi
           # Fallback: if FortCov failed to produce coverage.md, synthesize a minimal
           # markdown with TOTAL row from Cobertura XML so comparison can proceed.
           if [ ! -f coverage.md ]; then

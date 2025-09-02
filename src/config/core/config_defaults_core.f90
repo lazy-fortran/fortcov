@@ -55,6 +55,9 @@ contains
         config%strict_mode = .false.
         config%zero_configuration_mode = .false.
         config%auto_discovery = .true.
+        ! Enable auto test execution by default. Fork-bomb prevention is
+        ! handled by argument parsing and workflow guards; tests that could
+        ! recursively trigger fpm are removed from the suite.
         config%auto_test_execution = .true.
         config%test_timeout_seconds = 300
         
