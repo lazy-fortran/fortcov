@@ -41,9 +41,9 @@ contains
         write(output_unit, '(A)') ""
         write(output_unit, '(A)') "=== ERROR PATH FILE CLOSING ==="
 
-        ! Verify that file_utils_consolidated has proper error path closing
+        ! Verify that consolidated file utilities have proper error path closing
         call assert_test(.true., "Error path file closing in file_utils", &
-                        "file_utils_consolidated.f90 has proper error path file closing")
+                        "file_utilities.f90 has proper error path file closing")
 
     end subroutine test_error_path_file_closing
 
