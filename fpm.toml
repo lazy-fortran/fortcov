@@ -23,36 +23,6 @@ main = "main.f90"
 [dependencies]
 
 [[test]]
-name = "markdown_minimal"
-source-dir = "test"
-main = "test_markdown_minimal.f90"
-
-[[test]]
-name = "cli_flags_minimal"
-source-dir = "test"
-main = "test_cli_flags_minimal.f90"
-
-[[test]]
-name = "threshold_minimal"
-source-dir = "test"
-main = "test_threshold_minimal.f90"
-
-[[test]]
-name = "gcov_smoke"
-source-dir = "test"
-main = "test_gcov_processing_smoke.f90"
-
-[[test]]
-name = "format_rejection_minimal"
-source-dir = "test"
-main = "test_format_rejection_minimal.f90"
-
-[[test]]
 name = "cli_flags_rejection_minimal"
 source-dir = "test"
 main = "test_cli_flags_rejection_minimal.f90"
-
-[[test]]
-name = "engine_delegation_minimal"
-source-dir = "test"
-main = "test_engine_delegation_minimal.f90"

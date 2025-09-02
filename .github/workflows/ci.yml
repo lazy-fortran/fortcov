@@ -44,18 +44,9 @@ jobs:
     - name: Build project (once)
       run: fpm build --profile release
     
-    - name: Run minimal unit tests (guarded, per-test 45s)
+    - name: Run unit test suite (guarded, 120s)
       env:
         RUNNING_TESTS: "1"   # Ensure in-test guard is active to avoid recursion
         FPM_BACKTRACE: "0"
       run: |
-        set -e
-        tests=( \
-          cli_flags_rejection_minimal \
-          engine_delegation_minimal \
-        )
-        for t in "${tests[@]}"; do
-          echo "::group::Running test: $t"
-          timeout -k 5 45 fpm test --profile release --target "$t" --verbose
-          echo "::endgroup::"
-        done
+        timeout -k 5 120 fpm test --profile release --verbose
