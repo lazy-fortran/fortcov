@@ -21,11 +21,11 @@ From the root of your FPM project:
 
 ```bash
 # Auto-detect FPM, run tests with coverage, generate .gcov, produce coverage.md
-fortcov
+fortcov --gcov   # alias: --discover-and-gcov
 ```
-Outputs:
-- `coverage.md`: Markdown report (project summary and per-file stats)
+Outputs (defaults):
 - `.gcov` files in the working directory
+- `build/coverage/coverage.md`: Markdown report (project summary and per-file stats)
 
 Exit codes (FortCov): `0` success, `2` threshold not met, `3` no coverage data.
 
@@ -67,6 +67,7 @@ fortcov --fail-under 80 --source=src *.gcov --output=coverage.md --quiet
 
 ## Notes on built-in bridge
 
-The built-in bridge `--gcov` remains available for explicit `.gcov` generation
-when needed. The default `fortcov` command already performs discovery and
-production of coverage files for FPM projects, so `--gcov` is optional.
+By default, `fortcov` analyzes existing `.gcov` files and does not invoke
+`gcov` or run your tests. Use the built-in bridge `--gcov` (alias:
+`--discover-and-gcov`) to auto-discover FPM/CMake build directories, run under
+coverage, generate `.gcov`, and then analyze them.
