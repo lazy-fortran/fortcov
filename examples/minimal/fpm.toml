@@ -1,0 +1,12 @@
+name = "demo_coverage"
+version = "0.1.0"
+
+[build]
+auto-executables = true
+auto-tests = true
+
+[fortran]
+implicit-typing = false
+implicit-external = false
+source-form = "free"
+
