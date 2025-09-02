@@ -216,7 +216,8 @@ contains
             is_safe = .false.
             return
         end if
-        if (.not. (index(command, 'gcov ') == 1 .or. index(command, 'cd ') == 1)) then
+        ! Allow only direct gcov invocations (no directory chaining)
+        if (.not. (index(command, 'gcov ') == 1)) then
             is_safe = .false.
             return
         end if
