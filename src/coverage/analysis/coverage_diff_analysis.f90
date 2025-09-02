@@ -7,7 +7,7 @@ module coverage_diff_analysis
     use config_core
     use coverage_diff
     use coverage_types, only: coverage_diff_t
-    use json_io, only: import_coverage_from_json_file
+    ! JSON import removed; diff analysis from JSON disabled
     use coverage_model_core, only: coverage_data_t
     use file_utilities, only: file_exists
     implicit none
@@ -142,20 +142,20 @@ contains
             return
         end if
         
-        ! Load baseline coverage data
-        call import_coverage_from_json_file(baseline_file, baseline_data, baseline_error)
+        ! JSON import removed: fail gracefully
+        baseline_error = .true.
         if (baseline_error) then
             if (.not. config%quiet) then
-                print *, "❌ Failed to load baseline coverage data from: " // baseline_file
+                print *, "❌ JSON import not supported: " // baseline_file
             end if
             return
         end if
         
-        ! Load current coverage data
-        call import_coverage_from_json_file(current_file, current_data, current_error)
+        ! JSON import removed: fail gracefully
+        current_error = .true.
         if (current_error) then
             if (.not. config%quiet) then
-                print *, "❌ Failed to load current coverage data from: " // current_file
+                print *, "❌ JSON import not supported: " // current_file
             end if
             return
         end if

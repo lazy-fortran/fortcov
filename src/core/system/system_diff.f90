@@ -13,9 +13,7 @@ module system_diff
     !! - Clean separation of concerns with focused utility modules
     
     use coverage_format_converter, only: convert_json_to_cobertura_xml, &
-                                        convert_cobertura_xml_to_json, &
                                         validate_cobertura_xml_schema, &
-                                        perform_round_trip_conversion, &
                                         parse_cobertura_xml
     use coverage_data_comparator, only: compare_coverage_data, &
                                        validate_structural_equivalence, &
@@ -27,9 +25,7 @@ module system_diff
     
     ! Re-export public interface procedures for compatibility
     public :: convert_json_to_cobertura_xml
-    public :: convert_cobertura_xml_to_json
     public :: validate_cobertura_xml_schema
-    public :: perform_round_trip_conversion
     public :: compare_coverage_data
     public :: validate_structural_equivalence
     public :: check_numerical_tolerance

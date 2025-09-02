@@ -12,7 +12,6 @@ module coverage_format_converter
     !! - Round-trip conversion testing capabilities
 
     use coverage_model_core
-    use json_io, only: export_json_coverage, import_json_coverage
     use string_utils, only: real_to_string, int_to_string
     use json_module, only: json_value, json_core
     use json_kinds, only: RK, IK
@@ -23,9 +22,7 @@ module coverage_format_converter
 
     ! Public interface procedures for format conversion
     public :: convert_json_to_cobertura_xml
-    public :: convert_cobertura_xml_to_json
     public :: validate_cobertura_xml_schema
-    public :: perform_round_trip_conversion
     public :: parse_cobertura_xml
 
     ! XML namespace and schema constants
@@ -83,32 +80,6 @@ contains
 
     end subroutine convert_json_to_cobertura_xml
 
-    ! Convert Cobertura XML format back to fortcov JSON format
-    subroutine convert_cobertura_xml_to_json(xml_content, json_output, success)
-        character(len=*), intent(in) :: xml_content
-        character(len=:), allocatable, intent(out) :: json_output
-        logical, intent(out) :: success
-
-        type(coverage_data_t) :: coverage_data
-
-        success = .false.
-
-        ! Initialize output to prevent segfaults
-        json_output = ''
-
-        ! Parse XML content into coverage data structure
-        call parse_cobertura_xml(xml_content, coverage_data, success)
-        if (.not. success) then
-            json_output = '{"error": "XML parsing failed"}'
-            return
-        end if
-
-        ! Export as JSON
-        call export_json_coverage(coverage_data, json_output)
-        success = .true.
-
-    end subroutine convert_cobertura_xml_to_json
-
     ! Validate XML content against Cobertura schema
     subroutine validate_cobertura_xml_schema(xml_content, is_valid)
         character(len=*), intent(in) :: xml_content
@@ -131,35 +102,7 @@ contains
 
     end subroutine validate_cobertura_xml_schema
 
-    ! Perform round-trip conversion: Data -> JSON -> XML -> JSON -> Data
-    subroutine perform_round_trip_conversion(original_data, recovered_data)
-        type(coverage_data_t), intent(in) :: original_data
-        type(coverage_data_t), intent(out) :: recovered_data
-
-        character(len=:), allocatable :: json1, xml_content, json2
-        logical :: success
-
-        ! Original data -> JSON
-        call export_json_coverage(original_data, json1)
-
-        ! JSON -> XML
-        call convert_json_to_cobertura_xml(json1, xml_content, success)
-        if (.not. success) then
-            call recovered_data%init()
-            return
-        end if
-
-        ! XML -> JSON
-        call convert_cobertura_xml_to_json(xml_content, json2, success)
-        if (.not. success) then
-            call recovered_data%init()
-            return
-        end if
-
-        ! JSON -> Data
-        call import_json_coverage(json2, recovered_data)
-
-    end subroutine perform_round_trip_conversion
+    ! Round-trip conversion removed with JSON features
 
     subroutine extract_coverage_rates_from_json(json_content, line_rate, branch_rate, &
                                                covered_lines, total_lines, success)
