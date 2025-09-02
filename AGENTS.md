@@ -5,7 +5,7 @@
 - `src/`: Core modules by domain: `config/`, `core/`, `coverage/`, `gcov/`,
   `utils/`, `reporters/`, `syntax/`, `security/`, `zero_config/`.
 - `test/`: Unit, integration, security, performance, and CLI tests.
-- `scripts/`: CI helpers and utilities (`run_ci_tests.sh`).
+- `scripts/`: CI helpers and utilities.
 - `build/`: Compiler outputs (ignored in VCS).
 
 ## Build, Test, and Development Commands
@@ -16,10 +16,8 @@ fpm build
 # Build with coverage
 fpm build --flag "-fprofile-arcs -ftest-coverage"
 
-# Curated CI-safe test suite (timeouts, verified exclusions)
-# Honors `TEST_TIMEOUT` to set a hard cap for the entire run
-# (default: 300s). Example: `TEST_TIMEOUT=120 ./run_ci_tests.sh`.
-./run_ci_tests.sh
+# Run all tests
+fpm test
 
 # Run a specific/verbose test
 fpm test test_name
@@ -41,28 +39,13 @@ done
 - No commented-out code or secrets.
 
 ## Testing Guidelines
-- FPM-based tests in `test/`; do not skip/xfail without linked issue.
-- Primary runner: `./run_ci_tests.sh` (timeouts, fork-bomb prevention).
-  - Honors `TEST_TIMEOUT` env var: sets global cap (default 300s).
+- Use `fpm test` locally and in CI.
+- Keep tests deterministic and self-contained; do not skip/xfail without a linked issue.
 - Treat local vs CI differences as blockers; attach logs to PRs.
-- Produce `coverage.md` when validating coverage changes.
+- Generate `coverage.md` when validating coverage changes, if relevant.
 
-### Strict Prohibition: Recursive Test Execution
-- Tests must NEVER invoke external build/test runners (e.g., `fpm test`, `ctest`, `make test`) directly or indirectly.
-- Tests must NOT call FortCov auto-test workflows that spawn the project’s tests (e.g., `execute_auto_test_workflow`) — this creates recursive execution under `fpm test`.
-- If auto-test integration needs validation, mock or stub the invocation; do not spawn a real project test runner from within tests.
-- Any change that introduces tests running `fpm test` (or equivalent) during `fpm test` is a hard blocker.
-
-#### Hard Rules (Enforced)
-- Single source of truth: use `fork_bomb_prevention` for environment detection; do not duplicate or bypass detection logic.
-- Code paths reachable from unit/integration tests must never call `execute_auto_test_workflow` or any API that launches external test runners.
-- No wrappers or scripts from tests that indirectly run `fpm test`, `ctest`, or similar.
-- PRs adding or reintroducing such calls will be rejected on sight.
-
-#### Verification Gates
-- Static scan must show no test code or reachable code paths running `fpm test|ctest|make test|run_ci_tests.sh`.
-- `./run_ci_tests.sh` sets `FPM_TEST=1`; however, local plain `fpm test` MUST also be safe via robust detection in `fork_bomb_prevention`.
-- Include logs in PRs showing a clean run: `TEST_TIMEOUT=120 ./run_ci_tests.sh` with 0 recursion and all non-excluded tests passing.
+### CI
+- CI runs `fpm test` directly. Avoid custom wrappers unless strictly necessary.
 
 ## Commit & Pull Request Guidelines
 - Conventional Commits (e.g., `feat: add TUI summary`, `fix: handle gcov err`).
@@ -72,6 +55,5 @@ done
   failing CI.
 
 ## Security & Configuration Tips
-- Respect fork-bomb prevention markers and safe execution utilities in `utils/`.
 - Validate paths/inputs; avoid unvalidated shell execution.
 - Config via `fortcov.nml`; prefer CLI flags in CI (`--quiet`, `--fail-under`).
