@@ -29,8 +29,8 @@ module coverage_analysis_core
 contains
 
     function perform_coverage_analysis(config) result(exit_code)
-        !! Core coverage analysis implementation with interactive TUI support
-        type(config_t), intent(inout) :: config  ! Changed to inout for TUI mode
+        !! Core coverage analysis implementation
+        type(config_t), intent(inout) :: config
         integer :: exit_code
         
         ! Check for special modes first

@@ -64,13 +64,7 @@ fortcov --source=src *.gcov --minimum 80 --fail-under 90
 
 ## Advanced Analysis Features
 
-**Interactive TUI Mode:**
-```bash
-# Launch interactive terminal user interface
-fortcov --source=src *.gcov --tui
-```
-
-**Note**: Coverage diff analysis features are not yet implemented. Current implementation provides terminal coverage analysis and interactive TUI mode.
+Note: Coverage diff analysis features are not yet implemented. Current implementation provides terminal coverage analysis and file/JSON/HTML/XML reporting.
 
 ## Workflow Integration
 

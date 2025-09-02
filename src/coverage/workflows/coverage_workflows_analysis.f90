@@ -1,8 +1,8 @@
 module coverage_workflows_analysis
-    !! Coverage analysis workflows including diff analysis and TUI operations
+    !! Coverage analysis workflows including diff analysis
     !!
-    !! Provides high-level analysis workflows for coverage comparison,
-    !! terminal user interface launching, and analysis result reporting.
+    !! Provides high-level analysis workflows for coverage comparison
+    !! and analysis result reporting.
     
     use constants_core
     use config_core
