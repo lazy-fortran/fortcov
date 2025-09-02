@@ -15,10 +15,6 @@ contains
     
     subroutine create_reporter(format, reporter, error_flag)
         !! Create a concrete reporter instance based on format
-        use text_reporter, only: text_reporter_t
-        use json_reporter, only: json_reporter_t  
-        use html_reporter, only: html_reporter_t
-        use xml_reporter, only: xml_reporter_t
         use markdown_reporter_wrapper, only: markdown_reporter_t
         character(len=*), intent(in) :: format
         class(coverage_reporter_t), allocatable, intent(out) :: reporter
@@ -27,16 +23,8 @@ contains
         error_flag = .false.
         
         select case (trim(format))
-        case ("text")
-            allocate(text_reporter_t :: reporter)
         case ("markdown", "md")
             allocate(markdown_reporter_t :: reporter)
-        case ("json")
-            allocate(json_reporter_t :: reporter)
-        case ("html")
-            allocate(html_reporter_t :: reporter)
-        case ("xml")
-            allocate(xml_reporter_t :: reporter)
         case default
             error_flag = .true.
         end select
@@ -44,13 +32,8 @@ contains
     
     function get_supported_formats() result(formats)
         !! Get list of supported output formats
-        character(len=10), dimension(5) :: formats
-        
-        formats(1) = "text"
-        formats(2) = "markdown"
-        formats(3) = "json"
-        formats(4) = "html"
-        formats(5) = "xml"
+        character(len=10), dimension(1) :: formats
+        formats(1) = "markdown"
     end function get_supported_formats
     
 end module coverage_reporter_factory
