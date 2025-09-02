@@ -51,7 +51,9 @@ if command -v git >/dev/null 2>&1; then
     for f in "${TRACKED_LOGS[@]}"; do TRACKED_MAP["$f"]=1; done
     # Find any .log files at project root and remove if untracked
     while IFS= read -r logfile; do
-        if [ -z "${TRACKED_MAP["$logfile"]}" ]; then
+        # With 'set -u', direct expansion of an unset assoc key errors.
+        # Use the '+x' parameter expansion to test key existence safely.
+        if [[ -z "${TRACKED_MAP["$logfile"]+x}" ]]; then
             rm -f "$logfile" 2>/dev/null || true
         fi
     done < <(find . -maxdepth 1 -type f -name "*.log" 2>/dev/null)
