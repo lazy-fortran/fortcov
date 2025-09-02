@@ -93,7 +93,16 @@ contains
         integer :: i
         
         ! Find all .gcda files (indicates executed coverage data)
-        gcda_files = find_files("build/**/fortcov/*.gcda")
+        ! Use secure recursive discovery to handle various build layouts reliably
+        block
+            use gcov_file_discovery, only: discover_gcda_files
+            use error_handling_core, only: error_context_t, ERROR_SUCCESS
+            type(error_context_t) :: ectx
+            call discover_gcda_files('build', gcda_files, ectx)
+            if (ectx%error_code /= ERROR_SUCCESS) then
+                ! Leave gcda_files unallocated; fallback logic below will try test_build
+            end if
+        end block
 
         ! Test-friendly fallback: also look in a conventional test directory
         if (.not. allocated(gcda_files) .or. size(gcda_files) == 0) then
