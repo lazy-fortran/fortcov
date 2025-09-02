@@ -1,8 +1,8 @@
 module coverage_workflows_analysis
-    !! Coverage analysis workflows including diff analysis and TUI operations
+    !! Coverage analysis workflows including diff analysis
     !!
-    !! Provides high-level analysis workflows for coverage comparison,
-    !! terminal user interface launching, and analysis result reporting.
+    !! Provides high-level analysis workflows for coverage comparison
+    !! and analysis result reporting.
     
     use constants_core
     use config_core
@@ -12,7 +12,6 @@ module coverage_workflows_analysis
     private
     
     public :: perform_coverage_diff_analysis
-    public :: launch_coverage_tui_mode
     
 contains
 
@@ -68,30 +67,8 @@ contains
         
     end function perform_coverage_diff_analysis
     
-    function launch_coverage_tui_mode(config) result(exit_code)
-        !! TUI mode launch workflow implementation with interactive configuration
-        !! Extracted from original launch_tui_mode function
-        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
-        integer :: exit_code
-        
-        logical :: tui_success
-        
-        exit_code = EXIT_SUCCESS
-        
-        ! TUI disabled: treat as no-op success to keep CLI stable
-        tui_success = .true.
-        
-        if (.not. tui_success) then
-            if (.not. config%quiet) then
-                print *, "❌ TUI launch failed"
-            end if
-            exit_code = EXIT_FAILURE
-        end if
-        
-    end function launch_coverage_tui_mode
-    
     ! Internal helper routines
-    
+
     subroutine output_coverage_diff_summary(diff_result, config)
         !! Outputs coverage diff analysis summary
         type(coverage_diff_t), intent(in) :: diff_result
@@ -117,11 +94,6 @@ contains
         
     end subroutine output_coverage_diff_summary
     
-    subroutine start_tui_interface(config, success)
-        !! Stubbed out: TUI removed
-        type(config_t), intent(inout) :: config
-        logical, intent(out) :: success
-        success = .true.
-    end subroutine start_tui_interface
+    ! TUI interface removed
 
 end module coverage_workflows_analysis

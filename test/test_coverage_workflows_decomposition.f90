@@ -21,7 +21,7 @@ program test_coverage_workflows_decomposition
     call test_evaluate_exclude_patterns()
     call test_filter_coverage_files_by_patterns()
     call test_perform_coverage_diff_analysis()
-    call test_launch_coverage_tui_mode()
+    ! TUI mode removed
     ! Removed auto-test workflow invocation to avoid recursive fpm test
 
     write(output_unit, *)
@@ -125,19 +125,7 @@ contains
         call assert_not_equals_int(exit_code, -999, 'Threshold handling works')
     end subroutine test_perform_coverage_diff_analysis
 
-    subroutine test_launch_coverage_tui_mode()
-        !! Test TUI mode launch workflow
-        type(config_t) :: config
-        integer :: exit_code
-        
-        write(output_unit, '(A)') 'Test 5: TUI mode launch'
-        
-        call initialize_default_config(config)
-        config%quiet = .true.  ! Suppress output during testing
-        
-        exit_code = launch_coverage_tui_mode(config)
-        call assert_equals_int(exit_code, EXIT_SUCCESS, 'TUI mode launches')
-    end subroutine test_launch_coverage_tui_mode
+    ! TUI test removed
 
     ! Test 6 removed: auto-test workflow execution would trigger nested fpm test
 

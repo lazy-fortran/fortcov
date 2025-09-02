@@ -99,7 +99,7 @@ contains
         logical :: workflows_valid
         
         logical :: basic_analysis_workflow, diff_analysis_workflow
-        logical :: json_import_workflow, tui_workflow
+        logical :: json_import_workflow
         
         workflows_valid = .true.
         
@@ -124,12 +124,7 @@ contains
             workflows_valid = .false.
         end if
         
-        ! Test TUI workflow
-        tui_workflow = test_tui_workflow()
-        if (.not. tui_workflow) then
-            print *, "❌ TUI workflow failed"
-            workflows_valid = .false.
-        end if
+        ! TUI workflow removed
         
     end function test_end_to_end_workflows
     
@@ -273,13 +268,7 @@ contains
         
     end function test_json_import_workflow
     
-    function test_tui_workflow() result(passed)
-        logical :: passed
-        
-        ! Test TUI workflow
-        passed = .true.
-        
-    end function test_tui_workflow
+    ! TUI workflow test removed
     
     function test_orchestrator_analysis_compatibility() result(compatible)
         logical :: compatible

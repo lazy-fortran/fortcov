@@ -205,37 +205,6 @@ contains
         
     end function orchestrate_diff_analysis
 
-    function orchestrate_tui_launch(config) result(exit_code)
-        !! Orchestrate TUI mode launch
-        !! 
-        !! Simple orchestration for TUI mode launch with proper
-        !! error handling and user feedback.
-        type(config_t), intent(in) :: config
-        integer :: exit_code
-        
-        logical :: tui_success
-        
-        exit_code = EXIT_SUCCESS
-        
-        if (.not. config%quiet) then
-            print *, "🔄 Orchestrating TUI mode launch..."
-        end if
-        
-        ! Launch TUI interface (placeholder implementation)
-        tui_success = .true.  ! Placeholder for actual TUI launch
-        
-        if (.not. tui_success) then
-            if (.not. config%quiet) then
-                print *, "❌ TUI launch failed"
-            end if
-            exit_code = EXIT_FAILURE
-            return
-        end if
-        
-        if (.not. config%quiet) then
-            print *, "✅ TUI mode launched successfully"
-        end if
-        
-    end function orchestrate_tui_launch
+    ! TUI orchestration removed
 
 end module coverage_workflow_core

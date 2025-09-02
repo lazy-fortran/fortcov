@@ -53,7 +53,6 @@ contains
         config%import_file = ""
         config%keep_gcov_files = .false.
         config%gcov_args = ""
-        config%tui_mode = .false.
         config%strict_mode = .false.
         config%zero_configuration_mode = .false.
         config%auto_discovery = .true.

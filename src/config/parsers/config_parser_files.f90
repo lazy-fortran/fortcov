@@ -112,7 +112,7 @@ contains
             integer :: threads
             logical :: verbose
             logical :: quiet
-            logical :: tui_mode
+            ! TUI removed
             logical :: strict_mode
             logical :: enable_diff
             character(len=256) :: diff_baseline_file
@@ -133,14 +133,14 @@ contains
         ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
         real :: minimum_coverage, fail_under_threshold, diff_threshold
         integer :: threads, max_files
-        logical :: verbose, quiet, tui_mode, strict_mode, enable_diff, include_unchanged, keep_gcov_files
+        logical :: verbose, quiet, strict_mode, enable_diff, include_unchanged, keep_gcov_files
 
         ! Define the namelist
         namelist /fortcov_config/ &
             input_format, output_format, output_path, source_paths, &
             exclude_patterns, include_patterns, gcov_args, &
             minimum_coverage, fail_under_threshold, threads, &
-            verbose, quiet, tui_mode, strict_mode, enable_diff, &
+            verbose, quiet, strict_mode, enable_diff, &
             diff_baseline_file, include_unchanged, diff_threshold, &
             keep_gcov_files, max_files
 
@@ -164,7 +164,6 @@ contains
         threads = namelist_data%threads
         verbose = namelist_data%verbose
         quiet = namelist_data%quiet
-        tui_mode = namelist_data%tui_mode
         strict_mode = namelist_data%strict_mode
         enable_diff = namelist_data%enable_diff
         diff_baseline_file = namelist_data%diff_baseline_file
@@ -206,7 +205,6 @@ contains
         namelist_data%threads = threads
         namelist_data%verbose = verbose
         namelist_data%quiet = quiet
-        namelist_data%tui_mode = tui_mode
         namelist_data%strict_mode = strict_mode
         namelist_data%enable_diff = enable_diff
         namelist_data%diff_baseline_file = diff_baseline_file
@@ -237,7 +235,6 @@ contains
             namelist_data%threads = -1
             namelist_data%verbose = .false.
             namelist_data%quiet = .false.
-            namelist_data%tui_mode = .false.
             namelist_data%strict_mode = .false.
             namelist_data%enable_diff = .false.
             namelist_data%diff_baseline_file = ""
@@ -286,7 +283,6 @@ contains
             ! Transfer logical values
             config%verbose = namelist_data%verbose
             config%quiet = namelist_data%quiet
-            config%tui_mode = namelist_data%tui_mode
             config%strict_mode = namelist_data%strict_mode
             config%enable_diff = namelist_data%enable_diff
             config%include_unchanged = namelist_data%include_unchanged
@@ -335,8 +331,6 @@ contains
             config%verbose = (trim(adjustl(value)) == "true")
         case ("quiet")
             config%quiet = (trim(adjustl(value)) == "true")
-        case ("tui_mode")
-            config%tui_mode = (trim(adjustl(value)) == "true")
         case ("strict_mode")
             config%strict_mode = (trim(adjustl(value)) == "true")
         case ("keep_gcov_files")
