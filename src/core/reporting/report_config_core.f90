@@ -49,9 +49,10 @@ contains
     subroutine report_config_init(this)
         class(report_config_t), intent(out) :: this
 
-        this%output_format = "html"
-        this%theme_name = "cyberpunk"
-        this%enable_syntax_highlighting = .true.
+        ! Default to markdown-only reporting path
+        this%output_format = "markdown"
+        this%theme_name = "default"
+        this%enable_syntax_highlighting = .false.
         this%enable_coverage_annotation = .true.
         this%terminal_colors_enabled = .true.
         this%max_memory_mb = 100
