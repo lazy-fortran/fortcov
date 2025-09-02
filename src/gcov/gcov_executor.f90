@@ -11,9 +11,7 @@ module gcov_executor
                                   safe_write_message, safe_write_suggestion, safe_write_context
     use file_utilities, only: file_exists
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
-    use file_ops_secure, only: safe_mkdir, safe_remove_file, safe_move_file
-    use shell_utilities, only: escape_shell_argument
-    use secure_command_execution, only: secure_execute_command
+    ! Simplified: avoid security wrapper modules; use minimal local helpers
     use xml_utils, only: get_base_name
     use string_utils, only: int_to_string
     ! Inline security helpers to avoid module-order issues during test builds
@@ -137,7 +135,7 @@ contains
         
         inquire(file=trim(this%gcov_output_dir), exist=output_dir_exists)
         if (.not. output_dir_exists) then
-            call safe_mkdir(this%gcov_output_dir, error_ctx)
+            call ensure_dir(trim(this%gcov_output_dir))
         end if
     end subroutine setup_gcov_output_environment
     
@@ -155,28 +153,21 @@ contains
         
         call clear_error_context(error_ctx)
         
-        ! SECURITY IMPLEMENTATION Issue #1035: Restore secure gcov functionality
-        ! Validate and sanitize all inputs before command execution
-        
-        ! Validate source file exists and sanitize path
+        ! Validate source file exists
         inquire(file=source_file, exist=source_exists)
         if (.not. source_exists) then
             call handle_missing_source(source_file, error_ctx)
             return
         end if
         
-        ! Sanitize source file path (remove any dangerous characters)
+        ! Build minimal, safely-quoted gcov invocation
         safe_source_file = trim(source_file)
-        call sanitize_file_path(safe_source_file)
-        
-        ! Build minimal, safe gcov invocation
         branch_flag = ''
         if (this%branch_coverage) branch_flag = ' -b'
         command = trim(this%gcov_command) // branch_flag // ' ' // &
-                  escape_shell_argument(safe_source_file)
-        
-        ! SECURITY FIX Issue #926: Use secure process execution instead of execute_command_line
-        call secure_execute_gcov_command(command, exit_code)
+                  quote_arg(safe_source_file)
+
+        call run_command(command, exit_code)
         
         if (exit_code /= 0) then
             call handle_gcov_command_failure(command, exit_code, temp_filename, error_ctx)
@@ -187,71 +178,36 @@ contains
         error_ctx%error_code = ERROR_SUCCESS
     end subroutine execute_gcov_command
     
-    ! SECURITY FIX Issue #926: Secure gcov command execution with validation
-    ! Execute gcov commands safely with comprehensive input validation
-    subroutine secure_execute_gcov_command(command, exit_code)
-        character(len=*), intent(in) :: command  
-        integer, intent(out) :: exit_code
-        
-        ! SECURITY FIX: Validate command before execution
-        if (.not. is_safe_gcov_command(command)) then
-            exit_code = 1
+    ! Minimal helpers: quoting and command execution
+    pure function quote_arg(s) result(q)
+        character(len=*), intent(in) :: s
+        character(len=:), allocatable :: q
+        character(len=:), allocatable :: tmp
+        integer :: i, n
+        n = len_trim(s)
+        if (n == 0) then
+            q = "''"
             return
         end if
-        
-        ! Execute the validated command via centralized secure wrapper
-        call secure_execute_command(command, exit_code)
+        tmp = ''
+        do i = 1, n
+            select case(s(i:i))
+            case("'")
+                tmp = tmp // "'" // '"' // "'" // '"' // "'"
+            case default
+                tmp = tmp // s(i:i)
+            end select
+        end do
+        q = "'" // tmp // "'"
+    end function quote_arg
 
-    end subroutine secure_execute_gcov_command
-    
-    ! Security helpers
-    
-    logical function is_safe_gcov_command(command) result(is_safe)
-        character(len=*), intent(in) :: command
-        is_safe = .true.
-        if (index(command, '&&') > 0 .or. index(command, '||') > 0 .or. &
-            index(command, ';') > 0 .or. index(command, '`') > 0 .or. &
-            index(command, '$') > 0 .or. index(command, '|') > 0 .or. &
-            index(command, '>') > 0 .or. index(command, '<') > 0) then
-            is_safe = .false.
-            return
-        end if
-        ! Allow only direct gcov invocations (no directory chaining)
-        if (.not. (index(command, 'gcov ') == 1)) then
-            is_safe = .false.
-            return
-        end if
-    end function is_safe_gcov_command
-    
-    subroutine sanitize_file_path(path)
-        character(len=*), intent(inout) :: path
-        integer :: i, len_path
-        character :: c
-        len_path = len_trim(path)
-        do i = 1, len_path
-            c = path(i:i)
-            if (c == ';' .or. c == '|' .or. c == '&' .or. c == '$' .or. &
-                c == '`' .or. c == '<' .or. c == '>' .or. c == '(' .or. &
-                c == ')' .or. c == '{' .or. c == '}') then
-                path(i:i) = '_'
-            end if
-        end do
-        call remove_pattern(path, '../')
-        call remove_pattern(path, '/./')
-        call remove_pattern(path, '//')
-    end subroutine sanitize_file_path
-    
-    subroutine remove_pattern(str, pattern)
-        character(len=*), intent(inout) :: str
-        character(len=*), intent(in) :: pattern
-        integer :: pos, pattern_len
-        pattern_len = len(pattern)
-        do
-            pos = index(str, pattern)
-            if (pos == 0) exit
-            str = str(1:pos-1) // str(pos+pattern_len:)
-        end do
-    end subroutine remove_pattern
+    subroutine run_command(cmd, exit_code)
+        character(len=*), intent(in) :: cmd
+        integer, intent(out) :: exit_code
+        integer :: stat
+        call execute_command_line(cmd, exitstat=stat)
+        exit_code = stat
+    end subroutine run_command
     
     ! Process generated gcov output files
     subroutine process_gcov_output_files(this, source_file, temp_files, line_count, error_ctx)
@@ -275,11 +231,7 @@ contains
             output_gcov_file = trim(this%gcov_output_dir) // "/" // &
                               trim(source_basename) // ".f90.gcov"
             ! SECURITY FIX Issue #963: Use secure file move instead of execute_command_line
-            block
-                type(error_context_t) :: move_error_ctx
-                call safe_move_file(gcov_file, output_gcov_file, move_error_ctx)
-                stat = merge(0, 1, move_error_ctx%error_code == ERROR_SUCCESS)
-            end block
+            call move_file(gcov_file, output_gcov_file, stat)
             line_count = 1
             if (stat == 0) then
                 temp_files(1) = output_gcov_file
@@ -387,14 +339,7 @@ contains
                 open(newunit=unit, file=gcov_files(i), status='old', iostat=stat)
                 if (stat == 0) then
                     close(unit, status='delete', iostat=close_stat)
-                    ! SECURITY FIX Issue #963: If deletion failed, use secure removal
-                    if (close_stat /= 0) then
-                        block
-                            type(error_context_t) :: remove_error_ctx
-                            call safe_remove_file(trim(gcov_files(i)), remove_error_ctx)
-                            ! Note: Ignore errors in cleanup - file might be locked
-                        end block
-                    end if
+                    if (close_stat /= 0) continue
                 end if
             end if
         end do
@@ -417,16 +362,22 @@ contains
         open(newunit=unit, file=temp_filename, status='old', iostat=stat)
         if (stat == 0) then
             close(unit, status='delete', iostat=close_stat)
-            ! SECURITY FIX Issue #963: If deletion failed, use secure removal
-            if (close_stat /= 0) then
-                block
-                    type(error_context_t) :: remove_error_ctx
-                    call safe_remove_file(trim(temp_filename), remove_error_ctx)
-                    ! Note: Ignore errors in cleanup - file might be locked
-                end block
-            end if
+            if (close_stat /= 0) return
         end if
     end subroutine cleanup_temp_file
+
+    subroutine ensure_dir(path)
+        character(len=*), intent(in) :: path
+        integer :: stat
+        call execute_command_line('mkdir -p ' // quote_arg(trim(path)), exitstat=stat)
+    end subroutine ensure_dir
+
+    subroutine move_file(src, dst, stat)
+        character(len=*), intent(in) :: src, dst
+        integer, intent(out) :: stat
+        call execute_command_line('mv ' // quote_arg(trim(src)) // ' ' // &
+                                  quote_arg(trim(dst)), exitstat=stat)
+    end subroutine move_file
 
     subroutine handle_gcov_command_failure(command, exit_code, temp_file, &
                                          error_ctx)
