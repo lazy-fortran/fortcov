@@ -110,5 +110,6 @@ contains
         call get_environment_variable('FPM_TEST', env_value, status=stat)
         if (stat == 0 .and. len_trim(env_value) > 0) in_fpm_test = .true.
     end function is_fpm_test_environment
+
     
 end module test_environment_detector

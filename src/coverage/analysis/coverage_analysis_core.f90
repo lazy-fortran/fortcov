@@ -14,7 +14,7 @@ module coverage_analysis_core
                                        report_auto_test_failure, &
                                        line_coverage_stats_t
     use json_io
-    use coverage_tui
+    ! TUI removed: no interactive mode
     use coverage_workflows, only: execute_auto_test_workflow, perform_coverage_diff_analysis
     use error_handling_core
     use file_utilities, only: file_exists
@@ -62,12 +62,9 @@ contains
         
         exit_code = EXIT_SUCCESS
         
-        ! Check for TUI mode first
+        ! TUI mode disabled: ignore to avoid interactive/blocking behavior
         if (config%tui_mode) then
-            if (.not. config%quiet) then
-                print *, "🎯 TUI mode detected - switching to interactive interface"
-            end if
-            exit_code = perform_tui_analysis(config)
+            exit_code = EXIT_SUCCESS
             return
         end if
         
@@ -89,7 +86,6 @@ contains
         if (.not. config%quiet) then
             if (config%verbose) then
                 print *, "🚀 Starting coverage analysis with verbose output..."
-                print *, "   TUI mode: ", config%tui_mode
                 print *, "   Diff mode: ", config%enable_diff
                 print *, "   Strict mode: ", config%strict_mode
             else

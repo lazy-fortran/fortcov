@@ -16,7 +16,7 @@ module gcov_executor
     use secure_command_execution, only: secure_execute_command
     use xml_utils, only: get_base_name
     use string_utils, only: int_to_string
-    use gcov_executor_helpers, only: sanitize_file_path, is_safe_gcov_command
+    ! Inline security helpers to avoid module-order issues during test builds
     implicit none
     private
     
@@ -227,7 +227,53 @@ contains
 
     end subroutine secure_execute_gcov_command
     
-    ! is_safe_gcov_command moved to gcov_executor_helpers
+    ! Security helpers
+    
+    logical function is_safe_gcov_command(command) result(is_safe)
+        character(len=*), intent(in) :: command
+        is_safe = .true.
+        if (index(command, '&&') > 0 .or. index(command, '||') > 0 .or. &
+            index(command, ';') > 0 .or. index(command, '`') > 0 .or. &
+            index(command, '$') > 0 .or. index(command, '|') > 0 .or. &
+            index(command, '>') > 0 .or. index(command, '<') > 0) then
+            is_safe = .false.
+            return
+        end if
+        if (.not. (index(command, 'gcov ') == 1 .or. index(command, 'cd ') == 1)) then
+            is_safe = .false.
+            return
+        end if
+    end function is_safe_gcov_command
+    
+    subroutine sanitize_file_path(path)
+        character(len=*), intent(inout) :: path
+        integer :: i, len_path
+        character :: c
+        len_path = len_trim(path)
+        do i = 1, len_path
+            c = path(i:i)
+            if (c == ';' .or. c == '|' .or. c == '&' .or. c == '$' .or. &
+                c == '`' .or. c == '<' .or. c == '>' .or. c == '(' .or. &
+                c == ')' .or. c == '{' .or. c == '}') then
+                path(i:i) = '_'
+            end if
+        end do
+        call remove_pattern(path, '../')
+        call remove_pattern(path, '/./')
+        call remove_pattern(path, '//')
+    end subroutine sanitize_file_path
+    
+    subroutine remove_pattern(str, pattern)
+        character(len=*), intent(inout) :: str
+        character(len=*), intent(in) :: pattern
+        integer :: pos, pattern_len
+        pattern_len = len(pattern)
+        do
+            pos = index(str, pattern)
+            if (pos == 0) exit
+            str = str(1:pos-1) // str(pos+pattern_len:)
+        end do
+    end subroutine remove_pattern
     
     ! Process generated gcov output files
     subroutine process_gcov_output_files(this, source_file, temp_files, line_count, error_ctx)

@@ -11,7 +11,7 @@ module report_engine
     use report_config_core
     use coverage_metrics_core
     use html_reporter
-    use tui_manager_core
+    ! TUI removed
     use coverage_data_filter
     use report_generator_core
     use report_formatter_core
@@ -149,13 +149,9 @@ contains
             return
         end if
         
-        ! Delegate to generator module
-        call this%generator%generate_terminal_display(this%source_data, &
-                                                     this%transformer, &
-                                                     this%theme_manager, &
-                                                     this%config, session, &
-                                                     interactive, success, &
-                                                     error_msg)
+        ! TUI disabled: no-op success
+        success = .true.
+        allocate(character(len=0) :: error_msg)
     end subroutine report_engine_launch_terminal_browser
     
     ! Generate diff report

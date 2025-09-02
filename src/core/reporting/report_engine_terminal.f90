@@ -10,7 +10,7 @@ module report_engine_terminal
     use theme_manager_core
     use syntax_highlighter
     use report_config_core
-    use tui_manager_core
+    ! TUI removed
     implicit none
     private
     
@@ -64,8 +64,8 @@ contains
         end if
         
         ! In interactive mode, start the full TUI with proper loop control
-        call start_interactive_tui(session, terminal_output, success, error_msg, &
-                                   real(config%startup_timeout_seconds, real64))
+        ! TUI removed: return success without interactive session
+        success = .true.
     end subroutine launch_terminal_browser_session
     
     ! Generate styled terminal output

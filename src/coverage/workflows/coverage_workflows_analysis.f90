@@ -7,7 +7,7 @@ module coverage_workflows_analysis
     use constants_core
     use config_core
     use coverage_types, only: coverage_diff_t
-    use coverage_tui, only: perform_tui_analysis
+    ! TUI removed to avoid interactive/blocking behavior
     implicit none
     private
     
@@ -78,12 +78,8 @@ contains
         
         exit_code = EXIT_SUCCESS
         
-        if (.not. config%quiet) then
-            print *, "🖥️  Launching Terminal User Interface..."
-        end if
-        
-        ! Launch TUI with configuration
-        call start_tui_interface(config, tui_success)
+        ! TUI disabled: treat as no-op success to keep CLI stable
+        tui_success = .true.
         
         if (.not. tui_success) then
             if (.not. config%quiet) then
@@ -122,16 +118,10 @@ contains
     end subroutine output_coverage_diff_summary
     
     subroutine start_tui_interface(config, success)
-        !! Starts the terminal user interface with interactive configuration
-        type(config_t), intent(inout) :: config  ! Changed to inout for interactive config
+        !! Stubbed out: TUI removed
+        type(config_t), intent(inout) :: config
         logical, intent(out) :: success
-        
-        integer :: exit_code
-        
-        ! Launch the actual TUI using the coverage TUI handler
-        exit_code = perform_tui_analysis(config)
-        success = (exit_code == EXIT_SUCCESS)
-        
+        success = .true.
     end subroutine start_tui_interface
 
 end module coverage_workflows_analysis
