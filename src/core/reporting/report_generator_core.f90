@@ -115,8 +115,8 @@ contains
         call theme_manager%load_cyberpunk_theme(theme, success, error_msg)
         if (.not. success) return
         
-        ! Generate terminal-friendly output
-        call generate_terminal_display(transformed_data, theme, terminal_output)
+        ! Generate terminal-friendly output (TUI removed): minimal summary
+        terminal_output = ''
         
         session%is_active = .true.
         session%colors_enabled = config%terminal_colors_enabled
