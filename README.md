@@ -67,7 +67,7 @@ Outputs by default:
 ```bash
 set -e
 # Single-command CI-friendly execution (auto FPM + gcov + report)
-fortcov --fail-under 80 --quiet
+fortcov --gcov --fail-under 80 --quiet
 ```
 
 Exit codes: `0` success, `2` threshold not met, `3` no coverage data.
