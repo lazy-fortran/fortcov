@@ -9,7 +9,10 @@ module coverage_test_executor
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use build_system_validation, only: detect_and_validate_build_system
     use test_executor_core
-    use test_environment_detector
+    ! Use robust fork-bomb prevention (consolidated detection logic)
+    use fork_bomb_prevention, only: is_running_in_test_environment, &
+                                     prepare_for_auto_test_execution,       &
+                                     cleanup_recursion_marker
     use test_reporter_core
     implicit none
     private
