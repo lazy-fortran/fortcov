@@ -32,8 +32,12 @@ jobs:
         run: |
           # Build and run tests with coverage flags
           fpm test --flag "-fprofile-arcs -ftest-coverage"
-          # Generate Cobertura XML via gcovr
-          gcovr -r . --xml-pretty -o coverage.xml || gcovr --xml-pretty -o coverage.xml
+          # Generate Cobertura XML via gcovr (align file set with FortCov defaults)
+          gcovr -r . \
+            --exclude 'build/.*' \
+            --exclude 'test/.*' \
+            --xml-pretty -o coverage.xml \
+            || gcovr --exclude 'build/.*' --exclude 'test/.*' --xml-pretty -o coverage.xml
           # Generate FortCov markdown (single command workflow)
           fpm build --profile release
           FORTCOV_BIN=$(find build -type f -path '*/app/fortcov' | head -n1)
