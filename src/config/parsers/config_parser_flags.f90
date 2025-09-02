@@ -204,14 +204,11 @@ contains
             if (len_trim(value) > 0) then
                 call add_source_path(config, value)
             end if
-        case ("--exclude")
-            if (len_trim(value) > 0) then
-                call add_exclude_pattern(config, value)
-            end if
-        case ("--include")
-            if (len_trim(value) > 0) then
-                call add_include_pattern(config, value)
-            end if
+        ! Minimal CLI: exclude/include flags are no longer supported
+        case ("--exclude", "--include")
+            success = .false.
+            error_message = "Flag no longer supported: '" // trim(flag) // "'"
+            return
         case ("--output", "-o")
             if (len_trim(value) > 0) then
                 config%output_path = value
@@ -224,6 +221,7 @@ contains
             if (len_trim(value) > 0) then
                 call parse_threshold_with_error(value, config%minimum_coverage, "minimum coverage", success, error_message)
             end if
+        ! Minimal CLI: threads flag is ignored (single-threaded)
         case ("--threads", "-t")
             if (len_trim(value) > 0) then
                 call parse_integer_with_error(value, config%threads, "thread count", success, error_message)
@@ -236,48 +234,30 @@ contains
             config%show_help = .true.
         case ("--version", "-V")
             config%show_version = .true.
-        case ("--diff")
-            config%enable_diff = .true.
-        case ("--diff-baseline")
-            if (len_trim(value) > 0) then
-                config%diff_baseline_file = value
-            end if
-        case ("--diff-current")
-            if (len_trim(value) > 0) then
-                config%diff_current_file = value
-            end if
+        ! Minimal CLI: diff mode is not supported
+        case ("--diff", "--diff-baseline", "--diff-current", "--diff-threshold")
+            success = .false.
+            error_message = "Flag no longer supported: '" // trim(flag) // "'"
+            return
         case ("--fail-under")
             if (len_trim(value) > 0) then
                 call parse_threshold_with_error(value, config%fail_under_threshold, "fail-under threshold", success, error_message)
             end if
-        case ("--diff-threshold")
-            if (len_trim(value) > 0) then
-                call parse_threshold_with_error(value, config%diff_threshold, "diff threshold", success, error_message)
-            end if
+        ! Minimal CLI: import is not supported
         case ("--import")
-            if (len_trim(value) > 0) then
-                config%import_file = value
-            end if
+            success = .false.
+            error_message = "Flag no longer supported: '" // trim(flag) // "'"
+            return
         case ("--config")
-            if (len_trim(value) > 0) then
-                config%config_file = value
-            end if
-        case ("--auto-discovery")
-            config%auto_discovery = .true.
-        case ("--no-auto-discovery")
-            config%auto_discovery = .false.
-        case ("--auto-test")
-            config%auto_test_execution = .true.
-        case ("--no-auto-test")
-            config%auto_test_execution = .false.
-        case ("--test-timeout")
-            if (len_trim(value) > 0) then
-                call parse_integer_with_error(value, config%test_timeout_seconds, "test timeout", success, error_message)
-            end if
-         case ("--validate")
-             config%validate_config_only = .true.
-          case ("--zero-config")
-              config%zero_configuration_mode = .true.
+            success = .false.
+            error_message = "Configuration files are no longer supported; use CLI flags"
+            return
+        ! Minimal CLI: auto-discovery toggles, auto-test, timeout, validate, zero-config removed
+        case ("--auto-discovery", "--no-auto-discovery", "--auto-test", "--no-auto-test", &
+              "--test-timeout", "--validate", "--zero-config")
+            success = .false.
+            error_message = "Flag no longer supported: '" // trim(flag) // "'"
+            return
           case ("--gcov", "--discover-and-gcov")
               ! Enable explicit gcov discovery/generation path by disabling
               ! generic auto-discovery. This routes discovery to gcov processor.
