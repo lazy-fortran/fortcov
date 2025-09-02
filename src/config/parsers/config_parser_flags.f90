@@ -37,14 +37,14 @@ contains
         case ("--source", "-s", "--exclude", "--include", "--output", "-o", &
               "--format", "-f", "--minimum", "-m", "--threshold", &
               "--fail-under", "--diff-threshold", "--import", "--config", &
-              "--test-timeout", "--threads", "-t", "--architecture-format", &
+              "--test-timeout", "--threads", "-t", &
               "--diff-baseline", "--diff-current")
               ! SECURITY FIX Issue #963: --gcov-executable REMOVED
             requires_value = .true.
          case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
-               "--verbose", "-v", "--validate", "--validate-architecture", "--diff", "--lcov", &
+               "--verbose", "-v", "--validate", "--diff", "--lcov", &
                "--auto-test", "--no-auto-test", "--auto-discovery", &
-              "--no-auto-discovery", "--zero-config", "--fail-on-size-warnings", &
+              "--no-auto-discovery", "--zero-config", &
               "--gcov", "--discover-and-gcov")
              requires_value = .false.
         end select
@@ -274,16 +274,8 @@ contains
             if (len_trim(value) > 0) then
                 call parse_integer_with_error(value, config%test_timeout_seconds, "test timeout", success, error_message)
             end if
-        case ("--architecture-format")
-            if (len_trim(value) > 0) then
-                config%architecture_output_format = value
-            end if
          case ("--validate")
              config%validate_config_only = .true.
-          case ("--validate-architecture")
-              config%validate_architecture = .true.
-          case ("--fail-on-size-warnings")
-              config%fail_on_size_warnings = .true.
           case ("--zero-config")
               config%zero_configuration_mode = .true.
           case ("--gcov", "--discover-and-gcov")

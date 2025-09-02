@@ -15,9 +15,6 @@ program main
   use zero_config_core, only: enhance_zero_config_with_auto_discovery, &
                                                    execute_zero_config_complete_workflow
   ! TUI removed: no interactive mode
-  use size_enforcement_core, only: enforce_size_limits_for_ci, &
-                                   size_enforcement_config_t, ci_enforcement_result_t
-  use file_ops_secure, only: safe_remove_file
   implicit none
   
   type(config_t) :: config
@@ -107,14 +104,6 @@ program main
       print *, "Configuration is valid"
       call exit_success_clean()
     end if
-  else if (config%validate_architecture) then
-    ! Only validate architectural size compliance, don't run coverage analysis
-    call handle_architectural_validation(config, error_ctx)
-    if (error_ctx%error_code /= ERROR_SUCCESS) then
-      call exit_failure_clean()
-    else
-      call exit_success_clean()
-    end if
   end if
   
   ! Removed fork-bomb prevention early exit
@@ -167,71 +156,5 @@ program main
   else
     call exit_failure_clean()
   end if
-
-contains
-
-  subroutine handle_architectural_validation(config, error_ctx)
-    !! Handle architectural size validation and exit appropriately
-    type(config_t), intent(in) :: config
-    type(error_context_t), intent(out) :: error_ctx
-    
-    type(size_enforcement_config_t) :: enforcement_config
-    type(ci_enforcement_result_t) :: enforcement_result
-    
-    ! Initialize error context
-    call clear_error_context(error_ctx)
-    
-    ! Configure size enforcement based on user flags
-    enforcement_config%fail_on_warnings = config%fail_on_size_warnings
-    enforcement_config%fail_on_violations = .true.  ! Always fail on violations
-    enforcement_config%generate_github_annotations = &
-        (trim(config%architecture_output_format) == "ci")
-    enforcement_config%base_directory = "."
-    enforcement_config%output_format = config%architecture_output_format
-    enforcement_config%verbose_output = config%verbose
-    
-    ! Run architectural size enforcement
-    call enforce_size_limits_for_ci(enforcement_config, enforcement_result)
-    
-    ! Display results - output format depends on architecture_output_format
-    if (.not. config%quiet) then
-      if (trim(config%architecture_output_format) == "json") then
-        ! For JSON format, only output the detailed report which contains JSON
-        if (len_trim(enforcement_result%detailed_report) > 0) then
-          print '(A)', trim(enforcement_result%detailed_report)
-        end if
-      else
-        ! For human and CI formats, output the formatted messages
-        print *, trim(enforcement_result%summary_message)
-        if (config%verbose .and. len_trim(enforcement_result%detailed_report) > 0) then
-          print *, ""
-          print *, trim(enforcement_result%detailed_report)
-        end if
-        if (len_trim(enforcement_result%remediation_actions) > 0) then
-          print *, ""
-          print *, trim(enforcement_result%remediation_actions)
-        end if
-      end if
-    end if
-    
-    ! CRITICAL FIX: Use enforcement_result%exit_code directly instead of manual logic
-    ! This properly integrates size_enforcement_core exit codes with main.f90 error handling
-    if (enforcement_result%exit_code /= 0) then  ! CI_SUCCESS = 0, any non-zero is an error
-      ! Map size_enforcement_core exit codes to application error codes
-      if (enforcement_result%exit_code == 1) then  ! CI_SUCCESS_WITH_WARNINGS
-        ! Any non-success error code triggers exit_failure_clean() -> EXIT_FAILURE = 1
-        error_ctx%error_code = ERROR_THRESHOLD_NOT_MET
-        error_ctx%message = trim(enforcement_result%summary_message)
-      else if (enforcement_result%exit_code == 2) then  ! CI_FAILURE_VIOLATIONS
-        error_ctx%error_code = ERROR_INVALID_CONFIG
-        error_ctx%message = "Architectural size violations detected"
-      else  ! CI_FAILURE_ERROR = 3 or other errors
-        error_ctx%error_code = ERROR_INVALID_CONFIG
-        error_ctx%message = "Architectural size validation failed: " // &
-                           trim(enforcement_result%summary_message)
-      end if
-    end if
-    
-  end subroutine handle_architectural_validation
 
 end program main
