@@ -35,7 +35,13 @@ jobs:
           # Generate Cobertura XML via gcovr
           gcovr -r . --xml-pretty -o coverage.xml || gcovr --xml-pretty -o coverage.xml
           # Generate FortCov markdown (single command workflow)
-          fortcov --output=coverage.md
+          fpm build --profile release
+          FORTCOV_BIN=$(find build -type f -path '*/app/fortcov' | head -n1)
+          if [ -z "${FORTCOV_BIN}" ]; then
+            echo "FortCov binary not found in build tree" >&2
+            exit 2
+          fi
+          "${FORTCOV_BIN}" --output=coverage.md
 
       - name: Compare totals (Cobertura vs FortCov)
         run: |
