@@ -3,6 +3,7 @@ program main
   use config_core, only: config_t, parse_config, show_help, show_version
   use system_exit_handler, only: exit_with_code
   use constants_core, only: EXIT_INVALID_CONFIG, EXIT_SUCCESS
+  use iso_fortran_env, only: error_unit
   implicit none
 
   type(config_t) :: config
@@ -33,7 +34,7 @@ program main
   ! Parse CLI into config (minimal flags supported by parser)
   call parse_config(args, config, success, error_message)
   if (.not. success) then
-    write(*,'(A)') 'Error: ' // trim(error_message)
+    write(error_unit,'(A)') 'Error: ' // trim(error_message)
     call exit_with_code(EXIT_INVALID_CONFIG)
   end if
 
