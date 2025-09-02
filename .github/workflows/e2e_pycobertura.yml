@@ -1,7 +1,7 @@
 name: E2E Coverage Validation
 
 on:
-  pull_request:
+  push:
     branches: [ main ]
   workflow_dispatch:
 
