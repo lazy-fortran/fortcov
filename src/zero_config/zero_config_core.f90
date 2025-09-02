@@ -4,6 +4,7 @@ module zero_config_core
     use build_system_validation, only: detect_and_validate_build_system
     use coverage_test_executor, only: execute_auto_test_workflow
     use zero_config_manager
+    use coverage_processor_gcov, only: discover_gcov_files
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
     use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE, EXIT_NO_COVERAGE_DATA, &
                               EXIT_INVALID_CONFIG
@@ -86,6 +87,8 @@ contains
         type(config_t), intent(inout) :: config
         
         ! Set reasonable defaults for auto-discovery
+        ! Honor explicit CLI disable (e.g., --gcov sets auto_discovery=.false.)
+        if (.not. config%auto_discovery) return
         config%auto_discovery = .true.
         config%test_timeout_seconds = DEFAULT_TEST_TIMEOUT
         config%max_files = DEFAULT_MAX_FILES
@@ -239,12 +242,22 @@ contains
         success = .false.
         error_message = ""
         
-        ! Auto-discover coverage files using priority search
+        ! Discover coverage files honoring --gcov flag:
+        ! - When auto_discovery is enabled (default zero-config), search for existing .gcov
+        ! - When explicitly disabled via --gcov/--discover-and-gcov, generate via gcov path
         if (.not. config%quiet) then
-            print '(A)', "FortCov: Auto-discovering coverage files..."
+            if (config%auto_discovery) then
+                print '(A)', "FortCov: Auto-discovering coverage files..."
+            else
+                print '(A)', "FortCov: Generating coverage via gcov (--gcov mode)..."
+            end if
         end if
-        
-        discovered_coverage_files = auto_discover_coverage_files_priority()
+
+        if (config%auto_discovery) then
+            discovered_coverage_files = auto_discover_coverage_files_priority()
+        else
+            call discover_gcov_files(config, discovered_coverage_files)
+        end if
         
         if (.not. config%quiet) then
             if (allocated(discovered_coverage_files)) then

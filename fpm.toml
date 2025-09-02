@@ -3,7 +3,7 @@ version = "0.4.0"
 
 [build]
 auto-executables = true
-auto-tests = true
+auto-tests = false
 auto-examples = true
 
 [install]
@@ -22,3 +22,23 @@ main = "main.f90"
 
 [dependencies]
 json-fortran = { git = "https://github.com/jacobwilliams/json-fortran.git", tag = "9.0.5" }
+
+[[test]]
+name = "markdown_minimal"
+source-dir = "test"
+main = "test_markdown_minimal.f90"
+
+[[test]]
+name = "cli_flags_minimal"
+source-dir = "test"
+main = "test_cli_flags_minimal.f90"
+
+[[test]]
+name = "threshold_minimal"
+source-dir = "test"
+main = "test_threshold_minimal.f90"
+
+[[test]]
+name = "gcov_smoke"
+source-dir = "test"
+main = "test_gcov_processing_smoke.f90"

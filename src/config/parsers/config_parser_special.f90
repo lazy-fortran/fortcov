@@ -122,6 +122,14 @@ contains
                 return
             end if
         end do
+
+        ! If explicit gcov mode is requested, do NOT use zero-config
+        do i = 1, size(args)
+            if (trim(args(i)) == "--gcov" .or. trim(args(i)) == "--discover-and-gcov") then
+                zero_config_mode = .false.
+                return
+            end if
+        end do
         
         ! Check if we have only flags (ignoring their values for zero-config detection)
         ! This allows constructs like "--output custom.md" to still be zero-config
