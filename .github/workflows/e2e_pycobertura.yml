@@ -10,6 +10,8 @@ jobs:
     name: Compare FortCov vs Cobertura (gcovr)
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      FORTCOV_ALLOW_AUTOTEST: "1"
 
     steps:
       - name: Checkout repository
