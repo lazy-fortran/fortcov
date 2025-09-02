@@ -71,3 +71,8 @@ By default, `fortcov` analyzes existing `.gcov` files and does not invoke
 `gcov` or run your tests. Use the built-in bridge `--gcov` (alias:
 `--discover-and-gcov`) to auto-discover FPM/CMake build directories, run under
 coverage, generate `.gcov`, and then analyze them.
+
+Test-environment guard: When `fortcov` detects it is running under a test
+harness (e.g., `fpm test`), it skips auto-running tests to avoid recursion.
+In controlled CI jobs where this is desired, set the environment variable
+`FORTCOV_ALLOW_AUTOTEST=1` to explicitly allow the auto-test bridge.
