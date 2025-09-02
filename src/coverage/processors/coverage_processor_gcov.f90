@@ -380,7 +380,7 @@ contains
     ! Secure file copying without shell commands
     ! SECURITY FIX Issue #963: Replace find -exec cp shell vulnerability
     subroutine copy_gcov_files_secure(source_dir, target_dir)
-        use file_utils_consolidated, only: find_files_with_glob, basename
+        use file_utilities,       only: find_files_with_glob, basename
         use file_ops_secure,          only: safe_move_file
         use error_handling_core,      only: error_context_t
         character(len=*), intent(in) :: source_dir, target_dir
@@ -403,7 +403,7 @@ contains
     ! SECURITY FIX Issue #963: Replace cd && gcov shell vulnerability
     subroutine generate_gcov_files_secure(build_path, gcov_exe, exit_status)
         use gcov_generator,          only: generate_gcov_files_from_gcda
-        use file_utils_consolidated, only: find_files
+        use file_utilities,          only: find_files
         character(len=*), intent(in) :: build_path, gcov_exe
         integer, intent(out) :: exit_status
         character(len=:), allocatable :: gcda(:)
