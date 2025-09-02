@@ -23,23 +23,15 @@ fpm build --profile release
 sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
 ```
 
-## Quick Start (Single Command)
+## Quick Start
 
-From the root of your project, simply run:
+FortCov, by default, analyzes existing `.gcov` files and does not invoke
+`gcov` or run your tests. Use one of the following flows:
 
-```bash
-fortcov
-```
+- Manual `.gcov` flow (explicit control)
+- Auto-discovery + gcov bridge (`--gcov`)
 
-What happens:
-- Auto-detects `fpm.toml` and runs `fpm test` with coverage flags.
-- Auto-discovers or generates `.gcov` from coverage artifacts.
-- Produces a coverage report at `build/coverage/coverage.md` by default.
-
-That’s it — one binary, one command.
-
-If you prefer manual control (or a non-FPM build), you can still follow the
-explicit steps below. See `doc/coverage_workflow.md` for details.
+See `doc/coverage_workflow.md` for a consolidated, copy‑pasteable workflow.
 
 ```bash
 # 1) Instrument and run (tests or app) to produce .gcda/.gcno
@@ -55,7 +47,20 @@ fortcov --source=src *.gcov --output=coverage.md
 ```
 
 Note: The file `coverage.md` (default `build/coverage/coverage.md` in
-zero-config mode) contains a project summary and per-file stats.
+auto mode with `--gcov`) contains a project summary and per-file stats.
+
+### Auto-Discovery + gcov (single command)
+
+If you want FortCov to auto-discover FPM/CMake build dirs, run tests under
+coverage, and generate `.gcov` before analysis, use the built‑in bridge:
+
+```bash
+fortcov --gcov   # alias: --discover-and-gcov
+```
+
+Outputs by default:
+- `.gcov` files in the working directory
+- `build/coverage/coverage.md` Markdown report
 
 ## CI Recipe (Fail Under Threshold)
 
