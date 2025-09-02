@@ -13,7 +13,6 @@ module coverage_analysis_core
                                        apply_threshold_validation, &
                                        report_auto_test_failure, &
                                        line_coverage_stats_t
-    use json_io
     ! TUI removed: no interactive mode
     use coverage_workflows, only: execute_auto_test_workflow, perform_coverage_diff_analysis
     use error_handling_core
