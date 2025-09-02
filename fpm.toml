@@ -21,7 +21,6 @@ main = "main.f90"
 
 
 [dependencies]
-json-fortran = { git = "https://github.com/jacobwilliams/json-fortran.git", tag = "9.0.5" }
 
 [[test]]
 name = "markdown_minimal"
