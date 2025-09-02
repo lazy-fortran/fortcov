@@ -92,7 +92,7 @@ contains
         write(error_ctx%context, '(A)') "Memory allocation"
     end subroutine handle_out_of_memory
 
-    ! Handle invalid configuration file errors
+    ! Handle invalid configuration errors (CLI-only mode)
     subroutine handle_invalid_config(config_file, line_number, error_ctx)
         character(len=*), intent(in) :: config_file
         integer, intent(in) :: line_number
@@ -105,13 +105,11 @@ contains
             "Configuration error in ", trim(config_file), " at line ", line_number
         
         write(error_ctx%suggestion, '(A)') &
-            "1. Check syntax: gfortran -fsyntax-only -x f90 " // trim(config_file)
+            "1. Use CLI flags instead of config files"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "2. Copy example: cp fortcov.nml.example " // trim(config_file)
+            "2. Example: fortcov --source=src *.gcov --output=coverage.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "3. Common issues: comments inside namelist, missing quotes, missing '/'"
-        error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "4. Test basic config: fortcov --config=" // trim(config_file) // " --help"
+            "3. For auto mode: fortcov --discover-and-gcov"
         
         write(error_ctx%context, '(A)') "Configuration parsing"
     end subroutine handle_invalid_config

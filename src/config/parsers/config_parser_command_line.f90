@@ -18,7 +18,7 @@ module config_parser_command_line
                                    handle_zero_configuration_mode
     use config_classifier_args, only: classify_command_arguments
     use config_parser_flags, only: process_flag_arguments
-    use config_parser_files, only: parse_config_file
+    ! Config files removed: CLI-only configuration (Issue #1165)
     use config_parser_consolidated, only: detect_zero_config_mode
     use config_parser_consolidated, only: process_special_flags
     use config_positional_args
@@ -107,11 +107,7 @@ contains
         ! Now apply zero-configuration defaults for unset fields
         call handle_zero_configuration_mode(config)
 
-        ! Load config file if specified
-        if (len_trim(config%config_file) > 0) then
-            call parse_config_file(config, success, error_message)
-            if (.not. success) return
-        end if
+        ! Config files are no longer supported (CLI-only). Ignore if set.
 
         ! Apply fork bomb prevention (Issue #395)
         call prevent_fork_bomb_with_manual_files(config)
@@ -154,11 +150,7 @@ contains
             if (.not. success) return
         end if
 
-        ! Load config file if specified
-        if (len_trim(config%config_file) > 0) then
-            call parse_config_file(config, success, error_message)
-            if (.not. success) return
-        end if
+        ! Config files are no longer supported (CLI-only). Ignore if set.
 
         ! Apply fork bomb prevention (Issue #395)
         call prevent_fork_bomb_with_manual_files(config)
