@@ -2,7 +2,6 @@ module test_env_guard
     !! Runtime test-environment detection to prevent recursive execution
     !! Used to avoid spawning external test runners (e.g., fpm test) when
     !! fortcov itself is being run under a test harness.
-    use iso_fortran_env, only: error_unit
     implicit none
     private
 
