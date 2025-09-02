@@ -128,8 +128,7 @@ contains
             return
         end if
         
-        ! Start interactive TUI with configurable timeout
-        ! TUI removed: return success without interactive session
+        ! Interactive terminal UI removed; return success without session
         success = .true.
     end subroutine generator_generate_terminal
     
