@@ -95,6 +95,10 @@ $ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
 - For non-FPM builds, generate `.gcov` with your build system and invoke FortCov as shown above.
 - Use `fortcov --help` for additional options (quiet mode, thresholds, etc.).
 
+## Example (Minimal FPM Project)
+
+See `examples/minimal` for a tiny FPM project and a helper script `generate_coverage.sh` that builds with coverage, generates `.gcov`, and creates a Markdown report via FortCov.
+
 ## License
 
 MIT. See `LICENSE`.
