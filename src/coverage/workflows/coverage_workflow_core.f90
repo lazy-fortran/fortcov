@@ -14,6 +14,7 @@ module coverage_workflow_core
     use build_detector_core
     use build_system_validation, only: detect_and_validate_build_system
     use error_handling_core
+    use test_env_guard, only: running_under_test_env
     implicit none
     private
 
@@ -152,6 +153,9 @@ contains
         integer :: cmdstat, exitstat
         logical :: bridge_exists
         
+        ! Never invoke the bridge while running under a test harness.
+        if (running_under_test_env()) return
+
         inquire(file='scripts/fpm_coverage_bridge.sh', exist=bridge_exists)
         if (.not. bridge_exists) return
 

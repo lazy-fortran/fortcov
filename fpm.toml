@@ -51,3 +51,8 @@ main = "test_format_rejection_minimal.f90"
 name = "cli_flags_rejection_minimal"
 source-dir = "test"
 main = "test_cli_flags_rejection_minimal.f90"
+
+[[test]]
+name = "engine_delegation_minimal"
+source-dir = "test"
+main = "test_engine_delegation_minimal.f90"
