@@ -25,14 +25,16 @@ program test_threshold_minimal
 
     call calculate_coverage_statistics(data, stats)
 
-    cfg%fail_under_threshold = 70.0  ! 60% < 70% should fail
+    cfg%quiet = .true.
+    cfg%fail_under_threshold = 70.0  ! 60% should fail under 70%
     rc = apply_threshold_validation(stats, cfg)
     if (rc == 0) then
         print *, 'Expected threshold failure, got success'
         stop 1
     end if
 
-    cfg%fail_under_threshold = 50.0  ! 60% >= 50% should pass
+    cfg%quiet = .true.
+    cfg%fail_under_threshold = 50.0  ! 60% should pass at 50%
     rc = apply_threshold_validation(stats, cfg)
     if (rc /= 0) then
         print *, 'Expected threshold pass, got failure code=', rc
@@ -41,4 +43,3 @@ program test_threshold_minimal
 
     print *, 'OK: threshold minimal'
 end program test_threshold_minimal
-
