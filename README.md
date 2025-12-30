@@ -1,5 +1,7 @@
 # FortCov – Precise FPM Coverage
 
+> **Note**: This project is experimental and subject to major changes. APIs may change without notice.
+
 FortCov turns gfortran/gcov coverage into clear reports. By default it analyzes
 existing `.gcov` files. You can also use the built-in bridge with `--gcov`
 (alias: `--discover-and-gcov`) to auto-discover FPM/CMake build dirs and
