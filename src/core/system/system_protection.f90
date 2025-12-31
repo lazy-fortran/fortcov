@@ -39,7 +39,7 @@ contains
         
         ! SECURITY BALANCE IMPROVEMENT: Allow legitimate /tmp output while preserving security
         ! /tmp is standard Unix temporary directory - legitimate for output file creation
-        ! Check for both /tmp/ prefix AND /tmp exactly (when path is the directory itself)
+        ! Check for /tmp/ prefix AND /tmp exactly (directory itself)
         if (starts_with_ignore_case(path, '/tmp/') .or. trim(path) == '/tmp') then
             return
         end if
