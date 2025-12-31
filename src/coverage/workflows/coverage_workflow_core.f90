@@ -42,7 +42,7 @@ contains
             auto_test_result = orchestrate_auto_test_workflow(config)
             if (auto_test_result /= EXIT_SUCCESS) then
                 if (.not. config%quiet) then
-                    print *, "⚠️  Auto-test execution issues, continuing with coverage analysis"
+                    print *, "Warning: Auto-test execution issues, continuing with coverage analysis"
                 end if
             end if
         end if
@@ -63,7 +63,7 @@ contains
         end if
         
         if (.not. config%quiet) then
-            print *, "✅ Coverage workflow orchestration completed"
+            print *, "Coverage workflow orchestration completed"
             write(*, '(A,I0,A)') "   Discovered ", size(coverage_files), " coverage files"
         end if
         
@@ -78,7 +78,7 @@ contains
         integer :: exit_code
         
         if (.not. config%quiet) then
-            print *, "🔄 Orchestrating auto-test workflow..."
+            print *, "Orchestrating auto-test workflow..."
         end if
         
         ! Delegate to specialized auto-test executor
@@ -87,13 +87,13 @@ contains
         if (.not. config%quiet) then
             select case (exit_code)
             case (EXIT_SUCCESS)
-                print *, "✅ Auto-test workflow completed successfully"
+                print *, "Auto-test workflow completed successfully"
             case (2)
-                print *, "⚠️  Auto-test workflow skipped (build system issues)"
+                print *, "Warning: Auto-test workflow skipped (build system issues)"
             case (124)
-                print *, "⏱️  Auto-test workflow timed out"
+                print *, "Auto-test workflow timed out"
             case default
-                print *, "❌ Auto-test workflow failed"
+                print *, "Error: Auto-test workflow failed"
             end select
         end if
         
@@ -115,7 +115,7 @@ contains
         exit_code = EXIT_SUCCESS
 
         if (.not. config%quiet) then
-            print *, "🔍 Orchestrating coverage file discovery..."
+            print *, "Orchestrating coverage file discovery..."
         end if
 
         ! Try build system integration for enhanced discovery (unified)
@@ -124,7 +124,7 @@ contains
             build_info%tool_available) then
 
             if (.not. config%quiet) then
-                print *, "📦 Using build system integration for discovery: " // &
+                print *, "Using build system integration for discovery: " // &
                          trim(build_info%system_type)
             end if
         end if
@@ -133,7 +133,7 @@ contains
         ! generate .gcov files natively from discovered .gcda files.
         if (.not. config%auto_discovery) then
             if (.not. config%quiet) then
-                print *, "🔧 Generating gcov files from coverage data..."
+                print *, "Generating gcov files from coverage data..."
             end if
             call auto_generate_gcov_files(config, generated_files)
             if (allocated(generated_files) .and. size(generated_files) > 0) then
@@ -147,9 +147,9 @@ contains
         
         if (.not. config%quiet) then
             if (allocated(coverage_files) .and. size(coverage_files) > 0) then
-                write(*, '(A,I0,A)') "✅ Discovered ", size(coverage_files), " coverage files"
+                write(*, '(A,I0,A)') "Discovered ", size(coverage_files), " coverage files"
             else
-                print *, "⚠️  No coverage files discovered"
+                print *, "Warning: No coverage files discovered"
             end if
         end if
         
@@ -169,21 +169,21 @@ contains
         exit_code = EXIT_SUCCESS
         
         if (.not. config%quiet) then
-            print *, "🔄 Orchestrating coverage diff analysis..."
+            print *, "Orchestrating coverage diff analysis..."
         end if
         
         ! Validate diff configuration
         if (.not. allocated(config%diff_baseline_file) .or. &
             .not. allocated(config%diff_current_file)) then
             if (.not. config%quiet) then
-                print *, "❌ Diff analysis requires baseline and current files"
+                print *, "Error: Diff analysis requires baseline and current files"
             end if
             exit_code = EXIT_FAILURE
             return
         end if
         
         if (.not. config%quiet) then
-            print *, "📊 Analyzing coverage differences..."
+            print *, "Analyzing coverage differences..."
             print *, "   Baseline: " // trim(config%diff_baseline_file)
             print *, "   Compare:  " // trim(config%diff_current_file)
         end if
@@ -193,7 +193,7 @@ contains
         
         if (.not. diff_success) then
             if (.not. config%quiet) then
-                print *, "❌ Coverage diff analysis failed"
+                print *, "Error: Coverage diff analysis failed"
             end if
             exit_code = EXIT_FAILURE
             return
@@ -203,7 +203,7 @@ contains
         if (config%minimum_coverage > 0.0) then
             if (diff_result%current_coverage < config%minimum_coverage) then
                 if (.not. config%quiet) then
-                    print *, "❌ Coverage threshold not met in comparison"
+                    print *, "Error: Coverage threshold not met in comparison"
                     write(*, '(A, F5.1, A, F5.1, A)') &
                         "   Required: ", config%minimum_coverage, "%, Current: ", &
                         diff_result%current_coverage, "%"
@@ -214,7 +214,7 @@ contains
         end if
         
         if (.not. config%quiet) then
-            print *, "✅ Coverage diff analysis completed successfully"
+            print *, "Coverage diff analysis completed successfully"
         end if
         
     end function orchestrate_diff_analysis

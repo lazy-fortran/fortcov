@@ -27,7 +27,7 @@ contains
         exit_code = EXIT_SUCCESS
         
         if (.not. config%quiet) then
-            print *, "📊 Analyzing coverage differences..."
+            print *, "Analyzing coverage differences..."
             if (allocated(config%diff_baseline_file)) then
                 print *, "   Baseline: " // trim(config%diff_baseline_file)
             end if
@@ -43,7 +43,7 @@ contains
         
         if (.not. diff_success) then
             if (.not. config%quiet) then
-                print *, "❌ Coverage diff analysis failed"
+                print *, "Error: Coverage diff analysis failed"
             end if
             exit_code = EXIT_FAILURE
             return
@@ -56,7 +56,7 @@ contains
         if (config%minimum_coverage > 0.0) then
             if (diff_result%current_coverage < config%minimum_coverage) then
                 if (.not. config%quiet) then
-                    print *, "❌ Coverage threshold not met in comparison"
+                    print *, "Error: Coverage threshold not met in comparison"
                     write(*, '(A, F5.1, A, F5.1, A)') &
                         "   Required: ", config%minimum_coverage, "%, Current: ", &
                         diff_result%current_coverage, "%"
@@ -75,7 +75,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "📊 Coverage Diff Analysis Results:"
+            print *, "Coverage Diff Analysis Results:"
             write(*, '(A, F5.1, A)') "   Baseline Coverage: ", &
                 diff_result%baseline_coverage, "%"
             write(*, '(A, F5.1, A)') "   Current Coverage:  ", &
@@ -84,11 +84,11 @@ contains
                 diff_result%coverage_change, "%"
             
             if (diff_result%coverage_change > 0.0) then
-                print *, "   ✅ Coverage improved"
+                print *, "   Coverage improved"
             else if (diff_result%coverage_change < 0.0) then
-                print *, "   ⚠️  Coverage decreased"
+                print *, "   Coverage decreased"
             else
-                print *, "   ➡️  Coverage unchanged"
+                print *, "   Coverage unchanged"
             end if
         end if
         

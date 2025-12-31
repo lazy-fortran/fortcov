@@ -107,7 +107,7 @@ contains
         integer, intent(in) :: file_count
         
         if (.not. config%quiet) then
-            print *, "⚠️  Limiting coverage files from", file_count, "to", config%max_files
+            print *, "Warning: Limiting coverage files from", file_count, "to", config%max_files
         end if
     end subroutine report_file_count_limit
     

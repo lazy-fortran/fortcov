@@ -64,7 +64,7 @@ contains
         ! Check for diff mode
         if (config%enable_diff) then
             if (.not. config%quiet) then
-                print *, "📊 Diff mode detected - analyzing coverage differences"
+                print *, "Diff mode detected - analyzing coverage differences"
             end if
             exit_code = perform_coverage_diff_analysis(config)
             return
@@ -78,11 +78,11 @@ contains
         
         if (.not. config%quiet) then
             if (config%verbose) then
-                print *, "🚀 Starting coverage analysis with verbose output..."
+                print *, "Starting coverage analysis with verbose output..."
                 print *, "   Diff mode: ", config%enable_diff
                 print *, "   Strict mode: ", config%strict_mode
             else
-                print *, "📊 Analyzing coverage..."
+                print *, "Analyzing coverage..."
             end if
         end if
         
@@ -198,7 +198,7 @@ contains
         exit_code = EXIT_SUCCESS
         
         if (.not. config%quiet) then
-            print *, "📥 Importing coverage data from: " // trim(config%import_file)
+            print *, "Importing coverage data from: " // trim(config%import_file)
         end if
         
         ! Validate import file exists
@@ -217,7 +217,7 @@ contains
         end if
         
         if (.not. config%quiet) then
-            print *, "✅ Successfully imported coverage data"
+            print *, "Successfully imported coverage data"
         end if
         
         ! Calculate and display statistics

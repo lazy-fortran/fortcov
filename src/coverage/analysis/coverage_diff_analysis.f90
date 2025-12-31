@@ -29,7 +29,7 @@ contains
         exit_code = EXIT_SUCCESS
         
         if (.not. config%quiet) then
-            print *, "📊 Analyzing coverage differences..."
+            print *, "Analyzing coverage differences..."
             if (allocated(config%diff_baseline_file)) then
                 print *, "   Baseline: " // trim(config%diff_baseline_file)
             end if
@@ -43,7 +43,7 @@ contains
         
         if (.not. diff_success) then
             if (.not. config%quiet) then
-                print *, "❌ Coverage diff analysis failed"
+                print *, "Error: Coverage diff analysis failed"
             end if
             exit_code = EXIT_FAILURE
             return
@@ -56,7 +56,7 @@ contains
         if (config%minimum_coverage > 0.0) then
             if (diff_result%current_coverage < config%minimum_coverage) then
                 if (.not. config%quiet) then
-                    print *, "❌ Coverage threshold not met in comparison"
+                    print *, "Error: Coverage threshold not met in comparison"
                     write(*, '(A, F5.1, A, F5.1, A)') &
                         "   Required: ", config%minimum_coverage, "%, Current: ", &
                         diff_result%current_coverage, "%"
@@ -73,7 +73,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "📊 Coverage Diff Analysis Results:"
+            print *, "Coverage Diff Analysis Results:"
             write(*, '(A, F5.1, A)') "   Baseline Coverage: ", &
                 diff_result%baseline_coverage, "%"
             write(*, '(A, F5.1, A)') "   Current Coverage:  ", &
@@ -82,11 +82,11 @@ contains
                 diff_result%coverage_change, "%"
             
             if (diff_result%coverage_change > 0.0) then
-                print *, "   ✅ Coverage improved"
+                print *, "   Coverage improved"
             else if (diff_result%coverage_change < 0.0) then
-                print *, "   ⚠️  Coverage decreased"
+                print *, "   Coverage decreased"
             else
-                print *, "   ➡️  Coverage unchanged"
+                print *, "   Coverage unchanged"
             end if
         end if
         
@@ -112,14 +112,14 @@ contains
         ! Check if diff file paths are configured
         if (.not. allocated(config%diff_baseline_file)) then
             if (.not. config%quiet) then
-                print *, "❌ Baseline file not configured for diff analysis"
+                print *, "Error: Baseline file not configured for diff analysis"
             end if
             return
         end if
         
         if (.not. allocated(config%diff_current_file)) then
             if (.not. config%quiet) then
-                print *, "❌ Current file not configured for diff analysis"
+                print *, "Error: Current file not configured for diff analysis"
             end if
             return
         end if
@@ -130,14 +130,14 @@ contains
         ! Check if files exist
         if (.not. file_exists(baseline_file)) then
             if (.not. config%quiet) then
-                print *, "❌ Baseline file does not exist: " // baseline_file
+                print *, "Error: Baseline file does not exist: " // baseline_file
             end if
             return
         end if
         
         if (.not. file_exists(current_file)) then
             if (.not. config%quiet) then
-                print *, "❌ Current file does not exist: " // current_file
+                print *, "Error: Current file does not exist: " // current_file
             end if
             return
         end if
@@ -146,7 +146,7 @@ contains
         baseline_error = .true.
         if (baseline_error) then
             if (.not. config%quiet) then
-                print *, "❌ JSON import not supported: " // baseline_file
+                print *, "Error: JSON import not supported: " // baseline_file
             end if
             return
         end if
@@ -155,7 +155,7 @@ contains
         current_error = .true.
         if (current_error) then
             if (.not. config%quiet) then
-                print *, "❌ JSON import not supported: " // current_file
+                print *, "Error: JSON import not supported: " // current_file
             end if
             return
         end if
@@ -173,7 +173,7 @@ contains
             success = .true.
         else
             if (.not. config%quiet) then
-                print *, "❌ Invalid coverage data structure in loaded files"
+                print *, "Error: Invalid coverage data structure in loaded files"
             end if
         end if
         
