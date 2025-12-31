@@ -3,7 +3,7 @@ version = "0.4.0"
 
 [build]
 auto-executables = true
-auto-tests = false
+auto-tests = true
 auto-examples = true
 
 [install]
@@ -21,18 +21,3 @@ main = "main.f90"
 
 
 [dependencies]
-
-[[test]]
-name = "cli_flags_rejection_minimal"
-source-dir = "test"
-main = "test_cli_flags_rejection_minimal.f90"
-
-[[test]]
-name = "test_env_guard_override"
-source-dir = "test"
-main = "test_test_env_guard_override.f90"
-
-[[test]]
-name = "test_gcov_function_block_dedup_issue_1222"
-source-dir = "test"
-main = "test_gcov_function_block_dedup_issue_1222.f90"
