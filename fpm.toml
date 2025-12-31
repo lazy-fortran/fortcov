@@ -31,3 +31,8 @@ main = "test_cli_flags_rejection_minimal.f90"
 name = "test_env_guard_override"
 source-dir = "test"
 main = "test_test_env_guard_override.f90"
+
+[[test]]
+name = "test_gcov_function_block_dedup_issue_1222"
+source-dir = "test"
+main = "test_gcov_function_block_dedup_issue_1222.f90"
