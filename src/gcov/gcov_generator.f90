@@ -43,7 +43,6 @@ contains
         character(len=512) :: errmsg
         character(len=256), allocatable :: temp_generated_files(:)
         character(len=:), allocatable :: temp_files(:)
-        character(len=256) :: source_file
         logical :: dir_created
         
         ! Configure gcov executor for zero-config mode
