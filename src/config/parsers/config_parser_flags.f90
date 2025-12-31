@@ -203,23 +203,23 @@ contains
     subroutine process_single_flag(flag_with_value, config, success, error_message)
         !! Process a single flag with its value and update configuration
         use config_types, only: config_t
-        use config_parser_string, only: parse_real_with_error, &
-                                        parse_integer_with_error, &
-                                            parse_threshold_with_error
-        use config_parser_arrays, only: add_source_path, add_exclude_pattern, &
-                                        add_include_pattern
         character(len=*), intent(in) :: flag_with_value
         type(config_t), intent(inout) :: config
         logical, intent(out) :: success
         character(len=*), intent(out) :: error_message
 
         character(len=:), allocatable :: flag, value
+
+        call parse_flag_value(flag_with_value, flag, value)
+        call apply_flag_to_config(flag, value, config, success, error_message)
+    end subroutine process_single_flag
+
+    subroutine parse_flag_value(flag_with_value, flag, value)
+        !! Parse flag=value format into separate components
+        character(len=*), intent(in) :: flag_with_value
+        character(len=:), allocatable, intent(out) :: flag, value
         integer :: equals_pos
 
-        success = .true.
-        error_message = ""
-
-        ! Parse flag=value format or separate flag and value
         equals_pos = index(flag_with_value, '=')
         if (equals_pos > 0) then
             flag = trim(flag_with_value(1:equals_pos - 1))
@@ -228,33 +228,36 @@ contains
             flag = trim(flag_with_value)
             value = ""
         end if
+    end subroutine parse_flag_value
 
-        ! Process specific flags
+    subroutine apply_flag_to_config(flag, value, config, success, error_message)
+        !! Apply parsed flag and value to configuration
+        use config_types, only: config_t
+        use config_parser_string, only: parse_integer_with_error, &
+                                        parse_threshold_with_error
+        use config_parser_arrays, only: add_source_path
+        character(len=*), intent(in) :: flag, value
+        type(config_t), intent(inout) :: config
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+
+        success = .true.
+        error_message = ""
+
         select case (trim(flag))
         case ("--source", "-s")
-            if (len_trim(value) > 0) then
-                call add_source_path(config, value)
-            end if
-            ! Minimal CLI: exclude/include flags are no longer supported
+            if (len_trim(value) > 0) call add_source_path(config, value)
         case ("--exclude", "--include")
-            success = .false.
-            error_message = "Flag no longer supported: '" // trim(flag) // "'"
-            return
+            call set_unsupported_flag_error(flag, success, error_message)
         case ("--output", "-o")
-            if (len_trim(value) > 0) then
-                config % output_path = value
-            end if
+            if (len_trim(value) > 0) config % output_path = value
         case ("--format", "-f")
-            if (len_trim(value) > 0) then
-                config % output_format = value
-            end if
+            if (len_trim(value) > 0) config % output_format = value
         case ("--minimum", "-m", "--threshold")
             if (len_trim(value) > 0) then
                 call parse_threshold_with_error(value, config % minimum_coverage, &
-                                                "minimum coverage", success, &
-                                                    error_message)
+                    "minimum coverage", success, error_message)
             end if
-            ! Minimal CLI: threads flag is ignored (single-threaded)
         case ("--threads", "-t")
             if (len_trim(value) > 0) then
                 call parse_integer_with_error(value, config % threads, "thread count", &
@@ -268,42 +271,37 @@ contains
             config % show_help = .true.
         case ("--version", "-V")
             config % show_version = .true.
-            ! Minimal CLI: diff mode is not supported
         case ("--diff", "--diff-baseline", "--diff-current", "--diff-threshold")
-            success = .false.
-            error_message = "Flag no longer supported: '" // trim(flag) // "'"
-            return
+            call set_unsupported_flag_error(flag, success, error_message)
         case ("--fail-under")
             if (len_trim(value) > 0) then
                 call parse_threshold_with_error(value, config % fail_under_threshold, &
-                                                "fail-under threshold", success, &
-                                                    error_message)
+                    "fail-under threshold", success, error_message)
             end if
-            ! Minimal CLI: import is not supported
         case ("--import")
-            success = .false.
-            error_message = "Flag no longer supported: '" // trim(flag) // "'"
-            return
+            call set_unsupported_flag_error(flag, success, error_message)
         case ("--config")
             success = .false.
             error_message = "Configuration files are no longer supported; use CLI flags"
-            return
-! Minimal CLI: auto-discovery toggles, auto-test, timeout, validate, zero-config removed
         case ("--auto-discovery", "--no-auto-discovery", "--auto-test", &
-              "--no-auto-test", &
-              "--test-timeout", "--validate", "--zero-config")
-            success = .false.
-            error_message = "Flag no longer supported: '" // trim(flag) // "'"
-            return
+              "--no-auto-test", "--test-timeout", "--validate", "--zero-config")
+            call set_unsupported_flag_error(flag, success, error_message)
         case ("--gcov", "--discover-and-gcov")
-            ! Enable explicit gcov discovery/generation path by disabling
-            ! generic auto-discovery. This routes discovery to gcov processor.
             config % auto_discovery = .false.
         case default
-            ! Unknown flag - reject with error message
             success = .false.
             error_message = "Unknown flag: '" // trim(flag) // "'"
         end select
-    end subroutine process_single_flag
+    end subroutine apply_flag_to_config
+
+    subroutine set_unsupported_flag_error(flag, success, error_message)
+        !! Set error for unsupported flags
+        character(len=*), intent(in) :: flag
+        logical, intent(out) :: success
+        character(len=*), intent(out) :: error_message
+
+        success = .false.
+        error_message = "Flag no longer supported: '" // trim(flag) // "'"
+    end subroutine set_unsupported_flag_error
 
 end module config_parser_flags
