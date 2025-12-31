@@ -17,7 +17,8 @@ contains
 
     subroutine test_discovery_message_format()
         character(len=256) :: buf
-        character(len=*), parameter :: expected = 'FortCov: Discovery returned 249 files'
+        character(len=*), parameter :: expected = &
+            'FortCov: Discovery returned 249 files'
 
         tests = tests + 1
 
@@ -26,9 +27,11 @@ contains
 
         if (index(buf, new_line('a')) == 0 .and. trim(buf) == expected) then
             passed = passed + 1
-            write(output_unit,'(A)') '  [PASS] Discovery message formatted on a single line'
+            write(output_unit,'(A)') &
+                '  [PASS] Discovery message formatted on a single line'
         else
-            write(output_unit,'(A)') '  [FAIL] Discovery message formatting contains newline or mismatch'
+            write(output_unit,'(A)') &
+                '  [FAIL] Discovery message formatting has newline/mismatch'
             write(output_unit,'(A,A)') '    Expected: ', expected
             write(output_unit,'(A,A)') '    Actual:   ', trim(buf)
         end if
