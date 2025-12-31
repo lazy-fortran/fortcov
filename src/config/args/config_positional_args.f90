@@ -34,7 +34,10 @@ contains
         success = .true.
         error_message = ""
 
-        ! Allocate coverage files array
+        ! Only process if there are positional arguments
+        if (positional_count == 0) return
+
+        ! Allocate coverage files array only when needed
         if (allocated(config%coverage_files)) deallocate(config%coverage_files)
         allocate(character(len=0) :: config%coverage_files(0))
 
@@ -67,6 +70,11 @@ contains
                 ! Note: executable paths are silently ignored (no warning needed)
             end if
         end do
+
+        ! Deallocate if no coverage files were found - allows auto-discovery
+        if (allocated(config%coverage_files) .and. size(config%coverage_files) == 0) then
+            deallocate(config%coverage_files)
+        end if
 
     end subroutine process_positional_arguments
 
