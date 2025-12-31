@@ -56,9 +56,9 @@ contains
         ! Validate discovered files
         if (.not. allocated(coverage_files) .or. size(coverage_files) == 0) then
             if (.not. config%quiet) then
-                print *, "❌ No coverage files discovered"
+                print *, "No coverage files discovered"
             end if
-            exit_code = EXIT_FAILURE
+            exit_code = EXIT_NO_COVERAGE_DATA
             return
         end if
         
