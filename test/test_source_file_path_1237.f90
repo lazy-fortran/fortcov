@@ -81,7 +81,8 @@ contains
 
     subroutine test_is_source_file_path_directories()
         tests = tests + 1
-        write(output_unit,'(A)') 'Testing directory paths are not recognized as files...'
+        write(output_unit,'(A)') &
+            'Testing directory paths are not recognized as files...'
 
         if (.not. is_source_file_path('src/') .and. &
             .not. is_source_file_path('lib/subdir/') .and. &
@@ -90,7 +91,8 @@ contains
             passed = passed + 1
             write(output_unit,'(A)') '  [PASS] Directories not recognized as files'
         else
-            write(output_unit,'(A)') '  [FAIL] Directories incorrectly recognized as files'
+            write(output_unit,'(A)') &
+                '  [FAIL] Directories incorrectly recognized as files'
         end if
     end subroutine test_is_source_file_path_directories
 
