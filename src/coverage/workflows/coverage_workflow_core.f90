@@ -14,7 +14,6 @@ module coverage_workflow_core
     use build_detector_core
     use build_system_validation, only: detect_and_validate_build_system
     use error_handling_core
-    use test_env_guard, only: running_under_test_env
     implicit none
     private
 
@@ -102,37 +101,45 @@ contains
 
     subroutine orchestrate_gcov_discovery(config, coverage_files, exit_code)
         !! Orchestrate gcov file discovery and generation
-        !! 
+        !!
         !! Coordinates gcov file discovery with build system integration
         !! to provide comprehensive coverage file discovery.
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: coverage_files(:)
         integer, intent(out) :: exit_code
-        
+
         type(build_system_info_t) :: build_info
         type(error_context_t) :: error_ctx
-        
+        character(len=:), allocatable :: generated_files(:)
+
         exit_code = EXIT_SUCCESS
-        
+
         if (.not. config%quiet) then
             print *, "🔍 Orchestrating coverage file discovery..."
         end if
-        
+
         ! Try build system integration for enhanced discovery (unified)
         if (detect_and_validate_build_system(config, build_info, error_ctx, '.') == EXIT_SUCCESS .and. &
             build_info%system_type /= 'unknown' .and. &
             build_info%tool_available) then
-            
+
             if (.not. config%quiet) then
                 print *, "📦 Using build system integration for discovery: " // &
                          trim(build_info%system_type)
             end if
         end if
-        
+
         ! If explicit gcov mode requested (alias: --discover-and-gcov),
-        ! invoke the lightweight shell bridge to generate .gcov files.
+        ! generate .gcov files natively from discovered .gcda files.
         if (.not. config%auto_discovery) then
-            call run_shell_bridge()
+            if (.not. config%quiet) then
+                print *, "🔧 Generating gcov files from coverage data..."
+            end if
+            call auto_generate_gcov_files(config, generated_files)
+            if (allocated(generated_files) .and. size(generated_files) > 0) then
+                coverage_files = generated_files
+                return
+            end if
         end if
 
         ! Delegate to specialized gcov processor
@@ -147,22 +154,6 @@ contains
         end if
         
     end subroutine orchestrate_gcov_discovery
-
-    subroutine run_shell_bridge()
-        !! Invoke shell bridge for auto mode to generate .gcov files
-        integer :: cmdstat, exitstat
-        logical :: bridge_exists
-        
-        ! Never invoke the bridge while running under a test harness.
-        if (running_under_test_env()) return
-
-        inquire(file='scripts/fpm_coverage_bridge.sh', exist=bridge_exists)
-        if (.not. bridge_exists) return
-
-        call execute_command_line('scripts/fpm_coverage_bridge.sh', &
-             exitstat=exitstat, cmdstat=cmdstat, wait=.true.)
-        ! Non-fatal: continue regardless of bridge result
-    end subroutine run_shell_bridge
 
     function orchestrate_diff_analysis(config) result(exit_code)
         !! Orchestrate coverage diff analysis workflow

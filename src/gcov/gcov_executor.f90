@@ -99,26 +99,19 @@ contains
         end if
     end subroutine execute_gcov
     
-    ! Validate that source file and coverage data files exist
-    subroutine validate_gcov_prerequisites(source_file, error_ctx)
-        character(len=*), intent(in) :: source_file
+    ! Validate that coverage data file exists
+    subroutine validate_gcov_prerequisites(input_file, error_ctx)
+        character(len=*), intent(in) :: input_file
         type(error_context_t), intent(out) :: error_ctx
-        
-        character(len=256) :: gcda_file
-        logical :: source_exists, gcda_exists
-        
+
+        logical :: file_exists
+
         call clear_error_context(error_ctx)
-        
-        inquire(file=source_file, exist=source_exists)
-        if (.not. source_exists) then
-            call handle_missing_source(source_file, error_ctx)
-            return
-        end if
-        
-        gcda_file = get_base_name(source_file) // ".gcda"
-        inquire(file=gcda_file, exist=gcda_exists)
-        if (.not. gcda_exists) then
-            call handle_missing_source(gcda_file, error_ctx)
+
+        ! Check if the input file (either source or gcda) exists
+        inquire(file=input_file, exist=file_exists)
+        if (.not. file_exists) then
+            call handle_missing_source(input_file, error_ctx)
             return
         end if
     end subroutine validate_gcov_prerequisites
@@ -139,40 +132,33 @@ contains
     end subroutine setup_gcov_output_environment
     
     ! Execute gcov command with error handling
-    subroutine execute_gcov_command(this, source_file, temp_filename, error_ctx)
+    subroutine execute_gcov_command(this, input_file, temp_filename, error_ctx)
         class(gcov_executor_t), intent(in) :: this
-        character(len=*), intent(in) :: source_file, temp_filename
+        character(len=*), intent(in) :: input_file, temp_filename
         type(error_context_t), intent(out) :: error_ctx
-        
+
         character(len=1024) :: command
-        character(len=512) :: safe_source_file
+        character(len=512) :: safe_input_file
         character(len=64)  :: branch_flag
         integer :: exit_code
-        logical :: source_exists
-        
+
         call clear_error_context(error_ctx)
-        
-        ! Validate source file exists
-        inquire(file=source_file, exist=source_exists)
-        if (.not. source_exists) then
-            call handle_missing_source(source_file, error_ctx)
-            return
-        end if
-        
+
         ! Build minimal, safely-quoted gcov invocation
-        safe_source_file = trim(source_file)
+        ! input_file can be a source file or a gcda file
+        safe_input_file = trim(input_file)
         branch_flag = ''
         if (this%branch_coverage) branch_flag = ' -b'
         command = trim(this%gcov_command) // branch_flag // ' ' // &
-                  quote_arg(safe_source_file)
+                  quote_arg(safe_input_file)
 
         call run_command(command, exit_code)
-        
+
         if (exit_code /= 0) then
             call handle_gcov_command_failure(command, exit_code, temp_filename, error_ctx)
             return
         end if
-        
+
         ! Success - gcov command executed successfully
         error_ctx%error_code = ERROR_SUCCESS
     end subroutine execute_gcov_command
@@ -209,37 +195,45 @@ contains
     end subroutine run_command
     
     ! Process generated gcov output files
-    subroutine process_gcov_output_files(this, source_file, temp_files, line_count, error_ctx)
+    subroutine process_gcov_output_files(this, input_file, temp_files, line_count, error_ctx)
+        use file_utilities, only: find_files
         class(gcov_executor_t), intent(in) :: this
-        character(len=*), intent(in) :: source_file
+        character(len=*), intent(in) :: input_file
         character(len=256), allocatable, intent(inout) :: temp_files(:)
         integer, intent(out) :: line_count
         type(error_context_t), intent(inout) :: error_ctx
-        
-        character(len=256) :: gcov_file, output_gcov_file, source_basename
-        logical :: gcov_file_exists
-        integer :: stat
+
+        character(len=:), allocatable :: gcov_files_found(:)
+        character(len=256) :: output_gcov_file, gcov_basename
+        integer :: i
         type(error_context_t) :: move_err
-        
+
         line_count = 0
         temp_files = ""
-        source_basename = get_base_name(source_file)
-        gcov_file = trim(source_file) // ".gcov"
-        
-        inquire(file=gcov_file, exist=gcov_file_exists)
-        if (gcov_file_exists) then
-            output_gcov_file = trim(this%gcov_output_dir) // "/" // &
-                              trim(source_basename) // ".f90.gcov"
-            ! SECURITY FIX Issue #963: Use secure file move instead of shell mv
-            call clear_error_context(move_err)
-            call safe_move_file(gcov_file, output_gcov_file, move_err)
-            line_count = 1
-            if (move_err%error_code == ERROR_SUCCESS) then
-                temp_files(1) = output_gcov_file
-            else
-                temp_files(1) = gcov_file
-            end if
+
+        ! gcov creates .gcov files in the current directory with names derived
+        ! from the source file paths embedded in the gcda/gcno files.
+        ! Search for any newly created .gcov files.
+        gcov_files_found = find_files('*.gcov')
+
+        if (.not. allocated(gcov_files_found) .or. size(gcov_files_found) == 0) then
+            return
         end if
+
+        ! Move discovered gcov files to the output directory
+        do i = 1, min(size(gcov_files_found), size(temp_files))
+            gcov_basename = get_base_name(gcov_files_found(i))
+            output_gcov_file = trim(this%gcov_output_dir) // "/" // &
+                               trim(gcov_basename)
+            call clear_error_context(move_err)
+            call safe_move_file(gcov_files_found(i), output_gcov_file, move_err)
+            line_count = line_count + 1
+            if (move_err%error_code == ERROR_SUCCESS) then
+                temp_files(line_count) = output_gcov_file
+            else
+                temp_files(line_count) = gcov_files_found(i)
+            end if
+        end do
     end subroutine process_gcov_output_files
     
     ! Build final gcov_files result array

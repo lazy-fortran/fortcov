@@ -152,28 +152,37 @@ contains
 
     subroutine determine_gcov_search_paths(config, search_paths, found_files)
         !! Determine search paths for gcov files based on configuration
+        use gcov_file_discovery, only: discover_gcov_files_impl => discover_gcov_files
+        use error_handling_core, only: error_context_t, ERROR_SUCCESS
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: search_paths(:)
         character(len=:), allocatable, intent(out) :: found_files(:)
-        
-        character(len=256), parameter :: GCOV_OUTPUT_DIR = "build/gcov"
-        logical :: dir_exists
-        
-        ! If explicit source paths are provided, respect them exclusively
+
+        type(error_context_t) :: ectx
+
+        ! Use the secure recursive discovery for gcov files
+        call discover_gcov_files_impl(".", found_files, ectx)
+
+        ! If .gcov files found, use them
+        if (ectx%error_code == ERROR_SUCCESS .and. &
+            allocated(found_files) .and. size(found_files) > 0) then
+            return
+        end if
+
+        ! Also check standard output directory build/gcov
+        call discover_gcov_files_impl("build/gcov", found_files, ectx)
+        if (ectx%error_code == ERROR_SUCCESS .and. &
+            allocated(found_files) .and. size(found_files) > 0) then
+            return
+        end if
+
+        ! Use configured source paths as search locations
         if (allocated(config%source_paths)) then
             search_paths = config%source_paths
         else
-            ! Only check build/gcov directory when no explicit source paths provided
-            inquire(file=GCOV_OUTPUT_DIR, exist=dir_exists)
-            if (dir_exists) then
-                found_files = find_files(GCOV_OUTPUT_DIR // "/*" // GCOV_EXTENSION)
-            end if
-            
-            ! If no .gcov files found in build/gcov, default to current directory
-            if (.not. allocated(found_files) .or. size(found_files) == 0) then
-                allocate(character(len=1) :: search_paths(1))
-                search_paths(1) = "."
-            end if
+            ! Default to current directory
+            allocate(character(len=1) :: search_paths(1))
+            search_paths(1) = "."
         end if
     end subroutine determine_gcov_search_paths
     
@@ -190,15 +199,16 @@ contains
     end subroutine search_existing_gcov_files
     
     subroutine attempt_gcov_generation(config, found_files, generated_files)
-        !! Attempt automatic generation only in auto-discovery mode
+        !! Attempt automatic gcov generation when no .gcov files found
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(in) :: found_files(:)
         character(len=:), allocatable, intent(out) :: generated_files(:)
-        
-        ! Attempt automatic generation only in auto-discovery mode
-        ! When explicit source paths are specified, respect user intent
-        if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
-            .not. allocated(config%source_paths)) then
+
+        ! Only attempt generation if no .gcov files were discovered
+        if (.not. allocated(found_files) .or. size(found_files) == 0) then
+            ! Generate gcov files from .gcda coverage data.
+            ! This handles both explicit --gcov mode (auto_discovery=false)
+            ! and default mode when no .gcov files exist.
             call auto_generate_gcov_files(config, generated_files)
         end if
     end subroutine attempt_gcov_generation
