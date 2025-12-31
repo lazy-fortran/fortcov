@@ -16,6 +16,7 @@ module coverage_validation
     
     public :: validate_analysis_configuration
     public :: validate_source_paths
+    public :: validate_coverage_files
     public :: validate_exclude_patterns_strict
     public :: display_search_guidance
     
@@ -68,7 +69,13 @@ contains
             call validate_exclude_patterns_strict(config, is_valid)
             if (.not. is_valid) return
         end if
-        
+
+        ! Validate user-specified coverage files exist
+        if (allocated(config%coverage_files) .and. size(config%coverage_files) > 0) then
+            call validate_coverage_files(config, is_valid)
+            if (.not. is_valid) return
+        end if
+
     end function validate_analysis_configuration
 
     subroutine validate_source_paths(config, is_valid)
@@ -165,5 +172,33 @@ contains
         end do
         
     end subroutine validate_exclude_patterns_strict
+
+    subroutine validate_coverage_files(config, is_valid)
+        !! Validate that user-specified coverage files exist
+        type(config_t), intent(in) :: config
+        logical, intent(out) :: is_valid
+
+        integer :: i
+        logical :: path_exists
+        character(len=:), allocatable :: file_path
+
+        is_valid = .true.
+
+        if (.not. allocated(config%coverage_files)) return
+        if (size(config%coverage_files) == 0) return
+
+        do i = 1, size(config%coverage_files)
+            file_path = trim(config%coverage_files(i))
+            if (len_trim(file_path) == 0) cycle
+
+            inquire(file=file_path, exist=path_exists)
+            if (.not. path_exists) then
+                write(*,'(A)') "Error: File not found: " // file_path
+                is_valid = .false.
+                return
+            end if
+        end do
+
+    end subroutine validate_coverage_files
 
 end module coverage_validation
