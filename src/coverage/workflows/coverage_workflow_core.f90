@@ -42,7 +42,8 @@ contains
             auto_test_result = orchestrate_auto_test_workflow(config)
             if (auto_test_result /= EXIT_SUCCESS) then
                 if (.not. config%quiet) then
-                    print *, "Warning: Auto-test execution issues, continuing with coverage analysis"
+                    print *, "Warning: Auto-test execution issues, " // &
+                             "continuing with coverage analysis"
                 end if
             end if
         end if
