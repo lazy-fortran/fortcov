@@ -130,6 +130,7 @@ contains
     end subroutine open_gcov_file_with_validation
     
     ! Process all lines from gcov file
+    ! Handles function block separators (------------------) to avoid duplicate lines
     subroutine process_gcov_lines(unit, path, source_filename, lines_array, &
                                  lines_count, files_array, files_count, has_source)
         integer, intent(in) :: unit
@@ -140,21 +141,65 @@ contains
         type(coverage_file_t), allocatable, intent(inout) :: files_array(:)
         integer, intent(inout) :: files_count
         logical, intent(inout) :: has_source
-        
+
         character(len=256) :: line
         integer :: iostat_val
-        
+        logical :: in_function_block
+
+        in_function_block = .false.
+
         do
             call read_gcov_line_with_validation(unit, path, line, iostat_val)
             if (iostat_val /= 0) exit
-            
+
             line = trim(line)
             if (len(line) == 0) cycle
-            
+
+            ! Detect function block separator (line of dashes)
+            ! gcov outputs: ------------------ to separate function-level data
+            if (is_function_block_separator(line)) then
+                in_function_block = .true.
+                cycle
+            end if
+
+            ! New Source: header resets function block state
+            if (index(line, "Source:") > 0) then
+                in_function_block = .false.
+            end if
+
+            ! Skip lines inside function blocks (they duplicate main file data)
+            if (in_function_block) cycle
+
             call parse_gcov_line(line, path, source_filename, lines_array, &
                                lines_count, files_array, files_count, has_source)
         end do
     end subroutine process_gcov_lines
+
+    ! Check if line is a function block separator (line of dashes)
+    pure function is_function_block_separator(line) result(is_separator)
+        character(len=*), intent(in) :: line
+        logical :: is_separator
+        integer :: i, dash_count, line_len
+
+        is_separator = .false.
+        line_len = len_trim(line)
+
+        ! Must have at least 10 dashes to be a separator
+        if (line_len < 10) return
+
+        dash_count = 0
+        do i = 1, line_len
+            if (line(i:i) == '-') then
+                dash_count = dash_count + 1
+            else
+                ! Non-dash character found, not a separator
+                return
+            end if
+        end do
+
+        ! Valid separator has 10+ consecutive dashes and nothing else
+        is_separator = (dash_count >= 10)
+    end function is_function_block_separator
     
     ! Read single line from gcov file with error handling
     subroutine read_gcov_line_with_validation(unit, path, line, iostat_val)
