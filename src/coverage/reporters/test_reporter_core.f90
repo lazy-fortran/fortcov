@@ -28,7 +28,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "ℹ️  Auto-test execution disabled"
+            print *, "Note: Auto-test execution disabled"
         end if
     end subroutine report_auto_test_disabled
     
@@ -37,7 +37,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "🚀 Executing automatic test workflow..."
+            print *, "Executing automatic test workflow..."
         end if
     end subroutine report_workflow_start
     
@@ -47,7 +47,7 @@ contains
         type(error_context_t), intent(in) :: error_ctx
         
         if (.not. config%quiet) then
-            print *, "❌ Build system detection failed: " // &
+            print *, "Error: Build system detection failed: " // &
                      trim(error_ctx%message)
         end if
     end subroutine report_build_detection_failed
@@ -57,7 +57,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "⚠️  No known build system detected, skipping tests"
+            print *, "Warning: No known build system detected, skipping tests"
             print *, "   Supported: FPM, CMake, Make, Meson"
         end if
     end subroutine report_unknown_build_system
@@ -68,7 +68,7 @@ contains
         type(build_system_info_t), intent(in) :: build_info
         
         if (.not. config%quiet) then
-            print *, "⚠️  Build tool not available for " // &
+            print *, "Warning: Build tool not available for " // &
                      trim(build_info%system_type) // ", skipping tests"
         end if
     end subroutine report_build_tool_unavailable
@@ -79,7 +79,7 @@ contains
         type(build_system_info_t), intent(in) :: build_info
         
         if (.not. config%quiet) then
-            print *, "📦 Build system detected: " // trim(build_info%system_type)
+            print *, "Build system detected: " // trim(build_info%system_type)
         end if
     end subroutine report_build_system_detected
     
@@ -90,10 +90,10 @@ contains
         
         if (.not. config%quiet) then
             if (test_exit_code == 124) then
-                print *, "⏱️  Test execution timed out after " // &
+                print *, "Test execution timed out after " // &
                          format_timeout_message(config%test_timeout_seconds)
             else
-                print *, "❌ Test execution failed with exit code: " // &
+                print *, "Error: Test execution failed with exit code: " // &
                          int_to_string(test_exit_code)
             end if
         end if
@@ -104,7 +104,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "✅ Tests completed successfully"
+            print *, "Tests completed successfully"
         end if
     end subroutine report_test_success
     

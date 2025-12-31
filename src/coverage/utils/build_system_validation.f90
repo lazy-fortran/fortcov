@@ -84,7 +84,7 @@ contains
         type(error_context_t), intent(in) :: error_ctx
         
         if (.not. config%quiet) then
-            print *, "❌ Build system detection failed: " // &
+            print *, "Error: Build system detection failed: " // &
                      trim(error_ctx%message)
         end if
     end subroutine report_build_detection_failed
@@ -94,7 +94,7 @@ contains
         type(config_t), intent(in) :: config
         
         if (.not. config%quiet) then
-            print *, "⚠️  No known build system detected, skipping tests"
+            print *, "Warning: No known build system detected, skipping tests"
             print *, "   Supported: FPM, CMake, Make, Meson"
         end if
     end subroutine report_unknown_build_system
@@ -105,7 +105,7 @@ contains
         type(build_system_info_t), intent(in) :: build_info
         
         if (.not. config%quiet) then
-            print *, "⚠️  Build tool not available for " // &
+            print *, "Warning: Build tool not available for " // &
                      trim(build_info%system_type) // ", skipping tests"
         end if
     end subroutine report_build_tool_unavailable
@@ -116,7 +116,7 @@ contains
         type(build_system_info_t), intent(in) :: build_info
         
         if (.not. config%quiet) then
-            print *, "📦 Build system detected: " // trim(build_info%system_type)
+            print *, "Build system detected: " // trim(build_info%system_type)
         end if
     end subroutine report_build_system_detected
 
