@@ -38,8 +38,9 @@ contains
         
         ! This is the fix - direct concatenation instead of formatted write
         pattern_result = trim(test_build_dir) // '/' // GCOV_PATTERN
-        
-        call assert_equals(trim(pattern_result), expected, 'Pattern concatenated correctly')
+
+        call assert_equals(trim(pattern_result), expected, &
+                           'Pattern concatenated correctly')
     end subroutine test_gcov_pattern_concatenation
 
     subroutine test_gcov_pattern_edge_cases()
@@ -55,16 +56,18 @@ contains
         
         ! Test with build dir ending in slash
         pattern_result = trim('/build/') // '/' // GCOV_PATTERN
-        call assert_equals(trim(pattern_result), '/build//*.gcov', 'Trailing slash handled')
+        call assert_equals(trim(pattern_result), '/build//*.gcov', &
+                           'Trailing slash handled')
         
         ! Test with very long path (should not exceed buffer)
         block
             character(len=200) :: long_path
             long_path = repeat('x', 200)
             
-            ! This should work without "End of record" error
+            ! This should work without End of record error
             pattern_result = trim(long_path) // '/' // GCOV_PATTERN
-            call assert_true(len_trim(pattern_result) > 0, 'Long path concatenation works')
+            call assert_true(len_trim(pattern_result) > 0, &
+                             'Long path concatenation works')
         end block
     end subroutine test_gcov_pattern_edge_cases
 
@@ -72,28 +75,28 @@ contains
     
     subroutine assert_equals(actual, expected, description)
         character(len=*), intent(in) :: actual, expected, description
-        
+
         test_count = test_count + 1
         if (actual == expected) then
             passed_count = passed_count + 1
-            write(output_unit, '(A,A)') '  ✓ ', description
+            write(output_unit, '(A,A)') '  PASS: ', description
         else
-            write(output_unit, '(A,A)') '  ✗ ', description
+            write(output_unit, '(A,A)') '  FAIL: ', description
             write(output_unit, '(A,A)') '    Expected: ', expected
             write(output_unit, '(A,A)') '    Actual:   ', actual
         end if
     end subroutine assert_equals
-    
+
     subroutine assert_true(condition, description)
         logical, intent(in) :: condition
         character(len=*), intent(in) :: description
-        
+
         test_count = test_count + 1
         if (condition) then
             passed_count = passed_count + 1
-            write(output_unit, '(A,A)') '  ✓ ', description
+            write(output_unit, '(A,A)') '  PASS: ', description
         else
-            write(output_unit, '(A,A)') '  ✗ ', description
+            write(output_unit, '(A,A)') '  FAIL: ', description
         end if
     end subroutine assert_true
 

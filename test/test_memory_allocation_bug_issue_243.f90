@@ -2,11 +2,6 @@ program test_memory_allocation_bug_issue_243
     !! Memory allocation safety test for Issue #243
     !! Tests memory safety without external dependencies
     !! CI-optimized version for reliable test execution
-    !! 
-    !! Note: The comprehensive memory tests are in separate test programs:
-    !! - test_memory_allocation_core: Core allocation patterns
-    !! - test_memory_error_paths: Error handling paths
-    !! These run independently via FPM's test system
     
     use iso_fortran_env, only: error_unit, int64
     implicit none
@@ -28,16 +23,12 @@ program test_memory_allocation_bug_issue_243
     print *, ""
     print *, "============================================================="
     if (all_tests_passed) then
-        print *, "✅ MEMORY ALLOCATION SAFETY TESTS PASSED"
+        print *, "MEMORY ALLOCATION SAFETY TESTS PASSED"
         print *, "Issue #243: Basic memory safety verified"
-        print *, ""
-        print *, "Note: Run full test suite for comprehensive coverage:"
-        print *, "  - test_memory_allocation_core (core patterns)"
-        print *, "  - test_memory_error_paths (error handling)"
         print *, "============================================================="
         stop 0
     else
-        write(error_unit, *) "❌ MEMORY SAFETY TESTS FAILED"
+        write(error_unit, *) "MEMORY SAFETY TESTS FAILED"
         print *, "============================================================="
         stop 1
     end if
@@ -62,7 +53,7 @@ contains
         
         ! Verify allocation
         if (.not. allocated(test_array)) then
-            print *, "  ❌ FAIL: Array not allocated after allocate"
+            print *, "  FAIL: Array not allocated after allocate"
             all_tests_passed = .false.
             return
         end if
@@ -70,7 +61,7 @@ contains
         ! Clean up
         deallocate(test_array)
         
-        print *, "  ✅ PASS: Basic allocation safety verified"
+        print *, "  PASS: Basic allocation safety verified"
         
     end subroutine test_basic_allocation_safety
     
@@ -99,12 +90,12 @@ contains
         
         ! Verify deallocation
         if (allocated(int_array)) then
-            print *, "  ❌ FAIL: Array still allocated after deallocate"
+            print *, "  FAIL: Array still allocated after deallocate"
             all_tests_passed = .false.
             return
         end if
         
-        print *, "  ✅ PASS: Deallocation safety verified"
+        print *, "  PASS: Deallocation safety verified"
         
     end subroutine test_deallocation_safety
     
@@ -147,7 +138,7 @@ contains
         ! Clean up
         deallocate(string_array)
         
-        print *, "  ✅ PASS: Reallocation patterns verified"
+        print *, "  PASS: Reallocation patterns verified"
         
     end subroutine test_reallocation_patterns
     
