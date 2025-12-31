@@ -152,23 +152,15 @@ contains
         !! Handle case when no coverage files are found
         type(config_t), intent(in) :: config
         integer :: exit_code
-        character(len=256) :: test_env
-        integer :: env_status
-        
-        ! Check if we're in test mode
-        call get_environment_variable('FORTCOV_TEST_MODE', test_env, status=env_status)
-        
+
         if (.not. config%quiet) then
             print *, "No coverage files found for analysis."
         end if
-        
-        ! In test mode OR zero-configuration mode, return NO_COVERAGE_DATA instead of FAILURE
-        if (env_status == 0 .or. config%zero_configuration_mode) then
-            exit_code = EXIT_NO_COVERAGE_DATA
-        else
-            exit_code = EXIT_FAILURE
-        end if
-        
+
+        ! Always return EXIT_NO_COVERAGE_DATA (3) when no coverage files found
+        ! This allows CI scripts to distinguish between no coverage data and errors
+        exit_code = EXIT_NO_COVERAGE_DATA
+
     end function handle_missing_coverage_files
 
     function perform_safe_coverage_analysis(config, error_ctx) result(exit_code)
