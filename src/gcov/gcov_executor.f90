@@ -11,7 +11,7 @@ module gcov_executor
     use file_ops_secure, only: safe_mkdir, safe_move_file
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     ! Simplified: avoid security wrapper modules; use minimal local helpers
-    use xml_utils, only: get_base_name
+    use file_utilities, only: basename
     use string_utils, only: int_to_string
     ! Inline security helpers to avoid module-order issues during test builds
     implicit none
@@ -222,7 +222,7 @@ contains
 
         ! Move discovered gcov files to the output directory
         do i = 1, min(size(gcov_files_found), size(temp_files))
-            gcov_basename = get_base_name(gcov_files_found(i))
+            gcov_basename = basename(gcov_files_found(i))
             output_gcov_file = trim(this%gcov_output_dir) // "/" // &
                                trim(gcov_basename)
             call clear_error_context(move_err)

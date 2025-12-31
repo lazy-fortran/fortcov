@@ -21,23 +21,23 @@ contains
         !! Implements "sane default mode" - auto-discovers coverage files and runs gcov
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: files(:)
-        
+
         character(len=:), allocatable :: search_paths(:)
         character(len=:), allocatable :: found_files(:)
         character(len=:), allocatable :: generated_files(:)
-        
+
         ! Determine search paths based on configuration
         call determine_gcov_search_paths(config, search_paths, found_files)
-        
+
         ! Search for existing .gcov files if needed
         call search_existing_gcov_files(search_paths, found_files)
-        
+
         ! Generate gcov files if none found and in auto-discovery mode
         call attempt_gcov_generation(config, found_files, generated_files)
-        
+
         ! Set final result
         call finalize_gcov_file_result(found_files, generated_files, files)
-        
+
     end subroutine discover_gcov_files
     
     subroutine auto_generate_gcov_files(config, generated_files)
@@ -45,16 +45,16 @@ contains
         !! Implements the core "sane default mode" functionality for Issue #196
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: generated_files(:)
-        
+
         character(len=:), allocatable :: build_dirs(:)
         character(len=:), allocatable :: all_gcov_files(:)
         character(len=:), allocatable :: test_gcda(:)
         character(len=:), allocatable :: synthesized(:)
         logical :: success
-        
+
         ! Find build directories with coverage data
         call find_coverage_build_directories(build_dirs)
-        
+
         if (.not. allocated(build_dirs) .or. size(build_dirs) == 0) then
             ! Test-friendly path: directly synthesize .gcov from test_build/*.gcda
             test_gcda = find_files('test_build/*.gcda')
@@ -74,7 +74,7 @@ contains
         
         ! Generate gcov files from build directories
         call generate_gcov_from_build_dirs(config, build_dirs, success)
-        
+
         if (success) then
             ! Copy generated .gcov files to project root and collect them
             call collect_generated_gcov_files(build_dirs, all_gcov_files)
@@ -88,10 +88,10 @@ contains
     subroutine find_coverage_build_directories(build_dirs)
         !! Finds build directories containing coverage data files
         character(len=:), allocatable, intent(out) :: build_dirs(:)
-        
+
         character(len=:), allocatable :: gcda_files(:)
         integer :: i
-        
+
         ! Find all .gcda files (indicates executed coverage data)
         ! Use secure recursive discovery to handle various build layouts reliably
         block
@@ -206,9 +206,6 @@ contains
 
         ! Only attempt generation if no .gcov files were discovered
         if (.not. allocated(found_files) .or. size(found_files) == 0) then
-            ! Generate gcov files from .gcda coverage data.
-            ! This handles both explicit --gcov mode (auto_discovery=false)
-            ! and default mode when no .gcov files exist.
             call auto_generate_gcov_files(config, generated_files)
         end if
     end subroutine attempt_gcov_generation

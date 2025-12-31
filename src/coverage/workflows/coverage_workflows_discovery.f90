@@ -24,10 +24,10 @@ contains
         !! Extracted from original find_coverage_files function
         type(config_t), intent(in) :: config
         character(len=:), allocatable :: files(:)
-        
+
         character(len=:), allocatable :: all_files(:)
         character(len=:), allocatable :: filtered_files(:)
-        
+
         ! Find coverage files based on configuration
         call determine_coverage_files_source(config, all_files)
         
@@ -113,12 +113,10 @@ contains
         !! Determine source of coverage files based on configuration
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: files(:)
-        
+
         if (allocated(config%coverage_files)) then
-            ! Use explicitly specified coverage files
             files = config%coverage_files
         else
-            ! Delegate to gcov processor for discovery (single supported path)
             call discover_gcov_files(config, files)
         end if
     end subroutine determine_coverage_files_source
