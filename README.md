@@ -9,8 +9,6 @@ generate `.gcov` from coverage artifacts before analysis. For manual control,
 use `gcov` (or helper scripts in `scripts/`) to generate `.gcov`, then run
 FortCov to create the report.
 
-See the consolidated coverage workflow: `doc/coverage_workflow.md`.
-
 ## Requirements
 
 - `gfortran` and `gcov` (part of GCC)
@@ -32,8 +30,6 @@ FortCov, by default, analyzes existing `.gcov` files and does not invoke
 
 - Manual `.gcov` flow (explicit control)
 - Auto-discovery + gcov bridge (`--gcov`)
-
-See `doc/coverage_workflow.md` for a consolidated, copy‑pasteable workflow.
 
 ```bash
 # 1) Instrument and run (tests or app) to produce .gcda/.gcno
