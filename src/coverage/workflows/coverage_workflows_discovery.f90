@@ -4,18 +4,20 @@ module coverage_workflows_discovery
     !! Handles coverage file discovery from various sources including
     !! auto-discovery, explicit file lists, and gcov-based discovery.
     !! Provides comprehensive filtering and validation capabilities.
-    
+
     use constants_core
     use config_core
     use coverage_processor_gcov, only: discover_gcov_files
     use coverage_workflows_patterns, only: prepare_pattern_paths, check_include_patterns, &
                                            check_exclude_patterns, check_test_file_exclusion
+    use path_resolver, only: resolve_path
     implicit none
     private
     
     public :: discover_coverage_files
     public :: filter_coverage_files_by_patterns
     public :: evaluate_exclude_patterns
+    public :: deduplicate_files
     
 contains
 
@@ -114,12 +116,69 @@ contains
         type(config_t), intent(in) :: config
         character(len=:), allocatable, intent(out) :: files(:)
 
+        character(len=:), allocatable :: raw_files(:)
+
         if (allocated(config%coverage_files)) then
-            files = config%coverage_files
+            raw_files = config%coverage_files
         else
-            call discover_gcov_files(config, files)
+            call discover_gcov_files(config, raw_files)
         end if
+
+        call deduplicate_files(raw_files, files)
     end subroutine determine_coverage_files_source
+
+    subroutine deduplicate_files(input_files, output_files)
+        !! Deduplicate files based on their resolved canonical paths
+        !! Fixes issue #1238: duplicate files counted multiple times
+        character(len=:), allocatable, intent(in) :: input_files(:)
+        character(len=:), allocatable, intent(out) :: output_files(:)
+
+        character(len=:), allocatable :: resolved_paths(:)
+        logical, allocatable :: is_unique(:)
+        character(len=:), allocatable :: current_resolved
+        integer :: i, j, unique_count, input_size
+
+        if (.not. allocated(input_files)) return
+        input_size = size(input_files)
+        if (input_size == 0) then
+            allocate(character(len=256) :: output_files(0))
+            return
+        end if
+
+        allocate(character(len=4096) :: resolved_paths(input_size))
+        allocate(is_unique(input_size))
+        is_unique = .true.
+
+        do i = 1, input_size
+            current_resolved = resolve_path(trim(input_files(i)))
+            resolved_paths(i) = current_resolved
+        end do
+
+        do i = 2, input_size
+            do j = 1, i - 1
+                if (is_unique(i) .and. &
+                    trim(resolved_paths(i)) == trim(resolved_paths(j))) then
+                    is_unique(i) = .false.
+                    exit
+                end if
+            end do
+        end do
+
+        unique_count = count(is_unique)
+        if (unique_count == 0) then
+            allocate(character(len=256) :: output_files(0))
+            return
+        end if
+
+        allocate(character(len=len(input_files(1))) :: output_files(unique_count))
+        j = 0
+        do i = 1, input_size
+            if (is_unique(i)) then
+                j = j + 1
+                output_files(j) = input_files(i)
+            end if
+        end do
+    end subroutine deduplicate_files
     
     subroutine apply_coverage_file_filtering(all_files, config, filtered_files)
         !! Apply filtering to coverage files if needed
