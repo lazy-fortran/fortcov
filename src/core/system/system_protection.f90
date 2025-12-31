@@ -39,9 +39,8 @@ contains
         
         ! SECURITY BALANCE IMPROVEMENT: Allow legitimate /tmp output while preserving security
         ! /tmp is standard Unix temporary directory - legitimate for output file creation
-        if (starts_with_ignore_case(path, '/tmp/')) then
-            ! Allow /tmp access - this is legitimate temporary file creation
-            ! Security validation already prevents path traversal, command injection
+        ! Check for /tmp/ prefix AND /tmp exactly (directory itself)
+        if (starts_with_ignore_case(path, '/tmp/') .or. trim(path) == '/tmp') then
             return
         end if
         
