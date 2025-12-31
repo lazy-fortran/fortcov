@@ -58,7 +58,7 @@ contains
         print *, ""
         print *, "Built with:"
         print *, "  - Fortran compiler support"
-        print *, "  - gcov file analysis (does not invoke gcov)"
+        print *, "  - gcov file analysis (use --gcov to invoke gcov)"
         print *, "  - Markdown output format"
         ! TUI removed
         print *, "  - Parallel processing: not implemented (threads flag ignored)"
