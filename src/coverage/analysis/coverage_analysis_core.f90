@@ -24,6 +24,7 @@ module coverage_analysis_core
     public :: perform_coverage_analysis
     public :: perform_safe_coverage_analysis
     public :: perform_imported_json_analysis
+    public :: is_source_file_path
     
 contains
 
@@ -262,9 +263,23 @@ contains
             if (allocated(criteria%include_patterns)) deallocate(criteria%include_patterns)
             allocate(character(len=256) :: criteria%include_patterns(size(config%source_paths)))
             do i = 1, size(config%source_paths)
-                ! Add wildcard to match files under the directory
+                ! Determine if path is a file or directory pattern
+                ! If path ends with /, treat as directory and append *
+                ! If path already contains *, use as-is (already a pattern)
+                ! If path exists as a file, use as exact match
+                ! If path looks like a file (has extension), use as exact match
+                ! Otherwise treat as directory and append /*
                 if (config%source_paths(i)(len_trim(config%source_paths(i)):) == "/") then
                     criteria%include_patterns(i) = trim(config%source_paths(i)) // "*"
+                else if (index(config%source_paths(i), "*") > 0) then
+                    ! Already a pattern - use as-is
+                    criteria%include_patterns(i) = trim(config%source_paths(i))
+                else if (file_exists(config%source_paths(i))) then
+                    ! Path is an existing file - use it as exact match pattern
+                    criteria%include_patterns(i) = trim(config%source_paths(i))
+                else if (is_source_file_path(config%source_paths(i))) then
+                    ! Path looks like a source file - use as exact match
+                    criteria%include_patterns(i) = trim(config%source_paths(i))
                 else
                     criteria%include_patterns(i) = trim(config%source_paths(i)) // "/*"
                 end if
@@ -287,5 +302,35 @@ contains
         end if
         
     end subroutine apply_coverage_filtering
+
+    pure function is_source_file_path(path) result(is_file)
+        !! Determine if a path looks like a source file based on extension
+        character(len=*), intent(in) :: path
+        logical :: is_file
+        integer :: dot_pos, path_len
+        character(len=16) :: ext
+
+        is_file = .false.
+        path_len = len_trim(path)
+        if (path_len == 0) return
+
+        dot_pos = index(path, ".", back=.true.)
+        if (dot_pos == 0 .or. dot_pos == path_len) return
+
+        ! Check if dot appears after the last slash (i.e., in the filename)
+        if (index(path, "/", back=.true.) > dot_pos) return
+
+        ext = path(dot_pos+1:path_len)
+        select case (trim(ext))
+        case ("f90", "f95", "f03", "f08", "f18", "f", "for", "fpp", "F", "F90")
+            is_file = .true.
+        case ("c", "h", "cpp", "hpp", "cc", "cxx", "hxx")
+            is_file = .true.
+        case ("py", "rb", "js", "ts", "go", "rs", "java", "kt", "swift")
+            is_file = .true.
+        case default
+            is_file = .false.
+        end select
+    end function is_source_file_path
 
 end module coverage_analysis_core
