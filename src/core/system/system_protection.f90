@@ -1,5 +1,6 @@
 module system_protection
-    use error_handling_core, only: error_context_t, ERROR_INVALID_PATH, safe_write_message
+    use error_handling_core, only: error_context_t, ERROR_INVALID_PATH, &
+        safe_write_message
     use path_string_utils, only: starts_with_ignore_case
     implicit none
     private
@@ -37,8 +38,9 @@ contains
             '/proc/', '/sys/ ', '/dev/ ' &
         ]
         
-        ! SECURITY BALANCE IMPROVEMENT: Allow legitimate /tmp output while preserving security
-        ! /tmp is standard Unix temporary directory - legitimate for output file creation
+        ! SECURITY BALANCE IMPROVEMENT: Allow legitimate /tmp output while
+        ! preserving security. /tmp is standard Unix temporary directory -
+        ! legitimate for output file creation
         ! Check for /tmp/ prefix AND /tmp exactly (directory itself)
         if (starts_with_ignore_case(path, '/tmp/') .or. trim(path) == '/tmp') then
             return
