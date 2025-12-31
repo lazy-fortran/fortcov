@@ -43,7 +43,6 @@ contains
         character(len=512) :: errmsg
         character(len=256), allocatable :: temp_generated_files(:)
         character(len=:), allocatable :: temp_files(:)
-        character(len=256) :: source_file
         logical :: dir_created
         
         ! Configure gcov executor for zero-config mode
@@ -65,8 +64,9 @@ contains
         end if
         
         do i = 1, size(gcda_files)
-            source_file = extract_source_from_gcda(gcda_files(i))
-            call executor%execute_gcov(source_file, temp_files, error_ctx)
+            ! Pass the gcda file path directly - gcov can determine the source
+            ! from notes stored in the gcda/gcno files.
+            call executor%execute_gcov(gcda_files(i), temp_files, error_ctx)
             
             if (error_ctx%error_code == ERROR_SUCCESS .and. &
                 allocated(temp_files) .and. size(temp_files) > 0) then
