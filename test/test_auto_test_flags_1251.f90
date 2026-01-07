@@ -1,7 +1,7 @@
 program test_auto_test_flags_1251
     !! Test for Issue #1251: auto-test flags are supported and configurable.
 
-    use iso_fortran_env, only: output_unit
+    use, intrinsic :: iso_fortran_env, only: dp => real64, output_unit
     use config_defaults_core, only: initialize_default_config
     use config_parser_flags, only: process_single_flag
     use config_types, only: config_t
