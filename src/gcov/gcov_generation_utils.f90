@@ -18,6 +18,7 @@ module gcov_generation_utils
     use config_types, only: config_t
     use gcov_file_discovery, only: discover_gcov_files
     use secure_command_execution, only: secure_execute_command
+    use shell_utilities, only: escape_shell_argument
     implicit none
     private
 
@@ -44,11 +45,12 @@ contains
         integer :: env_len, env_stat
         logical :: use_real_gcov
         character(len=:), allocatable :: cmd
+        character(len=:), allocatable :: escaped_out_dir, escaped_gcno_file
         integer :: cmd_exit
 
         call clear_error_context(error_ctx)
 
-        ! SECURITY: Use hardcoded 'gcov' command - no user configuration
+        ! SECURITY: Use hardcoded gcov command - no user configuration
         gcov_exec = 'gcov'
 
         ! Feature flag: allow forcing synthetic gcov output for tests.
@@ -100,19 +102,12 @@ contains
                     base_name = base_name(1:len_trim(base_name)-5)
                 end if
 
-                ! Validate paths to avoid unsafe shell execution
-                if (.not. is_safe_path(out_dir) .or. &
-                    .not. is_safe_path(gcno_file)) then
-                    call safe_write_message(error_ctx, &
-                        'Unsafe characters in paths; refusing to run gcov')
-                    call safe_write_context(error_ctx, 'gcov file generation')
-                    error_ctx%error_code = 1
-                    return
-                end if
+                escaped_out_dir = escape_shell_argument(trim(out_dir))
+                escaped_gcno_file = escape_shell_argument(trim(gcno_file))
 
                 ! Run: gcov --object-directory=out_dir gcno_file
-                cmd = trim(gcov_exec)//' --object-directory='//trim(out_dir)// &
-                      ' ' // trim(gcno_file)
+                cmd = trim(gcov_exec)//' --object-directory='// &
+                      trim(escaped_out_dir)//' ' // trim(escaped_gcno_file)
                 call secure_execute_command(cmd, cmd_exit)
                 if (cmd_exit /= 0) then
                     call safe_write_message(error_ctx, &
@@ -220,26 +215,4 @@ contains
             error_ctx%error_code = 1
         end if
     end subroutine generate_gcov_files
-
-
-    logical function is_safe_path(s) result(ok)
-        !! Allow only sane path characters to mitigate shell interpretation.
-        character(len=*), intent(in) :: s
-        integer :: i, c
-        ok = .true.
-        do i = 1, len_trim(s)
-            c = iachar(s(i:i))
-            select case (c)
-            case (48:57)          ! 0-9
-            case (65:90)          ! A-Z
-            case (97:122)         ! a-z
-            case (47, 46, 95, 45) ! / . _ -
-            case default
-                ok = .false.
-                return
-            end select
-        end do
-    end function is_safe_path
-
-
 end module gcov_generation_utils
