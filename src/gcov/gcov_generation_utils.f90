@@ -133,11 +133,6 @@ contains
                 error_ctx%error_code = ERROR_SUCCESS
                 return
             end if
-            ! No .gcov detected; report failure rather than synthesizing
-            call safe_write_message(error_ctx, 'gcov did not generate any .gcov files')
-            call safe_write_context(error_ctx, 'gcov file generation')
-            error_ctx%error_code = 1
-            return
         end if
 
         created_count = 0
