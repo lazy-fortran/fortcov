@@ -4,13 +4,14 @@ module coverage_build
     !! Focused on build system detection and integration for coverage
     !! workflows. Provides specialized build system operations separated
     !! from test execution and other workflow functionality.
-    use constants_core
-    use config_core
-    use build_detector_core
+    use constants_core, only: EXIT_SUCCESS
+    use config_core, only: config_t
+    use build_detector_core, only: build_system_info_t
     use build_system_validation, only: detect_and_validate_build_system, &
                                        report_unknown_build_system, &
                                        report_build_tool_unavailable
-    use error_handling_core
+    use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
+                                   ERROR_INVALID_CONFIG, clear_error_context
     implicit none
     private
 
@@ -63,8 +64,6 @@ contains
         type(build_system_info_t), intent(in) :: build_info
         type(config_t), intent(in) :: config
         character(len=:), allocatable :: command
-        character(len=2), parameter :: shell_and = achar(38)//achar(38)
-
         select case (trim(build_info%system_type))
         case ('fpm')
             command = get_fpm_coverage_command(config)
