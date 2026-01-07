@@ -32,7 +32,7 @@ contains
       config%input_format = "auto"
       config%output_format = "markdown"
       config%output_path = ""
-      ! SECURITY FIX Issue #963: gcov_executable REMOVED - shell injection vulnerability
+      config%gcov_executable = "gcov"
       config%minimum_coverage = 0.0d0
       config%fail_under_threshold = 0.0d0
       config%threads = 1

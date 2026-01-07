@@ -96,15 +96,24 @@ contains
         end if
     end subroutine validate_build_tools
 
-    subroutine validate_gcov_tool(gcov_ok)
+    subroutine validate_gcov_tool(config, gcov_ok)
+        type(config_t), intent(in) :: config
         logical, intent(out) :: gcov_ok
         logical :: gcov_available
         type(error_context_t) :: error_ctx
 
-        call check_gcov_availability(gcov_available)
+        if (allocated(config%gcov_executable)) then
+            call check_gcov_availability(gcov_available, config%gcov_executable)
+        else
+            call check_gcov_availability(gcov_available)
+        end if
         gcov_ok = gcov_available
         if (.not. gcov_available) then
-            call handle_gcov_not_found("gcov", error_ctx)
+            if (allocated(config%gcov_executable)) then
+                call handle_gcov_not_found(trim(config%gcov_executable), error_ctx)
+            else
+                call handle_gcov_not_found("gcov", error_ctx)
+            end if
             call log_error(error_ctx)
         end if
     end subroutine validate_gcov_tool
@@ -148,14 +157,15 @@ contains
         end if
     end subroutine validate_coverage_files
 
-    function validate_system_integration() result(validation_passed)
+    function validate_system_integration(config) result(validation_passed)
+        type(config_t), intent(in) :: config
         logical :: validation_passed
         logical :: build_ok
         logical :: gcov_ok
         logical :: coverage_ok
 
         call validate_build_tools(build_ok)
-        call validate_gcov_tool(gcov_ok)
+        call validate_gcov_tool(config, gcov_ok)
         call validate_coverage_files(coverage_ok)
 
         validation_passed = build_ok .and. gcov_ok .and. coverage_ok

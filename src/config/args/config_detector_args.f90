@@ -40,8 +40,9 @@ contains
                 flag_part == "--import" .or. &
                 flag_part == "--config" .or. flag_part == "-c" .or. &
                 flag_part == "--include" .or. flag_part == "-i" .or. &
-                flag_part == "--exclude" .or. flag_part == "-e") then
-                ! SECURITY FIX Issue #963: --gcov-executable REMOVED
+                flag_part == "--exclude" .or. flag_part == "-e" .or. &
+                flag_part == "--gcov-executable" .or. &
+                flag_part == "--gcov-cmd") then
                 has_input_args = .true.
                 return
             end if

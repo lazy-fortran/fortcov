@@ -105,7 +105,7 @@ contains
             character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths
             character(len=256), dimension(MAX_ARRAY_SIZE) :: exclude_patterns
             character(len=256), dimension(MAX_ARRAY_SIZE) :: include_patterns
-            ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+            character(len=256) :: gcov_executable
             character(len=256) :: gcov_args
             real :: minimum_coverage
             real :: fail_under_threshold
@@ -129,8 +129,7 @@ contains
         ! Namelist variables (required for namelist reading)
         character(len=256) :: input_format, output_format, output_path
         character(len=256), dimension(MAX_ARRAY_SIZE) :: source_paths, exclude_patterns, include_patterns
-        character(len=256) :: gcov_args, diff_baseline_file
-        ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+        character(len=256) :: gcov_executable, gcov_args, diff_baseline_file
         real :: minimum_coverage, fail_under_threshold, diff_threshold
         integer :: threads, max_files
         logical :: verbose, quiet, strict_mode, enable_diff, include_unchanged, keep_gcov_files
@@ -138,7 +137,7 @@ contains
         ! Define the namelist
         namelist /fortcov_config/ &
             input_format, output_format, output_path, source_paths, &
-            exclude_patterns, include_patterns, gcov_args, &
+            exclude_patterns, include_patterns, gcov_executable, gcov_args, &
             minimum_coverage, fail_under_threshold, threads, &
             verbose, quiet, strict_mode, enable_diff, &
             diff_baseline_file, include_unchanged, diff_threshold, &
@@ -157,7 +156,7 @@ contains
         source_paths = namelist_data%source_paths
         exclude_patterns = namelist_data%exclude_patterns
         include_patterns = namelist_data%include_patterns
-        ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+        gcov_executable = namelist_data%gcov_executable
         gcov_args = namelist_data%gcov_args
         minimum_coverage = namelist_data%minimum_coverage
         fail_under_threshold = namelist_data%fail_under_threshold
@@ -198,7 +197,7 @@ contains
         namelist_data%source_paths = source_paths
         namelist_data%exclude_patterns = exclude_patterns
         namelist_data%include_patterns = include_patterns
-        ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+        namelist_data%gcov_executable = gcov_executable
         namelist_data%gcov_args = gcov_args
         namelist_data%minimum_coverage = minimum_coverage
         namelist_data%fail_under_threshold = fail_under_threshold
@@ -228,7 +227,7 @@ contains
             namelist_data%source_paths = ""
             namelist_data%exclude_patterns = ""
             namelist_data%include_patterns = ""
-            ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+            namelist_data%gcov_executable = ""
             namelist_data%gcov_args = ""
             namelist_data%minimum_coverage = -1.0
             namelist_data%fail_under_threshold = -1.0
@@ -269,7 +268,9 @@ contains
             if (len_trim(namelist_data%input_format) > 0) config%input_format = trim(namelist_data%input_format)
             if (len_trim(namelist_data%output_format) > 0) config%output_format = trim(namelist_data%output_format)
             if (len_trim(namelist_data%output_path) > 0) config%output_path = trim(namelist_data%output_path)
-            ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+            if (len_trim(namelist_data%gcov_executable) > 0) then
+                config%gcov_executable = trim(namelist_data%gcov_executable)
+            end if
             if (len_trim(namelist_data%gcov_args) > 0) config%gcov_args = trim(namelist_data%gcov_args)
             if (len_trim(namelist_data%diff_baseline_file) > 0) config%diff_baseline_file = trim(namelist_data%diff_baseline_file)
 
@@ -314,8 +315,8 @@ contains
             config%output_format = trim(value)
         case ("output_path")
             config%output_path = trim(value)
-        case ("gcov_executable")
-            ! SECURITY FIX Issue #963: gcov_executable ignored - shell injection vulnerability
+        case ("gcov_executable", "gcov_cmd")
+            config%gcov_executable = trim(value)
         case ("gcov_args")
             config%gcov_args = trim(value)
         case ("minimum_coverage")
