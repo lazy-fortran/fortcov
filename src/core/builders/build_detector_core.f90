@@ -317,10 +317,10 @@ contains
         integer :: i
 
         do i = 1, size(candidates)
-                if (find_cmake_cache_dir(project_path, candidates(i), &
-                                         build_dir)) then
-                    return
-                end if
+            if (find_cmake_cache_dir(project_path, candidates(i), &
+                                     build_dir)) then
+                return
+            end if
         end do
 
         cache_files = find_files_with_glob(project_path, &
