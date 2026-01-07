@@ -26,6 +26,29 @@ module gcov_generation_utils
 
 contains
 
+    subroutine discover_gcov_or_error(directory, gcov_files, error_ctx)
+        character(len=*), intent(in) :: directory
+        character(len=:), allocatable, intent(out) :: gcov_files(:)
+        type(error_context_t), intent(inout) :: error_ctx
+
+        call discover_gcov_files('.', gcov_files, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            call discover_gcov_files(directory, gcov_files, error_ctx)
+        end if
+
+        if (.not. allocated(gcov_files) .or. size(gcov_files) == 0) then
+            call safe_write_message(error_ctx, &
+                'No .gcov files generated from .gcda files')
+            call safe_write_suggestion(error_ctx, &
+                'Check gcov command output and file permissions')
+            call safe_write_context(error_ctx, 'gcov file generation')
+            error_ctx%error_code = 1
+        else
+            call clear_error_context(error_ctx)
+            error_ctx%error_code = ERROR_SUCCESS
+        end if
+    end subroutine discover_gcov_or_error
+
     logical function should_use_synthetic_gcov() result(use_synthetic_gcov)
         character(len=16) :: env_val
         integer :: env_len, env_stat
@@ -251,25 +274,7 @@ contains
                 return
             end if
 
-            call discover_gcov_files('.', gcov_files, error_ctx)
-            if (error_ctx%error_code /= ERROR_SUCCESS) then
-                call discover_gcov_files(directory, gcov_files, error_ctx)
-            end if
-
-            if (allocated(gcov_files)) then
-                if (size(gcov_files) > 0) then
-                    call clear_error_context(error_ctx)
-                    error_ctx%error_code = ERROR_SUCCESS
-                    return
-                end if
-            end if
-
-            call safe_write_message(error_ctx, &
-                'No .gcov files generated from .gcda files')
-            call safe_write_suggestion(error_ctx, &
-                'Check gcov command output and file permissions')
-            call safe_write_context(error_ctx, 'gcov file generation')
-            error_ctx%error_code = 1
+            call discover_gcov_or_error(directory, gcov_files, error_ctx)
             return
         end if
 
@@ -291,18 +296,6 @@ contains
             return
         end if
 
-        call discover_gcov_files('.', gcov_files, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            call discover_gcov_files(directory, gcov_files, error_ctx)
-        end if
-
-        if (.not. allocated(gcov_files) .or. size(gcov_files) == 0) then
-            call safe_write_message(error_ctx, &
-                'No .gcov files generated from .gcda files')
-            call safe_write_suggestion(error_ctx, &
-                'Check gcov command output and file permissions')
-            call safe_write_context(error_ctx, 'gcov file generation')
-            error_ctx%error_code = 1
-        end if
+        call discover_gcov_or_error(directory, gcov_files, error_ctx)
     end subroutine generate_gcov_files
 end module gcov_generation_utils
