@@ -1,221 +1,221 @@
 module config_defaults_core
     !! Configuration default values and initialization
-    !! 
+    !!
     !! This module provides initialization routines and default values for
     !! configuration settings, extracted from fortcov_config for maintainability.
 
-    use config_types, only: config_t, MAX_ARRAY_SIZE
-    use constants_core
-    use shell_utilities, only: escape_shell_argument
-    use file_processor, only: ensure_output_directory_structure
-    use file_utilities, only: ensure_directory
-    use error_handling_core, only: error_context_t, ERROR_SUCCESS
-    
-    implicit none
-    private
+   use config_types, only: config_t, MAX_ARRAY_SIZE
+   use constants_core
+   use shell_utilities, only: escape_shell_argument
+   use file_processor, only: ensure_output_directory_structure
+   use file_utilities, only: ensure_directory
+   use error_handling_core, only: error_context_t, ERROR_SUCCESS
 
-    public :: initialize_default_config
-    public :: apply_default_output_filename
-    public :: apply_default_output_path_for_coverage_files
-    public :: ensure_zero_config_output_directory
-    public :: get_max_files_from_env
-    public :: handle_zero_configuration_mode
-    public :: apply_legacy_zero_config_defaults
+   implicit none
+   private
+
+   public :: initialize_default_config
+   public :: apply_default_output_filename
+   public :: apply_default_output_path_for_coverage_files
+   public :: ensure_zero_config_output_directory
+   public :: get_max_files_from_env
+   public :: handle_zero_configuration_mode
+   public :: apply_legacy_zero_config_defaults
 
 contains
 
-    subroutine initialize_default_config(config)
+   subroutine initialize_default_config(config)
         !! Initialize configuration with default values
-        type(config_t), intent(out) :: config
+      type(config_t), intent(out) :: config
 
-        integer :: max_files_env
+      integer :: max_files_env
 
-        ! Set default values for all configuration fields
-        config%input_format = "auto"
-        config%output_format = "markdown"
-        config%output_path = ""
-        ! SECURITY FIX Issue #963: gcov_executable REMOVED - shell injection vulnerability  
-        config%minimum_coverage = 0.0
-        config%fail_under_threshold = 0.0
-        config%threads = 1
-        config%verbose = .false.
-        config%quiet = .false.
-        config%show_help = .false.
-        config%show_version = .false.
-        config%validate_config_only = .false.
-        config%config_file = ""
-        config%enable_diff = .false.
-        config%diff_baseline_file = ""
-        config%diff_current_file = ""
-        config%include_unchanged = .false.
-        config%diff_threshold = 0.0
-        config%import_file = ""
-        config%keep_gcov_files = .false.
-        config%gcov_args = ""
-        config%strict_mode = .false.
-        config%zero_configuration_mode = .false.
-        config%auto_discovery = .true.
-        ! Enable auto test execution by default. Fork-bomb prevention is
-        ! handled by argument parsing and workflow guards; tests that could
-        ! recursively trigger fpm are removed from the suite.
-        config%auto_test_execution = .true.
-        config%test_timeout_seconds = 300
-        
+      ! Set default values for all configuration fields
+      config%input_format = "auto"
+      config%output_format = "markdown"
+      config%output_path = ""
+      ! SECURITY FIX Issue #963: gcov_executable REMOVED - shell injection vulnerability
+      config%minimum_coverage = 0.0
+      config%fail_under_threshold = 0.0
+      config%threads = 1
+      config%verbose = .false.
+      config%quiet = .false.
+      config%show_help = .false.
+      config%show_version = .false.
+      config%validate_config_only = .false.
+      config%config_file = ""
+      config%enable_diff = .false.
+      config%diff_baseline_file = ""
+      config%diff_current_file = ""
+      config%include_unchanged = .false.
+      config%diff_threshold = 0.0
+      config%import_file = ""
+      config%keep_gcov_files = .false.
+      config%gcov_args = ""
+      config%gcov_output_dir = "build/gcov"
+      config%strict_mode = .false.
+      config%zero_configuration_mode = .false.
+      config%auto_discovery = .true.
+      ! Enable auto test execution by default. Fork-bomb prevention is
+      ! handled by argument parsing and workflow guards; tests that could
+      ! recursively trigger fpm are removed from the suite.
+      config%auto_test_execution = .true.
+      config%test_timeout_seconds = 300
 
-        ! Get max files from environment, default to 1000
-        call get_max_files_from_env(max_files_env)
-        config%max_files = max_files_env
+      ! Get max files from environment, default to 1000
+      call get_max_files_from_env(max_files_env)
+      config%max_files = max_files_env
 
-    end subroutine initialize_default_config
+   end subroutine initialize_default_config
 
-    subroutine apply_default_output_filename(config)
+   subroutine apply_default_output_filename(config)
         !! Apply default filename when output format is selected without path
-        type(config_t), intent(inout) :: config
+      type(config_t), intent(inout) :: config
 
-        ! Apply default output paths for all formats when not specified
-        if (len_trim(config%output_path) == 0) then
-            ! Only markdown is supported
-            config%output_path = "coverage.md"
-        end if
+      ! Apply default output paths for all formats when not specified
+      if (len_trim(config%output_path) == 0) then
+         ! Only markdown is supported
+         config%output_path = "coverage.md"
+      end if
 
-    end subroutine apply_default_output_filename
+   end subroutine apply_default_output_filename
 
-    subroutine apply_default_output_path_for_coverage_files(config)
+   subroutine apply_default_output_path_for_coverage_files(config)
         !! Apply default output path when processing coverage files directly
-        type(config_t), intent(inout) :: config
+      type(config_t), intent(inout) :: config
 
-        logical :: has_coverage_files
+      logical :: has_coverage_files
 
-        has_coverage_files = allocated(config%coverage_files) .and. &
-                              size(config%coverage_files) > 0
+      has_coverage_files = allocated(config%coverage_files) .and. &
+                           size(config%coverage_files) > 0
 
-        ! Apply default output paths for all formats when not specified
-        if (len_trim(config%output_path) == 0) then
-            ! Only markdown is supported
-            config%output_path = "coverage.md"
-        end if
+      ! Apply default output paths for all formats when not specified
+      if (len_trim(config%output_path) == 0) then
+         ! Only markdown is supported
+         config%output_path = "coverage.md"
+      end if
 
-    end subroutine apply_default_output_path_for_coverage_files
+   end subroutine apply_default_output_path_for_coverage_files
 
-    subroutine ensure_zero_config_output_directory(config)
+   subroutine ensure_zero_config_output_directory(config)
         !! Ensure output directory exists for zero-configuration mode
         !! Uses consolidated secure directory creation utilities
-        type(config_t), intent(inout) :: config
-        type(error_context_t) :: error_ctx
-        logical :: dir_error
-        integer :: last_slash_pos
-        character(len=512) :: directory_path
+      type(config_t), intent(inout) :: config
+      type(error_context_t) :: error_ctx
+      logical :: dir_error
+      integer :: last_slash_pos
+      character(len=512) :: directory_path
 
-        if (config%zero_configuration_mode .and. len_trim(config%output_path) > 0) then
-            call ensure_output_directory_structure(trim(config%output_path), error_ctx)
-            if (error_ctx%error_code /= ERROR_SUCCESS) then
-                ! Fallback: attempt direct directory creation
-                last_slash_pos = index(config%output_path, '/', back=.true.)
-                if (last_slash_pos > 0) then
-                    directory_path = config%output_path(1:last_slash_pos-1)
-                else
-                    directory_path = '.'
-                end if
-                ! Attempt direct creation of the directory path
-                call ensure_directory(trim(directory_path), dir_error)
-                if (dir_error) then
-                    ! Fallback failed: warn user
-                    write(*,'(A)') "Warning: Failed to create output directory: " // trim(directory_path)
-                    write(*,'(A)') "Please ensure the directory is writable or create it manually"
-                else
-                    ! Fallback succeeded: clear error
-                    error_ctx%error_code = ERROR_SUCCESS
-                end if
+      if (config%zero_configuration_mode .and. len_trim(config%output_path) > 0) then
+         call ensure_output_directory_structure(trim(config%output_path), error_ctx)
+         if (error_ctx%error_code /= ERROR_SUCCESS) then
+            ! Fallback: attempt direct directory creation
+            last_slash_pos = index(config%output_path, '/', back=.true.)
+            if (last_slash_pos > 0) then
+               directory_path = config%output_path(1:last_slash_pos - 1)
+            else
+               directory_path = '.'
             end if
-        end if
+            ! Attempt direct creation of the directory path
+            call ensure_directory(trim(directory_path), dir_error)
+            if (dir_error) then
+               ! Fallback failed: warn user
+               write (*, '(A)') "Warning: Failed to create output directory: "//trim(directory_path)
+               write (*, '(A)') "Please ensure the directory is writable or create it manually"
+            else
+               ! Fallback succeeded: clear error
+               error_ctx%error_code = ERROR_SUCCESS
+            end if
+         end if
+      end if
 
-    end subroutine ensure_zero_config_output_directory
+   end subroutine ensure_zero_config_output_directory
 
-    subroutine get_max_files_from_env(max_files)
+   subroutine get_max_files_from_env(max_files)
         !! Get max files limit from environment variable
-        integer, intent(out) :: max_files
+      integer, intent(out) :: max_files
 
-        character(len=256) :: env_value
-        integer :: status, io_stat
+      character(len=256) :: env_value
+      integer :: status, io_stat
 
-        ! Default value
-        max_files = 1000
+      ! Default value
+      max_files = 1000
 
-        ! Try to get from environment
-        call get_environment_variable("FORTCOV_MAX_FILES", env_value, status=status)
-        
-        if (status == 0 .and. len_trim(env_value) > 0) then
-            read(env_value, *, iostat=io_stat) max_files
-            if (io_stat /= 0) then
-                max_files = 1000  ! Fall back to default on parse error
-            else if (max_files <= 0) then
-                max_files = 1000  ! Ensure positive value
-            end if
-        end if
+      ! Try to get from environment
+      call get_environment_variable("FORTCOV_MAX_FILES", env_value, status=status)
 
-    end subroutine get_max_files_from_env
+      if (status == 0 .and. len_trim(env_value) > 0) then
+         read (env_value, *, iostat=io_stat) max_files
+         if (io_stat /= 0) then
+            max_files = 1000  ! Fall back to default on parse error
+         else if (max_files <= 0) then
+            max_files = 1000  ! Ensure positive value
+         end if
+      end if
 
-    subroutine handle_zero_configuration_mode(config)
+   end subroutine get_max_files_from_env
+
+   subroutine handle_zero_configuration_mode(config)
         !! Apply zero-configuration defaults (basic mode)
-        !! Enhanced auto-discovery integration is applied separately to avoid 
+        !! Enhanced auto-discovery integration is applied separately to avoid
         !! circular dependencies (Issue #281)
-        type(config_t), intent(inout) :: config
+      type(config_t), intent(inout) :: config
 
-        ! Mark as zero-configuration mode
-        config%zero_configuration_mode = .true.
+      ! Mark as zero-configuration mode
+      config%zero_configuration_mode = .true.
 
-        ! Apply zero-config defaults
-        call apply_legacy_zero_config_defaults(config)
+      ! Apply zero-config defaults
+      call apply_legacy_zero_config_defaults(config)
 
-        ! NOTE: Enhanced auto-discovery integration (Issue #281) is now 
-        ! applied separately from the main application entry point to 
-        ! avoid circular module dependencies
+      ! NOTE: Enhanced auto-discovery integration (Issue #281) is now
+      ! applied separately from the main application entry point to
+      ! avoid circular module dependencies
 
-    end subroutine handle_zero_configuration_mode
+   end subroutine handle_zero_configuration_mode
 
-    subroutine apply_legacy_zero_config_defaults(config)
+   subroutine apply_legacy_zero_config_defaults(config)
         !! Apply legacy zero-configuration defaults (preserved for compatibility)
-        type(config_t), intent(inout) :: config
-        
-        logical :: has_source_paths
-        integer :: stat
-        character(len=512) :: errmsg
+      type(config_t), intent(inout) :: config
 
-        ! Check if source paths are already set
-        has_source_paths = allocated(config%source_paths) .and. &
-                           size(config%source_paths) > 0
+      logical :: has_source_paths
+      integer :: stat
+      character(len=512) :: errmsg
 
-        ! Only set defaults for values not already set by CLI flags
-        if (.not. has_source_paths) then
-            ! Use current directory if no source paths specified
-            if (allocated(config%source_paths)) deallocate(config%source_paths)
-            allocate(character(len=1) :: config%source_paths(1), &
-                stat=stat, errmsg=errmsg)
-            if (stat /= 0) then
-                write(*, '(A)') "Error: Memory allocation failed for source_paths: " // &
-                    trim(errmsg)
-                return
-            end if
-            config%source_paths(1) = "."
-        end if
+      ! Check if source paths are already set
+      has_source_paths = allocated(config%source_paths) .and. &
+                         size(config%source_paths) > 0
 
-        ! Markdown is the only supported output format
+      ! Only set defaults for values not already set by CLI flags
+      if (.not. has_source_paths) then
+         ! Use current directory if no source paths specified
+         if (allocated(config%source_paths)) deallocate (config%source_paths)
+         allocate (character(len=1) :: config%source_paths(1), &
+                   stat=stat, errmsg=errmsg)
+         if (stat /= 0) then
+            write (*, '(A)') "Error: Memory allocation failed for source_paths: "// &
+               trim(errmsg)
+            return
+         end if
+         config%source_paths(1) = "."
+      end if
 
-        ! Set default output path if not set
-        if (len_trim(config%output_path) == 0) then
-            config%output_path = "build/coverage/coverage.md"
-        end if
+      ! Markdown is the only supported output format
 
-        ! Use auto-discovery for input format
-        if (config%input_format == "auto") then
-            config%input_format = "auto"
-        end if
+      ! Set default output path if not set
+      if (len_trim(config%output_path) == 0) then
+         config%output_path = "build/coverage/coverage.md"
+      end if
 
-        ! SECURITY FIX Issue #963: gcov_executable auto-discovery REMOVED
-        ! Native .gcov file parsing eliminates need for gcov executable
+      ! Use auto-discovery for input format
+      if (config%input_format == "auto") then
+         config%input_format = "auto"
+      end if
 
-    end subroutine apply_legacy_zero_config_defaults
-    
-    ! Legacy create_secure_config_directory removed.
+      ! SECURITY FIX Issue #963: gcov_executable auto-discovery REMOVED
+      ! Native .gcov file parsing eliminates need for gcov executable
+
+   end subroutine apply_legacy_zero_config_defaults
+
+   ! Legacy create_secure_config_directory removed.
 
 end module config_defaults_core
