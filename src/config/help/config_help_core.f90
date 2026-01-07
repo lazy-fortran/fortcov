@@ -20,7 +20,9 @@ contains
         print '(A)', "Usage: fortcov [OPTIONS] [COVERAGE_FILES...]"
         print '(A)', ""
         print '(A)', "Note: FortCov analyzes existing .gcov files by default."
-        print '(A)', "      Use --gcov (alias: --discover-and-gcov) to auto-discover builds and run gcov."
+        print '(A)', &
+            "      Use --gcov (alias: --discover-and-gcov) to auto-discover " // &
+            "builds and run gcov."
         print '(A)', ""
         print '(A)', "Options:"
         print '(A)', "  -h, --help                Show this help and exit"
@@ -32,24 +34,30 @@ contains
         print '(A)', "  -s, --source PATH         Add source directory or file"
         print '(A)', ""
         print '(A)', "Output:"
-        print '(A)', "  -o, --output PATH         Output Markdown file (default: coverage.md)"
+        print '(A)', "  -o, --output PATH         Output Markdown file (default: " // &
+            "coverage.md)"
         print '(A)', "  -f, --format FORMAT       Only 'markdown' is supported"
         print '(A)', ""
         print '(A)', "Coverage:"
-        print '(A)', "  --fail-under PERCENT      Exit non-zero if coverage below PERCENT"
+        print '(A)', "  --fail-under PERCENT      Exit non-zero if coverage below " // &
+            "PERCENT"
         print '(A)', ""
         print '(A)', "Automation:"
-        print '(A)', "  --gcov                    Auto-discover builds and run gcov before analysis"
+        print '(A)', &
+            "  --gcov                    Auto-discover builds and run gcov " // &
+            "before analysis"
         print '(A)', "                             (alias: --discover-and-gcov)"
         print '(A)', ""
         print '(A)', "Environment:"
-        print '(A)', "  FORTCOV_USE_REAL_GCOV=0   Force synthetic gcov output for tests"
+        print '(A)', "  FORTCOV_USE_REAL_GCOV=0   Force synthetic gcov output for " // &
+            "tests"
         print '(A)', ""
         print '(A)', "Examples:"
         print '(A)', "  fortcov --source=src *.gcov --output=report.md"
         print '(A)', "  fortcov --gcov --fail-under 80"
         print '(A)', ""
-        print '(A)', "For more information, visit: https://github.com/lazy-fortran/fortcov"
+        print '(A)', "For more information, visit: https://github.com/" // &
+            "lazy-fortran/fortcov"
 
     end subroutine show_help_information
 

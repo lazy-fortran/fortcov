@@ -11,8 +11,9 @@ module gcov_generation_utils
     !! - Generated .gcov file discovery and validation
     !! - Comprehensive error handling and context reporting
 
-    use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context, &
-                              safe_write_message, safe_write_suggestion, safe_write_context
+    use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
+        clear_error_context, safe_write_message, safe_write_suggestion, &
+        safe_write_context
     ! SECURITY FIX Issue #963: safe_execute_gcov removed - shell injection vulnerability
     use config_types, only: config_t
     use gcov_file_discovery, only: discover_gcov_files
@@ -56,7 +57,8 @@ contains
         env_len  = 0
         env_stat = 1
         use_real_gcov = .true.
-        call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, env_len, env_stat)
+        call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, env_len, &
+            env_stat)
         if (env_stat == 0 .and. env_len > 0) then
             if (env_val(1:1) == '0' .or. env_val(1:1) == 'N' .or. &
                 env_val(1:1) == 'n' .or. env_val(1:1) == 'F' .or. &
@@ -77,8 +79,10 @@ contains
                 gcno_file = trim(gcda_base) // '.gcno'
                 inquire(file=trim(gcno_file), exist=gcno_exists)
                 if (.not. gcno_exists) then
-                    call safe_write_message(error_ctx, 'Missing .gcno file for: ' // trim(gcda_files(i)))
-                    call safe_write_suggestion(error_ctx, 'Ensure tests were compiled with coverage flags')
+                    call safe_write_message(error_ctx, 'Missing .gcno file for: ' // &
+                        trim(gcda_files(i)))
+                    call safe_write_suggestion(error_ctx, &
+                        'Ensure tests were compiled with coverage flags')
                     call safe_write_context(error_ctx, 'gcov file generation')
                     error_ctx%error_code = 1
                     return
@@ -97,8 +101,10 @@ contains
                 end if
 
                 ! Validate paths to avoid unsafe shell execution
-                if (.not. is_safe_path(out_dir) .or. .not. is_safe_path(gcno_file)) then
-                    call safe_write_message(error_ctx, 'Unsafe characters in paths; refusing to run gcov')
+                if (.not. is_safe_path(out_dir) .or. &
+                    .not. is_safe_path(gcno_file)) then
+                    call safe_write_message(error_ctx, &
+                        'Unsafe characters in paths; refusing to run gcov')
                     call safe_write_context(error_ctx, 'gcov file generation')
                     error_ctx%error_code = 1
                     return
@@ -109,7 +115,8 @@ contains
                       ' ' // trim(gcno_file)
                 call secure_execute_command(cmd, cmd_exit)
                 if (cmd_exit /= 0) then
-                    call safe_write_message(error_ctx, 'gcov execution failed for: ' // trim(gcno_file))
+                    call safe_write_message(error_ctx, &
+                        'gcov execution failed for: ' // trim(gcno_file))
                     call safe_write_context(error_ctx, 'gcov file generation')
                     error_ctx%error_code = cmd_exit
                     return
@@ -171,7 +178,8 @@ contains
                 base_name = base_name(1:len_trim(base_name)-5)
             end if
             gcov_path = trim(out_dir) // '/' // trim(base_name) // '.f90.gcov'
-            open(newunit=u, file=gcov_path, status='replace', action='write', iostat=ios)
+            open(newunit=u, file=gcov_path, status='replace', action='write', &
+                iostat=ios)
             if (ios == 0) then
                 write(u,'(A)') '        -:    0:Source:' // trim(base_name) // '.f90'
                 write(u,'(A)') '        -:    1:module ' // trim(base_name)
@@ -195,7 +203,8 @@ contains
             return
         end if
 
-        ! Fallback: discover generated .gcov files in current directory and subdirectories
+        ! Fallback: discover generated .gcov files in current directory
+        ! and subdirectories
         call discover_gcov_files('.', gcov_files, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             ! Try searching more broadly
