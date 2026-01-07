@@ -50,15 +50,21 @@ contains
         ! SECURITY: Use hardcoded 'gcov' command - no user configuration
         gcov_exec = 'gcov'
 
-        ! Feature flag: allow using real gcov when explicitly requested.
-        ! By default, we synthesize .gcov files to keep tests deterministic.
+        ! Feature flag: allow forcing synthetic gcov output for tests.
+        ! By default, use real gcov for meaningful coverage data.
         env_val  = ''
         env_len  = 0
         env_stat = 1
-        use_real_gcov = .false.
+        use_real_gcov = .true.
         call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, env_len, env_stat)
         if (env_stat == 0 .and. env_len > 0) then
-            if (env_val(1:1) == '1' .or. env_val(1:1) == 'Y' .or. env_val(1:1) == 'y') then
+            if (env_val(1:1) == '0' .or. env_val(1:1) == 'N' .or. &
+                env_val(1:1) == 'n' .or. env_val(1:1) == 'F' .or. &
+                env_val(1:1) == 'f') then
+                use_real_gcov = .false.
+            else if (env_val(1:1) == '1' .or. env_val(1:1) == 'Y' .or. &
+                     env_val(1:1) == 'y' .or. env_val(1:1) == 'T' .or. &
+                     env_val(1:1) == 't') then
                 use_real_gcov = .true.
             end if
         end if
