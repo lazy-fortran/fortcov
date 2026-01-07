@@ -25,8 +25,11 @@ sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /u
 
 ## Quick Start
 
-FortCov, by default, analyzes existing `.gcov` files and does not invoke
-`gcov` or run your tests. Use one of the following flows:
+FortCov analyzes existing `.gcov` files by default. In zero-config mode
+(no arguments), it also runs your build-system tests unless you pass
+`--no-auto-test`. FortCov does not add coverage flags, so you still need
+to build or test with coverage instrumentation. Use one of the following
+flows:
 
 - Manual `.gcov` flow (explicit control)
 - Auto-discovery + gcov bridge (`--gcov`)
@@ -68,12 +71,16 @@ fortcov --source=src *.gcov --output=coverage.md
 
 ### Auto-Discovery + gcov (single command)
 
-If you want FortCov to auto-discover FPM/CMake build dirs, run tests under
-coverage, and generate `.gcov` before analysis, use the built‑in bridge:
+If you want FortCov to auto-discover FPM/CMake build dirs, run tests (unless
+disabled), and generate `.gcov` before analysis, use the built‑in bridge:
 
 ```bash
 fortcov --gcov   # alias: --discover-and-gcov
 ```
+
+Ensure your tests or builds use coverage flags (for example,
+`fpm test --flag "-fprofile-arcs -ftest-coverage"`), or gcov will have no
+coverage data to process.
 
 Outputs by default:
 - `.gcov` files in the working directory
@@ -83,7 +90,7 @@ Outputs by default:
 
 ```bash
 set -e
-# Single-command CI-friendly execution (auto FPM + gcov + report)
+# Single-command CI-friendly execution (auto test + gcov + report)
 fortcov --gcov --fail-under 80 --quiet
 ```
 
