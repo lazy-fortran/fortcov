@@ -47,6 +47,25 @@ fortcov --source=src *.gcov --output=coverage.md
 Note: The file `coverage.md` (default `build/coverage/coverage.md` in
 auto mode with `--gcov`) contains a project summary and per-file stats.
 
+## CMake Quick Start (Out-of-Source)
+
+If you build with CMake, you can generate coverage in a separate build
+directory and feed `.gcov` files to FortCov:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug \
+  -DCMAKE_Fortran_FLAGS="-fprofile-arcs -ftest-coverage" \
+  -DCMAKE_EXE_LINKER_FLAGS="--coverage"
+cmake --build build
+ctest --test-dir build
+
+find build -name "*.gcda" | xargs dirname | sort -u | while read d; do
+  gcov --object-directory="$d" "$d"/*.gcno 2>/dev/null || true
+done
+
+fortcov --source=src *.gcov --output=coverage.md
+```
+
 ### Auto-Discovery + gcov (single command)
 
 If you want FortCov to auto-discover FPM/CMake build dirs, run tests under
