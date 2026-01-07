@@ -113,6 +113,7 @@ debug_*
 
 # Test output directory (system test artifacts)
 test_outputs/
+engine_test_tmp/
 
 # Temporary test executables and analysis files
 acceptance_test_*
