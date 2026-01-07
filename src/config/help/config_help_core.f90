@@ -44,6 +44,9 @@ contains
          "(default: build/gcov)"
       print '(A)', ""
       print '(A)', "Automation:"
+      print '(A)', "  --auto-test               Run build-system tests automatically"
+      print '(A)', "                             (default in zero-config mode)"
+      print '(A)', "  --no-auto-test            Skip automatic test execution"
       print '(A)', &
          "  --gcov                    Auto-discover builds and run gcov "// &
          "before analysis"
