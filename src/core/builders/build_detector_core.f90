@@ -332,6 +332,16 @@ contains
                 end if
             end do
         end if
+
+        cache_files = find_files_with_glob(project_path, '**/CMakeCache.txt')
+        if (allocated(cache_files)) then
+            do i = 1, size(cache_files)
+                if (len_trim(cache_files(i)) > 0) then
+                    build_dir = extract_parent_dir(cache_files(i))
+                    if (allocated(build_dir)) return
+                end if
+            end do
+        end if
     end function detect_cmake_build_dir
 
     logical function find_cmake_cache_dir(project_path, candidate, build_dir)
