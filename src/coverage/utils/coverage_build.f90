@@ -68,7 +68,7 @@ contains
         case ('fpm')
             command = get_fpm_coverage_command(config)
         case ('cmake')
-            command = get_cmake_coverage_command(config)
+            command = get_cmake_coverage_command(build_info, config)
         case ('make')
             command = get_make_coverage_command(config)
         case ('meson')
@@ -90,15 +90,31 @@ contains
 
     end function get_fpm_coverage_command
 
-    function get_cmake_coverage_command(config) result(command)
+    function get_cmake_coverage_command(build_info, config) result(command)
         !! Generate CMake build command with coverage flags
+        type(build_system_info_t), intent(in) :: build_info
         type(config_t), intent(in) :: config
         character(len=:), allocatable :: command
         character(len=2), parameter :: shell_and = achar(38)//achar(38)
+        character(len=*), parameter :: coverage_flags = &
+            '-fprofile-arcs -ftest-coverage'
+        character(len=:), allocatable :: build_dir
+        character(len=:), allocatable :: configure_flags
 
-        ! Configure then build with coverage enabled (out-of-source default).
-        command = 'cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug '// &
-                  '-DENABLE_COVERAGE=ON '//shell_and//' cmake --build build'
+        build_dir = 'build'
+        if (len_trim(build_info%cmake_build_dir) > 0) then
+            build_dir = trim(build_info%cmake_build_dir)
+        end if
+
+        configure_flags = '-DCMAKE_BUILD_TYPE=Debug '// &
+            '-DCMAKE_C_FLAGS="'//coverage_flags//'" '// &
+            '-DCMAKE_CXX_FLAGS="'//coverage_flags//'" '// &
+            '-DCMAKE_Fortran_FLAGS="'//coverage_flags//'" '// &
+            '-DENABLE_COVERAGE=ON'
+
+        command = 'cmake -S . -B '//trim(build_dir)//' '// &
+                  trim(configure_flags)//' '//shell_and// &
+                  ' cmake --build '//trim(build_dir)
 
         ! Add parallel build if supported
         command = command//' --parallel'

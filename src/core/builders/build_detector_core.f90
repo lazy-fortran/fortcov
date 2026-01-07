@@ -14,7 +14,7 @@ module build_detector_core
     use iso_fortran_env, only: error_unit
     use error_handling_core
     use path_security, only: validate_executable_path, validate_path_security
-    use file_utilities, only: file_exists
+    use file_utilities, only: file_exists, find_files_with_glob
     use string_utils, only: trim_string
     implicit none
     private
@@ -22,8 +22,9 @@ module build_detector_core
     ! Build system type definition
     type :: build_system_info_t
         character(len=20) :: system_type = 'unknown'
-        character(len=256) :: test_command = ''
+        character(len=512) :: test_command = ''
         character(len=256) :: build_file = ''
+        character(len=256) :: cmake_build_dir = ''
         logical :: tool_available = .false.
     end type build_system_info_t
     
@@ -104,6 +105,7 @@ contains
         build_info%system_type = 'unknown'
         build_info%test_command = ''
         build_info%build_file = ''
+        build_info%cmake_build_dir = ''
         build_info%tool_available = .false.
         
         ! Check for FPM (highest priority)
@@ -116,7 +118,7 @@ contains
         ! Check for CMake  
         call construct_marker_path(safe_path, CMAKE_MARKER, marker_path)
         if (file_exists(marker_path)) then
-            call configure_cmake_system(build_info, error_ctx)
+            call configure_cmake_system(build_info, error_ctx, safe_path)
             if (error_ctx%error_code == ERROR_SUCCESS) return
         end if
         
@@ -142,28 +144,28 @@ contains
         
     end subroutine detect_build_system
 
-    subroutine get_coverage_test_command(system_type, command, error_ctx)
+    subroutine get_coverage_test_command(build_info, command, error_ctx)
         !! Generate coverage-enabled test command for build system
         !!
         !! Returns the appropriate test command with coverage flags
         !! enabled for the specified build system type.
         !!
         !! Args:
-        !!   system_type: Build system type ('fpm', 'cmake', etc.)
+        !!   build_info: Build system information
         !!   command: Generated test command with coverage flags
         !!   error_ctx: Error context for unsupported systems
         
-        character(len=*), intent(in) :: system_type
+        type(build_system_info_t), intent(in) :: build_info
         character(len=*), intent(out) :: command
         type(error_context_t), intent(out) :: error_ctx
         
         call clear_error_context(error_ctx)
         
-        select case (trim(system_type))
+        select case (trim(build_info%system_type))
         case ('fpm')
             command = 'fpm test --flag "-fprofile-arcs -ftest-coverage"'
-        case ('cmake')  
-            command = 'cmake --build . && ctest'
+        case ('cmake')
+            command = build_cmake_test_command(build_info%cmake_build_dir)
         case ('make')
             command = 'make test'
         case ('meson')
@@ -176,7 +178,7 @@ contains
         case default
             error_ctx%error_code = ERROR_INVALID_PATH
             error_ctx%message = 'Unsupported build system: ' // &
-                               trim(system_type)
+                               trim(build_info%system_type)
             command = ''
         end select
         
@@ -226,16 +228,23 @@ contains
         
     end subroutine configure_fpm_system
 
-    subroutine configure_cmake_system(build_info, error_ctx)
+    subroutine configure_cmake_system(build_info, error_ctx, project_path)
         !! Configure build_info for CMake build system  
         type(build_system_info_t), intent(out) :: build_info
         type(error_context_t), intent(out) :: error_ctx
+        character(len=*), intent(in) :: project_path
+        character(len=:), allocatable :: detected_build_dir
         
         call clear_error_context(error_ctx)
         
         build_info%system_type = 'cmake'
         build_info%build_file = CMAKE_MARKER
-        build_info%test_command = 'cmake --build . && ctest'
+        detected_build_dir = detect_cmake_build_dir(project_path)
+        if (allocated(detected_build_dir)) then
+            build_info%cmake_build_dir = detected_build_dir
+        end if
+        build_info%test_command = build_cmake_test_command( &
+            build_info%cmake_build_dir)
         build_info%tool_available = validate_build_tool_available(CMAKE_TOOL)
         
     end subroutine configure_cmake_system
@@ -295,5 +304,102 @@ contains
         end if
         
     end subroutine construct_marker_path
+
+    function detect_cmake_build_dir(project_path) result(build_dir)
+        character(len=*), intent(in) :: project_path
+        character(len=:), allocatable :: build_dir
+        character(len=:), allocatable :: cache_files(:)
+        character(len=512) :: cache_path
+        character(len=512) :: candidate_dir
+        character(len=512) :: candidate_cache
+        integer :: i
+
+        call construct_marker_path(project_path, 'build', candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            return
+        end if
+
+        call construct_marker_path(project_path, '_build', candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            return
+        end if
+
+        call construct_marker_path(project_path, 'cmake-build-debug', &
+                                   candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            return
+        end if
+
+        call construct_marker_path(project_path, 'cmake-build-release', &
+                                   candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            return
+        end if
+
+        call construct_marker_path(project_path, 'cmake-build-relwithdebinfo', &
+                                   candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            return
+        end if
+
+        call construct_marker_path(project_path, 'cmake-build-minsizerel', &
+                                   candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            return
+        end if
+
+        cache_files = find_files_with_glob(project_path, &
+                                           'cmake-build-*/CMakeCache.txt')
+        if (allocated(cache_files)) then
+            do i = 1, size(cache_files)
+                if (len_trim(cache_files(i)) > 0) then
+                    build_dir = extract_parent_dir(cache_files(i))
+                    if (allocated(build_dir)) return
+                end if
+            end do
+        end if
+    end function detect_cmake_build_dir
+
+    function extract_parent_dir(path) result(parent_dir)
+        character(len=*), intent(in) :: path
+        character(len=:), allocatable :: parent_dir
+        integer :: last_sep
+
+        last_sep = index(path, '/', back=.true.)
+        if (last_sep > 0) then
+            parent_dir = path(1:last_sep-1)
+        end if
+    end function extract_parent_dir
+
+    function build_cmake_test_command(build_dir) result(command)
+        character(len=*), intent(in) :: build_dir
+        character(len=:), allocatable :: command
+        character(len=2), parameter :: shell_and = achar(38)//achar(38)
+
+        if (len_trim(build_dir) > 0) then
+            command = 'cmake --build '//trim(build_dir)//' '//shell_and// &
+                      ' ctest --test-dir '//trim(build_dir)
+        else
+            command = 'cmake --build . '//shell_and//' ctest'
+        end if
+    end function build_cmake_test_command
 
 end module build_detector_core
