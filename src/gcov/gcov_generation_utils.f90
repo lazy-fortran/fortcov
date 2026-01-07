@@ -26,37 +26,12 @@ module gcov_generation_utils
 
 contains
 
-    subroutine generate_gcov_files(directory, gcda_files, config, gcov_files, error_ctx)
-        !! Generate .gcov files from .gcda files using gcov executable
-        character(len=*), intent(in) :: directory
-        character(len=*), intent(in) :: gcda_files(:)
-        type(config_t), intent(in) :: config
-        character(len=:), allocatable, intent(out) :: gcov_files(:)
-        type(error_context_t), intent(out) :: error_ctx
-
-        integer :: i
-        character(len=256) :: gcno_file, gcda_base, gcov_exec
-        logical :: gcno_exists
-        integer :: last_slash, u, ios
-        character(len=512) :: out_dir, base_name, gcov_path
-        character(len=512) :: created_files(512)
-        integer :: created_count
+    logical function should_use_real_gcov() result(use_real_gcov)
         character(len=16) :: env_val
         integer :: env_len, env_stat
-        logical :: use_real_gcov
-        character(len=:), allocatable :: cmd
-        character(len=:), allocatable :: escaped_out_dir, escaped_gcno_file
-        integer :: cmd_exit
 
-        call clear_error_context(error_ctx)
-
-        ! SECURITY: Use hardcoded gcov command - no user configuration
-        gcov_exec = 'gcov'
-
-        ! Feature flag: allow forcing synthetic gcov output for tests.
-        ! By default, use real gcov for meaningful coverage data.
-        env_val  = ''
-        env_len  = 0
+        env_val = ''
+        env_len = 0
         env_stat = 1
         use_real_gcov = .true.
         call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, env_len, &
@@ -72,59 +47,181 @@ contains
                 use_real_gcov = .true.
             end if
         end if
+    end function should_use_real_gcov
+
+    subroutine derive_paths(gcda_file, gcno_file, out_dir, base_name)
+        character(len=*), intent(in) :: gcda_file
+        character(len=256), intent(out) :: gcno_file
+        character(len=512), intent(out) :: out_dir, base_name
+
+        character(len=256) :: gcda_base
+        integer :: last_slash
+
+        gcda_base = gcda_file(1:index(gcda_file, '.gcda') - 1)
+        gcno_file = trim(gcda_base) // '.gcno'
+
+        last_slash = index(gcda_file, '/', back=.true.)
+        if (last_slash > 0) then
+            out_dir = gcda_file(1:last_slash-1)
+            base_name = gcda_file(last_slash+1:len_trim(gcda_file))
+        else
+            out_dir = '.'
+            base_name = gcda_file(1:len_trim(gcda_file))
+        end if
+
+        if (len_trim(base_name) > 5) then
+            base_name = base_name(1:len_trim(base_name)-5)
+        end if
+    end subroutine derive_paths
+
+    subroutine ensure_gcno_exists(gcda_file, gcno_file, error_ctx, ok)
+        character(len=*), intent(in) :: gcda_file
+        character(len=*), intent(in) :: gcno_file
+        type(error_context_t), intent(inout) :: error_ctx
+        logical, intent(out) :: ok
+        logical :: gcno_exists
+
+        inquire(file=trim(gcno_file), exist=gcno_exists)
+        if (.not. gcno_exists) then
+            call safe_write_message(error_ctx, 'Missing .gcno file for: ' // &
+                trim(gcda_file))
+            call safe_write_suggestion(error_ctx, &
+                'Ensure tests were compiled with coverage flags')
+            call safe_write_context(error_ctx, 'gcov file generation')
+            error_ctx%error_code = 1
+            ok = .false.
+            return
+        end if
+
+        ok = .true.
+    end subroutine ensure_gcno_exists
+
+    subroutine record_created_file(gcov_path, created_files, created_count)
+        character(len=*), intent(in) :: gcov_path
+        character(len=*), intent(inout) :: created_files(:)
+        integer, intent(inout) :: created_count
+
+        if (created_count < size(created_files)) then
+            created_count = created_count + 1
+            created_files(created_count) = gcov_path
+        end if
+    end subroutine record_created_file
+
+    subroutine run_real_gcov(gcda_file, gcno_file, out_dir, base_name, gcov_exec, &
+        created_files, created_count, error_ctx, ok)
+        character(len=*), intent(in) :: gcda_file
+        character(len=*), intent(in) :: gcno_file
+        character(len=*), intent(in) :: out_dir
+        character(len=*), intent(in) :: base_name
+        character(len=*), intent(in) :: gcov_exec
+        character(len=*), intent(inout) :: created_files(:)
+        integer, intent(inout) :: created_count
+        type(error_context_t), intent(inout) :: error_ctx
+        logical, intent(out) :: ok
+
+        character(len=512) :: gcov_path
+        character(len=:), allocatable :: cmd
+        character(len=:), allocatable :: escaped_out_dir, escaped_gcno_file
+        logical :: gcov_exists
+        integer :: cmd_exit
+
+        escaped_out_dir = escape_shell_argument(trim(out_dir))
+        escaped_gcno_file = escape_shell_argument(trim(gcno_file))
+
+        cmd = trim(gcov_exec)//' --object-directory='// &
+            trim(escaped_out_dir)//' ' // trim(escaped_gcno_file)
+        call secure_execute_command(cmd, cmd_exit)
+        if (cmd_exit /= 0) then
+            call safe_write_message(error_ctx, &
+                'gcov execution failed for: ' // trim(gcno_file))
+            call safe_write_context(error_ctx, 'gcov file generation')
+            error_ctx%error_code = cmd_exit
+            ok = .false.
+            return
+        end if
+
+        gcov_path = trim(out_dir) // '/' // trim(base_name) // '.f90.gcov'
+        inquire(file=trim(gcov_path), exist=gcov_exists)
+        if (gcov_exists) then
+            call record_created_file(gcov_path, created_files, created_count)
+        end if
+
+        ok = .true.
+    end subroutine run_real_gcov
+
+    subroutine synthesize_gcov_file(gcda_file, gcno_file, out_dir, base_name, &
+        created_files, created_count, error_ctx, ok)
+        character(len=*), intent(in) :: gcda_file
+        character(len=*), intent(in) :: gcno_file
+        character(len=*), intent(in) :: out_dir
+        character(len=*), intent(in) :: base_name
+        character(len=*), intent(inout) :: created_files(:)
+        integer, intent(inout) :: created_count
+        type(error_context_t), intent(inout) :: error_ctx
+        logical, intent(out) :: ok
+
+        character(len=512) :: gcov_path
+        integer :: ios, u
+
+        call ensure_gcno_exists(gcda_file, gcno_file, error_ctx, ok)
+        if (.not. ok) then
+            return
+        end if
+
+        gcov_path = trim(out_dir) // '/' // trim(base_name) // '.f90.gcov'
+        open(newunit=u, file=gcov_path, status='replace', action='write', &
+            iostat=ios)
+        if (ios == 0) then
+            write(u,'(A)') '        -:    0:Source:' // trim(base_name) // '.f90'
+            write(u,'(A)') '        -:    1:module ' // trim(base_name)
+            write(u,'(A)') '        1:    2:  implicit none'
+            write(u,'(A)') '        -:    3:end module'
+            close(u)
+            call record_created_file(gcov_path, created_files, created_count)
+        end if
+
+        ok = .true.
+    end subroutine synthesize_gcov_file
+
+    subroutine generate_gcov_files(directory, gcda_files, config, gcov_files, error_ctx)
+        !! Generate .gcov files from .gcda files using gcov executable
+        character(len=*), intent(in) :: directory
+        character(len=*), intent(in) :: gcda_files(:)
+        type(config_t), intent(in) :: config
+        character(len=:), allocatable, intent(out) :: gcov_files(:)
+        type(error_context_t), intent(out) :: error_ctx
+
+        integer :: i
+        character(len=256) :: gcno_file, gcov_exec
+        character(len=512) :: out_dir, base_name
+        character(len=512) :: created_files(512)
+        integer :: created_count
+        logical :: use_real_gcov
+        logical :: ok
+
+        call clear_error_context(error_ctx)
+
+        ! SECURITY: Use hardcoded gcov command - no user configuration
+        gcov_exec = 'gcov'
+
+        ! Feature flag: allow forcing synthetic gcov output for tests.
+        ! By default, use real gcov for meaningful coverage data.
+        use_real_gcov = should_use_real_gcov()
 
         if (use_real_gcov) then
             ! Attempt to invoke real gcov; do not synthesize files in this mode.
             created_count = 0
             do i = 1, size(gcda_files)
-                gcda_base = gcda_files(i)(1:index(gcda_files(i), '.gcda') - 1)
-                gcno_file = trim(gcda_base) // '.gcno'
-                inquire(file=trim(gcno_file), exist=gcno_exists)
-                if (.not. gcno_exists) then
-                    call safe_write_message(error_ctx, 'Missing .gcno file for: ' // &
-                        trim(gcda_files(i)))
-                    call safe_write_suggestion(error_ctx, &
-                        'Ensure tests were compiled with coverage flags')
-                    call safe_write_context(error_ctx, 'gcov file generation')
-                    error_ctx%error_code = 1
+                call derive_paths(gcda_files(i), gcno_file, out_dir, base_name)
+                call ensure_gcno_exists(gcda_files(i), gcno_file, error_ctx, ok)
+                if (.not. ok) then
                     return
                 end if
 
-                last_slash = index(gcda_files(i), '/', back=.true.)
-                if (last_slash > 0) then
-                    out_dir   = gcda_files(i)(1:last_slash-1)
-                    base_name = gcda_files(i)(last_slash+1:len_trim(gcda_files(i)))
-                else
-                    out_dir   = '.'
-                    base_name = gcda_files(i)(1:len_trim(gcda_files(i)))
-                end if
-                if (len_trim(base_name) > 5) then
-                    base_name = base_name(1:len_trim(base_name)-5)
-                end if
-
-                escaped_out_dir = escape_shell_argument(trim(out_dir))
-                escaped_gcno_file = escape_shell_argument(trim(gcno_file))
-
-                ! Run: gcov --object-directory=out_dir gcno_file
-                cmd = trim(gcov_exec)//' --object-directory='// &
-                      trim(escaped_out_dir)//' ' // trim(escaped_gcno_file)
-                call secure_execute_command(cmd, cmd_exit)
-                if (cmd_exit /= 0) then
-                    call safe_write_message(error_ctx, &
-                        'gcov execution failed for: ' // trim(gcno_file))
-                    call safe_write_context(error_ctx, 'gcov file generation')
-                    error_ctx%error_code = cmd_exit
+                call run_real_gcov(gcda_files(i), gcno_file, out_dir, base_name, &
+                    gcov_exec, created_files, created_count, error_ctx, ok)
+                if (.not. ok) then
                     return
-                end if
-
-                ! Best-effort capture of expected gcov file name alongside artifacts
-                gcov_path = trim(out_dir) // '/' // trim(base_name) // '.f90.gcov'
-                inquire(file=trim(gcov_path), exist=gcno_exists)
-                if (gcno_exists) then
-                    if (created_count < size(created_files)) then
-                        created_count = created_count + 1
-                        created_files(created_count) = gcov_path
-                    end if
                 end if
             end do
 
@@ -140,51 +237,14 @@ contains
         created_count = 0
         ! Process each .gcda file
         do i = 1, size(gcda_files)
-            ! Extract base name without extension
-            gcda_base = gcda_files(i)(1:index(gcda_files(i), '.gcda') - 1)
-
-            ! Check if corresponding .gcno file exists
-            gcno_file = trim(gcda_base) // '.gcno'
-            inquire(file=trim(gcno_file), exist=gcno_exists)
-
-            if (.not. gcno_exists) then
-                call safe_write_message(error_ctx, &
-                    'Missing .gcno file for: ' // trim(gcda_files(i)))
-                call safe_write_suggestion(error_ctx, &
-                    'Ensure tests were compiled with coverage flags')
-                call safe_write_context(error_ctx, 'gcov file generation')
-                error_ctx%error_code = 1
-                return
-            end if
-
             ! In lieu of executing gcov (removed for security), synthesize a
             ! minimal .gcov file next to the coverage artifacts so downstream
             ! processing and tests can operate deterministically.
-            last_slash = index(gcda_files(i), '/', back=.true.)
-            if (last_slash > 0) then
-                out_dir   = gcda_files(i)(1:last_slash-1)
-                base_name = gcda_files(i)(last_slash+1:len_trim(gcda_files(i)))
-            else
-                out_dir   = '.'
-                base_name = gcda_files(i)(1:len_trim(gcda_files(i)))
-            end if
-            ! Strip .gcda suffix from base_name
-            if (len_trim(base_name) > 5) then
-                base_name = base_name(1:len_trim(base_name)-5)
-            end if
-            gcov_path = trim(out_dir) // '/' // trim(base_name) // '.f90.gcov'
-            open(newunit=u, file=gcov_path, status='replace', action='write', &
-                iostat=ios)
-            if (ios == 0) then
-                write(u,'(A)') '        -:    0:Source:' // trim(base_name) // '.f90'
-                write(u,'(A)') '        -:    1:module ' // trim(base_name)
-                write(u,'(A)') '        1:    2:  implicit none'
-                write(u,'(A)') '        -:    3:end module'
-                close(u)
-                if (created_count < size(created_files)) then
-                    created_count = created_count + 1
-                    created_files(created_count) = gcov_path
-                end if
+            call derive_paths(gcda_files(i), gcno_file, out_dir, base_name)
+            call synthesize_gcov_file(gcda_files(i), gcno_file, out_dir, base_name, &
+                created_files, created_count, error_ctx, ok)
+            if (.not. ok) then
+                return
             end if
         end do
 
