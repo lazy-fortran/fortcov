@@ -13,7 +13,8 @@ module coverage_engine_core
     use config_core,            only: config_t
     use error_handling_core,    only: error_context_t, ERROR_MISSING_FILE, &
                                       ERROR_SUCCESS, clear_error_context, &
-                                      handle_gcov_not_found, log_error, &
+                                      handle_gcov_not_found, &
+                                      handle_no_coverage_files, log_error, &
                                       safe_write_message, safe_write_suggestion
     use gcov_file_discovery,   only: discover_gcda_files, discover_gcov_files
     use gcov_generator,        only: check_gcov_availability
@@ -122,10 +123,26 @@ contains
             return
         end if
 
-        if (allocated(gcov_files) .and. size(gcov_files) > 0) return
+        if (allocated(gcov_files)) then
+            if (size(gcov_files) > 0) return
+        end if
 
         call discover_gcda_files(".", gcda_files, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
+            call log_error(error_ctx)
+            coverage_ok = .false.
+            return
+        end if
+
+        if (.not. allocated(gcda_files)) then
+            call handle_no_coverage_files(".", error_ctx)
+            call log_error(error_ctx)
+            coverage_ok = .false.
+            return
+        end if
+
+        if (size(gcda_files) == 0) then
+            call handle_no_coverage_files(".", error_ctx)
             call log_error(error_ctx)
             coverage_ok = .false.
         end if
