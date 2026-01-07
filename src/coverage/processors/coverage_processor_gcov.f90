@@ -116,16 +116,89 @@ contains
         end if
         
         if (allocated(gcda_files) .and. size(gcda_files) > 0) then
-            ! Use first .gcda file to determine build directory path
-            i = index(gcda_files(1), '/', back=.true.)
-            if (i > 0) then
-                ! Allocate and set single build directory with exact length
-                allocate(character(len=i-1) :: build_dirs(1))
-                build_dirs(1) = gcda_files(1)(1:i-1)
-            end if
+            call extract_build_directories(gcda_files, build_dirs)
         end if
         
     end subroutine find_coverage_build_directories
+
+    subroutine extract_build_directories(gcda_files, build_dirs)
+        character(len=:), allocatable, intent(in) :: gcda_files(:)
+        character(len=:), allocatable, intent(out) :: build_dirs(:)
+
+        character(len=:), allocatable :: raw_dirs(:)
+        integer :: i, slash_pos, dir_count, max_len
+
+        max_len = 1
+        do i = 1, size(gcda_files)
+            max_len = max(max_len, len_trim(gcda_files(i)))
+        end do
+
+        allocate(character(len=max_len) :: raw_dirs(size(gcda_files)))
+        dir_count = 0
+
+        do i = 1, size(gcda_files)
+            slash_pos = index(gcda_files(i), '/', back=.true.)
+            if (slash_pos > 0) then
+                dir_count = dir_count + 1
+                raw_dirs(dir_count) = gcda_files(i)(1:slash_pos-1)
+            end if
+        end do
+
+        if (dir_count == 0) then
+            allocate(character(len=1) :: build_dirs(0))
+            return
+        end if
+
+        call deduplicate_directories(raw_dirs(1:dir_count), build_dirs)
+    end subroutine extract_build_directories
+
+    subroutine deduplicate_directories(input_dirs, output_dirs)
+        character(len=*), intent(in) :: input_dirs(:)
+        character(len=:), allocatable, intent(out) :: output_dirs(:)
+
+        character(len=:), allocatable :: resolved(:)
+        logical, allocatable :: is_unique(:)
+        integer :: i, j, unique_count, dir_count
+
+        dir_count = size(input_dirs)
+        if (dir_count == 0) then
+            allocate(character(len=1) :: output_dirs(0))
+            return
+        end if
+
+        allocate(character(len=4096) :: resolved(dir_count))
+        allocate(is_unique(dir_count))
+        is_unique = .true.
+
+        do i = 1, dir_count
+            resolved(i) = resolve_path(trim(input_dirs(i)))
+        end do
+
+        do i = 2, dir_count
+            do j = 1, i - 1
+                if (is_unique(i) .and. &
+                    trim(resolved(i)) == trim(resolved(j))) then
+                    is_unique(i) = .false.
+                    exit
+                end if
+            end do
+        end do
+
+        unique_count = count(is_unique)
+        if (unique_count == 0) then
+            allocate(character(len=1) :: output_dirs(0))
+            return
+        end if
+
+        allocate(character(len=len(input_dirs(1))) :: output_dirs(unique_count))
+        j = 0
+        do i = 1, dir_count
+            if (is_unique(i)) then
+                j = j + 1
+                output_dirs(j) = input_dirs(i)
+            end if
+        end do
+    end subroutine deduplicate_directories
     
     subroutine collect_generated_gcov_files(build_dirs, gcov_files)
         !! Collects generated .gcov files from canonical output directory
