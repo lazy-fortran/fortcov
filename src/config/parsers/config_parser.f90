@@ -17,7 +17,7 @@ module config_parser
                                                  handle_zero_configuration_with_overrides, &
                                                  handle_normal_configuration, &
                                                  process_positional_arguments, &
-                                                 prevent_fork_bomb_with_manual_files
+                                                 disable_auto_tests_for_manual_inputs
     use config_parser_flags, only: process_flag_arguments, process_single_flag
     use config_parser_files, only: parse_config_file, process_config_file_option
     use config_parser_utils, only: parse_real_with_error, parse_integer_with_error, &
@@ -40,7 +40,7 @@ module config_parser
     public :: handle_zero_configuration_with_overrides
     public :: handle_normal_configuration
     public :: process_positional_arguments
-    public :: prevent_fork_bomb_with_manual_files
+    public :: disable_auto_tests_for_manual_inputs
     
     ! Flag processing interface (delegated)
     public :: process_flag_arguments

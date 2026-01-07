@@ -1,7 +1,7 @@
 module config_parser_special
     !! Special configuration processing utilities
     !!
-    !! Handles special flags (help, version, quiet), fork bomb prevention,
+    !! Handles special flags (help, version, quiet), manual input detection,
     !! and zero-config mode detection with comprehensive flag analysis.
     
     use config_types, only: config_t
@@ -10,7 +10,7 @@ module config_parser_special
     private
     
     public :: process_special_flags
-    public :: prevent_fork_bomb_with_manual_files
+    public :: disable_auto_tests_for_manual_inputs
     public :: detect_zero_config_mode
     
 contains
@@ -58,38 +58,24 @@ contains
         end do
     end subroutine process_special_flags
 
-    subroutine prevent_fork_bomb_with_manual_files(config)
-        !! Prevent fork bomb by disabling auto-test execution when manual coverage files are provided
+    subroutine disable_auto_tests_for_manual_inputs(config)
+        !! Disable auto-test execution when manual inputs are provided
         type(config_t), intent(inout) :: config
-        logical :: has_manual_coverage_files
-        
-        has_manual_coverage_files = .false.
-        
-        ! Check for manually specified coverage files (positional arguments)
-        if (allocated(config%coverage_files) .and. size(config%coverage_files) > 0) then
-            has_manual_coverage_files = .true.
-        end if
-        
-        ! Check for import file specification
-        if (allocated(config%import_file) .and. len_trim(config%import_file) > 0) then
-            has_manual_coverage_files = .true.
-        end if
-        
-        ! Check for manually specified source paths (also indicates manual mode)
-        ! Exclude zero-config default source path "." from triggering fork bomb prevention
-        if (allocated(config%source_paths) .and. size(config%source_paths) > 0) then
-            ! Only consider it manual if it's not just the zero-config default "."
-            if (.not. (size(config%source_paths) == 1 .and. &
-                      trim(config%source_paths(1)) == ".")) then
-                has_manual_coverage_files = .true.
-            end if
-        end if
-        
-        ! If manual coverage files detected, disable auto-test execution to prevent fork bomb
-        if (has_manual_coverage_files) then
+        logical :: has_manual_inputs
+
+        has_manual_inputs = (allocated(config%coverage_files) .and. &
+                             size(config%coverage_files) > 0) .or. &
+                            (allocated(config%import_file) .and. &
+                             len_trim(config%import_file) > 0) .or. &
+                            (allocated(config%source_paths) .and. &
+                             size(config%source_paths) > 0 .and. &
+                             .not. (size(config%source_paths) == 1 .and. &
+                                    trim(config%source_paths(1)) == "."))
+
+        if (has_manual_inputs) then
             config%auto_test_execution = .false.
         end if
-    end subroutine prevent_fork_bomb_with_manual_files
+    end subroutine disable_auto_tests_for_manual_inputs
 
     function detect_zero_config_mode(args) result(zero_config_mode)
         !! Detect if zero config mode should be enabled

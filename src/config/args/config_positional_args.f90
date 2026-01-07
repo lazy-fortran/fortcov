@@ -93,7 +93,7 @@ contains
         is_executable_path = .false.
 
         ! First check file extension to recognize coverage files by pattern
-        ! (even if they don't exist yet - Issue #395 fork bomb prevention)
+        ! even if they do not exist yet
         dot_pos = index(arg, '.', back=.true.)
         if (dot_pos > 0) then
             extension = arg(dot_pos+1:)
