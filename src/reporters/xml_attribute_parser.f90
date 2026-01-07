@@ -1,15 +1,10 @@
 module xml_attribute_parser
-    !! XML Attribute Extraction and Line Parsing - Enhanced with Memory Management
-    !! 
-    !! Handles extraction of attributes from XML elements and line parsing.
-    !! Enhanced to address Issue #967: Systematic memory leaks in core modules.
-    !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
+    !! XML Attribute Extraction and Line Parsing
     !!
-    !! Memory Management Improvements:
-    !! - Comprehensive error handling for all allocations
-    !! - Safe deallocation patterns with stat= checking
-    !! - Proper error reporting for memory failures
+    !! Handles extraction of attributes from XML elements and line parsing.
+    !! Extracted from xml_utils.f90 for SRP compliance (Issue #718).
     use coverage_model_core, only: coverage_line_t
+    use xml_parser_core, only: count_xml_elements
     implicit none
     private
     
@@ -49,27 +44,26 @@ contains
     end subroutine extract_filename_from_class
     
     subroutine parse_lines_from_class(class_xml, lines, success)
-        use safe_allocation, only: safe_allocate_lines_array
-        use xml_parser_core, only: count_xml_elements
         character(len=*), intent(in) :: class_xml
         type(coverage_line_t), allocatable, intent(out) :: lines(:)
         logical, intent(out) :: success
         
-        integer :: line_count, i, pos, line_start
+        integer :: line_count, i, pos, line_start, stat
         integer :: line_number, hits
-        character(len=:), allocatable :: line_attr
         
         success = .false.
         
         ! Count line elements
         line_count = count_xml_elements(class_xml, '<line number=')
         if (line_count == 0) then
-            call safe_allocate_lines_array(lines, 0, success)
+            allocate(lines(0), stat=stat)
+            if (stat /= 0) return
+            success = .true.
             return
         end if
 
-        call safe_allocate_lines_array(lines, line_count, success)
-        if (.not. success) return
+        allocate(lines(line_count), stat=stat)
+        if (stat /= 0) return
         pos = 1
         
         ! Parse each line

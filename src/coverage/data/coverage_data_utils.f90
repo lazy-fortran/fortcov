@@ -1,23 +1,10 @@
 module coverage_data_utils
-    !! Coverage Data Utilities Module - Enhanced with Memory Management Infrastructure
+    !! Coverage Data Utilities Module
     !!
     !! Centralized utilities for coverage_data_t allocation and initialization
-    !! patterns to eliminate code duplication across the codebase. Enhanced to address
-    !! Issue #967: Systematic memory leaks in 10+ core modules.
-    !!
-    !! Memory Management Improvements:
-    !! - Comprehensive error handling with stat= and errmsg= parameters
-    !! - Balanced allocation/deallocation tracking
-    !! - Memory leak prevention and detection
-    !! - Integration with memory_management_core infrastructure
-    !!
-    !! Part of EPIC 2: Architectural debt consolidation to achieve:
-    !! - <130 files (from 172)
-    !! - <22,000 lines (from 27,311)
-    !! - Eliminate duplicated allocation patterns
+    !! patterns to eliminate code duplication across the codebase.
 
     use coverage_types
-    use memory_management, only: memory_status_t, get_memory_status, validate_memory_balance
     implicit none
     private
 
@@ -26,7 +13,6 @@ module coverage_data_utils
     public :: safely_deallocate_files
     public :: validate_files_allocation
     public :: allocate_files_with_error_handling
-    public :: get_coverage_memory_status
 
 contains
 
@@ -139,12 +125,5 @@ contains
             end if
         end if
     end function validate_files_allocation
-
-    function get_coverage_memory_status() result(status)
-        !! Get current memory status for coverage data structures
-        type(memory_status_t) :: status
-        
-        status = get_memory_status()
-    end function get_coverage_memory_status
 
 end module coverage_data_utils
