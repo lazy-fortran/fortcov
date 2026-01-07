@@ -4,10 +4,9 @@ module coverage_processor_gcov
     !! Focused on .gcov file discovery, generation, and processing.
     !! Provides specialized gcov operations separated from other workflow
     !! management functionality.
-    use constants_core
-    use config_core
-    use file_utilities
-    use shell_utilities, only: escape_shell_argument
+    use constants_core, only: GCOV_EXTENSION
+    use config_core, only: config_t
+    use file_utilities, only: find_files, find_files_with_glob, basename, resolve_path
     implicit none
     private
 
@@ -469,7 +468,6 @@ contains
     ! Secure file copying without shell commands
     ! SECURITY FIX Issue #963: Replace find -exec cp shell vulnerability
     subroutine copy_gcov_files_secure(source_dir, target_dir)
-        use file_utilities,       only: find_files_with_glob, basename
         use file_ops_secure,          only: safe_move_file
         use error_handling_core,      only: error_context_t
         character(len=*), intent(in) :: source_dir, target_dir
