@@ -6,18 +6,14 @@ module coverage_processor_gcov
     !! management functionality.
    use constants_core, only: GCOV_EXTENSION
    use config_core, only: config_t
-   use file_utilities, only: find_files, find_files_with_glob, basename, resolve_path
+   use file_utilities, only: find_files, resolve_path
    implicit none
    private
-
    public :: discover_gcov_files
    public :: auto_generate_gcov_files
 
 contains
-
    subroutine discover_gcov_files(config, files)
-        !! Discovers .gcov files in configured source paths with automatic gcov
-        !! generation in sane default mode
       type(config_t), intent(in) :: config
       character(len=:), allocatable, intent(out) :: files(:)
 
@@ -25,23 +21,14 @@ contains
       character(len=:), allocatable :: found_files(:)
       character(len=:), allocatable :: generated_files(:)
 
-      ! Determine search paths based on configuration
       call determine_gcov_search_paths(config, search_paths, found_files)
-
-      ! Search for existing .gcov files if needed
       call search_existing_gcov_files(search_paths, found_files)
-
-      ! Generate gcov files if none found and in auto-discovery mode
       call attempt_gcov_generation(config, found_files, generated_files)
-
-      ! Set final result
       call finalize_gcov_file_result(found_files, generated_files, files)
 
    end subroutine discover_gcov_files
 
    subroutine auto_generate_gcov_files(config, generated_files)
-        !! Automatically discovers and generates .gcov files from build directories
-        !! Implements the core sane default mode functionality for Issue #196
       type(config_t), intent(in) :: config
       character(len=:), allocatable, intent(out) :: generated_files(:)
 
@@ -50,34 +37,42 @@ contains
       character(len=:), allocatable :: test_gcda(:)
       character(len=:), allocatable :: synthesized(:)
       logical :: success
+      logical :: has_build_dirs
 
-      ! Find build directories with coverage data
       call find_coverage_build_directories(build_dirs)
 
-      if (.not. allocated(build_dirs) .or. size(build_dirs) == 0) then
+      has_build_dirs = .false.
+      if (allocated(build_dirs)) then
+         if (size(build_dirs) > 0) then
+            has_build_dirs = .true.
+         end if
+      end if
+
+      if (.not. has_build_dirs) then
          ! Test-friendly path: directly synthesize .gcov from test_build/*.gcda
          test_gcda = find_files('test_build/*.gcda')
-         if (allocated(test_gcda) .and. size(test_gcda) > 0) then
-            block
-               use error_handling_core, only: error_context_t, ERROR_SUCCESS
-               use gcov_generation_utils, only: generate_gcov_files
-               type(error_context_t) :: ectx
-               call generate_gcov_files('test_build', test_gcda, config, &
-                                        synthesized, ectx)
-               if (ectx%error_code == ERROR_SUCCESS .and. &
-                   allocated(synthesized)) then
-                  generated_files = synthesized
-               end if
-            end block
+         if (allocated(test_gcda)) then
+            if (size(test_gcda) > 0) then
+               block
+                  use error_handling_core, only: error_context_t, ERROR_SUCCESS
+                  use gcov_generation_utils, only: generate_gcov_files
+                  type(error_context_t) :: ectx
+                  call generate_gcov_files('test_build', test_gcda, config, &
+                                           synthesized, ectx)
+                  if (ectx%error_code == ERROR_SUCCESS) then
+                     if (allocated(synthesized)) then
+                        generated_files = synthesized
+                     end if
+                  end if
+               end block
+            end if
          end if
          return
       end if
 
-      ! Generate gcov files from build directories
       call generate_gcov_from_build_dirs(config, build_dirs, success)
 
       if (success) then
-         ! Copy generated .gcov files to project root and collect them
          call collect_generated_gcov_files(config, all_gcov_files)
          if (allocated(all_gcov_files)) then
             generated_files = all_gcov_files
@@ -87,7 +82,6 @@ contains
    end subroutine auto_generate_gcov_files
 
    subroutine find_coverage_build_directories(build_dirs)
-        !! Finds build directories containing coverage data files
       character(len=:), allocatable, intent(out) :: build_dirs(:)
 
       character(len=:), allocatable :: gcda_files(:)
@@ -106,18 +100,32 @@ contains
       end block
 
       ! Test-friendly fallback: also look in a conventional test directory
-      if (.not. allocated(gcda_files) .or. size(gcda_files) == 0) then
+      if (.not. allocated(gcda_files)) then
          block
             character(len=:), allocatable :: test_gcda(:)
             test_gcda = find_files("test_build/*.gcda")
-            if (allocated(test_gcda) .and. size(test_gcda) > 0) then
-               gcda_files = test_gcda
+            if (allocated(test_gcda)) then
+               if (size(test_gcda) > 0) then
+                  gcda_files = test_gcda
+               end if
+            end if
+         end block
+      else if (size(gcda_files) == 0) then
+         block
+            character(len=:), allocatable :: test_gcda(:)
+            test_gcda = find_files("test_build/*.gcda")
+            if (allocated(test_gcda)) then
+               if (size(test_gcda) > 0) then
+                  gcda_files = test_gcda
+               end if
             end if
          end block
       end if
 
-      if (allocated(gcda_files) .and. size(gcda_files) > 0) then
-         call extract_build_directories(gcda_files, build_dirs)
+      if (allocated(gcda_files)) then
+         if (size(gcda_files) > 0) then
+            call extract_build_directories(gcda_files, build_dirs)
+         end if
       end if
 
    end subroutine find_coverage_build_directories
@@ -202,7 +210,6 @@ contains
    end subroutine deduplicate_directories
 
    subroutine collect_generated_gcov_files(config, gcov_files)
-        !! Collects generated .gcov files from configured output directory
       type(config_t), intent(in) :: config
       character(len=:), allocatable, intent(out) :: gcov_files(:)
 
@@ -229,7 +236,6 @@ contains
    end subroutine collect_generated_gcov_files
 
    subroutine determine_gcov_search_paths(config, search_paths, found_files)
-        !! Determine search paths for gcov files based on configuration
       use gcov_file_discovery, only: discover_gcov_files_impl => discover_gcov_files
       use error_handling_core, only: error_context_t, ERROR_SUCCESS
       type(config_t), intent(in) :: config
@@ -243,9 +249,12 @@ contains
       call discover_gcov_files_impl(".", found_files, ectx)
 
       ! If .gcov files found, use them
-      if (ectx%error_code == ERROR_SUCCESS .and. &
-          allocated(found_files) .and. size(found_files) > 0) then
-         return
+      if (ectx%error_code == ERROR_SUCCESS) then
+         if (allocated(found_files)) then
+            if (size(found_files) > 0) then
+               return
+            end if
+         end if
       end if
 
       output_dir = trim(config%gcov_output_dir)
@@ -255,9 +264,12 @@ contains
 
       ! Also check configured gcov output directory
       call discover_gcov_files_impl(trim(output_dir), found_files, ectx)
-      if (ectx%error_code == ERROR_SUCCESS .and. &
-          allocated(found_files) .and. size(found_files) > 0) then
-         return
+      if (ectx%error_code == ERROR_SUCCESS) then
+         if (allocated(found_files)) then
+            if (size(found_files) > 0) then
+               return
+            end if
+         end if
       end if
 
       ! Use configured source paths as search locations
@@ -271,31 +283,33 @@ contains
    end subroutine determine_gcov_search_paths
 
    subroutine search_existing_gcov_files(search_paths, found_files)
-        !! Search for existing .gcov files in configured search paths
       character(len=:), allocatable, intent(in) :: search_paths(:)
       character(len=:), allocatable, intent(inout) :: found_files(:)
 
       ! Search for existing .gcov files in configured search paths
-      if ((.not. allocated(found_files) .or. size(found_files) == 0) .and. &
-          allocated(search_paths)) then
-         call search_gcov_files_in_paths(search_paths, found_files)
+      if (allocated(search_paths)) then
+         if (.not. allocated(found_files)) then
+            call search_gcov_files_in_paths(search_paths, found_files)
+         else if (size(found_files) == 0) then
+            call search_gcov_files_in_paths(search_paths, found_files)
+         end if
       end if
    end subroutine search_existing_gcov_files
 
    subroutine attempt_gcov_generation(config, found_files, generated_files)
-        !! Attempt automatic gcov generation when no .gcov files found
       type(config_t), intent(in) :: config
       character(len=:), allocatable, intent(in) :: found_files(:)
       character(len=:), allocatable, intent(out) :: generated_files(:)
 
       ! Only attempt generation if no .gcov files were discovered
-      if (.not. allocated(found_files) .or. size(found_files) == 0) then
+      if (.not. allocated(found_files)) then
+         call auto_generate_gcov_files(config, generated_files)
+      else if (size(found_files) == 0) then
          call auto_generate_gcov_files(config, generated_files)
       end if
    end subroutine attempt_gcov_generation
 
    subroutine finalize_gcov_file_result(found_files, generated_files, files)
-        !! Set final result for gcov file discovery
       character(len=:), allocatable, intent(in) :: found_files(:)
       character(len=:), allocatable, intent(in) :: generated_files(:)
       character(len=:), allocatable, intent(out) :: files(:)
@@ -312,13 +326,10 @@ contains
    end subroutine finalize_gcov_file_result
 
    subroutine generate_gcov_from_build_dirs(config, build_dirs, success)
-        !! Generate gcov files from build directories with gcno/gcda compatibility
-        !! checking
       type(config_t), intent(in) :: config
       character(len=*), intent(in) :: build_dirs(:)
       logical, intent(out) :: success
 
-      character(len=300) :: command
       character(len=:), allocatable :: gcov_exe
       integer :: i, exit_status, gcno_count, gcda_count
       logical :: has_compatible_files
@@ -355,13 +366,12 @@ contains
    end subroutine generate_gcov_from_build_dirs
 
    subroutine search_gcov_files_in_paths(search_paths, found_files)
-        !! Searches for .gcov files in specified search paths
       character(len=*), intent(in) :: search_paths(:)
       character(len=:), allocatable, intent(out) :: found_files(:)
 
       character(len=:), allocatable :: path_files(:)
       character(len=:), allocatable :: all_files(:)
-      integer :: i, total_files, current_size
+      integer :: i, total_files
       logical :: path_exists
 
       ! Initialize to empty
@@ -377,10 +387,11 @@ contains
             path_files = find_files(trim(search_paths(i))//"/*"//GCOV_EXTENSION)
 
             ! Merge with existing files
-            if (allocated(path_files) .and. size(path_files) > 0) then
-               current_size = size(all_files)
-               call expand_file_array(all_files, path_files)
-               total_files = total_files + size(path_files)
+            if (allocated(path_files)) then
+               if (size(path_files) > 0) then
+                  call expand_file_array(all_files, path_files)
+                  total_files = total_files + size(path_files)
+               end if
             end if
          end if
       end do
@@ -396,7 +407,6 @@ contains
    end subroutine search_gcov_files_in_paths
 
    subroutine expand_file_array(all_files, new_files)
-        !! Expands file array to include new files
       character(len=:), allocatable, intent(inout) :: all_files(:)
       character(len=*), intent(in) :: new_files(:)
 
@@ -427,7 +437,6 @@ contains
 
    subroutine check_coverage_file_compatibility(build_path, has_compatible_files, &
                                                 gcno_count, gcda_count)
-        !! Check if gcno and gcda files are present and compatible in build directory
       character(len=*), intent(in) :: build_path
       logical, intent(out) :: has_compatible_files
       integer, intent(out) :: gcno_count, gcda_count
@@ -457,45 +466,6 @@ contains
 
    end subroutine check_coverage_file_compatibility
 
-   ! Secure directory creation for gcov output
-   ! SECURITY FIX Issue #963: Replace mkdir -p shell vulnerability
-   subroutine create_gcov_output_directory(dir_path, exit_status)
-      use directory_operations, only: ensure_directory_safe
-      use error_handling_core, only: error_context_t, ERROR_SUCCESS
-      character(len=*), intent(in) :: dir_path
-      integer, intent(out) :: exit_status
-      type(error_context_t) :: error_ctx
-
-      call ensure_directory_safe(trim(dir_path), error_ctx)
-      if (error_ctx%error_code == ERROR_SUCCESS) then
-         exit_status = 0
-      else
-         exit_status = 1
-      end if
-
-   end subroutine create_gcov_output_directory
-
-   ! Secure file copying without shell commands
-   ! SECURITY FIX Issue #963: Replace find -exec cp shell vulnerability
-   subroutine copy_gcov_files_secure(source_dir, target_dir)
-      use file_ops_secure, only: safe_move_file
-      use error_handling_core, only: error_context_t
-      character(len=*), intent(in) :: source_dir, target_dir
-      character(len=:), allocatable :: files(:)
-      character(len=256) :: dst
-      type(error_context_t) :: err
-      integer :: i
-
-      files = find_files_with_glob(trim(source_dir), '*.gcov')
-      if (.not. allocated(files) .or. size(files) == 0) return
-
-      do i = 1, size(files)
-         dst = trim(target_dir)//'/'//trim(basename(files(i)))
-         call safe_move_file(trim(files(i)), trim(dst), err)
-      end do
-
-   end subroutine copy_gcov_files_secure
-
    ! Secure gcov generation without shell cd && commands
    ! SECURITY FIX Issue #963: Replace cd && gcov shell vulnerability
    subroutine generate_gcov_files_secure(build_path, gcov_exe, gcov_output_dir, &
@@ -511,11 +481,14 @@ contains
       exit_status = 1
 
       gcda = find_files(trim(build_path)//'/*.gcda')
-      if (.not. allocated(gcda) .or. size(gcda) == 0) return
+      if (.not. allocated(gcda)) return
+      if (size(gcda) == 0) return
 
       call generate_gcov_files_from_gcda(gcda, gcov_output_dir, generated)
-      if (allocated(generated) .and. size(generated) > 0) then
-         exit_status = 0
+      if (allocated(generated)) then
+         if (size(generated) > 0) then
+            exit_status = 0
+         end if
       end if
 
    end subroutine generate_gcov_files_secure

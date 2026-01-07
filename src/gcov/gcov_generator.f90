@@ -75,11 +75,14 @@ contains
          ! from notes stored in the gcda/gcno files.
          call executor%execute_gcov(gcda_files(i), temp_files, error_ctx)
 
-         if (error_ctx%error_code == ERROR_SUCCESS .and. &
-             allocated(temp_files) .and. size(temp_files) > 0) then
-            temp_generated_files(success_count + 1:success_count + &
-                                 size(temp_files)) = temp_files
-            success_count = success_count + size(temp_files)
+         if (error_ctx%error_code == ERROR_SUCCESS) then
+            if (allocated(temp_files)) then
+               if (size(temp_files) > 0) then
+                  temp_generated_files(success_count + 1:success_count + &
+                                       size(temp_files)) = temp_files
+                  success_count = success_count + size(temp_files)
+               end if
+            end if
          end if
       end do
 

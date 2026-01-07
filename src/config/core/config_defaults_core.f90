@@ -4,9 +4,7 @@ module config_defaults_core
     !! This module provides initialization routines and default values for
     !! configuration settings, extracted from fortcov_config for maintainability.
 
-   use config_types, only: config_t, MAX_ARRAY_SIZE
-   use constants_core
-   use shell_utilities, only: escape_shell_argument
+   use config_types, only: config_t
    use file_processor, only: ensure_output_directory_structure
    use file_utilities, only: ensure_directory
    use error_handling_core, only: error_context_t, ERROR_SUCCESS
@@ -35,8 +33,8 @@ contains
       config%output_format = "markdown"
       config%output_path = ""
       ! SECURITY FIX Issue #963: gcov_executable REMOVED - shell injection vulnerability
-      config%minimum_coverage = 0.0
-      config%fail_under_threshold = 0.0
+      config%minimum_coverage = 0.0d0
+      config%fail_under_threshold = 0.0d0
       config%threads = 1
       config%verbose = .false.
       config%quiet = .false.
@@ -48,7 +46,7 @@ contains
       config%diff_baseline_file = ""
       config%diff_current_file = ""
       config%include_unchanged = .false.
-      config%diff_threshold = 0.0
+      config%diff_threshold = 0.0d0
       config%import_file = ""
       config%keep_gcov_files = .false.
       config%gcov_args = ""
@@ -83,11 +81,6 @@ contains
    subroutine apply_default_output_path_for_coverage_files(config)
         !! Apply default output path when processing coverage files directly
       type(config_t), intent(inout) :: config
-
-      logical :: has_coverage_files
-
-      has_coverage_files = allocated(config%coverage_files) .and. &
-                           size(config%coverage_files) > 0
 
       ! Apply default output paths for all formats when not specified
       if (len_trim(config%output_path) == 0) then
@@ -182,8 +175,12 @@ contains
       character(len=512) :: errmsg
 
       ! Check if source paths are already set
-      has_source_paths = allocated(config%source_paths) .and. &
-                         size(config%source_paths) > 0
+      has_source_paths = .false.
+      if (allocated(config%source_paths)) then
+         if (size(config%source_paths) > 0) then
+            has_source_paths = .true.
+         end if
+      end if
 
       ! Only set defaults for values not already set by CLI flags
       if (.not. has_source_paths) then

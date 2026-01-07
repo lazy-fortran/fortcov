@@ -175,7 +175,7 @@ contains
             if (is_flag_argument(flags(i)) .and. flag_requires_value(flags(i))) then
                if (i < flag_count .and. len_trim(flags(i + 1)) > 0 .and. &
                    .not. is_flag_argument(flags(i + 1))) then
-                  ! Combine flag and value: "flag=value"
+                  ! Combine flag and value: flag=value
                   combined_flag = trim(flags(i))//"="//trim(flags(i + 1))
                   call process_single_flag(combined_flag, config, success, &
                                            error_message)
