@@ -11,6 +11,7 @@ module coverage_processor_gcov
    private
    public :: discover_gcov_files
    public :: auto_generate_gcov_files
+   public :: should_attempt_gcov_generation
 
 contains
    subroutine discover_gcov_files(config, files)
@@ -27,6 +28,23 @@ contains
       call finalize_gcov_file_result(found_files, generated_files, files)
 
    end subroutine discover_gcov_files
+
+   pure logical function should_attempt_gcov_generation(config, found_files) &
+      result(should_attempt)
+      type(config_t), intent(in) :: config
+      character(len=:), allocatable, intent(in) :: found_files(:)
+
+      should_attempt = .false.
+      if (config%auto_discovery) then
+         return
+      end if
+
+      if (.not. allocated(found_files)) then
+         should_attempt = .true.
+      else if (size(found_files) == 0) then
+         should_attempt = .true.
+      end if
+   end function should_attempt_gcov_generation
 
    subroutine auto_generate_gcov_files(config, generated_files)
       type(config_t), intent(in) :: config
@@ -301,10 +319,8 @@ contains
       character(len=:), allocatable, intent(in) :: found_files(:)
       character(len=:), allocatable, intent(out) :: generated_files(:)
 
-      ! Only attempt generation if no .gcov files were discovered
-      if (.not. allocated(found_files)) then
-         call auto_generate_gcov_files(config, generated_files)
-      else if (size(found_files) == 0) then
+      ! Only attempt generation if explicitly requested and none found
+      if (should_attempt_gcov_generation(config, found_files)) then
          call auto_generate_gcov_files(config, generated_files)
       end if
    end subroutine attempt_gcov_generation
