@@ -50,8 +50,10 @@ contains
       print '(A)', "                             (alias: --discover-and-gcov)"
       print '(A)', ""
       print '(A)', "Environment:"
-      print '(A)', "  FORTCOV_USE_REAL_GCOV=0   Force synthetic gcov output for "// &
-         "tests"
+      print '(A)', "  FORTCOV_USE_SYNTHETIC_GCOV=1  Use synthetic gcov output "// &
+         "for tests"
+      print '(A)', "  FORTCOV_USE_REAL_GCOV=0       Deprecated alias for "// &
+         "synthetic gcov"
       print '(A)', ""
       print '(A)', "Examples:"
       print '(A)', "  fortcov --source=src *.gcov --output=report.md"

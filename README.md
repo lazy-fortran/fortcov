@@ -110,7 +110,8 @@ $ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
 
 - Developed and tested with FPM default build layout.
 - For non-FPM builds, generate `.gcov` with your build system and invoke FortCov as shown above.
-- Set `FORTCOV_USE_REAL_GCOV=0` to force synthetic gcov output for tests.
+- Set `FORTCOV_USE_SYNTHETIC_GCOV=1` to force synthetic gcov output for tests.
+- `FORTCOV_USE_REAL_GCOV=0` is a deprecated alias for synthetic gcov output.
 - Use `fortcov --help` for additional options (quiet mode, thresholds, etc.).
 
 ## Example (Minimal FPM Project)
