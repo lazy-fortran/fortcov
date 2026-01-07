@@ -165,7 +165,7 @@ contains
         case ('fpm')
             command = 'fpm test --flag "-fprofile-arcs -ftest-coverage"'
         case ('cmake')
-            command = build_cmake_test_command(build_info%cmake_build_dir)
+            call build_cmake_test_command(build_info%cmake_build_dir, command)
         case ('make')
             command = 'make test'
         case ('meson')
@@ -239,12 +239,13 @@ contains
         
         build_info%system_type = 'cmake'
         build_info%build_file = CMAKE_MARKER
-        detected_build_dir = detect_cmake_build_dir(project_path)
+        call detect_cmake_build_dir(project_path, detected_build_dir)
         if (allocated(detected_build_dir)) then
             build_info%cmake_build_dir = detected_build_dir
+            deallocate(detected_build_dir)
         end if
-        build_info%test_command = build_cmake_test_command( &
-            build_info%cmake_build_dir)
+        call build_cmake_test_command(build_info%cmake_build_dir, &
+                                      build_info%test_command)
         build_info%tool_available = validate_build_tool_available(CMAKE_TOOL)
         
     end subroutine configure_cmake_system
@@ -305,9 +306,9 @@ contains
         
     end subroutine construct_marker_path
 
-    function detect_cmake_build_dir(project_path) result(build_dir)
+    subroutine detect_cmake_build_dir(project_path, build_dir)
         character(len=*), intent(in) :: project_path
-        character(len=:), allocatable :: build_dir
+        character(len=:), allocatable, intent(out) :: build_dir
         character(len=:), allocatable :: cache_files(:)
         character(len=32), parameter :: candidates(6) = &
             [character(len=32) :: 'build', '_build', 'cmake-build-debug', &
@@ -327,12 +328,22 @@ contains
         if (allocated(cache_files)) then
             do i = 1, size(cache_files)
                 if (len_trim(cache_files(i)) > 0) then
-                    build_dir = extract_parent_dir(cache_files(i))
+                    call extract_parent_dir(cache_files(i), build_dir)
                     if (allocated(build_dir)) return
                 end if
             end do
         end if
-    end function detect_cmake_build_dir
+
+        cache_files = find_files_with_glob(project_path, '**/CMakeCache.txt')
+        if (allocated(cache_files)) then
+            do i = 1, size(cache_files)
+                if (len_trim(cache_files(i)) > 0) then
+                    call extract_parent_dir(cache_files(i), build_dir)
+                    if (allocated(build_dir)) return
+                end if
+            end do
+        end if
+    end subroutine detect_cmake_build_dir
 
     logical function find_cmake_cache_dir(project_path, candidate, build_dir)
         character(len=*), intent(in) :: project_path
@@ -353,20 +364,20 @@ contains
         end if
     end function find_cmake_cache_dir
 
-    function extract_parent_dir(path) result(parent_dir)
+    subroutine extract_parent_dir(path, parent_dir)
         character(len=*), intent(in) :: path
-        character(len=:), allocatable :: parent_dir
+        character(len=:), allocatable, intent(out) :: parent_dir
         integer :: last_sep
 
         last_sep = index(path, '/', back=.true.)
         if (last_sep > 0) then
             parent_dir = path(1:last_sep-1)
         end if
-    end function extract_parent_dir
+    end subroutine extract_parent_dir
 
-    function build_cmake_test_command(build_dir) result(command)
+    subroutine build_cmake_test_command(build_dir, command)
         character(len=*), intent(in) :: build_dir
-        character(len=:), allocatable :: command
+        character(len=*), intent(out) :: command
         character(len=2), parameter :: shell_and = achar(38)//achar(38)
 
         if (len_trim(build_dir) > 0) then
@@ -375,6 +386,6 @@ contains
         else
             command = 'cmake --build . '//shell_and//' ctest'
         end if
-    end function build_cmake_test_command
+    end subroutine build_cmake_test_command
 
 end module build_detector_core
