@@ -26,28 +26,65 @@ module gcov_generation_utils
 
 contains
 
-    logical function should_use_real_gcov() result(use_real_gcov)
+    subroutine discover_gcov_or_error(directory, gcov_files, error_ctx)
+        character(len=*), intent(in) :: directory
+        character(len=:), allocatable, intent(out) :: gcov_files(:)
+        type(error_context_t), intent(inout) :: error_ctx
+
+        call discover_gcov_files('.', gcov_files, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            call discover_gcov_files(directory, gcov_files, error_ctx)
+        end if
+
+        if (.not. allocated(gcov_files) .or. size(gcov_files) == 0) then
+            call safe_write_message(error_ctx, &
+                'No .gcov files generated from .gcda files')
+            call safe_write_suggestion(error_ctx, &
+                'Check gcov command output and file permissions')
+            call safe_write_context(error_ctx, 'gcov file generation')
+            error_ctx%error_code = 1
+        else
+            call clear_error_context(error_ctx)
+            error_ctx%error_code = ERROR_SUCCESS
+        end if
+    end subroutine discover_gcov_or_error
+
+    logical function should_use_synthetic_gcov() result(use_synthetic_gcov)
         character(len=16) :: env_val
         integer :: env_len, env_stat
 
         env_val = ''
         env_len = 0
         env_stat = 1
-        use_real_gcov = .true.
-        call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, env_len, &
-            env_stat)
+        use_synthetic_gcov = .false.
+        call get_environment_variable('FORTCOV_USE_SYNTHETIC_GCOV', env_val, &
+            env_len, env_stat)
         if (env_stat == 0 .and. env_len > 0) then
             if (env_val(1:1) == '0' .or. env_val(1:1) == 'N' .or. &
                 env_val(1:1) == 'n' .or. env_val(1:1) == 'F' .or. &
                 env_val(1:1) == 'f') then
-                use_real_gcov = .false.
+                use_synthetic_gcov = .false.
             else if (env_val(1:1) == '1' .or. env_val(1:1) == 'Y' .or. &
                      env_val(1:1) == 'y' .or. env_val(1:1) == 'T' .or. &
                      env_val(1:1) == 't') then
-                use_real_gcov = .true.
+                use_synthetic_gcov = .true.
             end if
         end if
-    end function should_use_real_gcov
+        if (env_stat /= 0) then
+            env_val = ''
+            env_len = 0
+            env_stat = 1
+            call get_environment_variable('FORTCOV_USE_REAL_GCOV', env_val, &
+                env_len, env_stat)
+            if (env_stat == 0 .and. env_len > 0) then
+                if (env_val(1:1) == '0' .or. env_val(1:1) == 'N' .or. &
+                    env_val(1:1) == 'n' .or. env_val(1:1) == 'F' .or. &
+                    env_val(1:1) == 'f') then
+                    use_synthetic_gcov = .true.
+                end if
+            end if
+        end if
+    end function should_use_synthetic_gcov
 
     subroutine derive_paths(gcda_file, gcno_file, out_dir, base_name)
         character(len=*), intent(in) :: gcda_file
@@ -196,7 +233,7 @@ contains
         character(len=512) :: out_dir, base_name
         character(len=512) :: created_files(512)
         integer :: created_count
-        logical :: use_real_gcov
+        logical :: use_synthetic_gcov
         logical :: ok
 
         call clear_error_context(error_ctx)
@@ -211,12 +248,9 @@ contains
             gcov_exec = 'gcov'
         end if
 
-        ! Feature flag: allow forcing synthetic gcov output for tests.
-        ! By default, use real gcov for meaningful coverage data.
-        use_real_gcov = should_use_real_gcov()
+        use_synthetic_gcov = should_use_synthetic_gcov()
 
-        if (use_real_gcov) then
-            ! Attempt to invoke real gcov; do not synthesize files in this mode.
+        if (.not. use_synthetic_gcov) then
             created_count = 0
             do i = 1, size(gcda_files)
                 call derive_paths(gcda_files(i), gcno_file, out_dir, base_name)
@@ -239,14 +273,13 @@ contains
                 error_ctx%error_code = ERROR_SUCCESS
                 return
             end if
+
+            call discover_gcov_or_error(directory, gcov_files, error_ctx)
+            return
         end if
 
         created_count = 0
-        ! Process each .gcda file
         do i = 1, size(gcda_files)
-            ! In lieu of executing gcov (removed for security), synthesize a
-            ! minimal .gcov file next to the coverage artifacts so downstream
-            ! processing and tests can operate deterministically.
             call derive_paths(gcda_files(i), gcno_file, out_dir, base_name)
             call synthesize_gcov_file(gcda_files(i), gcno_file, out_dir, base_name, &
                 created_files, created_count, error_ctx, ok)
@@ -255,8 +288,6 @@ contains
             end if
         end do
 
-        ! Prefer directly returning the files we created to avoid
-        ! dependency on discovery in restricted environments.
         if (created_count > 0) then
             allocate(character(len=512) :: gcov_files(created_count))
             gcov_files(1:created_count) = created_files(1:created_count)
@@ -265,21 +296,6 @@ contains
             return
         end if
 
-        ! Fallback: discover generated .gcov files in current directory
-        ! and subdirectories
-        call discover_gcov_files('.', gcov_files, error_ctx)
-        if (error_ctx%error_code /= ERROR_SUCCESS) then
-            ! Try searching more broadly
-            call discover_gcov_files(directory, gcov_files, error_ctx)
-        end if
-
-        if (.not. allocated(gcov_files) .or. size(gcov_files) == 0) then
-            call safe_write_message(error_ctx, &
-                'No .gcov files generated from .gcda files')
-            call safe_write_suggestion(error_ctx, &
-                'Check gcov command output and file permissions')
-            call safe_write_context(error_ctx, 'gcov file generation')
-            error_ctx%error_code = 1
-        end if
+        call discover_gcov_or_error(directory, gcov_files, error_ctx)
     end subroutine generate_gcov_files
 end module gcov_generation_utils
