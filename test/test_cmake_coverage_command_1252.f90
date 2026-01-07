@@ -27,6 +27,12 @@ contains
         character(len=*), parameter :: expected = &
                                        'cmake -S . -B build '// &
                                        '-DCMAKE_BUILD_TYPE=Debug '// &
+                                       '-DCMAKE_C_FLAGS="'// &
+                                       '-fprofile-arcs -ftest-coverage" '// &
+                                       '-DCMAKE_CXX_FLAGS="'// &
+                                       '-fprofile-arcs -ftest-coverage" '// &
+                                       '-DCMAKE_Fortran_FLAGS="'// &
+                                       '-fprofile-arcs -ftest-coverage" '// &
                                        '-DENABLE_COVERAGE=ON '// &
                                        shell_and//' cmake --build build '// &
                                        '--parallel'

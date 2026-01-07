@@ -35,7 +35,7 @@ module build_discovery_core
     type :: test_build_result_t
         logical :: success = .false.
         character(len=512) :: error_message = ''
-        character(len=256) :: test_command = ''
+        character(len=512) :: test_command = ''
         logical :: has_coverage_support = .false.
         character(len=20) :: detected_build_system = 'unknown'
         character(len=256) :: build_file = ''
@@ -87,7 +87,8 @@ contains
         end if
 
         ! Unified: validate path, detect and standardize reporting
-        if (detect_and_validate_build_system(config, build_info, error_ctx, directory) /= EXIT_SUCCESS) then
+        if (detect_and_validate_build_system(config, build_info, error_ctx, &
+                                             directory) /= EXIT_SUCCESS) then
             call handle_build_detection_error(error_ctx, result)
             return
         end if
@@ -138,10 +139,9 @@ contains
         type(test_build_result_t), intent(inout) :: result
         
         type(error_context_t) :: error_ctx
-        character(len=256) :: coverage_command
+        character(len=512) :: coverage_command
         
-        call get_coverage_test_command(build_info%system_type, &
-                                      coverage_command, error_ctx)
+        call get_coverage_test_command(build_info, coverage_command, error_ctx)
         
         if (error_ctx%error_code == ERROR_SUCCESS) then
             result%test_command = coverage_command
