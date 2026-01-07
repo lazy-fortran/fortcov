@@ -19,7 +19,7 @@ module test_reporter_core
     public :: report_build_system_detected
     public :: report_test_failure
     public :: report_test_success
-    ! fork-bomb prevention reporting removed
+    ! Manual input reporting handled elsewhere
     
 contains
     

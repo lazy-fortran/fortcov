@@ -10,7 +10,6 @@ module config_parser_command_line
     !! - config_zero_config_detector.f90
     !! - config_special_flags.f90
     !! - config_positional_args.f90
-    !! - config_fork_bomb_prevention.f90
     use config_types, only: config_t
     use config_defaults_core, only: initialize_default_config, apply_default_output_filename, &
                                    apply_default_output_path_for_coverage_files, &
@@ -22,7 +21,7 @@ module config_parser_command_line
     use config_parser_consolidated, only: detect_zero_config_mode
     use config_parser_consolidated, only: process_special_flags
     use config_positional_args
-    use config_parser_consolidated, only: prevent_fork_bomb_with_manual_files
+    use config_parser_consolidated, only: disable_auto_tests_for_manual_inputs
     implicit none
     
     ! Re-export public procedures for backward compatibility
@@ -31,7 +30,7 @@ module config_parser_command_line
     public :: handle_zero_configuration_with_overrides
     public :: handle_normal_configuration
     public :: process_positional_arguments
-    public :: prevent_fork_bomb_with_manual_files
+    public :: disable_auto_tests_for_manual_inputs
 
 contains
 
@@ -109,8 +108,8 @@ contains
 
         ! Config files are no longer supported (CLI-only). Ignore if set.
 
-        ! Apply fork bomb prevention (Issue #395)
-        call prevent_fork_bomb_with_manual_files(config)
+        ! Disable auto tests when manual inputs are provided
+        call disable_auto_tests_for_manual_inputs(config)
 
         ! Apply final defaults
         call apply_default_output_filename(config)
@@ -152,8 +151,8 @@ contains
 
         ! Config files are no longer supported (CLI-only). Ignore if set.
 
-        ! Apply fork bomb prevention (Issue #395)
-        call prevent_fork_bomb_with_manual_files(config)
+        ! Disable auto tests when manual inputs are provided
+        call disable_auto_tests_for_manual_inputs(config)
 
         ! Apply defaults for output formats
         call apply_default_output_filename(config)

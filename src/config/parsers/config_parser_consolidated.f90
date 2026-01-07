@@ -13,7 +13,7 @@ module config_parser_consolidated
                                   get_long_form_option, has_input_related_arguments, &
                                   has_output_related_arguments, has_diff_mode_arguments
     use config_parser_special, only: process_special_flags, &
-                                     prevent_fork_bomb_with_manual_files, &
+                                     disable_auto_tests_for_manual_inputs, &
                                      detect_zero_config_mode
     use config_parser_complex, only: parse_diff_files
     implicit none
@@ -35,7 +35,7 @@ module config_parser_consolidated
     public :: has_output_related_arguments
     public :: has_diff_mode_arguments
     public :: process_special_flags
-    public :: prevent_fork_bomb_with_manual_files
+    public :: disable_auto_tests_for_manual_inputs
     public :: detect_zero_config_mode
     public :: parse_diff_files
 
