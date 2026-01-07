@@ -40,7 +40,7 @@ contains
         character(len=:), allocatable :: rest, cmd
         character(len=:), allocatable :: wrapped_command
         character(len=:), allocatable :: timeout_command
-        logical :: timeout_available
+        logical :: timeout_available, is_sleep
 
         success = .false.
         exit_code = 0
@@ -60,7 +60,11 @@ contains
             cmd = adjustl(test_command)
             sp = index(cmd, ' ')
             if (sp == 0) sp = len_trim(cmd) + 1
-            if (len_trim(cmd) >= 5 .and. cmd(1:5) == 'sleep') then
+            is_sleep = .false.
+            if (len_trim(cmd) >= 5) then
+                is_sleep = (cmd(1:5) == 'sleep')
+            end if
+            if (is_sleep) then
                 ! Parse seconds after the first space
                 sleep_sec = 0
                 ios = 0
