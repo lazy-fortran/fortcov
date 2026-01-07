@@ -283,8 +283,12 @@ contains
         case ("--config")
             success = .false.
             error_message = "Configuration files are no longer supported; use CLI flags"
-        case ("--auto-discovery", "--no-auto-discovery", "--auto-test", &
-              "--no-auto-test", "--test-timeout", "--validate", "--zero-config")
+        case ("--auto-test")
+            config % auto_test_execution = .true.
+        case ("--no-auto-test")
+            config % auto_test_execution = .false.
+        case ("--auto-discovery", "--no-auto-discovery", "--test-timeout", &
+              "--validate", "--zero-config")
             call set_unsupported_flag_error(flag, success, error_message)
         case ("--gcov", "--discover-and-gcov")
             config % auto_discovery = .false.
