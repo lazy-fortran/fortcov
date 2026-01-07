@@ -118,7 +118,7 @@ contains
         end do
         
         ! Check if we have only flags (ignoring their values for zero-config detection)
-        ! This allows constructs like "--output custom.md" to still be zero-config
+        ! This allows constructs like --output custom.md to still be zero-config
         call check_zero_config_with_flags(args, zero_config_mode)
     end function detect_zero_config_mode
 

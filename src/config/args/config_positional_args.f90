@@ -126,16 +126,16 @@ contains
         ! This prevents spurious warnings when shell expansion includes multiple executables
         call check_if_executable_path(arg, is_executable_path)
         
-        ! If it's an executable path, silently ignore (no classification needed)
+        ! If it is an executable path, silently ignore (no classification needed)
         if (is_executable_path) then
             return
         end if
 
-        ! If not recognized by extension, check if it's an existing file/directory
+        ! If not recognized by extension, check if it is an existing file/directory
         if (.not. is_valid_coverage_file .and. .not. is_source_path) then
             inquire(file=trim(arg), exist=file_exists)
             if (file_exists) then
-                ! Check if it's a directory
+                ! Check if it is a directory
                 call check_if_directory(arg, is_directory)
                 if (is_directory) then
                     is_source_path = .true.
@@ -181,13 +181,13 @@ contains
         inquire(file=trim(path), exist=file_exists)
         if (.not. file_exists) return
 
-        ! Check if path contains 'fortcov' and is in a build directory structure
+        ! Check if path contains fortcov and is in a build directory structure
         if (index(path, 'fortcov') > 0 .and. &
             (index(path, 'build/') > 0 .or. index(path, '/app/') > 0)) then
             
             ! Additional verification: try to open for read as binary executable
-            ! This is a heuristic - if the file can be opened and contains 'fortcov' 
-            ! in the path with build structure, it's likely an executable
+            ! This is a heuristic - if the file can be opened and contains fortcov
+            ! in the path with build structure, it is likely an executable
             open(newunit=unit, file=trim(path), status='old', &
                  action='read', form='unformatted', access='stream', iostat=iostat)
             if (iostat == 0) then
