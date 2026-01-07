@@ -201,8 +201,15 @@ contains
 
         call clear_error_context(error_ctx)
 
-        ! SECURITY: Use hardcoded gcov command - no user configuration
-        gcov_exec = 'gcov'
+        if (allocated(config%gcov_executable)) then
+            if (len_trim(config%gcov_executable) > 0) then
+                gcov_exec = trim(config%gcov_executable)
+            else
+                gcov_exec = 'gcov'
+            end if
+        else
+            gcov_exec = 'gcov'
+        end if
 
         ! Feature flag: allow forcing synthetic gcov output for tests.
         ! By default, use real gcov for meaningful coverage data.

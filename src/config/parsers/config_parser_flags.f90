@@ -65,8 +65,8 @@ contains
             "--format", "-f", "--minimum", "-m", "--threshold", &
             "--fail-under", "--diff-threshold", "--import", "--config", &
             "--test-timeout", "--threads", "-t", "--gcov-output-dir", &
-            "--diff-baseline", "--diff-current")
-         ! SECURITY FIX Issue #963: --gcov-executable REMOVED
+            "--diff-baseline", "--diff-current", "--gcov-executable", &
+            "--gcov-cmd")
          requires_value = .true.
       case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
             "--verbose", "-v", "--validate", "--diff", "--lcov", &
@@ -281,6 +281,10 @@ contains
       case ("--gcov-output-dir")
          if (len_trim(value) > 0) then
             config%gcov_output_dir = value
+         end if
+      case ("--gcov-executable", "--gcov-cmd")
+         if (len_trim(value) > 0) then
+            config%gcov_executable = value
          end if
       case ("--import")
          call set_unsupported_flag_error(flag, success, error_message)

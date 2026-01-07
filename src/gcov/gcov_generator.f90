@@ -21,22 +21,35 @@ module gcov_generator
 
 contains
 
-   subroutine check_gcov_availability(gcov_available)
+   subroutine check_gcov_availability(gcov_available, gcov_executable)
         !! Check if gcov executable is available in PATH
       logical, intent(out) :: gcov_available
+      character(len=*), intent(in), optional :: gcov_executable
       type(error_context_t) :: error_ctx
       character(len=:), allocatable :: safe_gcov
+      character(len=:), allocatable :: executable
 
       ! Try to validate gcov executable path - if it passes, gcov is available
-      call validate_executable_path("gcov", safe_gcov, error_ctx)
+      if (present(gcov_executable)) then
+         if (len_trim(gcov_executable) > 0) then
+            executable = trim(gcov_executable)
+         else
+            executable = "gcov"
+         end if
+      else
+         executable = "gcov"
+      end if
+
+      call validate_executable_path(executable, safe_gcov, error_ctx)
       gcov_available = (error_ctx%error_code == ERROR_SUCCESS)
    end subroutine check_gcov_availability
 
    subroutine generate_gcov_files_from_gcda(gcda_files, gcov_output_dir, &
-                                            generated_gcov_files)
+                                            gcov_executable, generated_gcov_files)
         !! Safely execute gcov commands to generate .gcov files from .gcda files
       character(len=*), intent(in) :: gcda_files(:)
       character(len=*), intent(in) :: gcov_output_dir
+      character(len=*), intent(in) :: gcov_executable
       character(len=:), allocatable, intent(out) :: generated_gcov_files(:)
 
       type(gcov_executor_t) :: executor
@@ -55,6 +68,9 @@ contains
       end if
       call executor%set_gcov_output_directory(output_dir)
       call executor%set_working_directory(".")
+      if (len_trim(gcov_executable) > 0) then
+         call executor%set_gcov_command(trim(gcov_executable))
+      end if
 
       ! Ensure output directory exists
       call ensure_directory(trim(output_dir), dir_created)

@@ -23,7 +23,8 @@ contains
         call validate_input_source_rules(has_source_paths, has_coverage_files, &
                                          has_import_file, has_diff_files, &
                                          config%zero_configuration_mode, &
-                                         is_valid, error_message)
+                                         is_valid, &
+                                         error_message)
         if (.not. is_valid) return
 
         call validate_specific_input_sources(config, has_source_paths, &
@@ -55,7 +56,8 @@ contains
 
     pure subroutine validate_input_source_rules(has_source_paths, has_coverage_files, &
                                                 has_import_file, has_diff_files, &
-                                                zero_config_mode, is_valid, error_message)
+                                                zero_config_mode, is_valid, &
+                                                error_message)
         !! Validate input source combination rules
         logical, intent(in) :: has_source_paths, has_coverage_files
         logical, intent(in) :: has_import_file, has_diff_files, zero_config_mode
@@ -73,7 +75,8 @@ contains
             .not. has_diff_files .and. &
             .not. zero_config_mode) then
             is_valid = .false.
-            error_message = "No input sources specified. Provide source paths, coverage files, import file, or diff files"
+            error_message = "No input sources specified. Provide source paths, " // &
+                            "coverage files, import file, or diff files"
             return
         end if
 
@@ -85,9 +88,11 @@ contains
         end if
 
         ! Can't mix diff with other sources (diff mode is standalone)
-        if (has_diff_files .and. (has_source_paths .or. has_coverage_files .or. has_import_file)) then
+        if (has_diff_files .and. (has_source_paths .or. has_coverage_files .or. &
+            has_import_file)) then
             is_valid = .false.
-            error_message = "Cannot mix diff mode with source paths, coverage files, or import file"
+            error_message = "Cannot mix diff mode with source paths, " // &
+                            "coverage files, or import file"
             return
         end if
 
@@ -120,9 +125,12 @@ contains
             if (.not. is_valid) return
         end if
 
-        ! SECURITY FIX Issue #963: gcov_executable validation removed - hardcoded 'gcov' command
-        is_valid = .true.
-        error_message = ""
+        if (allocated(config%gcov_executable) .and. &
+            (has_source_paths .or. config%zero_configuration_mode)) then
+            call validate_gcov_executable(config%gcov_executable, is_valid, &
+                                          error_message)
+            if (.not. is_valid) return
+        end if
 
     end subroutine validate_specific_input_sources
 

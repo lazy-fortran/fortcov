@@ -22,8 +22,11 @@ contains
         if (.not. allocated(cli_config%output_path) .and. allocated(file_config%output_path)) then
             cli_config%output_path = file_config%output_path
         end if
-        
-        ! SECURITY FIX Issue #963: gcov_executable removed - shell injection vulnerability
+
+        if (.not. allocated(cli_config%gcov_executable) .and. &
+            allocated(file_config%gcov_executable)) then
+            cli_config%gcov_executable = file_config%gcov_executable
+        end if
         
         ! Update numeric values if not explicitly set (using sentinel values)
         if (cli_config%minimum_coverage < 0.0 .and. file_config%minimum_coverage >= 0.0) then

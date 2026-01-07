@@ -336,8 +336,15 @@ contains
 
       success = .false.
 
-      ! SECURITY FIX Issue #963: Use hardcoded 'gcov' command - no user configuration
-      gcov_exe = "gcov"
+      if (allocated(config%gcov_executable)) then
+         if (len_trim(config%gcov_executable) > 0) then
+            gcov_exe = trim(config%gcov_executable)
+         else
+            gcov_exe = "gcov"
+         end if
+      else
+         gcov_exe = "gcov"
+      end if
 
       ! Process each build directory
       do i = 1, size(build_dirs)
@@ -484,7 +491,7 @@ contains
       if (.not. allocated(gcda)) return
       if (size(gcda) == 0) return
 
-      call generate_gcov_files_from_gcda(gcda, gcov_output_dir, generated)
+      call generate_gcov_files_from_gcda(gcda, gcov_output_dir, gcov_exe, generated)
       if (allocated(generated)) then
          if (size(generated) > 0) then
             exit_status = 0

@@ -1,6 +1,8 @@
 module config_validators
     use config_types, only: config_t
     use path_security, only: validate_executable_path, validate_path_security
+    use file_utilities, only: basename
+    use string_utils, only: to_lower
     use error_handling_core
     use input_validation_core
     use config_validators_format
@@ -255,17 +257,66 @@ contains
     end subroutine validate_import_file
 
     subroutine validate_gcov_executable(gcov_path, is_valid, error_message)
-        !! SECURITY FIX Issue #963: gcov_executable validation DISABLED
-        !! Native .gcov file parsing eliminates need for gcov executable validation
         character(len=*), intent(in) :: gcov_path
         logical, intent(out) :: is_valid
         character(len=*), intent(out) :: error_message
 
-        ! Always return valid - no gcov executable needed
+        type(error_context_t) :: error_ctx
+        character(len=:), allocatable :: safe_exec
+        character(len=:), allocatable :: exec_name
+
         is_valid = .true.
-        error_message = "SECURITY FIX: Native .gcov parsing - no gcov executable required"
+        error_message = ""
+
+        if (len_trim(gcov_path) == 0) then
+            return
+        end if
+
+        call validate_executable_path(trim(gcov_path), safe_exec, error_ctx)
+        if (error_ctx%error_code /= ERROR_SUCCESS) then
+            is_valid = .false.
+            error_message = trim(error_ctx%message)
+            return
+        end if
+
+        exec_name = basename(trim(safe_exec))
+        if (.not. is_allowed_gcov_name(exec_name)) then
+            is_valid = .false.
+            error_message = "Invalid gcov executable name: " // trim(exec_name)
+            return
+        end if
 
     end subroutine validate_gcov_executable
+
+    logical function is_allowed_gcov_name(name) result(is_allowed)
+        character(len=*), intent(in) :: name
+        character(len=:), allocatable :: lower_name
+        integer :: i, name_len
+
+        name_len = len_trim(name)
+        if (name_len == 0) then
+            is_allowed = .false.
+            return
+        end if
+
+        lower_name = to_lower(trim(name))
+        if (index(lower_name, "gcov") /= 1) then
+            is_allowed = .false.
+            return
+        end if
+
+        do i = 1, name_len
+            select case (name(i:i))
+            case ("a":"z", "A":"Z", "0":"9", "-", "_", ".")
+                cycle
+            case default
+                is_allowed = .false.
+                return
+            end select
+        end do
+
+        is_allowed = .true.
+    end function is_allowed_gcov_name
 
     subroutine validate_diff_files(config, is_valid, error_message)
         !! Validate diff files - wrapper for diff configuration
