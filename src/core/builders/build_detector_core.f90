@@ -309,62 +309,18 @@ contains
         character(len=*), intent(in) :: project_path
         character(len=:), allocatable :: build_dir
         character(len=:), allocatable :: cache_files(:)
-        character(len=512) :: cache_path
-        character(len=512) :: candidate_dir
-        character(len=512) :: candidate_cache
+        character(len=32), parameter :: candidates(6) = &
+            [character(len=32) :: 'build', '_build', 'cmake-build-debug', &
+             'cmake-build-release', 'cmake-build-relwithdebinfo', &
+             'cmake-build-minsizerel']
         integer :: i
 
-        call construct_marker_path(project_path, 'build', candidate_dir)
-        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
-                                   candidate_cache)
-        if (file_exists(candidate_cache)) then
-            build_dir = trim(candidate_dir)
-            return
-        end if
-
-        call construct_marker_path(project_path, '_build', candidate_dir)
-        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
-                                   candidate_cache)
-        if (file_exists(candidate_cache)) then
-            build_dir = trim(candidate_dir)
-            return
-        end if
-
-        call construct_marker_path(project_path, 'cmake-build-debug', &
-                                   candidate_dir)
-        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
-                                   candidate_cache)
-        if (file_exists(candidate_cache)) then
-            build_dir = trim(candidate_dir)
-            return
-        end if
-
-        call construct_marker_path(project_path, 'cmake-build-release', &
-                                   candidate_dir)
-        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
-                                   candidate_cache)
-        if (file_exists(candidate_cache)) then
-            build_dir = trim(candidate_dir)
-            return
-        end if
-
-        call construct_marker_path(project_path, 'cmake-build-relwithdebinfo', &
-                                   candidate_dir)
-        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
-                                   candidate_cache)
-        if (file_exists(candidate_cache)) then
-            build_dir = trim(candidate_dir)
-            return
-        end if
-
-        call construct_marker_path(project_path, 'cmake-build-minsizerel', &
-                                   candidate_dir)
-        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
-                                   candidate_cache)
-        if (file_exists(candidate_cache)) then
-            build_dir = trim(candidate_dir)
-            return
-        end if
+        do i = 1, size(candidates)
+            if (find_cmake_cache_dir(project_path, candidates(i), &
+                                     build_dir)) then
+                return
+            end if
+        end do
 
         cache_files = find_files_with_glob(project_path, &
                                            'cmake-build-*/CMakeCache.txt')
@@ -377,6 +333,25 @@ contains
             end do
         end if
     end function detect_cmake_build_dir
+
+    logical function find_cmake_cache_dir(project_path, candidate, build_dir)
+        character(len=*), intent(in) :: project_path
+        character(len=*), intent(in) :: candidate
+        character(len=:), allocatable, intent(out) :: build_dir
+        character(len=512) :: candidate_dir
+        character(len=512) :: candidate_cache
+
+        call construct_marker_path(project_path, trim(candidate), &
+                                   candidate_dir)
+        call construct_marker_path(candidate_dir, 'CMakeCache.txt', &
+                                   candidate_cache)
+        if (file_exists(candidate_cache)) then
+            build_dir = trim(candidate_dir)
+            find_cmake_cache_dir = .true.
+        else
+            find_cmake_cache_dir = .false.
+        end if
+    end function find_cmake_cache_dir
 
     function extract_parent_dir(path) result(parent_dir)
         character(len=*), intent(in) :: path
