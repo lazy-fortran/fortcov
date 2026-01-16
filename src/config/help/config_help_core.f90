@@ -40,6 +40,8 @@ contains
         print '(A)', "Coverage:"
         print '(A)', "  --fail-under PERCENT      Exit non-zero if coverage below "// &
             "PERCENT"
+        print '(A)', "  --gcov-executable PATH    Use a specific gcov executable"
+        print '(A)', "                             (alias: --gcov-cmd)"
         print '(A)', "  --gcov-output-dir PATH    Directory for gcov output "// &
             "(default: build/gcov)"
         print '(A)', ""
