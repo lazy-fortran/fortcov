@@ -22,13 +22,14 @@ contains
     subroutine test_open_no_suggestion()
         type(error_context_t) :: error_ctx
         character(len=*), parameter :: path = 'missing_file.gcov'
+        character(len=*), parameter :: expected_prefix = 'Could not open file: '
 
         tests = tests + 1
 
         call interpret_iostat_open_error(29, path, error_ctx)
 
         if (len_trim(error_ctx%suggestion) == 0 .and. &
-            index(error_ctx%message, 'Could not open file:') > 0) then
+            trim(error_ctx%message) == expected_prefix//path) then
             passed = passed + 1
             write (output_unit, '(A)') &
                 '  [PASS] Open error has minimal message and no suggestion'
@@ -43,13 +44,14 @@ contains
     subroutine test_open_permission_no_suggestion()
         type(error_context_t) :: error_ctx
         character(len=*), parameter :: path = 'no_permission.gcov'
+        character(len=*), parameter :: expected_prefix = 'Permission denied opening: '
 
         tests = tests + 1
 
         call interpret_iostat_open_error(13, path, error_ctx)
 
         if (len_trim(error_ctx%suggestion) == 0 .and. &
-            index(error_ctx%message, 'Permission denied opening:') > 0) then
+            trim(error_ctx%message) == expected_prefix//path) then
             passed = passed + 1
             write (output_unit, '(A)') &
                 '  [PASS] Permission error has minimal message and no suggestion'
