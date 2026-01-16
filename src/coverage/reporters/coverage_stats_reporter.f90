@@ -86,7 +86,8 @@ contains
         end if
         
         ! Generate the report
-        call reporter%generate_report(coverage_data, config%output_path, success, error_message)
+        call reporter%generate_report(coverage_data, config%output_path, success, &
+                                      error_message)
         if (.not. success) then
             if (.not. config%quiet) then
                 write(*,'(A)') "Error generating " // trim(config%output_format) // &
@@ -95,7 +96,9 @@ contains
             report_error = .true.
         else
             if (.not. config%quiet) then
-                write(*,'(A)') "Markdown coverage report generated: " // trim(config%output_path)
+                write(*,'(A)') trim(config%output_format) // &
+                               " coverage report generated: " // &
+                               trim(config%output_path)
             end if
         end if
         
@@ -120,9 +123,11 @@ contains
                                     " of ", line_stats%total_lines, " lines"
             
             if (line_stats%total_branches > 0) then
-                write(*,'(A,F6.2,A)') "  Branch Coverage: ", line_stats%branch_percentage, "%"
-                write(*,'(A,I0,A,I0,A)') "  Branches Covered: ", line_stats%covered_branches, &
-                                        " of ", line_stats%total_branches, " branches"
+                write(*,'(A,F6.2,A)') "  Branch Coverage: ", &
+                                      line_stats%branch_percentage, "%"
+                write(*,'(A,I0,A,I0,A)') "  Branches Covered: ", &
+                                        line_stats%covered_branches, " of ", &
+                                        line_stats%total_branches, " branches"
             end if
         end if
         
@@ -141,7 +146,8 @@ contains
             if (line_stats%percentage < config%minimum_coverage) then
                 if (.not. config%quiet) then
                     write(*,'(A)') ""
-                    write(*,'(A,F6.2,A,F6.2,A)') "Warning: Coverage ", line_stats%percentage, &
+                    write(*,'(A,F6.2,A,F6.2,A)') "Warning: Coverage ", &
+                                                 line_stats%percentage, &
                                                  "% is below minimum threshold of ", &
                                                  config%minimum_coverage, "%"
                 end if
@@ -153,8 +159,10 @@ contains
             if (line_stats%percentage < config%fail_under_threshold) then
                 if (.not. config%quiet) then
                     write(*,'(A)') ""
-                    write(*,'(A,F6.2,A,F6.2,A)') "Error: Coverage ", line_stats%percentage, &
-                                                 "% is below fail-under threshold of ", &
+                    write(*,'(A,F6.2,A,F6.2,A)') "Error: Coverage ", &
+                                                 line_stats%percentage, &
+                                                 "%" // &
+                                                 " is below fail-under threshold of ", &
                                                  config%fail_under_threshold, "%"
                 end if
                 exit_code = EXIT_THRESHOLD_NOT_MET

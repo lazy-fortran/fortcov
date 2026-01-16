@@ -35,7 +35,7 @@ contains
         print '(A)', "Output:"
         print '(A)', "  -o, --output PATH         Output Markdown file (default: "// &
             "coverage.md)"
-        print '(A)', "  -f, --format FORMAT       Only 'markdown' is supported"
+        print '(A)', "  -f, --format FORMAT       'markdown' or 'cobertura'"
         print '(A)', ""
         print '(A)', "Coverage:"
         print '(A)', "  --fail-under PERCENT      Exit non-zero if coverage below "// &
@@ -60,6 +60,7 @@ contains
         print '(A)', ""
         print '(A)', "Examples:"
         print '(A)', "  fortcov --source=src *.gcov --output=report.md"
+        print '(A)', "  fortcov --format=cobertura --output=coverage.xml"
         print '(A)', "  fortcov --gcov --fail-under 80"
         print '(A)', ""
         print '(A)', "For more information, visit: https://github.com/"// &
