@@ -4,7 +4,7 @@ program test_path_security_common_paths
 
     use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
     use error_handling_core, only: error_context_t, ERROR_INVALID_PATH, &
-        ERROR_SUCCESS
+                                   ERROR_SUCCESS
     use path_security, only: validate_path_security
     implicit none
 
@@ -68,8 +68,8 @@ contains
 
         tests = tests + 1
 
-        path = 'C:' // backslash // 'Users' // backslash // 'me' // backslash // &
-            'project' // backslash // 'src'
+        path = 'C:'//backslash//'Users'//backslash//'me'//backslash// &
+               'project'//backslash//'src'
         call validate_path_security(path, safe, ctx)
         if (ctx%error_code == ERROR_SUCCESS) then
             passed = passed + 1

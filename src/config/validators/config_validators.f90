@@ -3,10 +3,10 @@ module config_validators
     use path_security, only: validate_executable_path, validate_path_security
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use config_validators_format, only: is_file_readable, is_supported_output_format, &
-        is_valid_coverage_file_format, is_valid_import_file_format
+                              is_valid_coverage_file_format, is_valid_import_file_format
     implicit none
     private
-    
+
     ! Public procedures
     public :: validate_coverage_files
     public :: validate_output_settings
@@ -18,7 +18,7 @@ module config_validators
     public :: validate_import_file
     public :: validate_gcov_executable
     public :: validate_diff_files
-    
+
 contains
 
     subroutine validate_coverage_files(files, is_valid, error_message)
@@ -35,17 +35,17 @@ contains
 
         do i = 1, size(files)
             ! Check file exists
-            inquire(file=trim(files(i)), exist=file_exists)
+            inquire (file=trim(files(i)), exist=file_exists)
             if (.not. file_exists) then
                 is_valid = .false.
-                error_message = "Coverage file not found: " // trim(files(i))
+                error_message = "Coverage file not found: "//trim(files(i))
                 return
             end if
 
             ! Check file format
             if (.not. is_valid_coverage_file_format(files(i))) then
                 is_valid = .false.
-                error_message = "Invalid coverage file format: " // trim(files(i)) // &
+                error_message = "Invalid coverage file format: "//trim(files(i))// &
                                 ". Expected .gcov"
                 return
             end if
@@ -53,7 +53,7 @@ contains
             ! Check file is readable
             if (.not. is_file_readable(files(i))) then
                 is_valid = .false.
-                error_message = "Cannot read coverage file: " // trim(files(i))
+                error_message = "Cannot read coverage file: "//trim(files(i))
                 return
             end if
         end do
@@ -72,7 +72,7 @@ contains
         ! Check output format is supported
         if (.not. is_supported_output_format(config%output_format)) then
             is_valid = .false.
-            error_message = "Unsupported output format: " // trim(config%output_format)
+            error_message = "Unsupported output format: "//trim(config%output_format)
             return
         end if
 
@@ -122,33 +122,33 @@ contains
         error_message = ""
 
         ! Check baseline file exists and is readable
-        inquire(file=trim(config%diff_baseline_file), exist=file_exists)
+        inquire (file=trim(config%diff_baseline_file), exist=file_exists)
         if (.not. file_exists) then
             is_valid = .false.
-            error_message = "Diff baseline file not found: " // &
+            error_message = "Diff baseline file not found: "// &
                             trim(config%diff_baseline_file)
             return
         end if
 
         if (.not. is_file_readable(config%diff_baseline_file)) then
             is_valid = .false.
-            error_message = "Cannot read diff baseline file: " // &
+            error_message = "Cannot read diff baseline file: "// &
                             trim(config%diff_baseline_file)
             return
         end if
 
         ! Check current file exists and is readable
-        inquire(file=trim(config%diff_current_file), exist=file_exists)
+        inquire (file=trim(config%diff_current_file), exist=file_exists)
         if (.not. file_exists) then
             is_valid = .false.
-            error_message = "Diff current file not found: " // &
+            error_message = "Diff current file not found: "// &
                             trim(config%diff_current_file)
             return
         end if
 
         if (.not. is_file_readable(config%diff_current_file)) then
             is_valid = .false.
-            error_message = "Cannot read diff current file: " // &
+            error_message = "Cannot read diff current file: "// &
                             trim(config%diff_current_file)
             return
         end if
@@ -187,15 +187,15 @@ contains
             call validate_path_security(paths(i), safe_path, error_ctx)
             if (error_ctx%error_code /= ERROR_SUCCESS) then
                 is_valid = .false.
-                error_message = "Invalid source path: " // trim(error_ctx%message)
+                error_message = "Invalid source path: "//trim(error_ctx%message)
                 return
             end if
 
             ! Check path exists (file or directory)
-            inquire(file=trim(paths(i)), exist=path_exists)
+            inquire (file=trim(paths(i)), exist=path_exists)
             if (.not. path_exists) then
                 is_valid = .false.
-                error_message = "Source path not found: " // trim(paths(i))
+                error_message = "Source path not found: "//trim(paths(i))
                 return
             end if
         end do
@@ -218,7 +218,7 @@ contains
         call validate_path_security(output_path, safe_path, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             is_valid = .false.
-            error_message = "Invalid output path: " // trim(error_ctx%message)
+            error_message = "Invalid output path: "//trim(error_ctx%message)
         end if
 
     end subroutine validate_output_path
@@ -235,17 +235,17 @@ contains
         error_message = ""
 
         ! Check file exists
-        inquire(file=trim(import_file), exist=file_exists)
+        inquire (file=trim(import_file), exist=file_exists)
         if (.not. file_exists) then
             is_valid = .false.
-            error_message = "Import file not found: " // trim(import_file)
+            error_message = "Import file not found: "//trim(import_file)
             return
         end if
 
         ! Import of external coverage files (JSON/XML) is no longer supported
         if (.not. is_valid_import_file_format(import_file)) then
             is_valid = .false.
-            error_message = "Unsupported import file: " // trim(import_file) // &
+            error_message = "Unsupported import file: "//trim(import_file)// &
                             ". Only native .gcov inputs are supported"
             return
         end if
@@ -253,7 +253,7 @@ contains
         ! Check file is readable
         if (.not. is_file_readable(import_file)) then
             is_valid = .false.
-            error_message = "Cannot read import file: " // trim(import_file)
+            error_message = "Cannot read import file: "//trim(import_file)
             return
         end if
 
@@ -282,19 +282,25 @@ contains
             return
         end if
 
-        exec_name = extract_executable_name(trim(safe_exec))
+        call extract_executable_name(trim(safe_exec), exec_name)
         if (.not. is_valid_executable_token(exec_name)) then
             is_valid = .false.
-            error_message = "Invalid gcov executable name: " // trim(exec_name)
+            error_message = "Invalid gcov executable name: "//trim(exec_name)
+            return
+        end if
+
+        if (.not. contains_gcov_substring(exec_name)) then
+            is_valid = .false.
+            error_message = "Invalid gcov executable name: "//trim(exec_name)
             return
         end if
 
     end subroutine validate_gcov_executable
 
-    pure function extract_executable_name(path) result(name)
+    pure subroutine extract_executable_name(path, name)
         character(len=*), intent(in) :: path
         character(len=:), allocatable :: name
-        integer :: slash_pos, backslash_pos, last_sep, path_len
+        integer :: slash_pos, backslash_pos, last_sep, path_len, end_pos
         character(len=1), parameter :: backslash = achar(92)
 
         path_len = len_trim(path)
@@ -303,19 +309,34 @@ contains
             return
         end if
 
-        slash_pos = index(path(1:path_len), '/', back=.true.)
-        backslash_pos = index(path(1:path_len), backslash, back=.true.)
-        last_sep = max(slash_pos, backslash_pos)
+        end_pos = path_len
+        do while (end_pos > 0)
+            if (path(end_pos:end_pos) == '/' .or. &
+                path(end_pos:end_pos) == backslash) then
+                end_pos = end_pos - 1
+            else
+                exit
+            end if
+        end do
 
-        if (last_sep > 0 .and. last_sep < path_len) then
-            name = path(last_sep + 1:path_len)
-        else
-            name = path(1:path_len)
+        if (end_pos == 0) then
+            name = ""
+            return
         end if
 
-    end function extract_executable_name
+        slash_pos = index(path(1:end_pos), '/', back=.true.)
+        backslash_pos = index(path(1:end_pos), backslash, back=.true.)
+        last_sep = max(slash_pos, backslash_pos)
 
-    logical function is_valid_executable_token(name) result(is_allowed)
+        if (last_sep > 0 .and. last_sep < end_pos) then
+            name = path(last_sep + 1:end_pos)
+        else
+            name = path(1:end_pos)
+        end if
+
+    end subroutine extract_executable_name
+
+    pure logical function is_valid_executable_token(name) result(is_allowed)
         character(len=*), intent(in) :: name
         integer :: i, name_len
 
@@ -337,6 +358,26 @@ contains
 
         is_allowed = .true.
     end function is_valid_executable_token
+
+    pure logical function contains_gcov_substring(name) result(has_gcov)
+        character(len=*), intent(in) :: name
+        integer :: i, name_len
+
+        has_gcov = .false.
+        name_len = len_trim(name)
+        if (name_len < 4) return
+
+        do i = 1, name_len - 3
+            if ((name(i:i) == 'g' .or. name(i:i) == 'G') .and. &
+                (name(i + 1:i + 1) == 'c' .or. name(i + 1:i + 1) == 'C') .and. &
+                (name(i + 2:i + 2) == 'o' .or. name(i + 2:i + 2) == 'O') .and. &
+                (name(i + 3:i + 3) == 'v' .or. name(i + 3:i + 3) == 'V')) then
+                has_gcov = .true.
+                return
+            end if
+        end do
+
+    end function contains_gcov_substring
 
     subroutine validate_diff_files(config, is_valid, error_message)
         !! Validate diff files - wrapper for diff configuration
