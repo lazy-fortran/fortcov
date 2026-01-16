@@ -1,24 +1,61 @@
 module config_positional_args
     !! Positional argument processing extracted from config_parser_command_line
-    !! 
+    !!
     !! Focused on processing coverage files and source paths from command line.
     !! Provides clean separation of positional argument logic.
-    use config_types, only: config_t, MAX_ARRAY_SIZE
-    use config_parser_utils, only: add_string_to_array, add_source_path
-    use file_utilities
+    use config_types, only: config_t
     implicit none
     private
-    
+
     public :: process_positional_arguments
     public :: classify_positional_argument
-    
+
     ! Private helper functions
     private :: check_if_executable_path
-    
+
 contains
 
+    subroutine add_string_to_array(array, new_string)
+        character(len=:), allocatable, intent(inout) :: array(:)
+        character(len=*), intent(in) :: new_string
+
+        character(len=:), allocatable :: temp_array(:)
+        integer :: current_size
+        integer :: new_size
+        integer :: i
+        integer :: new_len
+
+        if (.not. allocated(array)) then
+            new_len = max(256, len_trim(new_string))
+            allocate (character(len=new_len) :: array(1))
+            array(1) = new_string
+            return
+        end if
+
+        current_size = size(array)
+        new_size = current_size + 1
+        new_len = max(256, len(array), len_trim(new_string))
+
+        allocate (character(len=new_len) :: temp_array(new_size))
+        do i = 1, current_size
+            temp_array(i) = array(i)
+        end do
+        temp_array(new_size) = new_string
+
+        call move_alloc(temp_array, array)
+
+    end subroutine add_string_to_array
+
+    subroutine add_source_path(config, path)
+        type(config_t), intent(inout) :: config
+        character(len=*), intent(in) :: path
+
+        call add_string_to_array(config%source_paths, path)
+
+    end subroutine add_source_path
+
     subroutine process_positional_arguments(positionals, positional_count, &
-                                             config, success, error_message)
+                                            config, success, error_message)
         !! Process positional arguments (coverage files)
         character(len=*), intent(in) :: positionals(:)
         integer, intent(in) :: positional_count
@@ -38,12 +75,12 @@ contains
         if (positional_count == 0) return
 
         ! Allocate coverage files array only when needed
-        if (allocated(config%coverage_files)) deallocate(config%coverage_files)
-        allocate(character(len=0) :: config%coverage_files(0))
+        if (allocated(config%coverage_files)) deallocate (config%coverage_files)
+        allocate (character(len=0) :: config%coverage_files(0))
 
         do i = 1, positional_count
             call classify_positional_argument(positionals(i), is_valid_coverage_file, &
-                                               is_source_path)
+                                              is_source_path)
 
             if (is_valid_coverage_file) then
                 ! Add to coverage files
@@ -56,15 +93,17 @@ contains
             else
                 ! Check if this is an executable path (silently ignored)
                 call check_if_executable_path(positionals(i), is_executable_path)
-                
+
                 if (.not. is_executable_path) then
                     ! Unknown positional argument (not an executable)
                     if (config%strict_mode) then
                         success = .false.
-                        error_message = "Unknown positional argument: " // trim(positionals(i))
+                        error_message = "Unknown positional argument: "// &
+                                        trim(positionals(i))
                         return
                     else if (config%verbose) then
-                        print '(A)', "Warning: Ignoring unknown argument: " // trim(positionals(i))
+                        print '(A)', "Warning: Ignoring unknown argument: "// &
+                            trim(positionals(i))
                     end if
                 end if
                 ! Note: executable paths are silently ignored (no warning needed)
@@ -72,8 +111,10 @@ contains
         end do
 
         ! Deallocate if no coverage files were found - allows auto-discovery
-        if (allocated(config%coverage_files) .and. size(config%coverage_files) == 0) then
-            deallocate(config%coverage_files)
+        if (allocated(config%coverage_files)) then
+            if (size(config%coverage_files) == 0) then
+                deallocate (config%coverage_files)
+            end if
         end if
 
     end subroutine process_positional_arguments
@@ -96,7 +137,7 @@ contains
         ! even if they do not exist yet
         dot_pos = index(arg, '.', back=.true.)
         if (dot_pos > 0) then
-            extension = arg(dot_pos+1:)
+            extension = arg(dot_pos + 1:)
 
             select case (trim(adjustl(extension)))
             case ("gcov")
@@ -122,10 +163,11 @@ contains
             end select
         end if
 
-        ! Check if this is an executable path before other classifications
-        ! This prevents spurious warnings when shell expansion includes multiple executables
+        ! Check if this is an executable path before other classifications.
+        ! This prevents spurious warnings when shell expansion includes multiple
+        ! executables.
         call check_if_executable_path(arg, is_executable_path)
-        
+
         ! If it is an executable path, silently ignore (no classification needed)
         if (is_executable_path) then
             return
@@ -133,7 +175,7 @@ contains
 
         ! If not recognized by extension, check if it is an existing file/directory
         if (.not. is_valid_coverage_file .and. .not. is_source_path) then
-            inquire(file=trim(arg), exist=file_exists)
+            inquire (file=trim(arg), exist=file_exists)
             if (file_exists) then
                 ! Check if it is a directory
                 call check_if_directory(arg, is_directory)
@@ -155,20 +197,21 @@ contains
             is_dir = .false.
 
             ! Try to open as directory (will fail for files)
-            open(newunit=unit, file=trim(path)//'/..', status='old', &
-                 action='read', iostat=iostat)
+            open (newunit=unit, file=trim(path)//'/..', status='old', &
+                  action='read', iostat=iostat)
             if (iostat == 0) then
                 is_dir = .true.
-                close(unit)
+                close (unit)
             end if
 
         end subroutine check_if_directory
 
     end subroutine classify_positional_argument
-    
+
     subroutine check_if_executable_path(path, is_executable)
         !! Check if path is an executable file (fix for issue #918)
-        !! This prevents spurious warnings when shell expansion includes multiple fortcov executables
+        !! This prevents spurious warnings when shell expansion includes multiple
+        !! fortcov executables.
         character(len=*), intent(in) :: path
         logical, intent(out) :: is_executable
 
@@ -178,20 +221,20 @@ contains
         is_executable = .false.
 
         ! Check if file exists
-        inquire(file=trim(path), exist=file_exists)
+        inquire (file=trim(path), exist=file_exists)
         if (.not. file_exists) return
 
         ! Check if path contains fortcov and is in a build directory structure
         if (index(path, 'fortcov') > 0 .and. &
             (index(path, 'build/') > 0 .or. index(path, '/app/') > 0)) then
-            
+
             ! Additional verification: try to open for read as binary executable
             ! This is a heuristic - if the file can be opened and contains fortcov
             ! in the path with build structure, it is likely an executable
-            open(newunit=unit, file=trim(path), status='old', &
-                 action='read', form='unformatted', access='stream', iostat=iostat)
+            open (newunit=unit, file=trim(path), status='old', &
+                  action='read', form='unformatted', access='stream', iostat=iostat)
             if (iostat == 0) then
-                close(unit)
+                close (unit)
                 is_executable = .true.
             end if
         end if

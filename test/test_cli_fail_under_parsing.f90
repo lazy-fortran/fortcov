@@ -4,9 +4,8 @@ program test_cli_fail_under_parsing
     !! Verifies that negative numbers are recognized as values (not flags) and that
     !! threshold validation provides a clear range error message.
 
-    use, intrinsic :: iso_fortran_env, only: output_unit
-    use config_parser_flags, only: is_flag_argument
-    use config_parser_string, only: parse_threshold_with_error
+    use, intrinsic :: iso_fortran_env, only: dp => real64, output_unit
+    use config_parser, only: is_flag_argument, parse_threshold_with_error
     implicit none
 
     integer :: tests = 0
@@ -55,7 +54,7 @@ contains
 
     subroutine test_threshold_validation_negative_value()
         !! Ensure negative threshold gives clear range error
-        real :: value
+        real(dp) :: value
         logical :: success
         character(len=256) :: error_message
 

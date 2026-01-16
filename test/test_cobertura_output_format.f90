@@ -4,7 +4,7 @@ program test_cobertura_output_format
 
     use, intrinsic :: iso_fortran_env, only: output_unit
     use config_defaults_core, only: initialize_default_config
-    use config_parser_flags, only: process_single_flag
+    use config_parser, only: process_single_flag
     use config_types, only: config_t
     use config_validators_format, only: is_supported_output_format
     use coverage_reporter, only: coverage_reporter_t
@@ -75,20 +75,20 @@ contains
 
         tests = tests + 1
 
-        allocate(lines(2))
+        allocate (lines(2))
         call initialize_coverage_line(lines(1), "src/a&b<.f90", 1, 0)
         call initialize_coverage_line(lines(2), "src/a&b<.f90", 2, 1)
         call file%init("src/a&b<.f90", lines)
         call file%calculate_coverage()
 
-        allocate(files(1))
+        allocate (files(1))
         files(1) = file
         call data%init(files)
 
         call create_reporter("cobertura", reporter, factory_error)
         if (factory_error) then
-            write (output_unit, '(A)') '  [FAIL] Reporter factory did not create ' // &
-                                       'cobertura reporter'
+            write (output_unit, '(A)') '  [FAIL] Reporter factory did not create '// &
+                'cobertura reporter'
             return
         end if
 
@@ -112,8 +112,8 @@ contains
             index(xml_content, '<packages>') > 0 .and. &
             index(xml_content, 'filename="src/a&amp;b&lt;.f90"') > 0) then
             passed = passed + 1
-            write (output_unit, '(A)') '  [PASS] Cobertura XML contains expected ' // &
-                                       'structure'
+            write (output_unit, '(A)') '  [PASS] Cobertura XML contains expected '// &
+                'structure'
         else
             write (output_unit, '(A)') '  [FAIL] Cobertura XML missing expected content'
         end if
