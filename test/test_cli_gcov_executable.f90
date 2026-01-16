@@ -72,6 +72,13 @@ contains
             return
         end if
 
+        call validate_gcov_executable('x86_64-linux-gnu-gcov', ok, error_message)
+        if (.not. ok) then
+            write (output_unit, '(A)') '  [FAIL] x86_64-linux-gnu-gcov should be valid'
+            write (output_unit, '(A,A)') '    Error: ', trim(error_message)
+            return
+        end if
+
         call validate_gcov_executable('gcov wrapper', ok, error_message)
         if (ok) then
             write (output_unit, '(A)') '  [FAIL] gcov wrapper should be invalid'

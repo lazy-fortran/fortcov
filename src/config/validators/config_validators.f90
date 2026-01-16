@@ -1,11 +1,9 @@
 module config_validators
     use config_types, only: config_t
     use path_security, only: validate_executable_path, validate_path_security
-    use file_utilities, only: basename
-    use string_utils, only: to_lower
-    use error_handling_core
-    use input_validation_core
-    use config_validators_format
+    use error_handling_core, only: error_context_t, ERROR_SUCCESS
+    use config_validators_format, only: is_file_readable, is_supported_output_format, &
+        is_valid_coverage_file_format, is_valid_import_file_format
     implicit none
     private
     
@@ -96,7 +94,8 @@ contains
         error_message = ""
 
         ! Validate coverage threshold (0-100)
-        if (config%fail_under_threshold < 0.0 .or. config%fail_under_threshold > 100.0) then
+        if (config%fail_under_threshold < 0.0 .or. &
+            config%fail_under_threshold > 100.0) then
             is_valid = .false.
             error_message = "Fail under threshold must be between 0 and 100"
             return
@@ -126,13 +125,15 @@ contains
         inquire(file=trim(config%diff_baseline_file), exist=file_exists)
         if (.not. file_exists) then
             is_valid = .false.
-            error_message = "Diff baseline file not found: " // trim(config%diff_baseline_file)
+            error_message = "Diff baseline file not found: " // &
+                            trim(config%diff_baseline_file)
             return
         end if
 
         if (.not. is_file_readable(config%diff_baseline_file)) then
             is_valid = .false.
-            error_message = "Cannot read diff baseline file: " // trim(config%diff_baseline_file)
+            error_message = "Cannot read diff baseline file: " // &
+                            trim(config%diff_baseline_file)
             return
         end if
 
@@ -140,13 +141,15 @@ contains
         inquire(file=trim(config%diff_current_file), exist=file_exists)
         if (.not. file_exists) then
             is_valid = .false.
-            error_message = "Diff current file not found: " // trim(config%diff_current_file)
+            error_message = "Diff current file not found: " // &
+                            trim(config%diff_current_file)
             return
         end if
 
         if (.not. is_file_readable(config%diff_current_file)) then
             is_valid = .false.
-            error_message = "Cannot read diff current file: " // trim(config%diff_current_file)
+            error_message = "Cannot read diff current file: " // &
+                            trim(config%diff_current_file)
             return
         end if
 
@@ -279,8 +282,8 @@ contains
             return
         end if
 
-        exec_name = basename(trim(safe_exec))
-        if (.not. is_allowed_gcov_name(exec_name)) then
+        exec_name = extract_executable_name(trim(safe_exec))
+        if (.not. is_valid_executable_token(exec_name)) then
             is_valid = .false.
             error_message = "Invalid gcov executable name: " // trim(exec_name)
             return
@@ -288,19 +291,36 @@ contains
 
     end subroutine validate_gcov_executable
 
-    logical function is_allowed_gcov_name(name) result(is_allowed)
+    pure function extract_executable_name(path) result(name)
+        character(len=*), intent(in) :: path
+        character(len=:), allocatable :: name
+        integer :: slash_pos, backslash_pos, last_sep, path_len
+        character(len=1), parameter :: backslash = achar(92)
+
+        path_len = len_trim(path)
+        if (path_len == 0) then
+            name = ""
+            return
+        end if
+
+        slash_pos = index(path(1:path_len), '/', back=.true.)
+        backslash_pos = index(path(1:path_len), backslash, back=.true.)
+        last_sep = max(slash_pos, backslash_pos)
+
+        if (last_sep > 0 .and. last_sep < path_len) then
+            name = path(last_sep + 1:path_len)
+        else
+            name = path(1:path_len)
+        end if
+
+    end function extract_executable_name
+
+    logical function is_valid_executable_token(name) result(is_allowed)
         character(len=*), intent(in) :: name
-        character(len=:), allocatable :: lower_name
         integer :: i, name_len
 
         name_len = len_trim(name)
         if (name_len == 0) then
-            is_allowed = .false.
-            return
-        end if
-
-        lower_name = to_lower(trim(name))
-        if (index(lower_name, "gcov") /= 1) then
             is_allowed = .false.
             return
         end if
@@ -316,7 +336,7 @@ contains
         end do
 
         is_allowed = .true.
-    end function is_allowed_gcov_name
+    end function is_valid_executable_token
 
     subroutine validate_diff_files(config, is_valid, error_message)
         !! Validate diff files - wrapper for diff configuration
