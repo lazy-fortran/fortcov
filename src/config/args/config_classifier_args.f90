@@ -9,6 +9,9 @@ module config_classifier_args
     private
 
     public :: classify_command_arguments
+    public :: flag_requires_value
+    public :: get_long_form_option
+    public :: is_flag_argument
 
 contains
 
