@@ -5,8 +5,7 @@ program test_memory_allocation_safety
     use, intrinsic :: iso_fortran_env, only: dp => real64, error_unit, output_unit
     implicit none
 
-    character(len=*), parameter :: separator = &
-                '======================================================================'
+    character(len=*), parameter :: separator = repeat('=', 70)
     logical :: all_tests_passed = .true.
 
     write (output_unit, '(A)') ''

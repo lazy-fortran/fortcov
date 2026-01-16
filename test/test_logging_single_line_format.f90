@@ -11,7 +11,8 @@ program test_logging_single_line_format
 
     call test_discovery_message_format()
 
-    write(output_unit,'(A,I0,A,I0,A)') 'Test Results: ', passed, ' / ', tests, ' passed'
+    write (output_unit, '(A,I0,A,I0,A)') 'Test Results: ', passed, ' / ', &
+        tests, ' passed'
     if (passed /= tests) stop 1
 
 contains
@@ -19,22 +20,22 @@ contains
     subroutine test_discovery_message_format()
         character(len=256) :: buf
         character(len=*), parameter :: expected = &
-            'FortCov: Discovery returned 249 files'
+                                       'FortCov: Discovery returned 249 files'
 
         tests = tests + 1
 
         ! Correct formatting: all parts in a single WRITE with (A,I0,A)
-        write(buf, '(A,I0,A)') 'FortCov: Discovery returned ', 249, ' files'
+        write (buf, '(A,I0,A)') 'FortCov: Discovery returned ', 249, ' files'
 
         if (index(buf, new_line('a')) == 0 .and. trim(buf) == expected) then
             passed = passed + 1
-            write(output_unit,'(A)') &
+            write (output_unit, '(A)') &
                 '  [PASS] Discovery message formatted on a single line'
         else
-            write(output_unit,'(A)') &
+            write (output_unit, '(A)') &
                 '  [FAIL] Discovery message formatting has newline/mismatch'
-            write(output_unit,'(A,A)') '    Expected: ', expected
-            write(output_unit,'(A,A)') '    Actual:   ', trim(buf)
+            write (output_unit, '(A,A)') '    Expected: ', expected
+            write (output_unit, '(A,A)') '    Actual:   ', trim(buf)
         end if
     end subroutine test_discovery_message_format
 
