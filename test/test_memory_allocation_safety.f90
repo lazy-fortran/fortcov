@@ -1,18 +1,17 @@
-program test_memory_allocation_bug_issue_243
-    !! Memory allocation safety test for Issue #243
-    !! Tests memory safety without external dependencies
-    !! CI-optimized version for reliable test execution
-    
-    use iso_fortran_env, only: error_unit, int64
+program test_memory_allocation_safety
+    !! Memory allocation safety patterns.
+    !! Regression test for issue 243.
+
+    use, intrinsic :: iso_fortran_env, only: error_unit, output_unit
     implicit none
     
     logical :: all_tests_passed = .true.
-    
-    print *, ""
-    print *, "============================================================="
-    print *, "Issue #243: Memory Allocation Safety Verification"
-    print *, "============================================================="
-    print *, ""
+
+    write (output_unit, '(A)') ''
+    write (output_unit, '(A)') '============================================================='
+    write (output_unit, '(A)') 'Memory Allocation Safety Verification'
+    write (output_unit, '(A)') '============================================================='
+    write (output_unit, '(A)') ''
     
     ! Run basic memory safety checks inline
     call test_basic_allocation_safety()
@@ -20,16 +19,15 @@ program test_memory_allocation_bug_issue_243
     call test_reallocation_patterns()
     
     ! Print summary
-    print *, ""
-    print *, "============================================================="
+    write (output_unit, '(A)') ''
+    write (output_unit, '(A)') '============================================================='
     if (all_tests_passed) then
-        print *, "MEMORY ALLOCATION SAFETY TESTS PASSED"
-        print *, "Issue #243: Basic memory safety verified"
-        print *, "============================================================="
+        write (output_unit, '(A)') 'MEMORY ALLOCATION SAFETY TESTS PASSED'
+        write (output_unit, '(A)') '============================================================='
         stop 0
     else
-        write(error_unit, *) "MEMORY SAFETY TESTS FAILED"
-        print *, "============================================================="
+        write (error_unit, '(A)') 'MEMORY SAFETY TESTS FAILED'
+        write (output_unit, '(A)') '============================================================='
         stop 1
     end if
     
@@ -40,20 +38,20 @@ contains
         real, allocatable :: test_array(:)
         integer :: stat
         character(len=256) :: errmsg
-        
-        print *, "Testing basic allocation safety..."
-        
+
+        write (output_unit, '(A)') 'Testing basic allocation safety...'
+
         ! Test allocation with error handling
         allocate(test_array(1000), stat=stat, errmsg=errmsg)
         if (stat /= 0) then
-            print *, "  failed:", trim(errmsg)
+            write (output_unit, '(A,A)') '  failed: ', trim(errmsg)
             all_tests_passed = .false.
             return
         end if
         
         ! Verify allocation
         if (.not. allocated(test_array)) then
-            print *, "  FAIL: Array not allocated after allocate"
+            write (output_unit, '(A)') '  FAIL: Array not allocated after allocate'
             all_tests_passed = .false.
             return
         end if
@@ -61,21 +59,21 @@ contains
         ! Clean up
         deallocate(test_array)
         
-        print *, "  PASS: Basic allocation safety verified"
-        
+        write (output_unit, '(A)') '  PASS: Basic allocation safety verified'
+
     end subroutine test_basic_allocation_safety
     
     subroutine test_deallocation_safety()
         !! Test safe deallocation patterns
         integer, allocatable :: int_array(:)
         integer :: stat
-        
-        print *, "Testing deallocation safety..."
-        
+
+        write (output_unit, '(A)') 'Testing deallocation safety...'
+
         ! Allocate
         allocate(int_array(500), stat=stat)
         if (stat /= 0) then
-            print *, "  failed"
+            write (output_unit, '(A)') '  failed'
             all_tests_passed = .false.
             return
         end if
@@ -83,33 +81,33 @@ contains
         ! Deallocate with status check
         deallocate(int_array, stat=stat)
         if (stat /= 0) then
-            print *, "  failed"
+            write (output_unit, '(A)') '  failed'
             all_tests_passed = .false.
             return
         end if
         
         ! Verify deallocation
         if (allocated(int_array)) then
-            print *, "  FAIL: Array still allocated after deallocate"
+            write (output_unit, '(A)') '  FAIL: Array still allocated after deallocate'
             all_tests_passed = .false.
             return
         end if
-        
-        print *, "  PASS: Deallocation safety verified"
-        
+
+        write (output_unit, '(A)') '  PASS: Deallocation safety verified'
+
     end subroutine test_deallocation_safety
     
     subroutine test_reallocation_patterns()
         !! Test safe reallocation patterns
         character(len=:), allocatable :: string_array(:)
         integer :: stat, i
-        
-        print *, "Testing reallocation patterns..."
-        
+
+        write (output_unit, '(A)') 'Testing reallocation patterns...'
+
         ! Initial allocation
         allocate(character(len=10) :: string_array(5), stat=stat)
         if (stat /= 0) then
-            print *, "  failed"
+            write (output_unit, '(A)') '  failed'
             all_tests_passed = .false.
             return
         end if
@@ -122,7 +120,7 @@ contains
         ! Deallocate before reallocation
         deallocate(string_array, stat=stat)
         if (stat /= 0) then
-            print *, "  failed"
+            write (output_unit, '(A)') '  failed'
             all_tests_passed = .false.
             return
         end if
@@ -130,7 +128,7 @@ contains
         ! Reallocate with different size
         allocate(character(len=20) :: string_array(10), stat=stat)
         if (stat /= 0) then
-            print *, "  failed"
+            write (output_unit, '(A)') '  failed'
             all_tests_passed = .false.
             return
         end if
@@ -138,8 +136,8 @@ contains
         ! Clean up
         deallocate(string_array)
         
-        print *, "  PASS: Reallocation patterns verified"
-        
+        write (output_unit, '(A)') '  PASS: Reallocation patterns verified'
+
     end subroutine test_reallocation_patterns
     
-end program test_memory_allocation_bug_issue_243
+end program test_memory_allocation_safety

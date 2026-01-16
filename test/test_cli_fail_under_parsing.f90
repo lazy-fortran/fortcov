@@ -1,9 +1,10 @@
-program test_negative_fail_under_1236
-    !! Test for Issue #1236: Confusing error when using negative value with --fail-under
+program test_cli_fail_under_parsing
+    !! CLI fail-under parsing and validation.
+    !! Regression test for issue 1236.
     !! Verifies that negative numbers are recognized as values (not flags) and that
     !! threshold validation provides a clear range error message.
 
-    use iso_fortran_env, only: output_unit
+    use, intrinsic :: iso_fortran_env, only: output_unit
     use config_parser_flags, only: is_flag_argument
     use config_parser_string, only: parse_threshold_with_error
     implicit none
@@ -76,4 +77,4 @@ contains
         end if
     end subroutine test_threshold_validation_negative_value
 
-end program test_negative_fail_under_1236
+end program test_cli_fail_under_parsing

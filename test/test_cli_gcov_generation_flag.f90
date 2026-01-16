@@ -1,5 +1,7 @@
-program test_gcov_flag_behavior_1250
-    !! Test for Issue #1250: --gcov controls gcov generation attempts.
+program test_cli_gcov_generation_flag
+    !! CLI gcov generation flag behavior.
+    !! Regression test for issue 1250.
+
     use, intrinsic :: iso_fortran_env, only: output_unit
     use config_defaults_core, only: initialize_default_config
     use config_types, only: config_t
@@ -45,4 +47,4 @@ program test_gcov_flag_behavior_1250
     if (failures > 0) then
         error stop 1
     end if
-end program test_gcov_flag_behavior_1250
+end program test_cli_gcov_generation_flag

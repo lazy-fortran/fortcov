@@ -1,10 +1,11 @@
-program test_string_concatenation_fix_364
-    !! Test for string concatenation fix in issue #364
+program test_gcov_pattern_concatenation
+    !! gcov pattern concatenation.
+    !! Regression test for issue 364.
     !!
     !! This test verifies that the gcov pattern string concatenation
     !! works correctly with direct concatenation instead of formatted I/O.
     
-    use iso_fortran_env, only: output_unit
+    use, intrinsic :: iso_fortran_env, only: output_unit
     implicit none
     
     integer :: test_count = 0
@@ -13,7 +14,7 @@ program test_string_concatenation_fix_364
     write(output_unit, '(A)') 'Testing string concatenation fix for issue #364...'
     write(output_unit, '(A)') ''
     
-    call test_gcov_pattern_concatenation()
+    call case_gcov_pattern_concatenation()
     call test_gcov_pattern_edge_cases()
     
     write(output_unit, '(A)') ''
@@ -27,7 +28,7 @@ program test_string_concatenation_fix_364
 
 contains
 
-    subroutine test_gcov_pattern_concatenation()
+    subroutine case_gcov_pattern_concatenation()
         !! Test that gcov pattern string concatenation works correctly
         character(len=256) :: pattern_result
         character(len=*), parameter :: GCOV_PATTERN = '*.gcov'
@@ -41,7 +42,7 @@ contains
 
         call assert_equals(trim(pattern_result), expected, &
                            'Pattern concatenated correctly')
-    end subroutine test_gcov_pattern_concatenation
+    end subroutine case_gcov_pattern_concatenation
 
     subroutine test_gcov_pattern_edge_cases()
         !! Test edge cases for gcov pattern concatenation
@@ -100,4 +101,4 @@ contains
         end if
     end subroutine assert_true
 
-end program test_string_concatenation_fix_364
+end program test_gcov_pattern_concatenation
