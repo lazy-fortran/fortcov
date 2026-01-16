@@ -4,6 +4,7 @@ module file_operations_secure
                                    ERROR_PERMISSION_DENIED, ERROR_SUCCESS, &
                                    safe_write_context, safe_write_message, &
                                    safe_write_suggestion
+    use, intrinsic :: iso_fortran_env, only: int8, int64
     use iso_c_binding, only: c_char, c_int, c_null_char
     use path_security, only: validate_path_security
     implicit none
@@ -113,12 +114,26 @@ contains
         character(len=*), intent(in) :: source_path, target_path
         type(error_context_t), intent(inout) :: error_ctx
 
-        integer :: source_unit, target_unit, iostat, copy_iostat
-        character(len=1024) :: buffer
+        integer, parameter :: chunk_size_bytes = 65536
+
+        integer(int64) :: file_size_bytes
+        integer(int64) :: bytes_copied
+        integer :: source_unit, target_unit, iostat, copy_iostat, bytes_to_copy
+        integer(int8), allocatable :: buffer(:)
+
+        inquire (file=source_path, size=file_size_bytes, iostat=iostat)
+        if (iostat /= 0) then
+            error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+            call safe_write_message( &
+                error_ctx, &
+                "Cannot determine size of source file: "//trim(source_path))
+            call safe_write_context(error_ctx, "secure file copy")
+            return
+        end if
 
         ! Open source file for reading
         open (newunit=source_unit, file=source_path, status='old', &
-              action='read', iostat=iostat)
+              action='read', access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message( &
@@ -129,7 +144,7 @@ contains
 
         ! Open target file for writing
         open (newunit=target_unit, file=target_path, status='replace', &
-              action='write', iostat=iostat)
+              action='write', access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
             close (source_unit)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
@@ -138,11 +153,35 @@ contains
             return
         end if
 
-        ! Copy content line by line
-        do
-            read (source_unit, '(A)', iostat=copy_iostat) buffer
-            if (copy_iostat /= 0) exit
-            write (target_unit, '(A)') trim(buffer)
+        allocate (buffer(chunk_size_bytes))
+
+        bytes_copied = 0_int64
+        do while (bytes_copied < file_size_bytes)
+            bytes_to_copy = int(min(int(chunk_size_bytes, int64), &
+                                    file_size_bytes - bytes_copied))
+
+            read (source_unit, iostat=copy_iostat) buffer(1:bytes_to_copy)
+            if (copy_iostat /= 0) then
+                error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+                call safe_write_message( &
+                    error_ctx, &
+                    "Failed to read bytes from source: "//trim(source_path))
+                call safe_write_context(error_ctx, "secure file copy")
+                exit
+            end if
+
+            write (target_unit, iostat=iostat) buffer(1:bytes_to_copy)
+            if (iostat /= 0) then
+                error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
+                call safe_write_message( &
+                    error_ctx, &
+                    "Failed to write copied bytes to target: "// &
+                    trim(target_path))
+                call safe_write_context(error_ctx, "secure file copy")
+                exit
+            end if
+
+            bytes_copied = bytes_copied + int(bytes_to_copy, int64)
         end do
 
         ! Close files
