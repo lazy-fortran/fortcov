@@ -15,6 +15,7 @@ contains
     
     subroutine create_reporter(format, reporter, error_flag)
         !! Create a concrete reporter instance based on format
+        use cobertura_reporter_wrapper, only: cobertura_reporter_t
         use markdown_reporter_wrapper, only: markdown_reporter_t
         character(len=*), intent(in) :: format
         class(coverage_reporter_t), allocatable, intent(out) :: reporter
@@ -25,6 +26,8 @@ contains
         select case (trim(format))
         case ("markdown", "md")
             allocate(markdown_reporter_t :: reporter)
+        case ("cobertura", "cobertura-xml", "xml")
+            allocate(cobertura_reporter_t :: reporter)
         case default
             error_flag = .true.
         end select
@@ -32,8 +35,9 @@ contains
     
     function get_supported_formats() result(formats)
         !! Get list of supported output formats
-        character(len=10), dimension(1) :: formats
+        character(len=10), dimension(2) :: formats
         formats(1) = "markdown"
+        formats(2) = "cobertura"
     end function get_supported_formats
     
 end module coverage_reporter_factory

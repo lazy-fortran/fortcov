@@ -19,7 +19,10 @@ contains
 
         lower_format = to_lower(trim(format))
 
-        is_supported = (lower_format == "markdown")
+        is_supported = (lower_format == "markdown" .or. &
+                        lower_format == "cobertura" .or. &
+                        lower_format == "cobertura-xml" .or. &
+                        lower_format == "xml")
 
     end function is_supported_output_format
 
