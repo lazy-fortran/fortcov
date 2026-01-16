@@ -3,10 +3,10 @@ module input_validator_source
     use config_validators
     implicit none
     private
-    
+
     ! Public procedures
     public :: validate_input_sources
-    
+
 contains
 
     subroutine validate_input_sources(config, is_valid, error_message)
@@ -75,7 +75,7 @@ contains
             .not. has_diff_files .and. &
             .not. zero_config_mode) then
             is_valid = .false.
-            error_message = "No input sources specified. Provide source paths, " // &
+            error_message = "No input sources specified. Provide source paths, "// &
                             "coverage files, import file, or diff files"
             return
         end if
@@ -89,9 +89,9 @@ contains
 
         ! Can't mix diff with other sources (diff mode is standalone)
         if (has_diff_files .and. (has_source_paths .or. has_coverage_files .or. &
-            has_import_file)) then
+                                  has_import_file)) then
             is_valid = .false.
-            error_message = "Cannot mix diff mode with source paths, " // &
+            error_message = "Cannot mix diff mode with source paths, "// &
                             "coverage files, or import file"
             return
         end if
