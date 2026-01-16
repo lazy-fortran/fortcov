@@ -4,7 +4,7 @@ program test_cli_auto_test_flags
 
     use, intrinsic :: iso_fortran_env, only: output_unit
     use config_defaults_core, only: initialize_default_config
-    use config_parser_flags, only: process_single_flag
+    use config_parser, only: process_single_flag
     use config_types, only: config_t
     implicit none
 
