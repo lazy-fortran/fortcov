@@ -299,7 +299,7 @@ contains
 
     pure subroutine extract_executable_name(path, name)
         character(len=*), intent(in) :: path
-        character(len=:), allocatable :: name
+        character(len=:), allocatable, intent(out) :: name
         integer :: slash_pos, backslash_pos, last_sep, path_len, end_pos
         character(len=1), parameter :: backslash = achar(92)
 
