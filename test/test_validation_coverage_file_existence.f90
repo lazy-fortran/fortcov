@@ -9,25 +9,26 @@ program test_validation_coverage_file_existence
     integer :: tests = 0
     integer :: passed = 0
 
-    write(output_unit,'(A)') ''
-    write(output_unit,'(A)') '=============================================='
-    write(output_unit,'(A)') 'Issue #1234: Nonexistent File Segfault Test'
-    write(output_unit,'(A)') '=============================================='
-    write(output_unit,'(A)') ''
+    write (output_unit, '(A)') ''
+    write (output_unit, '(A)') '=============================================='
+    write (output_unit, '(A)') 'Issue #1234: Nonexistent File Segfault Test'
+    write (output_unit, '(A)') '=============================================='
+    write (output_unit, '(A)') ''
 
     call test_nonexistent_file_detection()
     call test_existing_file_passes()
     call test_empty_coverage_files()
 
-    write(output_unit,'(A)') ''
-    write(output_unit,'(A,I0,A,I0,A)') 'Test Results: ', passed, ' / ', tests, ' passed'
+    write (output_unit, '(A)') ''
+    write (output_unit, '(A,I0,A,I0,A)') 'Test Results: ', passed, ' / ', &
+        tests, ' passed'
 
     if (passed /= tests) then
-        write(error_unit,'(A)') 'TESTS FAILED'
+        write (error_unit, '(A)') 'TESTS FAILED'
         stop 1
     end if
 
-    write(output_unit,'(A)') 'ALL TESTS PASSED'
+    write (output_unit, '(A)') 'ALL TESTS PASSED'
     stop 0
 
 contains
@@ -37,19 +38,19 @@ contains
         logical :: is_valid
 
         tests = tests + 1
-        write(output_unit,'(A)') 'Testing nonexistent file detection...'
+        write (output_unit, '(A)') 'Testing nonexistent file detection...'
 
         call initialize_config(config)
-        allocate(character(len=256) :: config%coverage_files(1))
+        allocate (character(len=256) :: config%coverage_files(1))
         config%coverage_files(1) = 'nonexistent_test_file.gcov'
 
         call validate_coverage_files(config, is_valid)
 
         if (.not. is_valid) then
             passed = passed + 1
-            write(output_unit,'(A)') '  [PASS] Nonexistent file correctly rejected'
+            write (output_unit, '(A)') '  [PASS] Nonexistent file correctly rejected'
         else
-            write(output_unit,'(A)') '  [FAIL] Nonexistent file was not detected'
+            write (output_unit, '(A)') '  [FAIL] Nonexistent file was not detected'
         end if
     end subroutine test_nonexistent_file_detection
 
@@ -59,34 +60,35 @@ contains
         integer :: unit_num, ios
 
         tests = tests + 1
-        write(output_unit,'(A)') 'Testing existing file passes validation...'
+        write (output_unit, '(A)') 'Testing existing file passes validation...'
 
         ! Create a temporary test file
-        open(newunit=unit_num, file='/tmp/test_existing.gcov', &
-             status='replace', iostat=ios)
+        open (newunit=unit_num, file='/tmp/test_existing.gcov', &
+              status='replace', iostat=ios)
         if (ios /= 0) then
-            write(output_unit,'(A)') '  [SKIP] Could not create temp file'
+            write (output_unit, '(A)') '  [SKIP] Could not create temp file'
             passed = passed + 1
             return
         end if
-        write(unit_num,'(A)') '        -:    0:Source:test.f90'
-        close(unit_num)
+        write (unit_num, '(A)') '        -:    0:Source:test.f90'
+        close (unit_num)
 
         call initialize_config(config)
-        allocate(character(len=256) :: config%coverage_files(1))
+        allocate (character(len=256) :: config%coverage_files(1))
         config%coverage_files(1) = '/tmp/test_existing.gcov'
 
         call validate_coverage_files(config, is_valid)
 
         ! Clean up temp file
-        open(newunit=unit_num, file='/tmp/test_existing.gcov', status='old')
-        close(unit_num, status='delete')
+        open (newunit=unit_num, file='/tmp/test_existing.gcov', status='old')
+        close (unit_num, status='delete')
 
         if (is_valid) then
             passed = passed + 1
-            write(output_unit,'(A)') '  [PASS] Existing file passes validation'
+            write (output_unit, '(A)') '  [PASS] Existing file passes validation'
         else
-            write(output_unit,'(A)') '  [FAIL] Existing file was incorrectly rejected'
+            write (output_unit, '(A)') &
+                '  [FAIL] Existing file was incorrectly rejected'
         end if
     end subroutine test_existing_file_passes
 
@@ -95,7 +97,7 @@ contains
         logical :: is_valid
 
         tests = tests + 1
-        write(output_unit,'(A)') 'Testing empty coverage files array...'
+        write (output_unit, '(A)') 'Testing empty coverage files array...'
 
         call initialize_config(config)
 
@@ -103,9 +105,9 @@ contains
 
         if (is_valid) then
             passed = passed + 1
-            write(output_unit,'(A)') '  [PASS] Empty array passes validation'
+            write (output_unit, '(A)') '  [PASS] Empty array passes validation'
         else
-            write(output_unit,'(A)') '  [FAIL] Empty array was incorrectly rejected'
+            write (output_unit, '(A)') '  [FAIL] Empty array was incorrectly rejected'
         end if
     end subroutine test_empty_coverage_files
 
