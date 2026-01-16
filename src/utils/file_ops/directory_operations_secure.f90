@@ -1,5 +1,6 @@
 module directory_operations_secure
-    use error_handling_core
+    use error_handling_core, only: clear_error_context, error_context_t, &
+                                   ERROR_SUCCESS
     use path_security, only: validate_path_security
     use file_operations_secure, only: safe_remove_file
     implicit none

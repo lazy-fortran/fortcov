@@ -1,5 +1,9 @@
 module file_operations_secure
-    use error_handling_core
+    use error_handling_core, only: clear_error_context, error_context_t, &
+                                   ERROR_FILE_OPERATION_FAILED, ERROR_MISSING_FILE, &
+                                   ERROR_PERMISSION_DENIED, ERROR_SUCCESS, &
+                                   safe_write_context, safe_write_message, &
+                                   safe_write_suggestion
     use iso_c_binding, only: c_char, c_int, c_null_char
     use path_security, only: validate_path_security
     implicit none
@@ -185,11 +189,10 @@ contains
         integer, intent(out) :: stat
 
         character(len=512) :: parent_path
-        integer :: last_slash, path_len
+        integer :: last_slash
         logical :: parent_exists
 
         stat = 0
-        path_len = len_trim(dir_path)
 
         ! Check if directory already exists
         inquire (file=dir_path, exist=parent_exists)

@@ -1,5 +1,6 @@
 module file_deletion_secure
-    use error_handling_core
+    use error_handling_core, only: error_context_t, ERROR_FILE_OPERATION_FAILED, &
+                                   safe_write_message
     implicit none
     private
 

@@ -1,6 +1,7 @@
 module input_validator_source
     use config_types, only: config_t
-    use config_validators
+    use config_validators, only: validate_coverage_files, validate_diff_files, &
+                                 validate_gcov_executable, validate_source_paths
     implicit none
     private
 

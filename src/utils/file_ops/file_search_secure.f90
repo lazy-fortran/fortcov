@@ -1,8 +1,9 @@
 module file_search_secure
-    use error_handling_core
+    use error_handling_core, only: clear_error_context, error_context_t, &
+                                   ERROR_SUCCESS
     use path_security, only: validate_path_security
-    use iso_c_binding, only: c_int, c_ptr, c_char, c_size_t, c_null_ptr, c_loc, &
-                             c_f_pointer
+    use, intrinsic :: iso_c_binding, only: c_char, c_f_pointer, c_int, c_loc
+    use, intrinsic :: iso_c_binding, only: c_null_ptr, c_ptr, c_size_t
     implicit none
     private
 
