@@ -13,6 +13,59 @@ module cobertura_reporter
 
 contains
 
+    subroutine calculate_line_totals(data, total_lines, covered_lines)
+        type(coverage_data_t), intent(in) :: data
+        integer, intent(out) :: total_lines
+        integer, intent(out) :: covered_lines
+        integer :: file_idx
+
+        total_lines = 0
+        covered_lines = 0
+
+        if (.not. allocated(data%files)) return
+
+        do file_idx = 1, size(data%files)
+            total_lines = total_lines + data%files(file_idx)%total_lines
+            covered_lines = covered_lines + data%files(file_idx)%covered_lines
+        end do
+    end subroutine calculate_line_totals
+
+    pure subroutine append_text(buf, pos, txt)
+        character(len=*), intent(inout) :: buf
+        integer, intent(inout) :: pos
+        character(len=*), intent(in) :: txt
+        integer :: l
+
+        l = len(txt)
+        if (l == 0) return
+        buf(pos:pos + l - 1) = txt
+        pos = pos + l
+    end subroutine append_text
+
+    pure subroutine append_nl(buf, pos)
+        character(len=*), intent(inout) :: buf
+        integer, intent(inout) :: pos
+
+        buf(pos:pos) = new_line('a')
+        pos = pos + 1
+    end subroutine append_nl
+
+    function rate_to_string(value) result(str)
+        real, intent(in) :: value
+        character(len=:), allocatable :: str
+        character(len=32) :: tmp
+
+        write (tmp, '(F12.6)') value
+        str = trim(adjustl(tmp))
+        if (len(str) >= 1) then
+            if (str(1:1) == ".") then
+                str = "0"//str
+            else if (len(str) >= 2) then
+                if (str(1:2) == "-.") str = "-0"//str(2:)
+            end if
+        end if
+    end function rate_to_string
+
     function generate_cobertura_xml_report(coverage_data) result(xml_report)
         type(coverage_data_t), intent(in) :: coverage_data
         character(len=:), allocatable :: xml_report
@@ -38,7 +91,7 @@ contains
         branches_covered = 0
 
         if (lines_valid > 0) then
-            line_rate = real(lines_covered) / real(lines_valid)
+            line_rate = real(lines_covered)/real(lines_valid)
         else
             line_rate = 0.0
         end if
@@ -62,7 +115,7 @@ contains
                     len_trim(lines_covered_str) + len_trim(branches_valid_str) + &
                     len_trim(branches_covered_str)
 
-        allocate(character(len=total_len) :: buffer)
+        allocate (character(len=total_len) :: buffer)
         pos = 1
 
         call append_text(buffer, pos, '<?xml version="1.0"?>')
@@ -96,63 +149,7 @@ contains
         call append_nl(buffer, pos)
         call append_text(buffer, pos, '</coverage>')
 
-        xml_report = buffer(1:pos-1)
-
-    contains
-
-        subroutine calculate_line_totals(data, total_lines, covered_lines)
-            type(coverage_data_t), intent(in) :: data
-            integer, intent(out) :: total_lines
-            integer, intent(out) :: covered_lines
-            integer :: file_idx
-
-            total_lines = 0
-            covered_lines = 0
-
-            if (.not. allocated(data%files)) return
-
-            do file_idx = 1, size(data%files)
-                total_lines = total_lines + data%files(file_idx)%total_lines
-                covered_lines = covered_lines + data%files(file_idx)%covered_lines
-            end do
-        end subroutine calculate_line_totals
-
-        pure subroutine append_text(buf, pos, txt)
-            character(len=*), intent(inout) :: buf
-            integer, intent(inout) :: pos
-            character(len=*), intent(in) :: txt
-            integer :: l
-
-            l = len(txt)
-            if (l == 0) return
-            buf(pos:pos+l-1) = txt
-            pos = pos + l
-        end subroutine append_text
-
-        pure subroutine append_nl(buf, pos)
-            character(len=*), intent(inout) :: buf
-            integer, intent(inout) :: pos
-
-            buf(pos:pos) = new_line('a')
-            pos = pos + 1
-        end subroutine append_nl
-
-        function rate_to_string(value) result(str)
-            real, intent(in) :: value
-            character(len=:), allocatable :: str
-            character(len=32) :: tmp
-
-            write(tmp, '(F12.6)') value
-            str = trim(adjustl(tmp))
-            if (len(str) >= 1) then
-                if (str(1:1) == ".") then
-                    str = "0" // str
-                else if (len(str) >= 2) then
-                    if (str(1:2) == "-.") str = "-0" // str(2:)
-                end if
-            end if
-        end function rate_to_string
-
+        xml_report = buffer(1:pos - 1)
     end function generate_cobertura_xml_report
 
 end module cobertura_reporter
