@@ -1,8 +1,8 @@
-program test_source_file_path_1237
-    !! Test for Issue #1237: --source with file path silently produces empty coverage
-    !! Verifies that source paths pointing to files are handled correctly
-    use coverage_analysis_core
-    use iso_fortran_env, only: output_unit, error_unit
+program test_source_path_file_detection
+    !! Source path classification: file vs directory.
+    !! Regression test for issue 1237.
+    use coverage_analysis_core, only: is_source_file_path
+    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
     implicit none
 
     integer :: tests = 0
@@ -113,4 +113,4 @@ contains
         end if
     end subroutine test_is_source_file_path_edge_cases
 
-end program test_source_file_path_1237
+end program test_source_path_file_detection

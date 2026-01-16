@@ -1,8 +1,9 @@
-program test_logging_glitches_1123
-    !! Smoke test for logging formatting (Issue #1123)
+program test_logging_single_line_format
+    !! Smoke test for logging formatting.
+    !! Regression test for issue 1123.
     !! Verifies discovery message uses single-line formatting without spurious newline.
 
-    use iso_fortran_env, only: output_unit
+    use, intrinsic :: iso_fortran_env, only: output_unit
     implicit none
 
     integer :: tests = 0
@@ -37,4 +38,4 @@ contains
         end if
     end subroutine test_discovery_message_format
 
-end program test_logging_glitches_1123
+end program test_logging_single_line_format

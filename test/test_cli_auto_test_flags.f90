@@ -1,7 +1,8 @@
-program test_auto_test_flags_1251
-    !! Test for Issue #1251: auto-test flags are supported and configurable.
+program test_cli_auto_test_flags
+    !! CLI auto-test flags.
+    !! Regression test for issue 1251.
 
-    use, intrinsic :: iso_fortran_env, only: dp => real64, output_unit
+    use, intrinsic :: iso_fortran_env, only: output_unit
     use config_defaults_core, only: initialize_default_config
     use config_parser_flags, only: process_single_flag
     use config_types, only: config_t
@@ -29,7 +30,7 @@ contains
         call initialize_default_config(config)
         call process_single_flag("--no-auto-test", config, success, error_message)
 
-        if (success .and. .not. config % auto_test_execution) then
+        if (success .and. .not. config%auto_test_execution) then
             passed = passed + 1
             write (output_unit, '(A)') '  [PASS] --no-auto-test disables auto-test'
         else
@@ -47,10 +48,10 @@ contains
         tests = tests + 1
 
         call initialize_default_config(config)
-        config % auto_test_execution = .false.
+        config%auto_test_execution = .false.
         call process_single_flag("--auto-test", config, success, error_message)
 
-        if (success .and. config % auto_test_execution) then
+        if (success .and. config%auto_test_execution) then
             passed = passed + 1
             write (output_unit, '(A)') '  [PASS] --auto-test enables auto-test'
         else
@@ -60,4 +61,4 @@ contains
         end if
     end subroutine test_auto_test_flag
 
-end program test_auto_test_flags_1251
+end program test_cli_auto_test_flags

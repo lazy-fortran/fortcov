@@ -1,9 +1,9 @@
-program test_nonexistent_file_segfault_1234
-    !! Test for Issue #1234: Segfault with nonexistent gcov file
-    !! Verifies file existence validation prevents segfault
+program test_validation_coverage_file_existence
+    !! Coverage file existence validation.
+    !! Regression test for issue 1234.
     use coverage_validation, only: validate_coverage_files
     use config_core, only: config_t, initialize_config
-    use iso_fortran_env, only: output_unit, error_unit
+    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
     implicit none
 
     integer :: tests = 0
@@ -109,4 +109,4 @@ contains
         end if
     end subroutine test_empty_coverage_files
 
-end program test_nonexistent_file_segfault_1234
+end program test_validation_coverage_file_existence

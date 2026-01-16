@@ -1,5 +1,6 @@
-program test_cmake_coverage_command_1252
-    !! Test for Issue #1252: CMake coverage build command is configured correctly.
+program test_build_cmake_coverage_command
+    !! CMake coverage build command construction.
+    !! Regression test for issue 1252.
 
     use, intrinsic :: iso_fortran_env, only: output_unit
     use build_detector_core, only: build_system_info_t
@@ -54,4 +55,4 @@ contains
         end if
     end subroutine test_cmake_coverage_command
 
-end program test_cmake_coverage_command_1252
+end program test_build_cmake_coverage_command

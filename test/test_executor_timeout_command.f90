@@ -1,5 +1,6 @@
-program test_timeout_command_builder_1257
-    !! Test for Issue #1257: timeout command selection is portable.
+program test_executor_timeout_command
+    !! Timeout command selection for test execution.
+    !! Regression test for issue 1257.
 
     use, intrinsic :: iso_fortran_env, only: output_unit
     use test_executor_core, only: build_timeout_command
@@ -61,4 +62,4 @@ contains
         end if
     end subroutine assert_equal
 
-end program test_timeout_command_builder_1257
+end program test_executor_timeout_command

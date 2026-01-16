@@ -1,8 +1,8 @@
-program test_duplicate_file_dedup_1238
-    !! Test for Issue #1238: Duplicate files counted multiple times
-    !! Verifies that coverage file lists are deduplicated by resolved path
+program test_discovery_deduplicate_files
+    !! Coverage file list deduplication during discovery.
+    !! Regression test for issue 1238.
     use coverage_workflows_discovery, only: deduplicate_files
-    use iso_fortran_env, only: output_unit, error_unit
+    use, intrinsic :: iso_fortran_env, only: output_unit, error_unit
     implicit none
 
     integer :: tests = 0
@@ -143,4 +143,4 @@ contains
         end if
     end subroutine test_multiple_duplicates
 
-end program test_duplicate_file_dedup_1238
+end program test_discovery_deduplicate_files
