@@ -47,16 +47,17 @@ contains
 
         call deduplicate_files(input, output)
 
-        if (allocated(output) .and. size(output) == 2) then
-            passed = passed + 1
-            write (output_unit, '(A)') '  [PASS] Exact duplicates removed'
+        if (allocated(output)) then
+            if (size(output) == 2) then
+                passed = passed + 1
+                write (output_unit, '(A)') '  [PASS] Exact duplicates removed'
+            else
+                write (output_unit, '(A)') '  [FAIL] Expected 2 files after dedup'
+                write (output_unit, '(A,I0)') '    Got: ', size(output)
+            end if
         else
             write (output_unit, '(A)') '  [FAIL] Expected 2 files after dedup'
-            if (allocated(output)) then
-                write (output_unit, '(A,I0)') '    Got: ', size(output)
-            else
-                write (output_unit, '(A)') '    Output not allocated'
-            end if
+            write (output_unit, '(A)') '    Output not allocated'
         end if
     end subroutine test_exact_duplicates
 
@@ -73,9 +74,13 @@ contains
 
         call deduplicate_files(input, output)
 
-        if (allocated(output) .and. size(output) == 3) then
-            passed = passed + 1
-            write (output_unit, '(A)') '  [PASS] All unique files preserved'
+        if (allocated(output)) then
+            if (size(output) == 3) then
+                passed = passed + 1
+                write (output_unit, '(A)') '  [PASS] All unique files preserved'
+            else
+                write (output_unit, '(A)') '  [FAIL] Expected 3 unique files'
+            end if
         else
             write (output_unit, '(A)') '  [FAIL] Expected 3 unique files'
         end if
@@ -91,9 +96,13 @@ contains
 
         call deduplicate_files(input, output)
 
-        if (allocated(output) .and. size(output) == 0) then
-            passed = passed + 1
-            write (output_unit, '(A)') '  [PASS] Empty input handled correctly'
+        if (allocated(output)) then
+            if (size(output) == 0) then
+                passed = passed + 1
+                write (output_unit, '(A)') '  [PASS] Empty input handled correctly'
+            else
+                write (output_unit, '(A)') '  [FAIL] Empty input not handled correctly'
+            end if
         else
             write (output_unit, '(A)') '  [FAIL] Empty input not handled correctly'
         end if
@@ -110,9 +119,13 @@ contains
 
         call deduplicate_files(input, output)
 
-        if (allocated(output) .and. size(output) == 1) then
-            passed = passed + 1
-            write (output_unit, '(A)') '  [PASS] Single file preserved'
+        if (allocated(output)) then
+            if (size(output) == 1) then
+                passed = passed + 1
+                write (output_unit, '(A)') '  [PASS] Single file preserved'
+            else
+                write (output_unit, '(A)') '  [FAIL] Single file not preserved'
+            end if
         else
             write (output_unit, '(A)') '  [FAIL] Single file not preserved'
         end if
@@ -133,14 +146,17 @@ contains
 
         call deduplicate_files(input, output)
 
-        if (allocated(output) .and. size(output) == 1) then
-            passed = passed + 1
-            write (output_unit, '(A)') '  [PASS] Multiple duplicates reduced to one'
-        else
-            write (output_unit, '(A)') '  [FAIL] Expected 1 file after dedup'
-            if (allocated(output)) then
+        if (allocated(output)) then
+            if (size(output) == 1) then
+                passed = passed + 1
+                write (output_unit, '(A)') '  [PASS] Multiple duplicates reduced to one'
+            else
+                write (output_unit, '(A)') '  [FAIL] Expected 1 file after dedup'
                 write (output_unit, '(A,I0)') '    Got: ', size(output)
             end if
+        else
+            write (output_unit, '(A)') '  [FAIL] Expected 1 file after dedup'
+            write (output_unit, '(A)') '    Output not allocated'
         end if
     end subroutine test_multiple_duplicates
 
