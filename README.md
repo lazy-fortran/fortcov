@@ -115,6 +115,10 @@ $ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
 
 ## Notes
 
+- FortCov is independent of the Lazy Fortran compiler bootstrap. It does not
+  depend on FortFront, `ffc`, or LIRIC.
+- Open cleanup issues track README simplification, Python dependency
+  documentation, examples cleanup, CLI defaults, and internal module reduction.
 - Developed and tested with FPM default build layout.
 - For non-FPM builds, generate `.gcov` with your build system and invoke FortCov as shown above.
 - Set `FORTCOV_USE_SYNTHETIC_GCOV=1` to force synthetic gcov output for tests.
