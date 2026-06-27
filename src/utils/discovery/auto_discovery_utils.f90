@@ -16,8 +16,8 @@ module auto_discovery_utils
     use gcov_processor_auto, only: gcov_result_t, auto_process_gcov_files
     use gcov_processing_core, only: initialize_processing_result
     use coverage_workflows, only: execute_auto_test_workflow
-    use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context
-    use constants_core, only: EXIT_SUCCESS, EXIT_FAILURE
+    use error_handling_core, only: error_context_t, ERROR_SUCCESS
+    use constants_core, only: EXIT_SUCCESS
     implicit none
     private
 
@@ -91,7 +91,7 @@ contains
 
         if (.not. manual_files_specified .and. config%auto_discovery) then
             call execute_auto_workflow(config, test_result, gcov_result, &
-                                      test_exit_code, result)
+                test_exit_code, result)
         else
             call handle_manual_workflow(config, result)
         end if
@@ -99,7 +99,7 @@ contains
     end subroutine execute_main_workflow
 
     subroutine execute_auto_workflow(config, test_result, gcov_result, &
-                                   test_exit_code, result)
+            test_exit_code, result)
         !! Execute auto-discovery workflow
         type(config_t), intent(in) :: config
         type(test_build_result_t), intent(out) :: test_result
@@ -121,7 +121,7 @@ contains
         if (test_result%success .and. config%auto_test_execution) then
             ! Step 2: Execute tests with coverage
             call execute_tests_with_coverage(config, test_result, &
-                                           test_exit_code, result)
+                test_exit_code, result)
         end if
 
         ! Step 3: Auto-process gcov files
@@ -210,7 +210,7 @@ contains
     end subroutine execute_auto_workflow
 
     subroutine execute_tests_with_coverage(config, test_result, &
-                                         test_exit_code, result)
+            test_exit_code, result)
         !! Execute tests with coverage using auto-discovered command
         type(config_t), intent(in) :: config
         type(test_build_result_t), intent(in) :: test_result
@@ -244,9 +244,9 @@ contains
         logical, intent(out) :: manual_files_specified
 
         manual_files_specified = (allocated(config%import_file) .and. &
-                                   len_trim(config%import_file) > 0) .or. &
-                               (allocated(config%source_paths) .and. &
-                                size(config%source_paths) > 0)
+            len_trim(config%import_file) > 0) .or. &
+            (allocated(config%source_paths) .and. &
+            size(config%source_paths) > 0)
 
     end subroutine check_manual_files
 

@@ -13,9 +13,8 @@ module gcov_file_discovery
     !! - Memory-safe file list allocation and management
 
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, clear_error_context, &
-                              safe_write_message, safe_write_suggestion, safe_write_context
+        safe_write_message, safe_write_suggestion, safe_write_context
     use path_security, only: validate_path_security
-    use file_ops_secure, only: safe_find_files, safe_remove_file
     use file_search_secure, only: safe_find_files_with_glob
     implicit none
     private
@@ -48,7 +47,7 @@ contains
             call safe_write_suggestion(error_ctx, &
                 'Verify the directory path or create the directory')
             call safe_write_context(error_ctx, 'gcov auto-processing directory validation')
-            error_ctx%error_code = 1  ! Non-success error code
+            error_ctx%error_code = 1 ! Non-success error code
         end if
     end subroutine validate_target_directory
 
@@ -82,7 +81,7 @@ contains
 
         ! Use enhanced recursive API for .gcda file discovery
         call safe_find_files_with_glob(safe_directory, "**/*.gcda", gcda_files, error_ctx)
-        
+
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call safe_write_context(error_ctx, 'direct gcda file discovery')
             return
@@ -97,7 +96,7 @@ contains
             call safe_write_context(error_ctx, 'direct gcda file discovery')
             error_ctx%error_code = 1
         end if
-        
+
     end subroutine direct_find_gcda_files
 
     subroutine discover_gcov_files(directory, gcov_files, error_ctx)
@@ -130,7 +129,7 @@ contains
 
         ! Use enhanced recursive API for .gcov file discovery
         call safe_find_files_with_glob(safe_directory, "**/*.gcov", gcov_files, error_ctx)
-        
+
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call safe_write_context(error_ctx, 'direct gcov file discovery')
             return
@@ -138,7 +137,7 @@ contains
 
         ! Don't set error for empty results - let caller handle no files found
         ! The secure find function already handles allocation correctly
-        
+
     end subroutine direct_find_gcov_files
 
 end module gcov_file_discovery

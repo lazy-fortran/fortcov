@@ -7,7 +7,7 @@ module coverage_stats_reporter
     use constants_core
     use coverage_model_core
     use config_core
-    use coverage_stats_core, only: coverage_stats_t, extended_coverage_stats_t
+    use coverage_stats_core, only: coverage_stats_t
     use coverage_reporter
     use error_handling_core
     use string_utils, only: int_to_string
@@ -84,7 +84,7 @@ contains
 
         ! Generate the report
         call reporter%generate_report(coverage_data, config%output_path, success, &
-                                      error_message)
+            error_message)
         if (.not. success) then
             if (.not. config%quiet) then
                 write (*, '(A)') "Error generating "//trim(config%output_format)// &
@@ -190,7 +190,7 @@ contains
         type(line_coverage_stats_t), intent(in) :: stats
         ! This subroutine exists only to suppress compiler warnings
         ! The stats parameter is intentionally unused
-        continue  ! Explicit no-op
+        continue ! Explicit no-op
     end subroutine suppress_unused_warning_stats
 
 end module coverage_stats_reporter
