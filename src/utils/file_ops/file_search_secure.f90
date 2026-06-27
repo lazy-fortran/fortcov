@@ -1,6 +1,6 @@
 module file_search_secure
     use error_handling_core, only: clear_error_context, error_context_t, &
-                                   ERROR_SUCCESS
+        ERROR_SUCCESS
     use path_security, only: validate_path_security
     use, intrinsic :: iso_c_binding, only: c_char, c_f_pointer, c_int, c_loc
     use, intrinsic :: iso_c_binding, only: c_null_ptr, c_ptr, c_size_t
@@ -9,15 +9,15 @@ module file_search_secure
 
     ! Public procedures
     public :: safe_find_files
-    public :: safe_find_files_with_glob  ! Enhanced API for directory+pattern
-    public :: safe_find_files_recursive  ! Enhanced API for recursive search
+    public :: safe_find_files_with_glob ! Enhanced API for directory+pattern
+    public :: safe_find_files_recursive ! Enhanced API for recursive search
     public :: create_secure_temp_filename
     public :: get_process_id
 
     ! C interop for glob()
     interface
         function c_glob(cpattern, flags, errfunc, pglob) bind(C, name="glob") &
-            result(rc)
+                result(rc)
             import :: c_char, c_int, c_ptr
             character(kind=c_char), dimension(*) :: cpattern
             integer(c_int), value :: flags
@@ -47,6 +47,20 @@ module file_search_secure
         type(c_ptr) :: gl_lstat
         type(c_ptr) :: gl_stat
     end type glob_t
+
+    type, bind(C) :: glob_t_darwin
+        integer(c_size_t) :: gl_pathc
+        integer(c_int) :: gl_matchc
+        integer(c_size_t) :: gl_offs
+        integer(c_int) :: gl_flags
+        type(c_ptr) :: gl_pathv
+        type(c_ptr) :: gl_errblk
+        type(c_ptr) :: gl_closedir
+        type(c_ptr) :: gl_readdir
+        type(c_ptr) :: gl_opendir
+        type(c_ptr) :: gl_lstat
+        type(c_ptr) :: gl_stat
+    end type glob_t_darwin
 
     integer, parameter :: GLOB_MARK = 2
     integer, parameter :: GLOB_NOSORT = 32
@@ -161,6 +175,18 @@ contains
         integer, intent(in) :: flags
         character(len=256), allocatable, intent(out) :: paths(:)
 
+        if (is_darwin()) then
+            call glob_collect_darwin(pattern, flags, paths)
+        else
+            call glob_collect_posix(pattern, flags, paths)
+        end if
+    end subroutine glob_collect
+
+    subroutine glob_collect_posix(pattern, flags, paths)
+        character(len=*), intent(in) :: pattern
+        integer, intent(in) :: flags
+        character(len=256), allocatable, intent(out) :: paths(:)
+
         type(glob_t), target :: g
         integer(c_int) :: rc
         character(kind=c_char), allocatable :: cpat(:)
@@ -196,7 +222,50 @@ contains
         end do
         call c_globfree(c_loc(g))
         deallocate (cpat)
-    end subroutine glob_collect
+    end subroutine glob_collect_posix
+
+    subroutine glob_collect_darwin(pattern, flags, paths)
+        character(len=*), intent(in) :: pattern
+        integer, intent(in) :: flags
+        character(len=256), allocatable, intent(out) :: paths(:)
+
+        type(glob_t_darwin), target :: g
+        integer(c_int) :: rc
+        character(kind=c_char), allocatable :: cpat(:)
+        type(c_ptr), pointer :: pathv(:)
+        integer :: i
+        integer(c_size_t) :: n
+
+        g%gl_pathc = 0_c_size_t
+        g%gl_matchc = 0
+        g%gl_pathv = c_null_ptr
+        g%gl_offs = 0_c_size_t
+        g%gl_flags = 0
+        g%gl_errblk = c_null_ptr
+        g%gl_closedir = c_null_ptr
+        g%gl_readdir = c_null_ptr
+        g%gl_opendir = c_null_ptr
+        g%gl_lstat = c_null_ptr
+        g%gl_stat = c_null_ptr
+
+        allocate (cpat(len_trim(pattern) + 1))
+        call to_c_string(pattern, cpat)
+        rc = c_glob(cpat, flags, c_null_ptr, c_loc(g))
+        if (rc /= 0 .or. g%gl_pathc == 0) then
+            allocate (character(len=256) :: paths(0))
+            deallocate (cpat)
+            return
+        end if
+
+        call c_f_pointer(g%gl_pathv, pathv, [g%gl_pathc])
+        allocate (character(len=256) :: paths(int(g%gl_pathc)))
+        do i = 1, int(g%gl_pathc)
+            n = c_strlen(pathv(i))
+            paths(i) = from_c_string(pathv(i), int(n))
+        end do
+        call c_globfree(c_loc(g))
+        deallocate (cpat)
+    end subroutine glob_collect_darwin
 
     recursive subroutine recursive_glob_collect(base_dir, file_pattern, paths)
         character(len=*), intent(in) :: base_dir, file_pattern
@@ -207,20 +276,35 @@ contains
         integer :: i
 
         call glob_collect(trim(base_dir)//'/'//trim(file_pattern), &
-                          GLOB_NOSORT, here)
-        call glob_collect(trim(base_dir)//'/*', GLOB_MARK, dirs)
+            GLOB_NOSORT, here)
+        call glob_collect(trim(base_dir)//'/*', glob_mark_flag(), dirs)
         acc = here
         if (allocated(dirs)) then
             do i = 1, size(dirs)
                 if (is_dir_marked(dirs(i))) then
                     call recursive_glob_collect(trim(strip_dir_mark(dirs(i))), &
-                                                trim(file_pattern), sub)
+                        trim(file_pattern), sub)
                     acc = append_paths(acc, sub)
                 end if
             end do
         end if
         paths = acc
     end subroutine recursive_glob_collect
+
+    logical function is_darwin()
+        logical :: exists
+        inquire (file='/System/Library/CoreServices/SystemVersion.plist', &
+            exist=exists)
+        is_darwin = exists
+    end function is_darwin
+
+    integer function glob_mark_flag()
+        if (is_darwin()) then
+            glob_mark_flag = 8
+        else
+            glob_mark_flag = GLOB_MARK
+        end if
+    end function glob_mark_flag
 
     pure function is_dir_marked(path) result(isdir)
         character(len=*), intent(in) :: path
