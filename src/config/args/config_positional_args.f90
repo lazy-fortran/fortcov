@@ -63,7 +63,7 @@ contains
     end subroutine add_source_path
 
     subroutine process_positional_arguments(positionals, positional_count, &
-                                            config, success, error_message)
+            config, success, error_message)
         !! Process positional arguments (coverage files)
         character(len=*), intent(in) :: positionals(:)
         integer, intent(in) :: positional_count
@@ -86,7 +86,7 @@ contains
 
         do i = 1, positional_count
             call classify_positional_argument(positionals(i), is_valid_coverage_file, &
-                                              is_source_path)
+                is_source_path)
 
             if (is_valid_coverage_file) then
                 call add_string_to_array(config%coverage_files, positionals(i))
@@ -94,7 +94,7 @@ contains
                 call add_source_path(config, positionals(i))
             else
                 call handle_unknown_positional(config, positionals(i), success, &
-                                               error_message)
+                    error_message)
                 if (.not. success) return
             end if
         end do
@@ -233,7 +233,7 @@ contains
 
         is_dir = .false.
         open (newunit=unit, file=trim(path)//'/..', status='old', action='read', &
-              iostat=iostat)
+            iostat=iostat)
         if (iostat == 0) then
             is_dir = .true.
             close (unit)
@@ -265,7 +265,7 @@ contains
             ! This is a heuristic - if the file can be opened and contains fortcov
             ! in the path with build structure, it is likely an executable
             open (newunit=unit, file=trim(path), status='old', &
-                  action='read', form='unformatted', access='stream', iostat=iostat)
+                action='read', form='unformatted', access='stream', iostat=iostat)
             if (iostat == 0) then
                 close (unit)
                 is_executable = .true.

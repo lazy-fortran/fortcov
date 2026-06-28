@@ -16,7 +16,7 @@ module config_classifier_args
 contains
 
     subroutine classify_command_arguments(args, flags, flag_count, positionals, &
-                                          positional_count, success, error_message)
+            positional_count, success, error_message)
         !! Classify arguments into flags and positionals
         character(len=*), intent(in) :: args(:)
         character(len=1024), allocatable, intent(out) :: flags(:)
@@ -30,24 +30,24 @@ contains
 
         ! Initialize classification state
         call initialize_argument_classification(flags, positionals, flag_count, &
-                                                positional_count, expecting_value, &
-                                                success, error_message)
+            positional_count, expecting_value, &
+            success, error_message)
 
         ! Process all arguments
         call process_all_arguments(args, flags, flag_count, positionals, &
-                                   positional_count, expecting_value, success, &
-                                   error_message)
+            positional_count, expecting_value, success, &
+            error_message)
         if (.not. success) return
 
         ! Final validation
         call validate_argument_completion(flags, flag_count, expecting_value, &
-                                          success, error_message)
+            success, error_message)
 
     end subroutine classify_command_arguments
 
     subroutine initialize_argument_classification(flags, positionals, flag_count, &
-                                                  positional_count, expecting_value, &
-                                                  success, error_message)
+            positional_count, expecting_value, &
+            success, error_message)
         !! Initialize argument classification arrays and state
         character(len=1024), allocatable, intent(out) :: flags(:)
         character(len=1024), allocatable, intent(out) :: positionals(:)
@@ -66,8 +66,8 @@ contains
     end subroutine initialize_argument_classification
 
     subroutine process_all_arguments(args, flags, flag_count, positionals, &
-                                     positional_count, expecting_value, success, &
-                                     error_message)
+            positional_count, expecting_value, success, &
+            error_message)
         !! Process all command line arguments
         character(len=*), intent(in) :: args(:)
         character(len=1024), allocatable, intent(inout) :: flags(:)
@@ -89,15 +89,15 @@ contains
             if (len_trim(arg) == 0) cycle
 
             call process_single_argument(arg, flags, flag_count, positionals, &
-                                         positional_count, expecting_value, success, &
-                                         error_message)
+                positional_count, expecting_value, success, &
+                error_message)
             if (.not. success) return
         end do
     end subroutine process_all_arguments
 
     subroutine process_single_argument(arg, flags, flag_count, positionals, &
-                                       positional_count, expecting_value, success, &
-                                       error_message)
+            positional_count, expecting_value, success, &
+            error_message)
         !! Process a single command line argument
         character(len=*), intent(in) :: arg
         character(len=1024), allocatable, intent(inout) :: flags(:)
@@ -110,18 +110,18 @@ contains
 
         if (expecting_value) then
             call add_flag_value(arg, flags, flag_count, expecting_value, success, &
-                                error_message)
+                error_message)
         else if (is_flag_argument(arg)) then
             call process_flag_argument(arg, flags, flag_count, expecting_value, &
-                                       success, error_message)
+                success, error_message)
         else
             call add_positional_argument(arg, positionals, positional_count, &
-                                         success, error_message)
+                success, error_message)
         end if
     end subroutine process_single_argument
 
     subroutine add_flag_value(value, flags, flag_count, expecting_value, success, &
-                              error_message)
+            error_message)
         !! Add flag value to flags array with validation
         character(len=*), intent(in) :: value
         character(len=1024), allocatable, intent(inout) :: flags(:)
@@ -134,8 +134,8 @@ contains
         if (is_flag_argument(value)) then
             success = .false.
             error_message = "Missing value for flag: "//trim(flags(flag_count))// &
-                            " (received flag instead of value: "//trim(value)// &
-                            ")"
+                " (received flag instead of value: "//trim(value)// &
+                ")"
             return
         end if
 
@@ -153,7 +153,7 @@ contains
     end subroutine add_flag_value
 
     subroutine process_flag_argument(arg, flags, flag_count, expecting_value, &
-                                     success, error_message)
+            success, error_message)
         !! Process flag argument (with or without equals)
         character(len=*), intent(in) :: arg
         character(len=1024), allocatable, intent(inout) :: flags(:)
@@ -167,15 +167,15 @@ contains
         equals_pos = index(arg, '=')
         if (equals_pos > 0) then
             call process_flag_with_equals(arg, equals_pos, flags, flag_count, &
-                                          success, error_message)
+                success, error_message)
         else
             call process_regular_flag(arg, flags, flag_count, expecting_value, &
-                                      success, error_message)
+                success, error_message)
         end if
     end subroutine process_flag_argument
 
     subroutine process_flag_with_equals(arg, equals_pos, flags, flag_count, &
-                                        success, error_message)
+            success, error_message)
         !! Process flag with equals sign (--flag=value)
         character(len=*), intent(in) :: arg
         integer, intent(in) :: equals_pos
@@ -200,14 +200,14 @@ contains
         end if
 
         call add_flag_to_array(normalized_flag, flags, flag_count, success, &
-                               error_message)
+            error_message)
         if (.not. success) return
 
         call add_flag_to_array(value, flags, flag_count, success, error_message)
     end subroutine process_flag_with_equals
 
     subroutine process_regular_flag(arg, flags, flag_count, expecting_value, &
-                                    success, error_message)
+            success, error_message)
         !! Process regular flag without value
         character(len=*), intent(in) :: arg
         character(len=1024), allocatable, intent(inout) :: flags(:)
@@ -248,7 +248,7 @@ contains
     end subroutine add_flag_to_array
 
     subroutine add_positional_argument(arg, positionals, positional_count, &
-                                       success, error_message)
+            success, error_message)
         !! Add positional argument with bounds checking
         character(len=*), intent(in) :: arg
         character(len=1024), allocatable, intent(inout) :: positionals(:)
@@ -269,7 +269,7 @@ contains
     end subroutine add_positional_argument
 
     subroutine validate_argument_completion(flags, flag_count, expecting_value, &
-                                            success, error_message)
+            success, error_message)
         !! Validate that argument processing completed correctly
         character(len=1024), allocatable, intent(in) :: flags(:)
         integer, intent(in) :: flag_count
@@ -330,17 +330,17 @@ contains
 
         select case (trim(flag))
         case ("--source", "-s", "--exclude", "--include", "--output", "-o", &
-              "--format", "-f", "--minimum", "-m", "--threshold", &
-              "--fail-under", "--diff-threshold", "--import", "--config", &
-              "--test-timeout", "--threads", "-t", "--gcov-output-dir", &
-              "--diff-baseline", "--diff-current", "--gcov-executable", &
-              "--gcov-cmd")
+                "--format", "-f", "--minimum", "-m", "--threshold", &
+                "--fail-under", "--diff-threshold", "--import", "--config", &
+                "--test-timeout", "--threads", "-t", "--gcov-output-dir", &
+                "--diff-baseline", "--diff-current", "--gcov-executable", &
+                "--gcov-cmd")
             requires_value = .true.
         case ("--help", "-h", "--version", "-V", "--quiet", "-q", &
-              "--verbose", "-v", "--validate", "--diff", "--lcov", &
-              "--auto-test", "--no-auto-test", "--auto-discovery", &
-              "--no-auto-discovery", "--zero-config", &
-              "--gcov", "--discover-and-gcov")
+                "--verbose", "-v", "--validate", "--diff", "--lcov", &
+                "--auto-test", "--no-auto-test", "--auto-discovery", &
+                "--no-auto-discovery", "--zero-config", &
+                "--gcov", "--discover-and-gcov")
             requires_value = .false.
         end select
 

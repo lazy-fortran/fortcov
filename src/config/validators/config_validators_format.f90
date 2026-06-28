@@ -1,13 +1,13 @@
 module config_validators_format
     implicit none
     private
-    
+
     ! Public procedures
     public :: is_supported_output_format
     public :: is_valid_coverage_file_format
     public :: is_valid_import_file_format
     public :: is_file_readable
-    
+
 contains
 
     function is_supported_output_format(format) result(is_supported)
@@ -20,9 +20,9 @@ contains
         lower_format = to_lower(trim(format))
 
         is_supported = (lower_format == "markdown" .or. &
-                        lower_format == "cobertura" .or. &
-                        lower_format == "cobertura-xml" .or. &
-                        lower_format == "xml")
+            lower_format == "cobertura" .or. &
+            lower_format == "cobertura-xml" .or. &
+            lower_format == "xml")
 
     end function is_supported_output_format
 
@@ -40,7 +40,7 @@ contains
         dot_pos = index(file_path, ".", back=.true.)
         if (dot_pos > 0 .and. dot_pos < len_trim(file_path)) then
             extension = to_lower(file_path(dot_pos:))
-            
+
             ! Only native .gcov coverage files are supported
             if (extension == ".gcov") is_valid = .true.
         end if
@@ -77,13 +77,13 @@ contains
         end if
 
     end function is_file_readable
-    
+
     ! Helper function to convert to lowercase
     function to_lower(str) result(lower_str)
         character(len=*), intent(in) :: str
         character(len=:), allocatable :: lower_str
         integer :: i
-        
+
         lower_str = trim(str)
         do i = 1, len(lower_str)
             if (lower_str(i:i) >= 'A' .and. lower_str(i:i) <= 'Z') then

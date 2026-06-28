@@ -6,10 +6,10 @@ module gcov_file_processor
     use coverage_data_builder
     implicit none
     private
-    
+
     ! Public procedures
     public :: process_gcov_file
-    
+
 contains
 
     ! Main entry point for processing gcov files
@@ -17,45 +17,45 @@ contains
         character(len=*), intent(in) :: path
         type(coverage_data_t), intent(out) :: coverage_data
         logical, intent(out) :: error_flag
-        
+
         integer, parameter :: unit = 10
         type(coverage_file_t), allocatable :: files_array(:)
         integer :: files_count
-        
+
         ! Initialize parser state
         call initialize_parser_state(error_flag, coverage_data, files_array, files_count)
         if (error_flag) return
-        
+
         ! Open and parse the gcov file
         call open_and_parse_gcov_file(unit, path, files_array, files_count, error_flag)
         if (error_flag) return
-        
+
         ! Build final coverage data
         call build_coverage_data_from_files(coverage_data, files_array, files_count, &
-                                           error_flag)
+            error_flag)
     end subroutine process_gcov_file
-    
+
     ! Initialize parser state with empty arrays and defaults
     subroutine initialize_parser_state(error_flag, coverage_data, files_array, files_count)
         logical, intent(out) :: error_flag
         type(coverage_data_t), intent(out) :: coverage_data
         type(coverage_file_t), allocatable, intent(out) :: files_array(:)
         integer, intent(out) :: files_count
-        
+
         integer :: stat
         character(len=512) :: errmsg
-        
+
         error_flag = .false.
         coverage_data = coverage_data_t()
         files_count = 0
-        allocate(coverage_file_t :: files_array(10), stat=stat, errmsg=errmsg)  ! Initial capacity
+        allocate(coverage_file_t :: files_array(10), stat=stat, errmsg=errmsg) ! Initial capacity
         if (stat /= 0) then
             write(*, '(A)') "Error: Failed to allocate files_array: " // trim(errmsg)
             error_flag = .true.
             return
         end if
     end subroutine initialize_parser_state
-    
+
     ! Open gcov file and parse all content line by line
     subroutine open_and_parse_gcov_file(unit, path, files_array, files_count, error_flag)
         integer, intent(in) :: unit
@@ -80,7 +80,7 @@ contains
         source_filename = "unknown"
         file_opened = .false.
 
-        allocate(coverage_line_t :: lines_array(100), stat=stat, errmsg=errmsg)  ! Initial capacity
+        allocate(coverage_line_t :: lines_array(100), stat=stat, errmsg=errmsg) ! Initial capacity
         if (stat /= 0) then
             write(*, '(A)') "Error: Failed to allocate lines_array: " // trim(errmsg)
             error_flag = .true.
@@ -94,7 +94,7 @@ contains
 
         ! Process each line
         call process_gcov_lines(unit, path, source_filename, lines_array, lines_count, &
-                               files_array, files_count, has_source)
+            files_array, files_count, has_source)
 
         ! Ensure file is always closed
         if (file_opened) then
@@ -104,18 +104,18 @@ contains
         ! Add final file if we have data
         if (has_source .and. lines_count > 0) then
             call add_file_to_array(files_array, files_count, source_filename, &
-                                 lines_array(1:lines_count))
+                lines_array(1:lines_count))
         end if
     end subroutine open_and_parse_gcov_file
-    
+
     ! Open gcov file with enhanced error handling
     subroutine open_gcov_file_with_validation(unit, path, error_flag)
         integer, intent(in) :: unit
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag
-        
+
         integer :: iostat_val
-        
+
         open(unit, file=path, status="old", iostat=iostat_val)
         if (iostat_val /= 0) then
             error_flag = .true.
@@ -128,11 +128,11 @@ contains
             error_flag = .false.
         end if
     end subroutine open_gcov_file_with_validation
-    
+
     ! Process all lines from gcov file
     ! Handles function block separators (------------------) to avoid duplicate lines
     subroutine process_gcov_lines(unit, path, source_filename, lines_array, &
-                                 lines_count, files_array, files_count, has_source)
+            lines_count, files_array, files_count, has_source)
         integer, intent(in) :: unit
         character(len=*), intent(in) :: path
         character(len=:), allocatable, intent(inout) :: source_filename
@@ -171,7 +171,7 @@ contains
             if (in_function_block) cycle
 
             call parse_gcov_line(line, path, source_filename, lines_array, &
-                               lines_count, files_array, files_count, has_source)
+                lines_count, files_array, files_count, has_source)
         end do
     end subroutine process_gcov_lines
 
@@ -200,14 +200,14 @@ contains
         ! Valid separator has 10+ consecutive dashes and nothing else
         is_separator = (dash_count >= 10)
     end function is_function_block_separator
-    
+
     ! Read single line from gcov file with error handling
     subroutine read_gcov_line_with_validation(unit, path, line, iostat_val)
         integer, intent(in) :: unit
         character(len=*), intent(in) :: path
         character(len=256), intent(out) :: line
         integer, intent(out) :: iostat_val
-        
+
         read(unit, '(A)', iostat=iostat_val) line
         if (iostat_val /= 0 .and. iostat_val /= -1) then
             block

@@ -29,7 +29,7 @@ program test_safe_move_file_preserves_bytes
     expected = repeat('A', 2048)//repeat(' ', 8)//achar(0)//'Z'//achar(10)//'TAIL  '
 
     open (newunit=unit, file=source_path, access='stream', form='unformatted', &
-          action='write', status='replace', iostat=ios)
+        action='write', status='replace', iostat=ios)
     if (ios /= 0) then
         call fail("Could not create source file: "//trim(source_path))
         call cleanup()
@@ -74,7 +74,7 @@ program test_safe_move_file_preserves_bytes
     allocate (character(len=file_size) :: actual)
 
     open (newunit=unit, file=target_path, access='stream', form='unformatted', &
-          action='read', status='old', iostat=ios)
+        action='read', status='old', iostat=ios)
     if (ios /= 0) then
         call fail("Could not open target file: "//trim(target_path))
         call cleanup()

@@ -84,7 +84,7 @@ contains
         character(len=:), allocatable :: status
 
         coverage_delta = current%line_coverage_percentage - &
-                        baseline%line_coverage_percentage
+            baseline%line_coverage_percentage
 
         if (coverage_delta > 0.1) then
             status = "improved"
@@ -95,13 +95,13 @@ contains
         end if
 
         output = 'Coverage Diff Report' // new_line('a') // &
-                '===================' // new_line('a') // &
-                'Baseline: ' // real_to_str(baseline%line_coverage_percentage) // &
-                '%' // new_line('a') // &
-                'Current:  ' // real_to_str(current%line_coverage_percentage) // &
-                '%' // new_line('a') // &
-                'Delta:    ' // real_to_str(coverage_delta) // '%' // new_line('a') // &
-                'Status:   ' // status // new_line('a')
+            '===================' // new_line('a') // &
+            'Baseline: ' // real_to_str(baseline%line_coverage_percentage) // &
+            '%' // new_line('a') // &
+            'Current:  ' // real_to_str(current%line_coverage_percentage) // &
+            '%' // new_line('a') // &
+            'Delta:    ' // real_to_str(coverage_delta) // '%' // new_line('a') // &
+            'Status:   ' // status // new_line('a')
     end subroutine generate_diff_output
 
 end module coverage_metrics_core

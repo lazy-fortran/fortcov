@@ -51,7 +51,7 @@ contains
                 source_path = get_directory_path(coverage_data%files(i)%filename)
                 path_len = xml_escape_length(trim(source_path), .false.)
                 total_len = total_len + len('  <source>') + path_len + &
-                            len('</source>') + 1
+                    len('</source>') + 1
             end do
         end if
 
@@ -126,23 +126,23 @@ contains
             bname_len = xml_escape_length(bname, .true.)
 
             total_len = total_len + len('      <class filename="') + fname_len + &
-                        len('" name="') + bname_len + &
-                        len('" line-rate="') + len_trim(rate_str) + &
-                        len('" branch-rate="') + len_trim(branch_rate_str) + &
-                        len('" complexity="0.0">') + 1
+                len('" name="') + bname_len + &
+                len('" line-rate="') + len_trim(rate_str) + &
+                len('" branch-rate="') + len_trim(branch_rate_str) + &
+                len('" complexity="0.0">') + 1
             total_len = total_len + len('        <lines>') + 1
 
             if (allocated(coverage_data%files(i)%lines)) then
                 do j = 1, size(coverage_data%files(i)%lines)
                     if (.not. coverage_data%files(i)%lines(j)%is_executable) cycle
                     line_no_str = int_to_string( &
-                                  coverage_data%files(i)%lines(j)%line_number)
+                        coverage_data%files(i)%lines(j)%line_number)
                     hits_str = int_to_string( &
-                               coverage_data%files(i)%lines(j)%execution_count)
+                        coverage_data%files(i)%lines(j)%execution_count)
                     total_len = total_len + len('          <line number="') + &
-                                len_trim(line_no_str) + len('" hits="') + &
-                                len_trim(hits_str) + &
-                                len('" branch="false"/>') + 1
+                        len_trim(line_no_str) + len('" hits="') + &
+                        len_trim(hits_str) + &
+                        len('" branch="false"/>') + 1
                 end do
             end if
 
@@ -200,9 +200,9 @@ contains
                     do j = 1, size(coverage_data%files(i)%lines)
                         if (.not. coverage_data%files(i)%lines(j)%is_executable) cycle
                         line_no_str = int_to_string( &
-                                      coverage_data%files(i)%lines(j)%line_number)
+                            coverage_data%files(i)%lines(j)%line_number)
                         hits_str = int_to_string( &
-                                   coverage_data%files(i)%lines(j)%execution_count)
+                            coverage_data%files(i)%lines(j)%execution_count)
                         call append_text(buffer, pos, '          <line number="')
                         call append_text(buffer, pos, trim(line_no_str))
                         call append_text(buffer, pos, '" hits="')

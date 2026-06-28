@@ -9,12 +9,12 @@ module system_diff
     !! XML-centric workflows only.
 
     use coverage_format_converter, only: validate_cobertura_xml_schema, &
-                                        parse_cobertura_xml
+        parse_cobertura_xml
     use coverage_data_comparator, only: compare_coverage_data, &
-                                       validate_structural_equivalence, &
-                                       check_numerical_tolerance
+        validate_structural_equivalence, &
+        check_numerical_tolerance
     use coverage_calculation_utils, only: calculate_coverage_rates, &
-                                         calculate_branch_coverage_rate
+        calculate_branch_coverage_rate
     implicit none
     private
 

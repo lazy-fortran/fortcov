@@ -17,7 +17,7 @@ module test_executor_core
 contains
 
     subroutine execute_tests_with_timeout(test_command, config, exit_code, &
-                                          success)
+            success)
         !! Secure test execution with strict validation
         !!
         !! Runs the detected build-system test command (e.g., FPM) using the
@@ -88,9 +88,9 @@ contains
             else
                 call resolve_timeout_command(timeout_command, timeout_available)
                 wrapped_command = build_timeout_command(test_command, &
-                                                        config%test_timeout_seconds, &
-                                                        timeout_command, &
-                                                        timeout_available)
+                    config%test_timeout_seconds, &
+                    timeout_command, &
+                    timeout_available)
                 if ((.not. timeout_available) .and. .not. config%quiet) then
                     write (error_unit, '(A)') "Timeout command unavailable; "// &
                         "running tests without timeout"
@@ -103,8 +103,8 @@ contains
     end subroutine execute_tests_with_timeout
 
     function build_timeout_command(test_command, timeout_seconds, &
-                                   timeout_command, timeout_available) &
-        result(command)
+            timeout_command, timeout_available) &
+            result(command)
         character(len=*), intent(in) :: test_command
         integer, intent(in) :: timeout_seconds
         character(len=*), intent(in) :: timeout_command
@@ -122,8 +122,8 @@ contains
         end if
 
         command = trim(timeout_command)//" -k 5 "// &
-                  trim(int_to_string(timeout_seconds))//" "// &
-                  trim(test_command)
+            trim(int_to_string(timeout_seconds))//" "// &
+            trim(test_command)
     end function build_timeout_command
 
     subroutine resolve_timeout_command(timeout_command, timeout_available)
@@ -149,13 +149,13 @@ contains
         call split_path_entries(path_value, path_separator, path_entries)
         do i = 1, size(path_entries)
             call check_timeout_candidate(trim(path_entries(i)), "timeout", &
-                                         timeout_available)
+                timeout_available)
             if (timeout_available) then
                 timeout_command = "timeout"
                 return
             end if
             call check_timeout_candidate(trim(path_entries(i)), "gtimeout", &
-                                         timeout_available)
+                timeout_available)
             if (timeout_available) then
                 timeout_command = "gtimeout"
                 return

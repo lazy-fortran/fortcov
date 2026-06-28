@@ -65,8 +65,8 @@ contains
                 env_val(1:1) == 'f') then
                 use_synthetic_gcov = .false.
             else if (env_val(1:1) == '1' .or. env_val(1:1) == 'Y' .or. &
-                     env_val(1:1) == 'y' .or. env_val(1:1) == 'T' .or. &
-                     env_val(1:1) == 't') then
+                    env_val(1:1) == 'y' .or. env_val(1:1) == 'T' .or. &
+                    env_val(1:1) == 't') then
                 use_synthetic_gcov = .true.
             end if
         end if
@@ -145,7 +145,7 @@ contains
     end subroutine record_created_file
 
     subroutine run_real_gcov(gcda_file, gcno_file, out_dir, base_name, gcov_exec, &
-        created_files, created_count, error_ctx, ok)
+            created_files, created_count, error_ctx, ok)
         character(len=*), intent(in) :: gcda_file
         character(len=*), intent(in) :: gcno_file
         character(len=*), intent(in) :: out_dir
@@ -187,7 +187,7 @@ contains
     end subroutine run_real_gcov
 
     subroutine synthesize_gcov_file(gcda_file, gcno_file, out_dir, base_name, &
-        created_files, created_count, error_ctx, ok)
+            created_files, created_count, error_ctx, ok)
         character(len=*), intent(in) :: gcda_file
         character(len=*), intent(in) :: gcno_file
         character(len=*), intent(in) :: out_dir

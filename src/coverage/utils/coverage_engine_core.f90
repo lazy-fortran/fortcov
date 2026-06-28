@@ -6,16 +6,16 @@ module coverage_engine_core
     !! integration indirection layers.
     use build_detector_core,   only: build_system_info_t, detect_build_system
     use coverage_analysis_core, only: perform_coverage_analysis, &
-                                      perform_safe_coverage_analysis
+        perform_safe_coverage_analysis
     use coverage_workflows,     only: discover_coverage_files, &
-                                      evaluate_exclude_patterns, &
-                                      perform_coverage_diff_analysis
+        evaluate_exclude_patterns, &
+        perform_coverage_diff_analysis
     use config_core,            only: config_t
     use error_handling_core,    only: error_context_t, ERROR_MISSING_FILE, &
-                                      ERROR_SUCCESS, clear_error_context, &
-                                      handle_gcov_not_found, &
-                                      handle_no_coverage_files, log_error, &
-                                      safe_write_message, safe_write_suggestion
+        ERROR_SUCCESS, clear_error_context, &
+        handle_gcov_not_found, &
+        handle_no_coverage_files, log_error, &
+        safe_write_message, safe_write_suggestion
     use gcov_file_discovery,   only: discover_gcda_files, discover_gcov_files
     use gcov_generator,        only: check_gcov_availability
     implicit none

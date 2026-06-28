@@ -19,8 +19,8 @@ module cobertura_reporter_wrapper
 contains
 
     subroutine cobertura_generate_report(this, coverage_data, output_path, &
-                                         success, error_message, &
-                                         diff_data, threshold)
+            success, error_message, &
+            diff_data, threshold)
         use cobertura_reporter, only: generate_cobertura_xml_report
         use error_handling_core, only: error_context_t, ERROR_SUCCESS
         use file_utilities, only: write_text_file_safe

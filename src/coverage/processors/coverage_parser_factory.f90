@@ -3,15 +3,15 @@ module coverage_parser_factory
     use input_validation_core
     implicit none
     private
-    
+
     ! Public types
     public :: coverage_parser_t
     public :: gcov_parser_t
     public :: mock_parser_t
-    
+
     ! Public procedures
     public :: create_parser
-    
+
     ! Abstract parser interface
     type, abstract :: coverage_parser_t
     contains
@@ -19,7 +19,7 @@ module coverage_parser_factory
         procedure(can_parse_interface), deferred :: can_parse
         procedure(get_required_files_interface), deferred :: get_required_files
     end type coverage_parser_t
-    
+
     ! Concrete GCov parser implementation
     type, extends(coverage_parser_t) :: gcov_parser_t
     contains
@@ -27,7 +27,7 @@ module coverage_parser_factory
         procedure :: can_parse => gcov_can_parse
         procedure :: get_required_files => gcov_get_required_files
     end type gcov_parser_t
-    
+
     ! Mock parser for testing
     type, extends(coverage_parser_t) :: mock_parser_t
         type(coverage_data_t) :: injected_data
@@ -37,7 +37,7 @@ module coverage_parser_factory
         procedure :: get_required_files => mock_get_required_files
         procedure :: inject_data => mock_inject_data
     end type mock_parser_t
-    
+
     ! Abstract interfaces
     abstract interface
         function parse_interface(this, path, error_flag) result(coverage_data)
@@ -47,14 +47,14 @@ module coverage_parser_factory
             logical, intent(out) :: error_flag
             type(coverage_data_t) :: coverage_data
         end function parse_interface
-        
+
         function can_parse_interface(this, path) result(supported)
             import :: coverage_parser_t
             class(coverage_parser_t), intent(in) :: this
             character(len=*), intent(in) :: path
             logical :: supported
         end function can_parse_interface
-        
+
         function get_required_files_interface(this) result(extensions)
             import :: coverage_parser_t
             class(coverage_parser_t), intent(in) :: this
@@ -71,9 +71,9 @@ contains
         logical, intent(out) :: error_flag
         character(len=10) :: extension
         integer :: dot_pos
-        
+
         error_flag = .false.
-        
+
         ! Input validation: Check path validity using validation framework
         block
             type(validation_result_t) :: validation_result
@@ -83,7 +83,7 @@ contains
                 return
             end if
         end block
-        
+
         ! Extract file extension
         dot_pos = index(path, ".", back=.true.)
         if (dot_pos > 0) then
@@ -91,8 +91,8 @@ contains
         else
             extension = ""
         end if
-        
-        ! Select parser based on extension  
+
+        ! Select parser based on extension
         select case (trim(extension))
         case (".gcov")
             allocate(gcov_parser_t :: parser)
@@ -112,7 +112,7 @@ contains
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag
         type(coverage_data_t) :: coverage_data
-        
+
         call process_gcov_file(path, coverage_data, error_flag)
     end function gcov_parse
 
@@ -122,7 +122,7 @@ contains
         logical :: supported
         character(len=10) :: extension
         integer :: dot_pos
-        
+
         ! Extract extension and check if supported
         dot_pos = index(path, ".", back=.true.)
         if (dot_pos > 0) then
@@ -136,7 +136,7 @@ contains
     function gcov_get_required_files(this) result(extensions)
         class(gcov_parser_t), intent(in) :: this
         character(len=:), allocatable :: extensions(:)
-        
+
         allocate(character(len=5) :: extensions(1))
         extensions(1) = ".gcov"
     end function gcov_get_required_files
@@ -147,7 +147,7 @@ contains
         character(len=*), intent(in) :: path
         logical, intent(out) :: error_flag
         type(coverage_data_t) :: coverage_data
-        
+
         error_flag = .false.
         coverage_data = this%injected_data
     end function mock_parse
@@ -156,7 +156,7 @@ contains
         class(mock_parser_t), intent(in) :: this
         character(len=*), intent(in) :: path
         logical :: supported
-        
+
         ! Mock parser supports anything for testing
         supported = .true.
     end function mock_can_parse
@@ -164,7 +164,7 @@ contains
     function mock_get_required_files(this) result(extensions)
         class(mock_parser_t), intent(in) :: this
         character(len=:), allocatable :: extensions(:)
-        
+
         allocate(character(len=5) :: extensions(1))
         extensions(1) = ".mock"
     end function mock_get_required_files
@@ -172,7 +172,7 @@ contains
     subroutine mock_inject_data(this, data)
         class(mock_parser_t), intent(inout) :: this
         type(coverage_data_t), intent(in) :: data
-        
+
         this%injected_data = data
     end subroutine mock_inject_data
 

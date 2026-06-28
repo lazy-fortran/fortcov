@@ -5,7 +5,7 @@ module cobertura_reporter
     use coverage_model_core, only: coverage_data_t
     use string_utils, only: int_to_string
     use xml_utils, only: generate_packages_section, generate_sources_section, &
-                         get_current_timestamp
+        get_current_timestamp
     implicit none
     private
 
@@ -110,10 +110,10 @@ contains
         branches_covered_str = int_to_string(branches_covered)
 
         total_len = 1024 + len_trim(sources_xml) + len_trim(packages_xml) + &
-                    len_trim(timestamp) + len_trim(line_rate_str) + &
-                    len_trim(branch_rate_str) + len_trim(lines_valid_str) + &
-                    len_trim(lines_covered_str) + len_trim(branches_valid_str) + &
-                    len_trim(branches_covered_str)
+            len_trim(timestamp) + len_trim(line_rate_str) + &
+            len_trim(branch_rate_str) + len_trim(lines_valid_str) + &
+            len_trim(lines_covered_str) + len_trim(branches_valid_str) + &
+            len_trim(branches_covered_str)
 
         allocate (character(len=total_len) :: buffer)
         pos = 1
@@ -122,7 +122,7 @@ contains
         call append_nl(buffer, pos)
         call append_text(buffer, pos, '<!DOCTYPE coverage SYSTEM ')
         call append_text(buffer, pos, &
-                         '"http://cobertura.sourceforge.net/xml/coverage-04.dtd">')
+            '"http://cobertura.sourceforge.net/xml/coverage-04.dtd">')
         call append_nl(buffer, pos)
 
         call append_text(buffer, pos, '<coverage lines-valid="')
@@ -138,7 +138,7 @@ contains
         call append_text(buffer, pos, '" branch-rate="')
         call append_text(buffer, pos, trim(branch_rate_str))
         call append_text(buffer, pos, &
-                         '" complexity="0.0" version="fortcov" timestamp="')
+            '" complexity="0.0" version="fortcov" timestamp="')
         call append_text(buffer, pos, trim(timestamp))
         call append_text(buffer, pos, '">')
         call append_nl(buffer, pos)

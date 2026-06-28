@@ -45,7 +45,7 @@ contains
 
         call initialize_default_config(config)
         call process_single_flag("--gcov-output-dir=out/gcov", config, success, &
-                                 error_message)
+            error_message)
 
         if (success .and. trim(config%gcov_output_dir) == 'out/gcov') then
             passed = passed + 1

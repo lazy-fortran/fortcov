@@ -1,9 +1,9 @@
 module file_operations_secure
     use error_handling_core, only: clear_error_context, error_context_t, &
-                                   ERROR_FILE_OPERATION_FAILED, ERROR_MISSING_FILE, &
-                                   ERROR_PERMISSION_DENIED, ERROR_SUCCESS, &
-                                   safe_write_context, safe_write_message, &
-                                   safe_write_suggestion
+        ERROR_FILE_OPERATION_FAILED, ERROR_MISSING_FILE, &
+        ERROR_PERMISSION_DENIED, ERROR_SUCCESS, &
+        safe_write_context, safe_write_message, &
+        safe_write_suggestion
     use, intrinsic :: iso_fortran_env, only: int8, int64
     use iso_c_binding, only: c_char, c_int, c_null_char
     use path_security, only: validate_path_security
@@ -76,7 +76,7 @@ contains
 
         ! Validate both file paths for security
         call validate_move_file_paths(source_file, target_file, safe_source, &
-                                      safe_target, error_ctx)
+            safe_target, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) return
 
         ! Check source file exists
@@ -84,7 +84,7 @@ contains
         if (.not. source_exists) then
             error_ctx%error_code = ERROR_MISSING_FILE
             call safe_write_message(error_ctx, &
-                                    "Source file does not exist: "//safe_source)
+                "Source file does not exist: "//safe_source)
             return
         end if
 
@@ -98,7 +98,7 @@ contains
 
     ! Validate file paths for move operation
     subroutine validate_move_file_paths(source_file, target_file, safe_source, &
-                                        safe_target, error_ctx)
+            safe_target, error_ctx)
         character(len=*), intent(in) :: source_file, target_file
         character(len=:), allocatable, intent(out) :: safe_source, safe_target
         type(error_context_t), intent(out) :: error_ctx
@@ -133,7 +133,7 @@ contains
 
         ! Open source file for reading
         open (newunit=source_unit, file=source_path, status='old', &
-              action='read', access='stream', form='unformatted', iostat=iostat)
+            action='read', access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message( &
@@ -144,12 +144,12 @@ contains
 
         ! Open target file for writing
         open (newunit=target_unit, file=target_path, status='replace', &
-              action='write', access='stream', form='unformatted', iostat=iostat)
+            action='write', access='stream', form='unformatted', iostat=iostat)
         if (iostat /= 0) then
             close (source_unit)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, &
-                                    "Cannot create target file: "//target_path)
+                "Cannot create target file: "//target_path)
             return
         end if
 
@@ -158,7 +158,7 @@ contains
         bytes_copied = 0_int64
         do while (bytes_copied < file_size_bytes)
             bytes_to_copy = int(min(int(chunk_size_bytes, int64), &
-                                    file_size_bytes - bytes_copied))
+                file_size_bytes - bytes_copied))
 
             read (source_unit, iostat=copy_iostat) buffer(1:bytes_to_copy)
             if (copy_iostat /= 0) then
@@ -283,7 +283,7 @@ contains
 
         character(kind=c_char), allocatable :: c_path(:)
         integer :: n, i
-        integer(c_int), parameter :: mode = int(493, c_int)  ! 0755
+        integer(c_int), parameter :: mode = int(493, c_int) ! 0755
         integer(c_int) :: ret
 
         n = len_trim(path)

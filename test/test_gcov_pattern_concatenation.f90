@@ -41,7 +41,7 @@ contains
         pattern_result = trim(test_build_dir)//'/'//GCOV_PATTERN
 
         call assert_equals(trim(pattern_result), expected, &
-                           'Pattern concatenated correctly')
+            'Pattern concatenated correctly')
     end subroutine case_gcov_pattern_concatenation
 
     subroutine test_gcov_pattern_edge_cases()
@@ -58,7 +58,7 @@ contains
         ! Test with build dir ending in slash
         pattern_result = trim('/build/')//'/'//GCOV_PATTERN
         call assert_equals(trim(pattern_result), '/build//*.gcov', &
-                           'Trailing slash handled')
+            'Trailing slash handled')
 
         ! Test with very long path (should not exceed buffer)
         block
@@ -68,7 +68,7 @@ contains
             ! This should work without End of record error
             pattern_result = trim(long_path)//'/'//GCOV_PATTERN
             call assert_true(len_trim(pattern_result) > 0, &
-                             'Long path concatenation works')
+                'Long path concatenation works')
         end block
     end subroutine test_gcov_pattern_edge_cases
 

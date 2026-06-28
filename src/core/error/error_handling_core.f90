@@ -14,10 +14,10 @@ module error_handling_core
     use error_handlers
     use error_utils
     implicit none
-    
+
     ! Re-export all types for backward compatibility
     public :: error_context_t
-    
+
     ! Re-export error constants
     public :: ERROR_SUCCESS, ERROR_MISSING_SOURCE_FILE, ERROR_PERMISSION_DENIED
     public :: ERROR_OUT_OF_MEMORY, ERROR_INVALID_CONFIG, ERROR_INCOMPLETE_COVERAGE
@@ -25,10 +25,10 @@ module error_handling_core
     public :: ERROR_FILE_TOO_LARGE, ERROR_EMPTY_FILE, ERROR_INVALID_DATA
     public :: ERROR_INVALID_PATH, ERROR_MEMORY_EXHAUSTION, ERROR_FILE_OPERATION_FAILED
     public :: ERROR_FATAL
-    
+
     ! Re-export string length constants
     public :: MAX_MESSAGE_LEN, MAX_SUGGESTION_LEN, MAX_CONTEXT_LEN, MAX_STACK_TRACE_LEN
-    
+
     ! Re-export all public procedures for backward compatibility
     public :: handle_missing_source
     public :: handle_permission_denied

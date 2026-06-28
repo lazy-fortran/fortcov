@@ -33,7 +33,7 @@ contains
     end subroutine allocate_files_array
 
     subroutine allocate_files_with_error_handling(coverage_data, size, success, &
-                                                  error_msg)
+            error_msg)
         !! Enhanced file array allocation with comprehensive error handling
         type(coverage_data_t), intent(inout) :: coverage_data
         integer, intent(in) :: size
@@ -57,7 +57,7 @@ contains
             deallocate (coverage_data%files, stat=stat, errmsg=errmsg)
             if (stat /= 0) then
                 error_msg = "Failed to deallocate existing files array: "// &
-                            trim(errmsg)
+                    trim(errmsg)
                 return
             end if
         end if
@@ -120,11 +120,11 @@ contains
         ! Check basic allocation consistency
         if (.not. allocated(coverage_data%files)) then
             if (coverage_data%total_files /= 0) then
-                is_valid = .false.  ! Inconsistent state
+                is_valid = .false. ! Inconsistent state
             end if
         else
             if (size(coverage_data%files) /= coverage_data%total_files) then
-                is_valid = .false.  ! Size mismatch
+                is_valid = .false. ! Size mismatch
             end if
         end if
     end function validate_files_allocation

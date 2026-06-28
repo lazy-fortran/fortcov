@@ -1,6 +1,6 @@
 module file_deletion_secure
     use error_handling_core, only: error_context_t, ERROR_FILE_OPERATION_FAILED, &
-                                   safe_write_message
+        safe_write_message
     implicit none
     private
 
@@ -35,7 +35,7 @@ contains
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             error_ctx%recoverable = .true.
             call safe_write_message(error_ctx, &
-                                    "Failed to delete temporary file: "//trim(filename))
+                "Failed to delete temporary file: "//trim(filename))
         end if
 
     end subroutine safe_close_and_delete
@@ -56,7 +56,7 @@ contains
 
         ! Open file for overwriting
         open (newunit=unit, file=filename, action='write', status='old', &
-              access='stream', iostat=iostat)
+            access='stream', iostat=iostat)
         if (iostat /= 0) return
 
         ! Get file size
