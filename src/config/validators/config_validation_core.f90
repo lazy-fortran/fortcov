@@ -4,11 +4,11 @@ module config_validation_core
     use input_validator_source, only: validate_input_sources
     implicit none
     private
-    
+
     ! Public procedures
     public :: validate_complete_config
     public :: validate_complete_config_with_message
-    
+
 contains
 
     function validate_complete_config(config) result(is_valid)

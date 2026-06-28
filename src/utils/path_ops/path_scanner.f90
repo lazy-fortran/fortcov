@@ -3,11 +3,11 @@ module path_scanner
     use path_string_utils
     implicit none
     private
-    
+
     ! Public procedures
     public :: scan_for_dangerous_patterns
     public :: check_url_encoded_attacks
-    
+
 contains
 
     ! PERFORMANCE: Consolidated dangerous pattern scanning
@@ -15,10 +15,10 @@ contains
         character(len=*), intent(in) :: path
         logical :: has_dangerous
         integer :: i, path_len
-        
+
         has_dangerous = .false.
         path_len = len_trim(path)
-        
+
         ! Single pass through string checking for all dangerous patterns
         do i = 1, path_len - 1
             select case (path(i:i))
@@ -32,7 +32,7 @@ contains
                 return
             end select
         end do
-        
+
         ! Check last character
         if (path_len > 0) then
             select case (path(path_len:path_len))
@@ -42,12 +42,12 @@ contains
             end select
         end if
     end function scan_for_dangerous_patterns
-    
+
     ! URL-encoded attack detection
     subroutine check_url_encoded_attacks(path, error_ctx)
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
-        
+
         ! Check for URL-encoded directory traversal patterns
         if (index(path, '%2e') > 0 .or. index(path, '%2E') > 0 .or. &
             index(path, '%2f') > 0 .or. index(path, '%2F') > 0 .or. &

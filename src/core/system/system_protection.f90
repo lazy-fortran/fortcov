@@ -4,20 +4,20 @@ module system_protection
     use path_string_utils, only: starts_with_ignore_case
     implicit none
     private
-    
+
     ! Public procedures
     public :: check_system_file_access
-    
+
 contains
 
     ! System file access protection - optimized for performance
     subroutine check_system_file_access(path, error_ctx)
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
-        
+
         ! PERFORMANCE: Avoid full string conversion if possible
         if (len_trim(path) == 0) return
-        
+
         ! PERFORMANCE: Check absolute paths first with early exits
         if (path(1:1) == '/') then
             ! Block all absolute system paths for security
@@ -31,13 +31,13 @@ contains
         character(len=*), intent(in) :: path
         type(error_context_t), intent(inout) :: error_ctx
         integer :: i
-        
+
         ! Array of blocked system paths (data-driven approach)
         character(len=*), parameter :: BLOCKED_PATHS(*) = [ &
             '/tmp/ ', '/home/', '/etc/ ', '/root/', '/usr/ ', '/var/ ', &
             '/proc/', '/sys/ ', '/dev/ ' &
-        ]
-        
+            ]
+
         ! SECURITY BALANCE IMPROVEMENT: Allow legitimate /tmp output while
         ! preserving security. /tmp is standard Unix temporary directory -
         ! legitimate for output file creation
@@ -45,7 +45,7 @@ contains
         if (starts_with_ignore_case(path, '/tmp/') .or. trim(path) == '/tmp') then
             return
         end if
-        
+
         ! Check against blocked system directories
         do i = 1, size(BLOCKED_PATHS)
             if (starts_with_ignore_case(path, trim(BLOCKED_PATHS(i)))) then
@@ -55,7 +55,7 @@ contains
                 return
             end if
         end do
-        
+
         ! Block any other root-level directory creation
         error_ctx%error_code = ERROR_INVALID_PATH
         call safe_write_message(error_ctx, &

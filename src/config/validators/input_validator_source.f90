@@ -1,7 +1,7 @@
 module input_validator_source
     use config_types, only: config_t
     use config_validators, only: validate_coverage_files, validate_diff_files, &
-                                 validate_gcov_executable, validate_source_paths
+        validate_gcov_executable, validate_source_paths
     implicit none
     private
 
@@ -19,46 +19,46 @@ contains
         logical :: has_source_paths, has_coverage_files, has_import_file, has_diff_files
 
         call detect_input_sources(config, has_source_paths, has_coverage_files, &
-                                  has_import_file, has_diff_files)
+            has_import_file, has_diff_files)
 
         call validate_input_source_rules(has_source_paths, has_coverage_files, &
-                                         has_import_file, has_diff_files, &
-                                         config%zero_configuration_mode, &
-                                         is_valid, &
-                                         error_message)
+            has_import_file, has_diff_files, &
+            config%zero_configuration_mode, &
+            is_valid, &
+            error_message)
         if (.not. is_valid) return
 
         call validate_specific_input_sources(config, has_source_paths, &
-                                             has_coverage_files, has_diff_files, &
-                                             is_valid, error_message)
+            has_coverage_files, has_diff_files, &
+            is_valid, error_message)
 
     end subroutine validate_input_sources
 
     pure subroutine detect_input_sources(config, has_source_paths, has_coverage_files, &
-                                         has_import_file, has_diff_files)
+            has_import_file, has_diff_files)
         !! Detect which input sources are configured
         type(config_t), intent(in) :: config
         logical, intent(out) :: has_source_paths, has_coverage_files
         logical, intent(out) :: has_import_file, has_diff_files
 
         has_source_paths = allocated(config%source_paths) .and. &
-                           size(config%source_paths) > 0
+            size(config%source_paths) > 0
         has_coverage_files = allocated(config%coverage_files) .and. &
-                             size(config%coverage_files) > 0
+            size(config%coverage_files) > 0
         has_import_file = allocated(config%import_file) .and. &
-                          len_trim(config%import_file) > 0
+            len_trim(config%import_file) > 0
         has_diff_files = config%enable_diff .and. &
-                         allocated(config%diff_baseline_file) .and. &
-                         allocated(config%diff_current_file) .and. &
-                         len_trim(config%diff_baseline_file) > 0 .and. &
-                         len_trim(config%diff_current_file) > 0
+            allocated(config%diff_baseline_file) .and. &
+            allocated(config%diff_current_file) .and. &
+            len_trim(config%diff_baseline_file) > 0 .and. &
+            len_trim(config%diff_current_file) > 0
 
     end subroutine detect_input_sources
 
     pure subroutine validate_input_source_rules(has_source_paths, has_coverage_files, &
-                                                has_import_file, has_diff_files, &
-                                                zero_config_mode, is_valid, &
-                                                error_message)
+            has_import_file, has_diff_files, &
+            zero_config_mode, is_valid, &
+            error_message)
         !! Validate input source combination rules
         logical, intent(in) :: has_source_paths, has_coverage_files
         logical, intent(in) :: has_import_file, has_diff_files, zero_config_mode
@@ -77,7 +77,7 @@ contains
             .not. zero_config_mode) then
             is_valid = .false.
             error_message = "No input sources specified. Provide source paths, "// &
-                            "coverage files, import file, or diff files"
+                "coverage files, import file, or diff files"
             return
         end if
 
@@ -90,18 +90,18 @@ contains
 
         ! Can't mix diff with other sources (diff mode is standalone)
         if (has_diff_files .and. (has_source_paths .or. has_coverage_files .or. &
-                                  has_import_file)) then
+            has_import_file)) then
             is_valid = .false.
             error_message = "Cannot mix diff mode with source paths, "// &
-                            "coverage files, or import file"
+                "coverage files, or import file"
             return
         end if
 
     end subroutine validate_input_source_rules
 
     subroutine validate_specific_input_sources(config, has_source_paths, &
-                                               has_coverage_files, has_diff_files, &
-                                               is_valid, error_message)
+            has_coverage_files, has_diff_files, &
+            is_valid, error_message)
         !! Validate specific input source types
         type(config_t), intent(in) :: config
         logical, intent(in) :: has_source_paths, has_coverage_files, has_diff_files
@@ -129,7 +129,7 @@ contains
         if (allocated(config%gcov_executable) .and. &
             (has_source_paths .or. config%zero_configuration_mode)) then
             call validate_gcov_executable(config%gcov_executable, is_valid, &
-                                          error_message)
+                error_message)
             if (.not. is_valid) return
         end if
 

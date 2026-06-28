@@ -1,6 +1,6 @@
 module config_core
     !! Unified Configuration Management Module (Refactored)
-    !! 
+    !!
     !! This module serves as the main interface for configuration management,
     !! delegating to specialized modules for specific functionality while
     !! maintaining backward compatibility with existing code.

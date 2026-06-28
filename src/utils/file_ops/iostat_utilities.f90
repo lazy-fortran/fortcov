@@ -1,9 +1,9 @@
 module iostat_utilities
     use error_handling_core, only: clear_error_context, error_context_t, &
-                                   safe_write_context, safe_write_message, &
-                                   ERROR_EMPTY_FILE, ERROR_FILE_OPERATION_FAILED, &
-                                   ERROR_INVALID_DATA, ERROR_MISSING_FILE, &
-                                   ERROR_OUT_OF_MEMORY, ERROR_PERMISSION_DENIED
+        safe_write_context, safe_write_message, &
+        ERROR_EMPTY_FILE, ERROR_FILE_OPERATION_FAILED, &
+        ERROR_INVALID_DATA, ERROR_MISSING_FILE, &
+        ERROR_OUT_OF_MEMORY, ERROR_PERMISSION_DENIED
     use string_utils, only: int_to_string
     implicit none
     private
@@ -44,27 +44,27 @@ contains
         case (IOSTAT_NO_SUCH_FILE)
             error_ctx%error_code = ERROR_MISSING_FILE
             call safe_write_message(error_ctx, "Could not open file: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_PERMISSION_DENIED)
             error_ctx%error_code = ERROR_PERMISSION_DENIED
             call safe_write_message(error_ctx, "Permission denied opening: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_NO_SPACE)
             error_ctx%error_code = ERROR_OUT_OF_MEMORY
             call safe_write_message(error_ctx, "No space left opening: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_TOO_MANY_FILES)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "Too many open files")
         case (IOSTAT_FILE_EXISTS)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "File already exists: "// &
-                                    trim(filename))
+                trim(filename))
         case default
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "Could not open file: "// &
-                                    trim(filename)//" (iostat="// &
-                                    int_to_string(iostat_code)//")")
+                trim(filename)//" (iostat="// &
+                int_to_string(iostat_code)//")")
         end select
     end subroutine interpret_iostat_open_error
 
@@ -83,24 +83,24 @@ contains
         case (IOSTAT_EOF)
             error_ctx%error_code = ERROR_EMPTY_FILE
             call safe_write_message(error_ctx, "Unexpected end-of-file reading: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_EOR)
             error_ctx%error_code = ERROR_INVALID_DATA
             call safe_write_message(error_ctx, "Unexpected end-of-record reading: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_FORMAT_ERROR)
             error_ctx%error_code = ERROR_INVALID_DATA
             call safe_write_message(error_ctx, "Format error reading: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_BAD_FILE_DESCRIPTOR)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "Bad file descriptor reading: "// &
-                                    trim(filename))
+                trim(filename))
         case default
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "File read failed: "// &
-                                    trim(filename)//" (iostat="// &
-                                    int_to_string(iostat_code)//")")
+                trim(filename)//" (iostat="// &
+                int_to_string(iostat_code)//")")
         end select
     end subroutine interpret_iostat_read_error
 
@@ -119,24 +119,24 @@ contains
         case (IOSTAT_NO_SPACE)
             error_ctx%error_code = ERROR_OUT_OF_MEMORY
             call safe_write_message(error_ctx, "No space left writing: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_PERMISSION_DENIED)
             error_ctx%error_code = ERROR_PERMISSION_DENIED
             call safe_write_message(error_ctx, "Permission denied writing: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_BAD_FILE_DESCRIPTOR)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "Bad file descriptor writing: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_FORMAT_ERROR)
             error_ctx%error_code = ERROR_INVALID_DATA
             call safe_write_message(error_ctx, "Format error writing: "// &
-                                    trim(filename))
+                trim(filename))
         case default
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "File write failed: "// &
-                                    trim(filename)//" (iostat="// &
-                                    int_to_string(iostat_code)//")")
+                trim(filename)//" (iostat="// &
+                int_to_string(iostat_code)//")")
         end select
     end subroutine interpret_iostat_write_error
 
@@ -155,16 +155,16 @@ contains
         case (IOSTAT_BAD_FILE_DESCRIPTOR)
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "Bad file descriptor closing: "// &
-                                    trim(filename))
+                trim(filename))
         case (IOSTAT_NO_SPACE)
             error_ctx%error_code = ERROR_OUT_OF_MEMORY
             call safe_write_message(error_ctx, "No space left closing: "// &
-                                    trim(filename))
+                trim(filename))
         case default
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_message(error_ctx, "File close failed: "// &
-                                    trim(filename)//" (iostat="// &
-                                    int_to_string(iostat_code)//")")
+                trim(filename)//" (iostat="// &
+                int_to_string(iostat_code)//")")
         end select
     end subroutine interpret_iostat_close_error
 
@@ -201,7 +201,7 @@ contains
     end function get_iostat_error_message
 
     subroutine handle_file_operation_error(operation, iostat_code, filename, &
-                                           error_ctx)
+            error_ctx)
         character(len=*), intent(in) :: operation
         integer, intent(in) :: iostat_code
         character(len=*), intent(in) :: filename
@@ -221,9 +221,9 @@ contains
             error_ctx%error_code = ERROR_FILE_OPERATION_FAILED
             call safe_write_context(error_ctx, "File operation")
             call safe_write_message(error_ctx, "File operation failed: "// &
-                                    trim(operation)//" (iostat="// &
-                                    int_to_string(iostat_code)//") for "// &
-                                    trim(filename))
+                trim(operation)//" (iostat="// &
+                int_to_string(iostat_code)//") for "// &
+                trim(filename))
             error_ctx%recoverable = .false.
         end select
     end subroutine handle_file_operation_error

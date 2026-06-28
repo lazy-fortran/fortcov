@@ -25,7 +25,7 @@ contains
         ! Find filename attribute start
         start_pos = index(class_xml, 'filename="')
         if (start_pos == 0) return
-        start_pos = start_pos + 10  ! length of filename attribute marker
+        start_pos = start_pos + 10 ! length of filename attribute marker
 
         ! Bounds check
         if (start_pos > len(class_xml)) return
@@ -77,7 +77,7 @@ contains
 
             ! Extract line number and hits
             call extract_line_attributes(class_xml(line_start:), line_number, hits, &
-                                         success)
+                success)
             if (.not. success) return
 
             ! Create line object using dummy filename from parent context
@@ -88,9 +88,9 @@ contains
             if (pos == 0) then
                 pos = index(class_xml(line_start:), '</line>')
                 if (pos == 0) return
-                pos = line_start + pos + 6  ! length of line end tag
+                pos = line_start + pos + 6 ! length of line end tag
             else
-                pos = line_start + pos + 1  ! length of line empty tag
+                pos = line_start + pos + 1 ! length of line empty tag
             end if
         end do
 
@@ -113,7 +113,7 @@ contains
         ! Extract line number
         num_start = index(line_xml, 'number="')
         if (num_start == 0) return
-        num_start = num_start + 8  ! length of number attribute marker
+        num_start = num_start + 8 ! length of number attribute marker
 
         ! Bounds check
         if (num_start > len(line_xml)) return
@@ -132,7 +132,7 @@ contains
         ! Extract hits
         hits_start = index(line_xml, 'hits="')
         if (hits_start == 0) return
-        hits_start = hits_start + 6  ! length of hits attribute marker
+        hits_start = hits_start + 6 ! length of hits attribute marker
 
         ! Bounds check
         if (hits_start > len(line_xml)) return

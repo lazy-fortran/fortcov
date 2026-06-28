@@ -74,8 +74,8 @@ contains
         character(len=:), allocatable :: header
 
         header = "| Filename | Stmts | Covered | Cover | Missing |"// &
-                 new_line('A')// &
-                 "|----------|-------|---------|-------|---------|"
+            new_line('A')// &
+            "|----------|-------|---------|-------|---------|"
     end function generate_table_header
 
     ! Generate a single table row for a file
@@ -112,10 +112,10 @@ contains
 
         ! Build the row
         row = "| "//escaped_name//" | "// &
-              int_to_string(stats%total_count)//" | "// &
-              int_to_string(stats%covered_count)//" | "// &
-              percentage_str//" | "// &
-              missing_str//" |"
+            int_to_string(stats%total_count)//" | "// &
+            int_to_string(stats%covered_count)//" | "// &
+            percentage_str//" | "// &
+            missing_str//" |"
     end function generate_table_row
 
     ! Calculate coverage statistics for a single file
@@ -140,10 +140,10 @@ contains
             if (stat /= 0) then
                 ! Graceful fallback - return basic stats without ranges
                 call stats%init(file%get_line_coverage(), covered_lines, &
-                                total_lines, "")
+                    total_lines, "")
                 return
             end if
-            uncovered_count = 0  ! Reset for collection
+            uncovered_count = 0 ! Reset for collection
             do line_idx = 1, size(file%lines)
                 if (file%lines(line_idx)%is_executable .and. &
                     .not. file%lines(line_idx)%is_covered()) then
@@ -156,7 +156,7 @@ contains
             if (stat /= 0) then
                 ! Graceful fallback for empty allocation failure
                 call stats%init(file%get_line_coverage(), covered_lines, &
-                                total_lines, "")
+                    total_lines, "")
                 return
             end if
         end if
@@ -167,8 +167,8 @@ contains
             call stats%init(0.0, 0, 0, "")
         else
             call stats%init(file%get_line_coverage(), &
-                            covered_lines, total_lines, &
-                            compress_ranges(uncovered_lines))
+                covered_lines, total_lines, &
+                compress_ranges(uncovered_lines))
         end if
 
         if (allocated(uncovered_lines)) then

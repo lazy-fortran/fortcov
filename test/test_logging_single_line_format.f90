@@ -20,7 +20,7 @@ contains
     subroutine test_discovery_message_format()
         character(len=256) :: buf
         character(len=*), parameter :: expected = &
-                                       'FortCov: Discovery returned 249 files'
+            'FortCov: Discovery returned 249 files'
 
         tests = tests + 1
 

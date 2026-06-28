@@ -61,7 +61,7 @@ contains
         tests = tests + 1
 
         call parse_threshold_with_error("-10", value, "fail-under threshold", &
-                                        success, error_message)
+            success, error_message)
 
         if (.not. success .and. &
             index(error_message, "must be between 0.0 and 100.0") > 0) then

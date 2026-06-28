@@ -3,7 +3,7 @@ module config_validators
     use path_security, only: validate_executable_path, validate_path_security
     use error_handling_core, only: error_context_t, ERROR_SUCCESS
     use config_validators_format, only: is_file_readable, is_supported_output_format, &
-                              is_valid_coverage_file_format, is_valid_import_file_format
+        is_valid_coverage_file_format, is_valid_import_file_format
     implicit none
     private
 
@@ -46,7 +46,7 @@ contains
             if (.not. is_valid_coverage_file_format(files(i))) then
                 is_valid = .false.
                 error_message = "Invalid coverage file format: "//trim(files(i))// &
-                                ". Expected .gcov"
+                    ". Expected .gcov"
                 return
             end if
 
@@ -126,14 +126,14 @@ contains
         if (.not. file_exists) then
             is_valid = .false.
             error_message = "Diff baseline file not found: "// &
-                            trim(config%diff_baseline_file)
+                trim(config%diff_baseline_file)
             return
         end if
 
         if (.not. is_file_readable(config%diff_baseline_file)) then
             is_valid = .false.
             error_message = "Cannot read diff baseline file: "// &
-                            trim(config%diff_baseline_file)
+                trim(config%diff_baseline_file)
             return
         end if
 
@@ -142,14 +142,14 @@ contains
         if (.not. file_exists) then
             is_valid = .false.
             error_message = "Diff current file not found: "// &
-                            trim(config%diff_current_file)
+                trim(config%diff_current_file)
             return
         end if
 
         if (.not. is_file_readable(config%diff_current_file)) then
             is_valid = .false.
             error_message = "Cannot read diff current file: "// &
-                            trim(config%diff_current_file)
+                trim(config%diff_current_file)
             return
         end if
 
@@ -246,7 +246,7 @@ contains
         if (.not. is_valid_import_file_format(import_file)) then
             is_valid = .false.
             error_message = "Unsupported import file: "//trim(import_file)// &
-                            ". Only native .gcov inputs are supported"
+                ". Only native .gcov inputs are supported"
             return
         end if
 

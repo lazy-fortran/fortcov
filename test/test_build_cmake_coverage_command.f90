@@ -26,17 +26,17 @@ contains
         character(len=:), allocatable :: command
         character(len=2), parameter :: shell_and = achar(38)//achar(38)
         character(len=*), parameter :: expected = &
-                                       'cmake -S . -B build '// &
-                                       '-DCMAKE_BUILD_TYPE=Debug '// &
-                                       '-DCMAKE_C_FLAGS="'// &
-                                       '-fprofile-arcs -ftest-coverage" '// &
-                                       '-DCMAKE_CXX_FLAGS="'// &
-                                       '-fprofile-arcs -ftest-coverage" '// &
-                                       '-DCMAKE_Fortran_FLAGS="'// &
-                                       '-fprofile-arcs -ftest-coverage" '// &
-                                       '-DENABLE_COVERAGE=ON '// &
-                                       shell_and//' cmake --build build '// &
-                                       '--parallel'
+            'cmake -S . -B build '// &
+            '-DCMAKE_BUILD_TYPE=Debug '// &
+            '-DCMAKE_C_FLAGS="'// &
+            '-fprofile-arcs -ftest-coverage" '// &
+            '-DCMAKE_CXX_FLAGS="'// &
+            '-fprofile-arcs -ftest-coverage" '// &
+            '-DCMAKE_Fortran_FLAGS="'// &
+            '-fprofile-arcs -ftest-coverage" '// &
+            '-DENABLE_COVERAGE=ON '// &
+            shell_and//' cmake --build build '// &
+            '--parallel'
 
         tests = tests + 1
 

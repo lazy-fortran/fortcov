@@ -106,7 +106,7 @@ contains
 
             ! Extract filename - inline implementation to avoid circular dependency
             call extract_filename_inline(xml_content(class_start:), filename, &
-                                         success)
+                success)
             if (.not. success) return
 
             ! Find end of this class - with bounds checking
@@ -125,7 +125,7 @@ contains
 
             ! Parse lines inline to avoid a circular dependency
             call parse_lines_inline(xml_content(class_start:class_end), lines, &
-                                    success)
+                success)
             if (.not. success) return
 
             ! Create file object
@@ -133,7 +133,7 @@ contains
             if (allocated(lines)) deallocate (lines)
 
             ! Move position for next class
-            pos = class_end + 8  ! length of class end tag
+            pos = class_end + 8 ! length of class end tag
         end do
 
     end subroutine parse_classes_from_xml
@@ -166,7 +166,7 @@ contains
         start_pos = index(class_xml, 'filename="')
         if (start_pos == 0) return
 
-        start_pos = start_pos + 10  ! length of filename attribute marker
+        start_pos = start_pos + 10 ! length of filename attribute marker
 
         ! Find end quote
         end_pos = index(class_xml(start_pos:), '"')
@@ -216,13 +216,13 @@ contains
 
             ! Extract line attributes
             call extract_line_attributes_inline(class_xml(line_start:), &
-                                                line_number, hits, line_success)
+                line_number, hits, line_success)
             if (.not. line_success) return
 
             ! Initialize line with filename placeholder
             call lines(i)%init("parsed.f90", line_number, hits, .true.)
 
-            pos = line_start + 14  ! Move past line number attribute marker
+            pos = line_start + 14 ! Move past line number attribute marker
         end do
 
         success = .true.

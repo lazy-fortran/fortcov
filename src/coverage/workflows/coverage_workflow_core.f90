@@ -1,6 +1,6 @@
 module coverage_workflow_core
     !! High-level workflow orchestration for coverage operations
-    !! 
+    !!
     !! Slim coordinator that orchestrates the various extracted coverage
     !! workflow modules. Provides a unified interface while maintaining
     !! separation of concerns between different workflow responsibilities.
@@ -25,35 +25,35 @@ contains
 
     function orchestrate_coverage_analysis(config) result(exit_code)
         !! Orchestrate complete coverage analysis workflow
-        !! 
+        !!
         !! Coordinates all aspects of coverage analysis including auto-test
         !! execution (if enabled), gcov file discovery/generation, and
         !! coverage analysis execution.
         type(config_t), intent(in) :: config
         integer :: exit_code
-        
+
         character(len=:), allocatable :: coverage_files(:)
         integer :: auto_test_result
-        
+
         exit_code = EXIT_SUCCESS
-        
+
         ! Execute auto-test workflow if enabled
         if (config%auto_test_execution) then
             auto_test_result = orchestrate_auto_test_workflow(config)
             if (auto_test_result /= EXIT_SUCCESS) then
                 if (.not. config%quiet) then
                     print *, "Warning: Auto-test execution issues, " // &
-                             "continuing with coverage analysis"
+                        "continuing with coverage analysis"
                 end if
             end if
         end if
-        
+
         ! Discover coverage files using orchestrated discovery
         call orchestrate_gcov_discovery(config, coverage_files, exit_code)
         if (exit_code /= EXIT_SUCCESS) then
             return
         end if
-        
+
         ! Validate discovered files
         if (.not. allocated(coverage_files) .or. size(coverage_files) == 0) then
             if (.not. config%quiet) then
@@ -62,29 +62,29 @@ contains
             exit_code = EXIT_NO_COVERAGE_DATA
             return
         end if
-        
+
         if (.not. config%quiet) then
             print *, "Coverage workflow orchestration completed"
             write(*, '(A,I0,A)') "   Discovered ", size(coverage_files), " coverage files"
         end if
-        
+
     end function orchestrate_coverage_analysis
 
     function orchestrate_auto_test_workflow(config) result(exit_code)
         !! Orchestrate automatic test execution workflow
-        !! 
+        !!
         !! Delegates to the specialized auto-test executor module while
         !! providing orchestration context and error handling.
         type(config_t), intent(in) :: config
         integer :: exit_code
-        
+
         if (.not. config%quiet) then
             print *, "Orchestrating auto-test workflow..."
         end if
-        
+
         ! Delegate to specialized auto-test executor
         exit_code = execute_auto_test_workflow(config)
-        
+
         if (.not. config%quiet) then
             select case (exit_code)
             case (EXIT_SUCCESS)
@@ -97,7 +97,7 @@ contains
                 print *, "Error: Auto-test workflow failed"
             end select
         end if
-        
+
     end function orchestrate_auto_test_workflow
 
     subroutine orchestrate_gcov_discovery(config, coverage_files, exit_code)
@@ -126,7 +126,7 @@ contains
 
             if (.not. config%quiet) then
                 print *, "Using build system integration for discovery: " // &
-                         trim(build_info%system_type)
+                    trim(build_info%system_type)
             end if
         end if
 
@@ -145,7 +145,7 @@ contains
 
         ! Delegate to specialized gcov processor
         call discover_gcov_files(config, coverage_files)
-        
+
         if (.not. config%quiet) then
             if (allocated(coverage_files) .and. size(coverage_files) > 0) then
                 write(*, '(A,I0,A)') "Discovered ", size(coverage_files), " coverage files"
@@ -153,26 +153,26 @@ contains
                 print *, "Warning: No coverage files discovered"
             end if
         end if
-        
+
     end subroutine orchestrate_gcov_discovery
 
     function orchestrate_diff_analysis(config) result(exit_code)
         !! Orchestrate coverage diff analysis workflow
-        !! 
+        !!
         !! Provides high-level coordination for coverage diff analysis
         !! while delegating to specialized diff analysis functionality.
         type(config_t), intent(in) :: config
         integer :: exit_code
-        
+
         type(coverage_diff_t) :: diff_result
         logical :: diff_success
-        
+
         exit_code = EXIT_SUCCESS
-        
+
         if (.not. config%quiet) then
             print *, "Orchestrating coverage diff analysis..."
         end if
-        
+
         ! Validate diff configuration
         if (.not. allocated(config%diff_baseline_file) .or. &
             .not. allocated(config%diff_current_file)) then
@@ -182,16 +182,16 @@ contains
             exit_code = EXIT_FAILURE
             return
         end if
-        
+
         if (.not. config%quiet) then
             print *, "Analyzing coverage differences..."
             print *, "   Baseline: " // trim(config%diff_baseline_file)
             print *, "   Compare:  " // trim(config%diff_current_file)
         end if
-        
+
         ! Perform diff analysis (delegated to coverage_diff module)
-        diff_success = .true.  ! Placeholder for actual diff analysis
-        
+        diff_success = .true. ! Placeholder for actual diff analysis
+
         if (.not. diff_success) then
             if (.not. config%quiet) then
                 print *, "Error: Coverage diff analysis failed"
@@ -199,7 +199,7 @@ contains
             exit_code = EXIT_FAILURE
             return
         end if
-        
+
         ! Apply threshold validation
         if (config%minimum_coverage > 0.0) then
             if (diff_result%current_coverage < config%minimum_coverage) then
@@ -213,11 +213,11 @@ contains
                 return
             end if
         end if
-        
+
         if (.not. config%quiet) then
             print *, "Coverage diff analysis completed successfully"
         end if
-        
+
     end function orchestrate_diff_analysis
 
     ! TUI orchestration removed

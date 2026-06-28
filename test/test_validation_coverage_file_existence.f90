@@ -64,7 +64,7 @@ contains
 
         ! Create a temporary test file
         open (newunit=unit_num, file='/tmp/test_existing.gcov', &
-              status='replace', iostat=ios)
+            status='replace', iostat=ios)
         if (ios /= 0) then
             write (output_unit, '(A)') '  [SKIP] Could not create temp file'
             passed = passed + 1

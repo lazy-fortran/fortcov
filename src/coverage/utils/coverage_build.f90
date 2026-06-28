@@ -8,10 +8,10 @@ module coverage_build
     use config_core, only: config_t
     use build_detector_core, only: build_system_info_t
     use build_system_validation, only: detect_and_validate_build_system, &
-                                       report_unknown_build_system, &
-                                       report_build_tool_unavailable
+        report_unknown_build_system, &
+        report_build_tool_unavailable
     use error_handling_core, only: error_context_t, ERROR_SUCCESS, &
-                                   ERROR_INVALID_CONFIG, clear_error_context
+        ERROR_INVALID_CONFIG, clear_error_context
     implicit none
     private
 
@@ -21,7 +21,7 @@ module coverage_build
 contains
 
     function detect_and_validate_build_system_for_coverage(config, build_info, &
-                                                           error_ctx) result(exit_code)
+            error_ctx) result(exit_code)
         !! Detect build system specifically for coverage analysis
         !!
         !! Extended version of build system detection that includes coverage-specific
@@ -48,7 +48,7 @@ contains
         ! Validate coverage support for detected build system
         call validate_coverage_support(build_info, config, error_ctx)
         if (error_ctx%error_code /= ERROR_SUCCESS) then
-            exit_code = 3  ! Coverage support validation failed
+            exit_code = 3 ! Coverage support validation failed
             return
         end if
         ! Successful detection already reported by detect_and_validate_build_system
@@ -113,8 +113,8 @@ contains
             '-DENABLE_COVERAGE=ON'
 
         command = 'cmake -S . -B '//trim(build_dir)//' '// &
-                  trim(configure_flags)//' '//shell_and// &
-                  ' cmake --build '//trim(build_dir)
+            trim(configure_flags)//' '//shell_and// &
+            ' cmake --build '//trim(build_dir)
 
         ! Add parallel build if supported
         command = command//' --parallel'
@@ -128,7 +128,7 @@ contains
 
         ! Base Make command with coverage flags
         command = 'make COVERAGE=1 CFLAGS="-fprofile-arcs -ftest-coverage" '// &
-                  'FFLAGS="-fprofile-arcs -ftest-coverage"'
+            'FFLAGS="-fprofile-arcs -ftest-coverage"'
 
     end function get_make_coverage_command
 
@@ -162,7 +162,7 @@ contains
             ! Unknown or unsupported system
             error_ctx%error_code = ERROR_INVALID_CONFIG
             error_ctx%message = 'Build system does not support coverage analysis: '// &
-                                trim(build_info%system_type)
+                trim(build_info%system_type)
             return
         end select
 

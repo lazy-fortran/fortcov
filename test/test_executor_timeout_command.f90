@@ -22,7 +22,7 @@ contains
     subroutine test_wraps_timeout_command()
         character(len=:), allocatable :: actual
         character(len=*), parameter :: expected = &
-                                       'timeout -k 5 120 fpm test'
+            'timeout -k 5 120 fpm test'
 
         tests = tests + 1
         actual = build_timeout_command('fpm test', 120, 'timeout', .true.)

@@ -46,7 +46,7 @@ contains
 
         call initialize_default_config(config)
         call process_single_flag("--gcov-executable=gcov-12", config, success, &
-                                 error_message)
+            error_message)
 
         if (success .and. trim(config%gcov_executable) == 'gcov-12') then
             passed = passed + 1

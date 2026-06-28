@@ -1,14 +1,14 @@
 module config_parser
     use, intrinsic :: iso_fortran_env, only: dp => real64
     use config_classifier_args, only: classify_command_arguments, flag_requires_value, &
-                                      get_long_form_option, is_flag_argument
+        get_long_form_option, is_flag_argument
     use config_defaults_core, only: apply_default_output_filename, &
-                                    apply_default_output_path_for_coverage_files, &
-                                    ensure_zero_config_output_directory, &
-                                    handle_zero_configuration_mode, &
-                                    initialize_default_config
+        apply_default_output_path_for_coverage_files, &
+        ensure_zero_config_output_directory, &
+        handle_zero_configuration_mode, &
+        initialize_default_config
     use config_positional_args, only: add_source_path, add_string_to_array, &
-                                      process_positional_arguments
+        process_positional_arguments
     use config_types, only: config_t
     implicit none
     private
@@ -52,7 +52,7 @@ contains
         config%zero_configuration_mode = is_zero_config
         if (is_zero_config) then
             call handle_zero_configuration_with_overrides(args, config, success, &
-                                                          error_message)
+                error_message)
             return
         end if
         call handle_normal_configuration(args, config, success, error_message)
@@ -68,20 +68,20 @@ contains
         success = .true.
         error_message = ""
         call classify_command_arguments(args, flags, flag_count, positionals, &
-                                        positional_count, success, error_message)
+            positional_count, success, error_message)
         if (.not. success) return
         if (flag_count > 0) then
             call process_flag_arguments(flags, flag_count, config, success, &
-                                        error_message)
+                error_message)
             if (.not. success) return
         end if
         if (positional_count > 0) then
             call process_positional_arguments(positionals, positional_count, config, &
-                                              success, error_message)
+                success, error_message)
         end if
     end subroutine apply_command_line_overrides
     subroutine handle_zero_configuration_with_overrides(args, config, success, &
-                                                        error_message)
+            error_message)
         character(len=*), intent(in) :: args(:)
         type(config_t), intent(inout) :: config
         logical, intent(out) :: success
@@ -198,7 +198,7 @@ contains
         if (.not. has_non_empty_args) zero_config_mode = .true.
     end function detect_zero_config_mode
     subroutine process_flag_arguments(flags, flag_count, config, success, &
-                                      error_message)
+            error_message)
         character(len=*), intent(in) :: flags(:)
         integer, intent(in) :: flag_count
         type(config_t), intent(inout) :: config
@@ -220,7 +220,7 @@ contains
                         if (.not. is_flag_argument(flags(i + 1))) then
                             combined_flag = trim(flags(i))//"="//trim(flags(i + 1))
                             call process_single_flag(combined_flag, config, success, &
-                                                     error_message)
+                                error_message)
                             if (.not. success) return
                             i = i + 2
                             cycle
@@ -267,17 +267,17 @@ contains
         error_message = ""
         select case (trim(flag))
         case ("--source", "-s", "--output", "-o", "--format", "-f", &
-              "--gcov-output-dir", "--gcov-executable", "--gcov-cmd")
+                "--gcov-output-dir", "--gcov-executable", "--gcov-cmd")
             call apply_string_flag(flag, value, config)
         case ("--minimum", "-m", "--threshold", "--fail-under", "--threads", "-t")
             call apply_numeric_flag(flag, value, config, success, error_message)
         case ("--quiet", "-q", "--verbose", "-v", "--help", "-h", "--version", "-V", &
-              "--auto-test", "--no-auto-test", "--gcov", "--discover-and-gcov", &
-              "--validate", "--zero-config")
+                "--auto-test", "--no-auto-test", "--gcov", "--discover-and-gcov", &
+                "--validate", "--zero-config")
             call apply_toggle_flag(flag, config)
         case ("--exclude", "--include", "--diff", "--diff-baseline", &
-              "--diff-current", "--diff-threshold", "--import", &
-              "--auto-discovery", "--no-auto-discovery", "--test-timeout")
+                "--diff-current", "--diff-threshold", "--import", &
+                "--auto-discovery", "--no-auto-discovery", "--test-timeout")
             call set_unsupported_flag_error(flag, success, error_message)
         case ("--config")
             success = .false.
@@ -341,14 +341,14 @@ contains
         select case (trim(flag))
         case ("--minimum", "-m", "--threshold")
             call parse_threshold_with_error(value, config%minimum_coverage, &
-                                            "minimum coverage", success, error_message)
+                "minimum coverage", success, error_message)
         case ("--threads", "-t")
             call parse_integer_with_error(value, config%threads, "thread count", &
-                                          success, error_message)
+                success, error_message)
         case ("--fail-under")
             call parse_threshold_with_error(value, config%fail_under_threshold, &
-                                            "fail-under threshold", success, &
-                                            error_message)
+                "fail-under threshold", success, &
+                error_message)
         case default
             success = .true.
             error_message = ""
@@ -362,7 +362,7 @@ contains
         error_message = "Flag no longer supported: "//trim(flag)
     end subroutine set_unsupported_flag_error
     subroutine parse_real_with_error_real32(str, value, value_name, success, &
-                                            error_message)
+            error_message)
         character(len=*), intent(in) :: str
         real, intent(out) :: value
         character(len=*), intent(in) :: value_name
@@ -381,7 +381,7 @@ contains
         error_message = ""
     end subroutine parse_real_with_error_real32
     subroutine parse_real_with_error_real64(str, value, value_name, success, &
-                                            error_message)
+            error_message)
         character(len=*), intent(in) :: str
         real(dp), intent(out) :: value
         character(len=*), intent(in) :: value_name
@@ -398,7 +398,7 @@ contains
         error_message = ""
     end subroutine parse_real_with_error_real64
     subroutine parse_integer_with_error(str, value, value_name, success, &
-                                        error_message)
+            error_message)
         character(len=*), intent(in) :: str
         integer, intent(out) :: value
         character(len=*), intent(in) :: value_name
@@ -415,7 +415,7 @@ contains
         error_message = ""
     end subroutine parse_integer_with_error
     subroutine parse_threshold_with_error_real32(str, value, value_name, success, &
-                                                 error_message)
+            error_message)
         character(len=*), intent(in) :: str
         real, intent(out) :: value
         character(len=*), intent(in) :: value_name
@@ -430,7 +430,7 @@ contains
         if (tmp < 0.0d0 .or. tmp > 100.0d0) then
             success = .false.
             error_message = "Invalid "//trim(value_name)//": "//trim(str)// &
-                            " (must be between 0.0 and 100.0)"
+                " (must be between 0.0 and 100.0)"
             value = 0.0
             return
         end if
@@ -438,7 +438,7 @@ contains
         error_message = ""
     end subroutine parse_threshold_with_error_real32
     subroutine parse_threshold_with_error_real64(str, value, value_name, success, &
-                                                 error_message)
+            error_message)
         character(len=*), intent(in) :: str
         real(dp), intent(out) :: value
         character(len=*), intent(in) :: value_name
@@ -449,7 +449,7 @@ contains
         if (value < 0.0d0 .or. value > 100.0d0) then
             success = .false.
             error_message = "Invalid "//trim(value_name)//": "//trim(str)// &
-                            " (must be between 0.0 and 100.0)"
+                " (must be between 0.0 and 100.0)"
             return
         end if
         error_message = ""

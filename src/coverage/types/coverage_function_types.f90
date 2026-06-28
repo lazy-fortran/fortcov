@@ -43,7 +43,7 @@ contains
     ! ============================================================================
 
     function function_constructor(name, parent_module, is_module_procedure, execution_count, &
-                                 line_number, filename) result(this)
+            line_number, filename) result(this)
         character(len=*), intent(in) :: name
         character(len=*), intent(in) :: parent_module
         logical, intent(in) :: is_module_procedure
@@ -56,7 +56,7 @@ contains
     end function function_constructor
 
     subroutine function_init(this, name, filename, line_number, execution_count, &
-                           parent_module, is_module_procedure)
+            parent_module, is_module_procedure)
         class(coverage_function_t), intent(out) :: this
         character(len=*), intent(in) :: name
         character(len=*), intent(in) :: filename

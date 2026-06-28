@@ -109,10 +109,10 @@ contains
                 if (allocated(coverage_data%files(file_idx)%functions)) then
                     do func_idx = 1, size(coverage_data%files(file_idx)%functions)
                         if (allocated(coverage_data%files(file_idx) &
-                                          %functions(func_idx)%branches)) then
+                            %functions(func_idx)%branches)) then
                             do branch_idx = 1, size(coverage_data%files(file_idx) &
-                                                  %functions(func_idx) &
-                                                  %branches)
+                                    %functions(func_idx) &
+                                    %branches)
                                 total_branches = total_branches + 1
                                 ! Branch is covered if taken path has been executed
                                 if (coverage_data%files(file_idx)%functions(func_idx) &
@@ -130,7 +130,7 @@ contains
         if (total_branches > 0) then
             branch_rate = real(covered_branches) / real(total_branches)
         else
-            branch_rate = 0.0  ! No branches means 0% coverage (mathematical correctness)
+            branch_rate = 0.0 ! No branches means 0% coverage (mathematical correctness)
         end if
 
     end function calculate_branch_coverage_rate

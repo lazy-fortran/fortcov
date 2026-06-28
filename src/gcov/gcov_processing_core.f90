@@ -75,14 +75,14 @@ contains
         ! Process each file
         do i = 1, file_count
             call process_single_gcov_file(gcov_files(i), result%file_summaries(i), &
-                                        coverage_data, error_flag)
+                coverage_data, error_flag)
 
             result%files_processed = result%files_processed + 1
 
             if (.not. error_flag) then
                 result%successful_files = result%successful_files + 1
                 result%total_lines_processed = result%total_lines_processed + &
-                                              result%file_summaries(i)%lines_processed
+                    result%file_summaries(i)%lines_processed
             else
                 result%failed_files = result%failed_files + 1
             end if
@@ -136,7 +136,7 @@ contains
 
         ! Determine overall success - succeed if we processed at least some files
         result%success = (result%files_discovered > 0) .and. &
-                        (result%successful_files > 0)
+            (result%successful_files > 0)
 
         ! Generate summary message
         if (result%success) then

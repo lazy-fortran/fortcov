@@ -1,6 +1,6 @@
 module directory_operations_secure
     use error_handling_core, only: clear_error_context, error_context_t, &
-                                   ERROR_SUCCESS
+        ERROR_SUCCESS
     use path_security, only: validate_path_security
     use file_operations_secure, only: safe_remove_file
     implicit none
@@ -30,7 +30,7 @@ contains
         end if
 
         call safe_remove_file(trim(safe_dir_path)//"/.fortcov_temp_dir_marker", &
-                              file_error)
+            file_error)
         call safe_remove_file(trim(safe_dir_path)//"/cmd_test.txt", file_error)
         call safe_remove_file(trim(safe_dir_path)//"/cleanup_test.txt", file_error)
         call safe_remove_file(trim(safe_dir_path)//"/temp_mgmt_test.tmp", file_error)

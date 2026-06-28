@@ -69,7 +69,7 @@ contains
 
         has_drive_letter = (len_trim(executable) >= 2 .and. executable(2:2) == ':')
         is_path_like = (index(executable, '/') > 0 .or. &
-                        index(executable, BACKSLASH) > 0 .or. has_drive_letter)
+            index(executable, BACKSLASH) > 0 .or. has_drive_letter)
 
         if (is_path_like) then
             call validate_path_security(executable, safe_executable, error_ctx)
