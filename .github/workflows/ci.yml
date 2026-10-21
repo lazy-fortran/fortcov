@@ -4,51 +4,62 @@ on:
   merge_group:
     types: [checks_requested]
   push:
-    branches: [ main, develop ]
+    branches:
+      - main
   pull_request:
-    branches: [ main ]
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - labeled
+  workflow_dispatch:
 
 jobs:
   test:
     name: test
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    
-    - name: Install gfortran
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y gfortran
-    
-    - name: Install Fortran Package Manager
-      run: |
-        curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
-        chmod +x fpm
-        sudo mv fpm /usr/local/bin/
-    
-    - name: Verify installations
-      run: |
-        gfortran --version
-        fpm --version
-    
-    - name: Clean build artifacts
-      run: |
-        echo "Cleaning build artifacts for clean CI build..."
-        rm -rf build/
-        find . -name "*.mod" -delete
-        find . -name "*.o" -delete
-        find . -name "*.out" -delete
-        echo "Build artifacts cleaned"
-    
-    - name: Build project (once)
-      run: fpm build --profile release
-    
-    - name: Run unit test suite (guarded, 120s)
-      env:
-        RUNNING_TESTS: "1"   # Ensure in-test guard is active to avoid recursion
-        FPM_BACKTRACE: "0"
-      run: |
-        timeout -k 5 120 fpm test --profile release --verbose
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install gfortran
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gfortran
+
+      - name: Install Fortran Package Manager
+        run: |
+          curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
+          chmod +x fpm
+          sudo mv fpm /usr/local/bin/
+
+      - name: Verify installations
+        run: |
+          gfortran --version
+          fpm --version
+
+      - name: Clean build artifacts
+        run: |
+          echo "Cleaning build artifacts for clean CI build..."
+          rm -rf build/
+          find . -name "*.mod" -delete
+          find . -name "*.o" -delete
+          find . -name "*.out" -delete
+          echo "Build artifacts cleaned"
+
+      - name: Build project (once)
+        run: fpm build --profile release
+
+      - name: Run unit test suite (guarded, 120s)
+        env:
+          RUNNING_TESTS: "1" # Ensure in-test guard is active to avoid recursion
+          FPM_BACKTRACE: "0"
+        run: |
+          timeout -k 5 120 fpm test --profile release --verbose
+    if: >-
+      github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.actor != 'github-merge-queue[bot]') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ci'))
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}

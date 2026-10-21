@@ -2,7 +2,7 @@ name: E2E Coverage Validation
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   workflow_dispatch:
 
 jobs:
@@ -68,17 +68,17 @@ jobs:
           if [ ! -f coverage.md ]; then
             echo "FortCov did not produce coverage.md (rc=$rc); generating from coverage.xml"
             python3 - <<'PY'
-import xml.etree.ElementTree as ET
-root = ET.parse('coverage.xml').getroot()
-lv = int(float(root.get('lines-valid') or 0))
-lc = int(float(root.get('lines-covered') or 0))
-rate = float(root.get('line-rate') or (lc / lv if lv else 0.0))
-pct = f"{rate*100:.2f}%"
-with open('coverage.md','w',encoding='utf-8') as f:
-    f.write("| Filename | Stmts | Covered | Cover | Missing |\n")
-    f.write("|----------|-------|---------|-------|---------|\n")
-    f.write(f"| TOTAL | {lv} | {lc} | {pct} |  |\n")
-PY
+          import xml.etree.ElementTree as ET
+          root = ET.parse('coverage.xml').getroot()
+          lv = int(float(root.get('lines-valid') or 0))
+          lc = int(float(root.get('lines-covered') or 0))
+          rate = float(root.get('line-rate') or (lc / lv if lv else 0.0))
+          pct = f"{rate*100:.2f}%"
+          with open('coverage.md','w',encoding='utf-8') as f:
+              f.write("| Filename | Stmts | Covered | Cover | Missing |\n")
+              f.write("|----------|-------|---------|-------|---------|\n")
+              f.write(f"| TOTAL | {lv} | {lc} | {pct} |  |\n")
+          PY
           fi
 
       - name: Compare totals (Cobertura vs FortCov)
@@ -93,3 +93,5 @@ PY
           path: |
             coverage.xml
             coverage.md
+    if: >-
+      github.event_name == 'merge_group' || github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.actor != 'github-merge-queue[bot]') || (github.event_name == 'pull_request' && contains(github.event.pull_request.labels.*.name, 'full-ci'))
