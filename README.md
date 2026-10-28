@@ -1,20 +1,24 @@
-# FortCov – Precise FPM Coverage
+# FortCov
 
-> **Note**: This project is experimental and subject to major changes. APIs may change without notice.
+FortCov turns gfortran/gcov coverage data into Markdown or Cobertura XML reports
+for Fortran projects built with fpm or CMake.
 
-FortCov turns gfortran/gcov coverage into clear reports. By default it analyzes
-existing `.gcov` files. You can also use the built-in bridge with `--gcov`
-(alias: `--discover-and-gcov`) to auto-discover FPM/CMake build dirs and
-generate `.gcov` from coverage artifacts before analysis. For manual control,
-use `gcov` (or helper scripts in `scripts/`) to generate `.gcov`, then run
-FortCov to create the report.
+Status: experimental; options and output may change.
+
+## Features
+
+- Reads existing `.gcov` files and writes a per-file summary with missing lines.
+- Optionally discovers fpm/CMake build directories, runs the tests and calls `gcov`
+  itself (`--gcov`).
+- Markdown (default) or Cobertura XML output.
+- Coverage threshold for CI (`--fail-under`), with distinct exit codes.
 
 ## Requirements
 
 - `gfortran` and `gcov` (part of GCC)
-- `fpm` (Fortran Package Manager)
+- [fpm](https://fpm.fortran-lang.org)
 
-## Install FortCov
+## Install
 
 ```bash
 git clone https://github.com/lazy-fortran/fortcov.git
@@ -23,112 +27,51 @@ fpm build --profile release
 sudo install -m 0755 "$(find build -type f -path '*/app/fortcov' | head -n1)" /usr/local/bin/fortcov
 ```
 
-## Quick Start
+## Usage
 
-FortCov analyzes existing `.gcov` files by default. In zero-config mode
-(no arguments), it also runs your build-system tests unless you pass
-`--no-auto-test`. FortCov does not add coverage flags, so you still need
-to build or test with coverage instrumentation. Use one of the following
-flows:
-
-- Manual `.gcov` flow (explicit control)
-- Auto-discovery + gcov bridge (`--gcov`)
+FortCov does not add coverage flags; build and run your tests with instrumentation
+first.
 
 ```bash
-# 1) Instrument and run (tests or app) to produce .gcda/.gcno
-fpm test --flag "-fprofile-arcs -ftest-coverage"  # or: fpm build --flag ... && ./build/gfortran_*/app/your_app ...
+# 1. Build and run tests with coverage instrumentation
+fpm test --flag "-fprofile-arcs -ftest-coverage"
 
-# 2) Generate .gcov files from build directories
+# 2. Generate .gcov files from the build directories
 find build -name "*.gcda" | xargs dirname | sort -u | while read d; do
   gcov --object-directory="$d" "$d"/*.gcno 2>/dev/null || true
 done
 
-# 3) Generate FortCov report from .gcov files
+# 3. Write the report
 fortcov --source=src *.gcov --output=coverage.md
 ```
 
-Note: The file `coverage.md` (default `build/coverage/coverage.md` in
-auto mode with `--gcov`) contains a project summary and per-file stats.
+Output:
 
-## CMake Quick Start (Out-of-Source)
-
-If you build with CMake, you can generate coverage in a separate build
-directory and feed `.gcov` files to FortCov:
-
-```bash
-cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug \
-  -DCMAKE_Fortran_FLAGS="-fprofile-arcs -ftest-coverage" \
-  -DCMAKE_EXE_LINKER_FLAGS="--coverage"
-cmake --build build
-ctest --test-dir build
-
-find build -name "*.gcda" | xargs dirname | sort -u | while read d; do
-  gcov --object-directory="$d" "$d"/*.gcno 2>/dev/null || true
-done
-
-fortcov --source=src *.gcov --output=coverage.md
 ```
-
-### Auto-Discovery + gcov (single command)
-
-If you want FortCov to auto-discover FPM/CMake build dirs, run tests (unless
-disabled), and generate `.gcov` before analysis, use the built‑in bridge:
-
-```bash
-fortcov --gcov   # alias: --discover-and-gcov
-```
-
-Ensure your tests or builds use coverage flags (for example,
-`fpm test --flag "-fprofile-arcs -ftest-coverage"`), or gcov will have no
-coverage data to process.
-
-Outputs by default:
-- `.gcov` files in the working directory
-- `build/coverage/coverage.md` Markdown report
-
-## CI Recipe (Fail Under Threshold)
-
-```bash
-set -e
-# Single-command CI-friendly execution (auto test + gcov + report)
-fortcov --gcov --fail-under 80 --quiet
-```
-
-Exit codes: `0` success, `2` threshold not met, `3` no coverage data.
-
-## Example Output
-
-```bash
-$ fortcov --source=src *.gcov --output=coverage.md
 | Filename | Stmts | Covered | Cover | Missing |
 |----------|-------|---------|-------|---------|
 | src/example.f90 | 10 | 7 | 70.00% | 3-4, 9 |
 | TOTAL | 10 | 7 | 70.00% | |
 ```
 
-Advanced: You can still use the built-in bridge explicitly when needed:
+Steps 2 and 3 can be replaced by `fortcov --gcov`, which discovers the build
+directories, runs the tests (unless `--no-auto-test` is given), generates the
+`.gcov` files and writes `build/coverage/coverage.md`. In CI:
 
 ```bash
-$ fortcov --gcov --output=coverage.md  # alias: --discover-and-gcov
-# Auto-discovers build dirs, generates .gcov, and produces coverage.md
+fortcov --gcov --fail-under 80 --quiet
 ```
 
-## Notes
+`examples/minimal` contains a small fpm project with a `generate_coverage.sh`
+script that performs the manual steps above.
 
-- FortCov is independent of the Lazy Fortran compiler bootstrap. It does not
-  depend on FortFront, `ffc`, or LIRIC.
-- Open cleanup issues track README simplification, Python dependency
-  documentation, examples cleanup, CLI defaults, and internal module reduction.
-- Developed and tested with FPM default build layout.
-- For non-FPM builds, generate `.gcov` with your build system and invoke FortCov as shown above.
-- Set `FORTCOV_USE_SYNTHETIC_GCOV=1` to force synthetic gcov output for tests.
-- `FORTCOV_USE_REAL_GCOV=0` is a deprecated alias for synthetic gcov output.
-- Use `fortcov --help` for additional options (quiet mode, thresholds, etc.).
+## Documentation
 
-## Example (Minimal FPM Project)
-
-See `examples/minimal` for a tiny FPM project and a helper script `generate_coverage.sh` that builds with coverage, generates `.gcov`, and creates a Markdown report via FortCov.
+- [Usage details](docs/usage.md): CMake projects, automatic mode, options, exit
+  codes, environment variables
+- `fortcov --help` lists all options
+- [Changelog](CHANGELOG.md)
 
 ## License
 
-MIT. See `LICENSE`.
+MIT. See [LICENSE](LICENSE).
