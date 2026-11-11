@@ -75,7 +75,7 @@ jobs:
           artifact_name: fortcov-linux-x86_64
           executable: fortcov
         - os: macos-latest
-          artifact_name: fortcov-macos-x86_64
+          artifact_name: fortcov-macos-arm64
           executable: fortcov
     
     steps:
@@ -97,11 +97,14 @@ jobs:
       run: |
         if [ "$RUNNER_OS" = "Linux" ]; then
           curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-linux-x86_64 -o fpm
-        elif [ "$RUNNER_OS" = "macOS" ]; then
-          curl -fsSL https://github.com/fortran-lang/fpm/releases/download/v0.10.1/fpm-0.10.1-macos-x86_64 -o fpm
+          chmod +x fpm
+          sudo mv fpm /usr/local/bin/
+        else
+          # fpm 0.10.1 has no macOS arm64 binary; the PyPI package does.
+          python3 -m venv "$RUNNER_TEMP/fpm"
+          "$RUNNER_TEMP/fpm/bin/python" -m pip install fpm==0.10.1
+          echo "$RUNNER_TEMP/fpm/bin" >> "$GITHUB_PATH"
         fi
-        chmod +x fpm
-        sudo mv fpm /usr/local/bin/
         
     - name: Verify build environment
       run: |
