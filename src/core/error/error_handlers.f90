@@ -173,9 +173,9 @@ contains
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "2. Run your tests to generate .gcda files: fpm test --flag ""-fprofile-arcs -ftest-coverage"""
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "3. Generate .gcov files: gcov src/*.f90"
+            "3. Generate .gcov files: gcov src/" // "*.f90"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "4. Run fortcov: fortcov --source=. --exclude='build/*' --exclude='test/*' --output=coverage.md"
+            "4. Run fortcov: fortcov --source=. --exclude='build/" // "*' --exclude='test/" // "*' --output=coverage.md"
 
         write(error_ctx%context, '(A)') "Coverage file discovery"
     end subroutine handle_no_coverage_files
@@ -219,7 +219,7 @@ contains
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "2. Basic usage: fortcov --source=src --output=coverage.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
-            "3. Quick start: fortcov --source=. --exclude=build/*,test/* --output=coverage.md"
+            "3. Quick start: fortcov --source=. --exclude=build/" // "*,test/" // "* --output=coverage.md"
         error_ctx%suggestion = trim(error_ctx%suggestion) // char(10) // &
             "4. For help and examples: fortcov --help"
 

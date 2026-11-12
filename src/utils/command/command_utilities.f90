@@ -165,7 +165,7 @@ contains
         if (pos_find > 0 .and. pos_name > 0) then
             ! Extract directory from "find <directory> -name ..."
             pattern = command(pos_find+5:pos_name-1)
-            pattern = trim(adjustl(pattern)) // '/*.gcov'
+            pattern = trim(adjustl(pattern)) // '/' // '*.gcov'
 
             ! Remove shell escaping quotes if present
             if (pattern(1:1) == '"') then

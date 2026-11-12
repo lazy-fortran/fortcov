@@ -121,7 +121,7 @@ contains
         if (trim(base_dir) == "." .or. len_trim(base_dir) == 0) then
             recursive_pattern = "**/"//trim(pattern)
         else
-            recursive_pattern = trim(base_dir)//"/**/"//trim(pattern)
+            recursive_pattern = trim(base_dir)//"/" // "**/"//trim(pattern)
         end if
 
         ! Use existing safe_find_files implementation
@@ -141,7 +141,7 @@ contains
         call clear_error_context(error_ctx)
 
         if (index(pattern, '**/') > 0) then
-            ! Recursive form: <base>/**/<file_pattern>
+            ! Recursive form: <base>, then ** and <file_pattern>
             star_pos = index(pattern, '**/')
             if (star_pos > 1) then
                 base_dir = pattern(1:star_pos - 1)
@@ -277,7 +277,7 @@ contains
 
         call glob_collect(trim(base_dir)//'/'//trim(file_pattern), &
             GLOB_NOSORT, here)
-        call glob_collect(trim(base_dir)//'/*', glob_mark_flag(), dirs)
+        call glob_collect(trim(base_dir)//'/' // '*', glob_mark_flag(), dirs)
         acc = here
         if (allocated(dirs)) then
             do i = 1, size(dirs)

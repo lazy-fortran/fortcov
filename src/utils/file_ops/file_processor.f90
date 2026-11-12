@@ -77,16 +77,16 @@ contains
         print *, "Step 3: Generate .gcov files using gcov"
         print *, "  Option A (RECOMMENDED - Issue #203 standard):"
         print *, "    mkdir -p build/gcov"
-        print *, "    gcov -o build/your_test_dir src/*.f90 -t build/gcov/"
+        print *, "    gcov -o build/your_test_dir src/" // "*.f90 -t build/gcov/"
         print *, ""
         print *, "  Option B (current directory):"
-        print *, "    gcov src/*.f90"
+        print *, "    gcov src/" // "*.f90"
         print *, ""
         print *, "Step 4: Run fortcov again"
         print *, "  fortcov"
         print *, ""
         print *, "Alternative: Specify coverage files manually"
-        print *, "  fortcov path/to/*.gcov --source=src --output=coverage.md"
+        print *, "  fortcov path/to/" // "*.gcov --source=src --output=coverage.md"
         print *, ""
         print *, "For more help: fortcov --help"
         print *, ""
@@ -117,8 +117,8 @@ contains
                 trim(errmsg)
             return
         end if
-        exclude_patterns(1) = "build/*"
-        exclude_patterns(2) = "test/*"
+        exclude_patterns(1) = "build/" // "*"
+        exclude_patterns(2) = "test/" // "*"
 
     end subroutine apply_zero_configuration_defaults
 

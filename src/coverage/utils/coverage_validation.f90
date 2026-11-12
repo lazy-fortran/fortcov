@@ -171,7 +171,7 @@ contains
 
             ! Check for overly broad patterns that might exclude everything
             if (pattern == "*" .or. pattern == "**" .or. &
-                pattern == "*.*" .or. pattern == "**/*") then
+                pattern == "*.*" .or. pattern == "**/" // "*") then
                 write (*, '(A)') "Error: Overly broad exclude pattern not allowed "// &
                     "in strict mode: "//trim(pattern)
                 is_valid = .false.

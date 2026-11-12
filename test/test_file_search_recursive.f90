@@ -49,7 +49,7 @@ contains
             close (unit)
         end if
 
-        call safe_find_files_with_glob(trim(root), '**/*.gcov', files, error_ctx)
+        call safe_find_files_with_glob(trim(root), '**/' // '*.gcov', files, error_ctx)
         call assert(error_ctx%error_code == ERROR_SUCCESS, &
             'recursive glob succeeds')
         call assert(allocated(files), 'recursive glob allocates result')

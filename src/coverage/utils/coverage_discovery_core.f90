@@ -196,7 +196,7 @@ contains
         end if
 
         ! Try to list files in the path - if this works, it's a directory
-        test_files = find_files(trim(path) // "/*")
+        test_files = find_files(trim(path) // "/" // "*")
         if (size(test_files) >= 0) then
             is_dir = .true.
             return

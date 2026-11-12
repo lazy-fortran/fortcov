@@ -137,7 +137,7 @@ contains
         integer :: stat
         character(len=512) :: errmsg
 
-        ! Priority 1: Check build/gcov/*.gcov (Issue #203 standard location)
+        ! Priority 1: Check the .gcov files in build/gcov (Issue #203 standard location)
         inquire(file="build/gcov", exist=dir_exists)
         if (dir_exists) then
             temp_files = direct_find_gcov_files("build/gcov")

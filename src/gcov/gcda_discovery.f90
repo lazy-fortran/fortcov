@@ -53,16 +53,16 @@ contains
 
         total_files = 0
 
-        ! Check FPM app directory pattern: build/gfortran_*/app/*.gcda
+        ! Check FPM app directory pattern: .gcda files in build/gfortran_*/app
         inquire(file="build", exist=dir_exists)
         if (dir_exists) then
-            app_files = find_files_with_glob("build", "gfortran_*/app/*.gcda")
+            app_files = find_files_with_glob("build", "gfortran_*/app/" // "*.gcda")
             if (allocated(app_files)) then
                 total_files = total_files + size(app_files)
             end if
 
-            ! Check FPM test directory pattern: build/gfortran_*/test/*.gcda
-            test_files = find_files_with_glob("build", "gfortran_*/test/*.gcda")
+            ! Check FPM test directory pattern: .gcda files in build/gfortran_*/test
+            test_files = find_files_with_glob("build", "gfortran_*/test/" // "*.gcda")
             if (allocated(test_files)) then
                 total_files = total_files + size(test_files)
             end if
@@ -93,10 +93,10 @@ contains
         character(len=:), allocatable :: temp_files(:)
         logical :: dir_exists
 
-        ! Check CMake patterns: build/**/*.gcda, _build/**/*.gcda
+        ! Check CMake patterns: .gcda files anywhere below build or _build
         inquire(file="build", exist=dir_exists)
         if (dir_exists) then
-            temp_files = find_files_with_glob("build", "**/*.gcda")
+            temp_files = find_files_with_glob("build", "**/" // "*.gcda")
             if (allocated(temp_files) .and. size(temp_files) > 0) then
                 gcda_files = temp_files
                 return
@@ -105,7 +105,7 @@ contains
 
         inquire(file="_build", exist=dir_exists)
         if (dir_exists) then
-            temp_files = find_files_with_glob("_build", "**/*.gcda")
+            temp_files = find_files_with_glob("_build", "**/" // "*.gcda")
             if (allocated(temp_files) .and. size(temp_files) > 0) then
                 gcda_files = temp_files
                 return
@@ -122,7 +122,7 @@ contains
         logical :: dir_exists
 
         ! Generic patterns: any directory containing "build" in name
-        temp_files = find_files_with_glob(".", "*build*/**/*.gcda")
+        temp_files = find_files_with_glob(".", "*build*/" // "**/" // "*.gcda")
         if (allocated(temp_files) .and. size(temp_files) > 0) then
             gcda_files = temp_files
             return
@@ -131,7 +131,7 @@ contains
         ! Check obj/objects directories
         inquire(file="obj", exist=dir_exists)
         if (dir_exists) then
-            temp_files = find_files_with_glob("obj", "**/*.gcda")
+            temp_files = find_files_with_glob("obj", "**/" // "*.gcda")
             if (allocated(temp_files) .and. size(temp_files) > 0) then
                 gcda_files = temp_files
                 return
@@ -140,7 +140,7 @@ contains
 
         inquire(file="objects", exist=dir_exists)
         if (dir_exists) then
-            temp_files = find_files_with_glob("objects", "**/*.gcda")
+            temp_files = find_files_with_glob("objects", "**/" // "*.gcda")
             if (allocated(temp_files) .and. size(temp_files) > 0) then
                 gcda_files = temp_files
                 return

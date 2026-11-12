@@ -80,7 +80,7 @@ contains
         if (error_ctx%error_code /= ERROR_SUCCESS) return
 
         ! Use enhanced recursive API for .gcda file discovery
-        call safe_find_files_with_glob(safe_directory, "**/*.gcda", gcda_files, error_ctx)
+        call safe_find_files_with_glob(safe_directory, "**/" // "*.gcda", gcda_files, error_ctx)
 
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call safe_write_context(error_ctx, 'direct gcda file discovery')
@@ -128,7 +128,7 @@ contains
         if (error_ctx%error_code /= ERROR_SUCCESS) return
 
         ! Use enhanced recursive API for .gcov file discovery
-        call safe_find_files_with_glob(safe_directory, "**/*.gcov", gcov_files, error_ctx)
+        call safe_find_files_with_glob(safe_directory, "**/" // "*.gcov", gcov_files, error_ctx)
 
         if (error_ctx%error_code /= ERROR_SUCCESS) then
             call safe_write_context(error_ctx, 'direct gcov file discovery')

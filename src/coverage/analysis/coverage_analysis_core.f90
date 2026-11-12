@@ -268,7 +268,7 @@ contains
                 ! If path already contains *, use as-is (already a pattern)
                 ! If path exists as a file, use as exact match
                 ! If path looks like a file (has extension), use as exact match
-                ! Otherwise treat as directory and append /*
+                ! Otherwise treat as directory and match everything in it
                 if (config%source_paths(i)(len_trim(config%source_paths(i)):) == "/") then
                     criteria%include_patterns(i) = trim(config%source_paths(i)) // "*"
                 else if (index(config%source_paths(i), "*") > 0) then
@@ -281,7 +281,7 @@ contains
                     ! Path looks like a source file - use as exact match
                     criteria%include_patterns(i) = trim(config%source_paths(i))
                 else
-                    criteria%include_patterns(i) = trim(config%source_paths(i)) // "/*"
+                    criteria%include_patterns(i) = trim(config%source_paths(i)) // "/" // "*"
                 end if
             end do
         end if

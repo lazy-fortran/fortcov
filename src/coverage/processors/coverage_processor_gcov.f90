@@ -67,8 +67,8 @@ contains
         end if
 
         if (.not. has_build_dirs) then
-            ! Test-friendly path: directly synthesize .gcov from test_build/*.gcda
-            test_gcda = find_files('test_build/*.gcda')
+            ! Test-friendly path: directly synthesize .gcov from the .gcda files in test_build
+            test_gcda = find_files('test_build/' // '*.gcda')
             if (allocated(test_gcda)) then
                 if (size(test_gcda) > 0) then
                     block
@@ -121,7 +121,7 @@ contains
         if (.not. allocated(gcda_files)) then
             block
                 character(len=:), allocatable :: test_gcda(:)
-                test_gcda = find_files("test_build/*.gcda")
+                test_gcda = find_files("test_build/" // "*.gcda")
                 if (allocated(test_gcda)) then
                     if (size(test_gcda) > 0) then
                         gcda_files = test_gcda
@@ -131,7 +131,7 @@ contains
         else if (size(gcda_files) == 0) then
             block
                 character(len=:), allocatable :: test_gcda(:)
-                test_gcda = find_files("test_build/*.gcda")
+                test_gcda = find_files("test_build/" // "*.gcda")
                 if (allocated(test_gcda)) then
                     if (size(test_gcda) > 0) then
                         gcda_files = test_gcda
@@ -242,7 +242,7 @@ contains
         end if
         inquire (file=trim(output_dir), exist=dir_exists)
         if (dir_exists) then
-            found_gcov_files = find_files(trim(output_dir)//"/*.gcov")
+            found_gcov_files = find_files(trim(output_dir)//"/" // "*.gcov")
         end if
 
         if (allocated(found_gcov_files)) then
@@ -407,7 +407,7 @@ contains
             inquire (file=trim(search_paths(i)), exist=path_exists)
             if (path_exists) then
                 ! Search for .gcov files in this path
-                path_files = find_files(trim(search_paths(i))//"/*"//GCOV_EXTENSION)
+                path_files = find_files(trim(search_paths(i))//"/" // "*"//GCOV_EXTENSION)
 
                 ! Merge with existing files
                 if (allocated(path_files)) then
@@ -471,13 +471,13 @@ contains
         gcda_count = 0
 
         ! Find .gcno files in build directory
-        gcno_files = find_files(trim(build_path)//"/*.gcno")
+        gcno_files = find_files(trim(build_path)//"/" // "*.gcno")
         if (allocated(gcno_files)) then
             gcno_count = size(gcno_files)
         end if
 
         ! Find .gcda files in build directory
-        gcda_files = find_files(trim(build_path)//"/*.gcda")
+        gcda_files = find_files(trim(build_path)//"/" // "*.gcda")
         if (allocated(gcda_files)) then
             gcda_count = size(gcda_files)
         end if
@@ -503,7 +503,7 @@ contains
 
         exit_status = 1
 
-        gcda = find_files(trim(build_path)//'/*.gcda')
+        gcda = find_files(trim(build_path)//'/' // '*.gcda')
         if (.not. allocated(gcda)) return
         if (size(gcda) == 0) return
 

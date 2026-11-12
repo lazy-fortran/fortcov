@@ -33,7 +33,7 @@ contains
         character(len=256) :: pattern_result
         character(len=*), parameter :: GCOV_PATTERN = '*.gcov'
         character(len=*), parameter :: test_build_dir = '/path/to/build'
-        character(len=*), parameter :: expected = '/path/to/build/*.gcov'
+        character(len=*), parameter :: expected = '/path/to/build/' // '*.gcov'
 
         write (output_unit, '(A)') 'Test: GCOV pattern string concatenation'
 
@@ -53,11 +53,11 @@ contains
 
         ! Test with empty build dir (should use current dir)
         pattern_result = trim('.')//'/'//GCOV_PATTERN
-        call assert_equals(trim(pattern_result), './*.gcov', 'Empty dir handled')
+        call assert_equals(trim(pattern_result), './' // '*.gcov', 'Empty dir handled')
 
         ! Test with build dir ending in slash
         pattern_result = trim('/build/')//'/'//GCOV_PATTERN
-        call assert_equals(trim(pattern_result), '/build//*.gcov', &
+        call assert_equals(trim(pattern_result), '/build//' // '*.gcov', &
             'Trailing slash handled')
 
         ! Test with very long path (should not exceed buffer)
